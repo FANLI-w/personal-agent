@@ -625,3 +625,7 @@ focused资料库10项、聊天来源6项和连续聊天 / 上下文合计23项�
 13项客户端回归、标准客户端类型、原生非composite类型、完整客户端/原生构建/四SDK检查通过。7组生产React/HTTP/API/SQLite/实际handler流程通过，原生窗口/许可/IPC及Zotero响应为夹具，1536×1024/1024×726截图已查看、无水平溢出，pageerror0。实际API提交后合成503再重试只保留一个来源；取消零上传、读取错误不同空结果、范围变公开拒绝和第二账号隔离通过。首次Antd“完 成”选择器失败、prettier旧CLI路径错误、默认node composite原有imageClipboard文件清单问题和新DTO跨项目错误保留，DTO改.d.ts，门槛命令/最终报告分别记录。不称真实个人库、安装桌面或模型质量已验收。
 
 无共享/内置Skill修改，不重复根共享CI；没有新安装包、Release、部署、迁移或用户客户端重启。线上沿用2026-10-10aee02447/Windows0.10.0/schema022记录、公开更新0.6.0，本轮未重验线上。PR37远端38159262310三平台均成功；本轮CI独立跟踪。旧Zotero缺Server-ID不保证跨库身份，不确定导入只在原窗口保留重试；全文/MCP/工具调用及跨重启恢复仍待后续。PR35/36独立分支未包含。证据Git外.runtime/zotero-local-20261013；隔离4646/4647服务和浏览器已关闭。完整来源、命令、边界与交接见docs/development/zotero-local-library.md。
+
+PR38远端38299994061两Linux成功，Windows首轮632/634通过，discovery分页/seed与execution A12既有测试均超过5秒门槛；与父分支比较相关后端/测试没有改动。已只重跑失败Windows job。新增本机诊断：execution A12过滤通过；discovery单独过滤因缺前序测试任务而断言失败（非远端超时复现），改按原文件顺序执行全部9项通过。诊断日志及远端失败/重试记录保留Git外，不提高测试时限、模型预算或改动共享业务。远端重试最终状态单独追踪。
+
+GitHub38299994061矩阵重试最终Ubuntu22.19 / Ubuntu24 / Windows24全部成功，受测HEAD0135f0be8ca876b2c4ff4636db77f6a604fec750、生产源码仍5e85efe。失败节点重试请求和实际完整矩阵结果见ci-retry-passed.json，首次失败保留。无生产/共享测试/时限变化，后续仅文档更新不再重复本地检查或打包部署。

@@ -38,6 +38,8 @@ Git外证据 `D:/deepseek-agent/.runtime/zotero-local-20261013`。仅使用合�
 4. 覆盖目录跳转不读取、原生取消零读取、403配置提示/重连、分页/末条、选中摘要末尾保持、取消零上传、错误不同于空结果、真实API提交后合成503再用同编号重试只有一个来源、集合变公开拒绝、账号切换途中晚稿丢弃、第二账号不能发现/读取私人来源。两尺寸无水平溢出，模态标题、关闭与确认均可达，截图已查看。
 5. pageerror0；既有Antd bodyStyle/findDOMNode和预期400/503/404保留。首轮UI失败仅为Antd将“完成”渲染成“完 成”的测试定位；改用实际可访问名称后通过，没有把首轮称为通过。错误prettier CLI路径、首次类型检查及初次QA证据保留；新格式化、最终类型/构建和QA分别记录，不掩盖失败。
 
+远端run38299994061两Linux检查成功，首轮Windows共享检查632/634通过，discovery分页/seed与execution A12两条已有测试超过默认5秒时限。相关后端与测试本轮未变。请求重跑失败Windows节点，不提高预算或修改测试时限；execution A12本机定向通过。最初单独过滤discovery分页测试缺少同文件前面测试建立的任务，断言失败，该失败保留；改为整个discovery文件9/9通过。GitHub矩阵重试最终Ubuntu22.19、Ubuntu24、Windows24均成功，受测HEAD0135f0b、生产源码仍5e85efe；完整结果见Git外ci-retry-passed.json。不能把缺夹具的单测失败或首次共享时限失败算作通过，不为这次CI诊断重打包或部署。
+
 关键复现命令（clients/openim）：
 
 ```powershell
