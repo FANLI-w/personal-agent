@@ -598,6 +598,14 @@ export function CapabilitySquare() {
                 </Button>
               </div>
             )}
+            {view === "public" && (
+              <CommunitySyncStatus
+                catalog={community.data?.data}
+                loading={community.loading}
+                error={community.error}
+                onRefresh={community.refresh}
+              />
+            )}
             {hasDiscoveryResults && (
               <div className="capability-feed-section-heading">
                 <h2>
@@ -634,14 +642,6 @@ export function CapabilitySquare() {
                 />
               )}
             </div>
-            {view === "public" && (
-              <CommunitySyncStatus
-                catalog={community.data?.data}
-                loading={community.loading}
-                error={community.error}
-                onRefresh={community.refresh}
-              />
-            )}
             {hasDiscoveryResults && (
               <p className="capability-center-boundary">
                 示例展示交付形式，并非实际生成结果。具体输入、资料权限与接入状态见各项用法。
