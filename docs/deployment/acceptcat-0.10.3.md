@@ -14,7 +14,7 @@
 - 实际公开GitHub请求成功同步3个仓库事实、发现20个待审阅候选。最终页面截图使用这份真实公开响应缓存，隔离合成API/账号，不能当作线上账号截图或科研质量验收。同步提示在首屏用途标题上方，卡片显示实际Star/代码更新时间；1024无横向溢出。
 - 保留初次新依赖文件尚未进入客户端缓存的类型错误、Vite旧预构建缓存、冷启动18秒超时、候选/安装选择器和历史镜像摘要守卫笔误导致的停止证据。原有electron-log重复initialize与Sass警告保留，打包启动仍通过。
 
-证据Git外 `D:/deepseek-agent/.runtime/community-sync-20261014`，包含根检查、类型、定向测试、GitHub公开响应、界面分段结果、最终实拍、构建/启动/ASAR/复制摘要。远端38543331737首次Linux两项通过、Windows两项历史解析/迁移超时失败，已仅重跑失败Windows节点；最终状态单独记录，不能以本机通过替代远端结果。
+证据Git外 `D:/deepseek-agent/.runtime/community-sync-20261014`，包含根检查、类型、定向测试、GitHub公开响应、界面分段结果、最终实拍、构建/启动/ASAR/复制摘要。生产源码47c42ac的远端[38543331737](https://github.com/luoyan96/personal-agent/actions/runs/38543331737)首次Linux两项通过、Windows两项历史解析/迁移超时失败，仅重跑失败Windows节点后最终三平台全部成功，实际回执github-ci-last.json保留。后续文档提交的检查不替代这个生产源码回执。
 
 ## 后台升级准备与恢复
 

@@ -711,3 +711,5 @@ Windows0.10.3 NSIS87,399,966字节/SHA2565799fe92a664ae9c2a96882e63ad4ac89fd22ba
 证据Git外.runtime/community-sync-20261014：根CI首败/最终、类型、客户端测试、6+3界面日志/最终可见性/实拍、真实GitHub响应、两轮包/ASAR/smoke/复制hash、部署脚本初检/v2/public-probes和实际终端图；敏感行摘要和备份只在服务器保护目录。GitHubconnector创建PR403后使用已有gh权限正常建立草稿45，未改connector权限。远端38543331737首轮Linux两项通过、Windows旧agent-file解析和015账户迁移超时失败，已仅重跑失败Windows节点，最后快照仍运行中；不计三平台全部通过。交接docs/development/community-catalog-sync.md与docs/deployment/acceptcat-0.10.3.md。
 
 后续每日社区任务核对候选依赖/许可/材料/模型成本/真实样例后，通过operator-only发布路径收录；GitHub热度和元数据更新不等于可运行科研能力。已安装Skill更新、应用二进制更新、执行沙箱/向量/绘图/PaperQA和真实师生交付质量继续独立处理。未包含兄弟PR35/36，当前公共更新源仍未获得本地0.10.3。
+
+后续确认：生产源码47c42ac的38543331737失败Windows节点重跑成功，Ubuntu22.19/24及Windows24最终三平台全部通过，实际github-ci-last.json保留；初次失败日志仍保留。文档HEAD检查独立于固定生产源码结果。

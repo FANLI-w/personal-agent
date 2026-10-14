@@ -6,7 +6,7 @@
 
 用户要求社区能力由软件/后台自动更新后，`feature/community-catalog-sync` 基于PR44完成后端持久目录、真实GitHub事实同步和待审阅发现。生产源码 **47c42acbccf64b1d329babb26a464733b81d51d3**（实现6c6b31f），[草稿PR45](https://github.com/luoyan96/personal-agent/pull/45)。客户端读取服务器目录，Star/Fork、代码更新时间、归档与上游提交独立展示；自动发现候选不提供安装/调用，运营者审阅后发布固定SHA的说明，私人技能和资料权限保持。
 
-Windows x64 NSIS **0.10.3** 在桌面 `AcceptCat_0.10.3.exe`，87,399,966字节，SHA2565799fe92a664ae9c2a96882e63ad4ac89fd22ba7e856375dda59e0ba0c23ba2c，副本一致。最终根53文件/669项、生产2项/B0/隔离通过；客户端类型/12项、界面六组目录流程及三组安装/账号/布局流程、最终提示位置实拍、真实打包exe启动及ASAR核对通过。界面/模型验证范围分开，未使用真实用户科研数据或进行供应商科研质量验收。此前失败与警告保留。远端38543331737 Linux两节点通过，Windows旧解析/迁移超时失败后仅重跑该节点，最后快照仍运行中，不计三平台全部通过。
+Windows x64 NSIS **0.10.3** 在桌面 `AcceptCat_0.10.3.exe`，87,399,966字节，SHA2565799fe92a664ae9c2a96882e63ad4ac89fd22ba7e856375dda59e0ba0c23ba2c，副本一致。最终根53文件/669项、生产2项/B0/隔离通过；客户端类型/12项、界面六组目录流程及三组安装/账号/布局流程、最终提示位置实拍、真实打包exe启动及ASAR核对通过。界面/模型验证范围分开，未使用真实用户科研数据或进行供应商科研质量验收。此前失败与警告保留。生产源码47c42ac的远端[38543331737](https://github.com/luoyan96/personal-agent/actions/runs/38543331737)最终三平台全部通过；首轮Windows旧解析/迁移超时失败，仅重跑失败节点后成功。后续文档HEAD检查与生产源码结果分开。
 
 API/worker已成对上线47c42ac，镜像 **research-openim-api:community-47c42ac** / **sha256:b78613b5c6e1f77d07e7af392149744161e25460cb7e4f14b2ec0500e3fda2cc**，API healthy/worker running，公网ready0.25/ok。**contract0.25 / chat1.12 / schema022，无迁移**。停写备份与解压副本/新writer前原库91表/22迁移/6原件一致，六基础服务保持。服务器首次同步09:51:35.482Z—09:51:41.195Z成功：四项已收录、三个仓库、二十候选，所有来源metadata error=null，下一次2026-10-14T16:00Z（北京时间10月15日零点）。worker持续运行，桌面关闭不影响同步；无GitHub token。普通登录用户只有缓存GET，操作CLI不允许用户任意晋级。
 
