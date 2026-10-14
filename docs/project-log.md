@@ -669,3 +669,5 @@ GitHub38299994061矩阵重试最终Ubuntu22.19 / Ubuntu24 / Windows24全部成�
 承接PR41生产db9ec3d的38502596075，Ubuntu22.19/24及Windows24全部成功，pr41-ci-passed.json；PR42生产38505283235另跟踪，完成本地检查时尚在运行。只改API聊天分流/守卫、回归及评估/交接；没有前端、内置Skill正文、共享契约/依赖/权限策略/数据库变更。没有安装包、Release、部署、迁移或用户客户端重启，沿用aee02447/Windows0.10.0/contract0.24/schema022记录，公开更新源此前0.6.0本轮未重验。需后续成对升级API/worker，不把本地修复称为现装已获得。包含PR37—41，不含PR35/36；合并协调chat.ts与状态/评估，接续明确输入输出的工具适配和真实科研质量评估。
 
 本批文档补录：check:content178份Markdown/10个内置Skill定义通过。PR42生产7d2a9c8的38505283235最新快照Ubuntu22.19/24成功、Windows24运行中，pr42-ci-production.json；不把未完成的远端节点记为通过。
+
+后续确认：PR42生产7d2a9c8的38505283235三平台全部成功，pr42-ci-production-passed.json根据实际gh返回记录（后续文档HEAD独立检查）。GitHub说明更新TLS超时和元数据读取EOF保留为网络故障，Git推送已成功；未把网络错误当代码失败。交接补丁曾引用不存在的文本而校验失败、零文件改动，读取准确锚点后补录。

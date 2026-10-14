@@ -31,6 +31,8 @@ pnpm run ci
 
 后续文档 `check:content`通过178份Markdown / 10个内置Skill定义（`content-final.log`）。PR42生产提交的 GitHub `38505283235`另跟踪：交接时Ubuntu22.19/24已成功、Windows24仍运行，快照 `pr42-ci-production.json`；不能借PR41成功宣称新PR全部远端矩阵通过。
 
+后续确认同一生产提交的GitHub38505283235三平台**全部成功**（不是后续文档HEAD），记录 `pr42-ci-production-passed.json`。PR说明更新一次TLS handshake timeout，随后元数据读取EOF，属于网络失败；Git推送与上述成功矩阵无误，PR说明以同正文可重试。一次交接补丁引用了不存在的文本导致校验失败、零文件改动，改用已读取的准确锚点后补录。
+
 ## 发布与协调
 
 **没有安装包、Release、部署、迁移或用户客户端重启。** 沿用2026-10-10 `aee02447` / Windows0.10.0 / contract0.24 / schema022部署记录，公开更新源此前0.6.0，本轮未重验线上。补丁需后续成对更新 API/worker；当前已安装用户不能被告知已经获得此修复。
