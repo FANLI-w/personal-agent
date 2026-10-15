@@ -38,6 +38,8 @@ Browser plugin/skill未提供，使用环境Playwright/隔离Edge；实际入口
 
 实拍 `download-1536.png`、`retry-1024.png`、`revoked-1024.png` 和 `native-electron-1200.png` 已查看。首次图标英文进入按钮名称导致精确定位失败，图标设为装饰隐藏；Edge自带 `edge://downloads-hub/` 被误计为业务弹窗后单独记录；撤回夹具漏 `expectedVersion` 被客户端拒绝，按既有契约补齐；默认node_modules没有下载Electron二进制的启动失败保留，改用已有22.3.27缓存。没有改变权限或弱化未知错误检查。
 
+包检查首轮误用不存在的历史素材名，严格断言失败；按实际文件核对 `research-desk.jpg`、`cat-room.webp`及图标完整字节后通过，原失败保留。打包exe的既有electron-log重复initialize警告保留。
+
 ## 交付与接续
 
 Windows版本 **0.10.6**，固定产品源码、最终安装器字节/哈希与实际打包启动见[当前状态](../current-state.md)及[项目日志](../project-log.md)。本轮无需后台部署/迁移，既有内容服务已用真实HTTP验证兼容。手动覆盖安装才会获得新按钮行为；不发布公开Release或改自动更新源，也不替用户安装/重启。
