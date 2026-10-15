@@ -25,7 +25,7 @@
 
 嵌套 Skill 包装页依赖 `../../SKILL.md`、脚本、参考和文档，当前选择单个子目录的导入不能自动补齐所有依赖，因此禁用安装，而非让用户装一个空壳。静态检查源码的导入、进程、网络、目录写入和评审配置；未运行外部模型/CLI或安装MCP。根脚本和方法参考等90个原件经过Git blob验证，Python静态解析通过。
 
-实际标准库CLI用上游公开的**虚构出货记录**重放Lite：start/save/status、缺失检查提示、未通过检查拒绝完成、完整作者检查交付和路径穿越拒绝共8次调用通过，记录明确 `independent_review=false`、`review_strength=unreviewed`。这是样例记录/回执验证，不是新生成报告或独立评审。Full也不自动等于独立评审；尚未适配AcceptCat任务、材料授权、执行隔离或中文科研报告质量。
+实际标准库CLI用上游公开的**虚构出货记录**重放Lite：start/save/status、缺失检查提示、未通过检查拒绝完成、完整作者检查交付和路径穿越拒绝共7次调用通过，记录明确 `independent_review=false`、`review_strength=unreviewed`。这是样例记录/回执验证，不是新生成报告或独立评审。Full也不自动等于独立评审；尚未适配AcceptCat任务、材料授权、执行隔离或中文科研报告质量。
 
 ## 桌面体验修复
 
