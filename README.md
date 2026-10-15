@@ -1,5 +1,7 @@
 # AcceptCat · 老师与实验室团队的科研工作平台
 
+2026-10-16：[选题决策与可证伪假设流程](docs/development/research-question-catalog.md)已加入在线科研广场：明确输入、风险/预测表与检验草稿，确认后安装为私人文字Skill。实际目录八项/五仓库同步成功；Windows0.10.6刷新“广场→研究设计”即可读取，无新安装包。原件/离线CLI/合成聊天与界面检查通过，脚本及联网工具仍未自动接通，科研质量尚需实际课题验证；详见[当前状态](docs/current-state.md)。
+
 2026-10-16：Windows **0.10.6**修复[任务材料下载](docs/development/task-artifact-download.md)，在当前应用会话读取并核对原件，支持停止/重试与换账号晚响应隔离。实际Electron保存/取消后重试及合成师生权限检查通过；安装包和说明在桌面，需覆盖安装，无后台升级。准确哈希、QA与交付范围见[当前状态](docs/current-state.md)。
 
 2026-10-16：Windows **0.10.5**修复[包内文字模板无法选为Skill参考](docs/development/skill-linked-reference-text.md)，安装前可逐项核对原文。固定审查Skill参考6→14、原25原件不变，私人调用/隔离与实际包启动通过；安装包在桌面，旧Skill需重新导入并确认更新，无需升级后台。准确哈希与验证范围见[当前状态](docs/current-state.md)。

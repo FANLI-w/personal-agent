@@ -2,6 +2,18 @@
 
 更新日期：2026-10-16（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 最新收录：选题决策与可证伪假设工作流已上线
+
+`acceptcat-3`，`feature/research-question-catalog` 接续PR48 / d8cd9e9，目录源码 **ba4aa090a0484481a0522eb5e5899340734f8ef5**，[草稿PR49](https://github.com/luoyan96/personal-agent/pull/49)已附任务。新增Anthropic官方选题/项目风险/决策路线，以及K-Dense可证伪假设/检验计划；固定SHA、适用许可、中文输入/交付、材料/费用和实际限制。前者13原件/9参考/无脚本；后者28原件/18可选文字参考与模板/8个Python文件，文字流程可确认私人安装。未复制上游正文入Git，私人资料/模型Key/团队权限保持。
+
+根CI53文件/669项、生产两项/B0/隔离通过；41原件独立核对、原生导入/存储/原包往返、13次公开合成CLI及两组真实HTTP/SQLite/ChatWorker私人调用/选择性参考/跨账号隔离通过。实际React两组安装预览与1536/1024实拍通过，pageerror0，既有Antd/Router警告和首败证据保留。合成回复不代表科研效果；上游作者引用错误与中文因果词漏检已如实提示。脚本、PubMed/MCP、绘图均未自动接通。
+
+两项通过既有运营CLI于 **2026-10-15T17:22:46Z**（北京时间10月16日01:22）加入实际生产目录；SQLite一致性备份/integrity_check通过，原六项逐值保持，备份 `/srv/research-openim-backups/community-review-20261015T172242Z`。GitHub同步17:22:44.578Z—17:22:50.446Z成功，最终公共缓存 **version38 / 八项 / 五仓库 / 二十候选**，全部metadata error=null；下一次10月16日16:00Z（北京时间17日零点）。后台仍47c42ac / community-47c42ac / b78613b5c6e1f77d07e7af392149744161e25460cb7e4f14b2ec0500e3fda2cc，未重启、部署或迁移，contract0.25/chat1.12/schema022保持。独立公网ready200/0.25/ok，harness not_verified。
+
+**现有Windows0.10.6打开“广场→研究设计”刷新即可读取，无需新安装包。** 本轮不发0.10.7，不更新已安装私人Skill或公开Release。旧客户端0.10.4及以下可能无法选择包内JSON/CSV，旧安装需新版明确重新导入。远端ba4aa09的38776266627首轮两Linux成功、Windows旧registration迁移/reuse撤回测试分别15000/5000ms超时；保存失败并仅重跑失败节点，未计全通过。上一批663a033的38771771667首轮Windows旧文件解析超时，保留失败并仅重跑失败节点，尚在运行。其他分支PR35/36未包含。
+
+[来源、验证与发布恢复](development/research-question-catalog.md)，证据Git外 `.runtime/community-curation-20261016`。隔离4766/4767服务已按完整命令行核对后停止；后续优先用授权课题资料验证中文科研交付质量，再接入受控检索和脚本执行。
+
 ## 最新交付：Windows 0.10.6 修复任务材料下载
 
 `acceptcat`，`fix/task-artifact-download` 接续PR47 / f29917d，产品源码 **663a0330c083faef0d09632a64a756cbee24543a**，[草稿PR48](https://github.com/luoyan96/personal-agent/pull/48)已附任务。任务材料改为当前应用会话读取，解决普通新窗口链接被Electron交给没有登录Cookie的外部浏览器。成功二进制单独处理，校验类型/10MiB/当前版本大小及SHA256后才请求系统下载；错误可重试，可停止，换账号/任务及晚响应不保存。撤回状态禁用，实际GET仍重新授权；只称已请求保存，不冒称系统落盘成功。

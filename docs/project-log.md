@@ -759,3 +759,21 @@ acceptcat接续PR47 / f29917d，fix/task-artifact-download，产品源码663a033
 仅桌面代码/版本/测试及交接变更，未改共享/内置Skill/依赖/API/worker/数据库，按范围不重复本地根全套。旧content端点兼容已用真实HTTP核验，无云端部署、迁移或公共目录发布，权限/资料绑定/模型Key保持。后台沿用部署记录47c42ac / community-47c42ac / contract0.25 / chat1.12 / schema022；独立公网ready200/ok/0.25，数据库/存储/认证ok、harness not_verified，未重新inspect线上镜像。上批f063969的38767651485三平台全部成功；本批663a033的38771771667最新快照两Linux成功、Windows运行中，独立于客户端检查及后续文档HEAD，未计全通过。
 
 证据Git外.runtime/task-download-20261016包含基线/最终检查、实际任务合成输入与下载文件、UI首败/实拍/最终回执、Electron原生保存/取消、构建/包/启动、CI和公开ready。隔离4746/4747服务和原生窗口已关闭，仅root活动，无其他工作文件，未包含兄弟PR35/36。交接docs/development/task-artifact-download.md。后续继续真实师生课题交接与其他下载入口可靠性、科研质量和受控执行适配；无法删除此前保存到用户磁盘的副本，不宣称所有IM/资料库下载入口都已修复。
+
+### 2026-10-16：选题决策与可证伪假设流程实际收录（acceptcat-3）
+
+本批feature/research-question-catalog接续PR48 / d8cd9e9，目录源码ba4aa090a0484481a0522eb5e5899340734f8ef5，草稿PR49 https://github.com/luoyan96/personal-agent/pull/49 已附任务。阅读原始仓库/固定树/许可/方法原文与实际问题讨论，新增Anthropic scientific-problem-selection（e6b505348c39c6e751a70d52ff407e7b0a6bf676，独立Skill未标版本/Bio Research1.2.0，Apache-2.0）和K-Dense hypothesis-generation（529b9f73ab4b48925027145800d7b49e96ccfd3c，Skill2.2/Writer2.22.0，MIT）。用途分别为选题/风险/决策和竞争解释/预测/测量/反证草稿；两项只开放经确认的私人文字安装。未把上游Body/脚本复制进Git、未改变agents/skills或私人/团队授权。
+
+46份原始审阅文件Git blob/大小/SHA核对，实际41原件与固定ZIP/私人原件存储完整往返通过；选题13原件/9参考/无脚本，假设28原件/18份参考文字/8Python文件。Python3.12.14实际13次标准库CLI：公开合成结构/测量/预测/对照/证据/预注册草稿，重复键/误称已证实/相同竞争预测/URL/覆盖拒绝。英语因果词检出而中文等价表述漏检，目录如实提示；选题上游Fischbach与Walsh引用与出版社/PubMed单作者不符，提示正确Michael A. Fischbach且不改原件。CLI及合成模型都不证明科学正确、新颖、因果、伦理或质量。
+
+真实HTTP/SQLite/ChatWorker两项私人安装、本人Agent绑定、完整说明与仅选定两份风险/决策或JSON/CSV模板入提示、消息/使用回执与其他账号404通过；合成模型无供应商质量评价。根pnpm run ci最终53文件/669项、生产两项/B0/隔离全部通过。实际React/HTTP/SQLite/原生导入两组动态卡片/限制/固定源码/精确预览/取消不安装检查、1536×1024及1024×726实拍通过，pageerror0，关闭/确认可达。Browser技能未列出，使用隔离Edge/Playwright；桌面框架/SDK/IPC、合成账号及已核对公开下载是夹具。第一次CLI退出码误期望、许可层级漏映射、参考排序误断言及截图未滚到条目的证据保留，修正夹具后通过；Antd/Router既有警告保留。
+
+沿用已授权Edge阿里云维护，实际主机和API/worker固定镜像核对。自固定提交下载公共种子TS只解析数据，源hash5eb3494ce678337445074016b7d9e046a4340143360c95007348c710f220030a、两项JSON hashbe04b9e725afbdc0ca4756c43f6d66a2320568f305670173b4fcbd3ccc77126d与受测一致；发布脚本传输前后按LF核对，未执行上游第三方代码。SQLite在线一致性备份/integrity_check通过，备份/srv/research-openim-backups/community-review-20261015T172242Z保留服务器；旧六项逐值不变、替换前重读无并发修改。运营CLI17:22:46Z追加，首回执running不计完成，最终17:22:44.578Z—17:22:50.446Z同步成功，公共缓存version38/八项/五仓库/二十候选、所有metadata error=null；Anthropic29765和Writer2481 Star仅当时事实。下次2026-10-16T16:00Z（北京时间17日零点）。未读取用户真实科研资料。
+
+API healthy/worker running，镜像仍research-openim-api:community-47c42ac / sha256:b78613b5c6e1f77d07e7af392149744161e25460cb7e4f14b2ec0500e3fda2cc；没有部署、重启或迁移，contract0.25/chat1.12/schema022保持。独立公网ready200/0.25/ok、database/storage/authentication ok、harness not_verified。当前Windows0.10.6刷新广场→研究设计即可读取，不发0.10.7/Release，不代安装或自动更新私人Skill；旧客户端模板选择限制与工具尚未接通均保留。上批663a033远端38771771667首轮Windows旧agent-files解析超时（FILE_PARSE_TIMEOUT），已保存日志并仅重跑失败节点，最新仍运行；本批ba4aa09远端38776266627两Linux通过、Windows运行，均未冒称三平台全通过。gh初次因safe.directory失败后仅以该进程环境设定目录，未改全局信任。
+
+证据Git外.runtime/community-curation-20261016含来源/静态/CLI/真实原件/native/chat/UI首败和最终检查、根CI、公共发布回执与ready；私有数据库备份不下载。隔离4766/4767服务完整命令行核对后停止，未包含兄弟PR35/36。交接docs/development/research-question-catalog.md。后续按获准课题资料验证真实中文科研交付、PubMed检索和脚本执行隔离，目录撤回走公开描述恢复，不整库覆盖新增业务写入。
+
+远端状态补记：ba4aa09 / 38776266627首轮两Linux成功，Windows registration旧迁移测试15000ms与reuse撤回边界5000ms超时，667/669通过。失败日志已留Git外source-ci-failed.log；仅重跑失败Windows节点，不改生产行为或放宽测试时限，最后快照仍待重跑完成，不计三平台全部通过。
+
+发布后重新inspect确认API healthy、worker running且仍为固定镜像；临时Workbench终端已关闭，原用户阿里云维护页保留。
