@@ -357,3 +357,13 @@
 - 用户截图 `Unexpected desktop review directory` 对应先前自有测试启动：目录前缀错误，且生产bootstrap在注册错误处理之前执行目录守卫。原失败日志保留。基于main e498fa7，分支 `fix/desktop-review-startup-error` 将同一守卫和userData设置移入既有try块、放在错误处理注册之后；没有放宽合法目录范围，也没有改用户正常启动逻辑。
 - Electron主进程类型检查通过。13:23:34北京时间，缓存的实际Electron22.3.27运行生产bootstrap / smoke源码：错误前缀和OS临时目录外路径均退出1且保留原拒绝错误；正确私有目录进入合成最小main、userData完全匹配并退出0。三组均无12秒超时；无业务renderer、网络、模型或账号，不声称完整软件验收。Git外 `.runtime/desktop-startup-error-20261007/report.json`和各组stdout / stderr保留，进程检查无自有测试残留。
 - 当前正常用户客户端继续运行，本批未操作其账号或重启软件。只同步源码及交接文档；未重发Windows安装包、修改更新清单或部署云端，线上b3eb215 + API94b26d1 / contract0.19 / chat1.8 / schema18保持。此次主进程源码修复将在下一次桌面打包纳入。
+
+### 2026-10-16：GitHub产品介绍重写
+
+用户要求把简陋、无图标且过期的GitHub README改为产品文档。实际读取GitHub默认分支确认仍是Research Agent Platform/Windows0.3.0；repo About为空，latest公开Release API核实v0.6.0、2026-10-08发布、ResearchWeChat_0.6.0.exe。与最新完整集成815a4b5cdb65b0c8dfe6db0de45bc4aab79931fa及0.10.6桌面交付区分。0.10.6本机安装器重新核对87,402,492字节/SHA256ebb16e7e8f786f08cadffc715982d95033f946684ceedcb3f5a5acdbf4b2e600一致，未上传该包或改变更新源。
+
+文档分支docs/acceptcat-product-readme单独从main6122b915创建，首页以橘猫图标、产品定位、科研问题与一次师生协作流程、实际界面、能力/资料/方法边界和试用入口组织；工程与流水更新放回状态/日志。旧main README保留历史快照并适配相对链接；新增product-status区分public Release/小范围试用/集成源码/服务。AGENTS明确后续不要把工程日志继续prepend到产品首页。仅文档/展示资产/维护规则，不更改代码、依赖、权限、Skill或服务，不运行根全套检查。
+
+展示资产为既有图标及公开示例组件截图原字节，来源与校验保留，未使用真实科研资料。0.10.4广场预览和0.10.0虚构师生审阅截图明确标为开发预览，不伪称0.6.0公开版或实时科研成果。图标独立许可未追溯，沿用既有记录，不贴MIT徽章。平台managed worktree工具因调用线程cwd不在Git目录失败，改用命令行在明确的D:/deepseek-agent/.worktrees/acceptcat-product-readme建立隔离文档checkout，原集成checkout保持。
+
+首次GitHub CLI TLS超时保留；实际网站与后续API读取成功。固定集成完整SHA通过本地rev-parse取得并修正链接后才发布。文档相对/HTML图片和锚点、原件尺寸/hash、GitHub渲染/入口与实际上线结果在后续本批记录补齐。证据留在Git外.runtime/product-readme-20261016；不收录运行记录或原用户材料。
