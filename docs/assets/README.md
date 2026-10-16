@@ -11,4 +11,3 @@
 橘猫图标来自用户此前指定的本机Catnap Desktop已有图标像素，16–256px图标组中最大档。原素材生成过程、独立原图许可未追溯，不补写未核实作者或MIT许可。详细[原图标来源记录](https://github.com/luoyan96/personal-agent/blob/815a4b5cdb65b0c8dfe6db0de45bc4aab79931fa/docs/development/acceptcat-cat-icon.md)在产品集成快照中保留。
 
 截图中的OpenIM派生组件及OpenMuse主题/布局改编沿用各自来源与许可，详情见[NOTICE](../../NOTICE.md)和[集成来源说明](https://github.com/luoyan96/personal-agent/blob/815a4b5cdb65b0c8dfe6db0de45bc4aab79931fa/NOTICE.md)。仅挑选展示资产没有迁入上游产品代码或更改整体许可。
-

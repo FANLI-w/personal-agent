@@ -142,4 +142,3 @@ docs/                          规划、设计、开发指令与报告
 第一阶段成功取决于成员能独立承接、成果可用、协调与返工负担下降，以及下一次自然需求中的复用；不以任务数量、Agent 数量或 CI 通过代替。付费与跨组需求另行验证。
 
 详见[贡献指南](../../CONTRIBUTING.md)、[AI 开发约定](../../AGENTS.md)、[迁移记录](../../docs/migration.md)和[来源说明](../../NOTICE.md)。我们使用并扩展 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)，这是独立平台项目。
-

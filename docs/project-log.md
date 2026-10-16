@@ -367,3 +367,5 @@
 展示资产为既有图标及公开示例组件截图原字节，来源与校验保留，未使用真实科研资料。0.10.4广场预览和0.10.0虚构师生审阅截图明确标为开发预览，不伪称0.6.0公开版或实时科研成果。图标独立许可未追溯，沿用既有记录，不贴MIT徽章。平台managed worktree工具因调用线程cwd不在Git目录失败，改用命令行在明确的D:/deepseek-agent/.worktrees/acceptcat-product-readme建立隔离文档checkout，原集成checkout保持。
 
 首次GitHub CLI TLS超时保留；实际网站与后续API读取成功。固定集成完整SHA通过本地rev-parse取得并修正链接后才发布。文档相对/HTML图片和锚点、原件尺寸/hash、GitHub渲染/入口与实际上线结果在后续本批记录补齐。证据留在Git外.runtime/product-readme-20261016；不收录运行记录或原用户材料。
+
+本批发布结果：52dad5f22aedaba35dbfdb44afe9c21c521871a3已普通快进到main（仅12项文档/展示资产）。实际GitHub默认页的AcceptCat正文、三图complete/naturalWidth256/1536/1496、公开v0.6.0/试用0.10.6表格已核对，IAB650px实拍可见。GitHub API/CLI TLS与连接器写入403未解决，未创建成功PR；不把分支推送当默认页完成，确认main推送成功后才报告。未force或绕分支保护，无应用/服务/安装版本变化。完整失败与验证证据在Git外.runtime/product-readme-20261016。首轮diff check未包含未暂存新文件，集成时发现三份新文档多余EOF空行，本次归一化后暂存检查通过。
