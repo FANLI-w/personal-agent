@@ -2,6 +2,16 @@
 
 更新日期：2026-10-16（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## GitHub产品首页已更新：AcceptCat介绍、猫咪图标与预览
+
+用户指出README简陋和过期后，文档提交 **52dad5f22aedaba35dbfdb44afe9c21c521871a3** 已从main6122b915普通快进发布到实际默认分支；仅12项文档/展示文件，无应用实现变化。首页围绕科研场景、师生协作流程、实际广场/交付预览、试用和开发入口组织，旧首页保留在历史快照，AGENTS约定后续工程更新不要继续prepend到README。现有集成实现与服务仍以本文件下方最新记录为准；main应用代码较早，README没有把功能分支或0.10.6试用包伪称为已公开Release。
+
+实际latest Release仍v0.6.0/ResearchWeChat旧名；本机0.10.6的87,402,492字节和SHA256重新核对一致。新增[版本与试用说明](product-status.md)区分公开包/试用包/集成源码/服务。153份Markdown/10Skill及HTML图片/导航/固定快照链接/三图原件检查通过，实际GitHub默认首页AcceptCat正文、0.10.6与v0.6.0表格、三图加载通过；IAB650px实拍与导航核对，非应用或模型质量重验。
+
+GitHub CLI/API多次TLS超时、连接器写入403、Edge CDP与IAB首次导航超时均保留；最终Git保留证书验证并以TLS1.2/HTTP1.1成功上传，仅按普通快进方式发布文档，没有force或绕过分支保护，未创建成功的PR不能计作已创建。备用API脚本在首个blob/PR读取时失败，无远端未知写入；GitHub实际已显示52dad5f并读回。当前集成合入相同文档，冲突只在README/状态/日志/路线，保留本分支最新工程事实。
+
+证据Git外 `.runtime/product-readme-20261016`，公开素材来源见[说明](assets/README.md)，无部署、迁移、模型调用或安装包发布。原GitHub用户页保留，完成页在IAB展示。
+
 ## 最新收录：选题决策与可证伪假设工作流已上线
 
 `acceptcat-3`，`feature/research-question-catalog` 接续PR48 / d8cd9e9，目录源码 **ba4aa090a0484481a0522eb5e5899340734f8ef5**，[草稿PR49](https://github.com/luoyan96/personal-agent/pull/49)已附任务。新增Anthropic官方选题/项目风险/决策路线，以及K-Dense可证伪假设/检验计划；固定SHA、适用许可、中文输入/交付、材料/费用和实际限制。前者13原件/9参考/无脚本；后者28原件/18可选文字参考与模板/8个Python文件，文字流程可确认私人安装。未复制上游正文入Git，私人资料/模型Key/团队权限保持。

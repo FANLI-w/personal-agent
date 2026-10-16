@@ -777,3 +777,17 @@ API healthy/worker running，镜像仍research-openim-api:community-47c42ac / sh
 远端状态补记：ba4aa09 / 38776266627首轮两Linux成功，Windows registration旧迁移测试15000ms与reuse撤回边界5000ms超时，667/669通过。失败日志已留Git外source-ci-failed.log；仅重跑失败Windows节点，不改生产行为或放宽测试时限，最后快照仍待重跑完成，不计三平台全部通过。
 
 发布后重新inspect确认API healthy、worker running且仍为固定镜像；临时Workbench终端已关闭，原用户阿里云维护页保留。
+
+### 2026-10-16：GitHub产品首页实际发布与集成同步
+
+用户要求修正GitHub简陋且过期的产品README。实际默认分支仍Research Agent Platform/0.3.0/6122b915；从main独立文档checkout完成52dad5f22aedaba35dbfdb44afe9c21c521871a3：橘猫图标、实际科研广场与合成师生审阅截图，产品定位、日常场景、一次组会任务工作流、能力/资料/方法范围、试用与下载、折叠开发指引。保留旧main首页为历史快照，新增product-status与素材来源；AGENTS明确工程流水留在状态/日志，NOTICE不伪造整体MIT许可。
+
+GitHub实际latest Release API核实v0.6.0，2026-10-08发布、ResearchWeChat_0.6.0.exe；0.10.6仅小范围已交付，尚未公开，准确来源快照815a4b5cdb65b0c8dfe6db0de45bc4aab79931fa、当前集成分支与线上服务分别说明。本机包87,402,492字节/SHA256ebb16e7e8f786f08cadffc715982d95033f946684ceedcb3f5a5acdbf4b2e600重新核对一致。没有公开新Release或改更新源。
+
+文档checkout153份Markdown/10Skill检查、diff check、README HTML三图/导航锚点及五个固定Git对象链接核对通过。图标256×256/SHA256d637a0596e26143571b05e7965e4fddbb9fdb4bfc9599540b2efaf77038ad14c，广场1536×1024/59dcab2011bc14a36cc5d5d689d65dbb3f4c9b5e88b0680a0a71da680cbefc02，审阅1496×1051/c621f64345f27df40b83636002cf48e6776eeea1bee7f45b4f07606485975b95，均原字节。图片来自实际组件与公开示例/合成账号，明确开发预览，不把虚构任务当真实课题质量。
+
+GitHub CLI TLS handshake和schannel/OpenSSL EOF首败、API上传首个blob与PR读取失败、GitHub连接器blobs/PR403，以及Edge CDP焦点/IAB首轮导航超时均保留。没泄露gh已有认证令牌，备用脚本只在内存读取且没输出/保存令牌；没有执行成功的第三方上传/创建PR。最后按请求沿已有gh认证Git传输，保持证书验证、仅命令级TLS1.2/HTTP1.1，分支上传成功。PR渠道仍失败，依据用户明确要求发布README及AGENTS的PR优先规则，以普通快进（不force、不绕分支保护）将经检查的12个纯文档/展示文件推送main：6122b91→52dad5f。没有把待发布分支称为默认首页已更新；推送成功后才核对默认页。
+
+实际GitHub分支页面及默认首页经web读取、IAB真实DOM/650px截图核对：AcceptCat标题/定位、图标及两张预览全部complete/naturalWidth分别256/1536/1496，公开v0.6.0与试用0.10.6表格均可见。原用户GitHub页没改动，IAB结果页保留。没有依赖/应用/共享Skill/权限改动，无后台部署、迁移、模型调用或新安装包；纯文档不重复根功能CI。
+
+managed worktree工具因线程cwd不在Git目录失败后，命令行在明确路径D:/deepseek-agent/.worktrees/acceptcat-product-readme从origin/main建隔离checkout；原集成工作区保持。公开文档随后合入当前集成，四处文本冲突保留最新工程状态/日志/路线、采用新版产品README；合并命令首次缺身份在开始前失败，重试仅命令级Codex身份，未改全局配置。证据Git外.runtime/product-readme-20261016，完整工程/上线事实继续见前批记录，公开README不再覆盖这些事实。
