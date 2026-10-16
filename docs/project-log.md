@@ -791,3 +791,5 @@ GitHub CLI TLS handshake和schannel/OpenSSL EOF首败、API上传首个blob与PR
 实际GitHub分支页面及默认首页经web读取、IAB真实DOM/650px截图核对：AcceptCat标题/定位、图标及两张预览全部complete/naturalWidth分别256/1536/1496，公开v0.6.0与试用0.10.6表格均可见。原用户GitHub页没改动，IAB结果页保留。没有依赖/应用/共享Skill/权限改动，无后台部署、迁移、模型调用或新安装包；纯文档不重复根功能CI。
 
 managed worktree工具因线程cwd不在Git目录失败后，命令行在明确路径D:/deepseek-agent/.worktrees/acceptcat-product-readme从origin/main建隔离checkout；原集成工作区保持。公开文档随后合入当前集成，四处文本冲突保留最新工程状态/日志/路线、采用新版产品README；合并命令首次缺身份在开始前失败，重试仅命令级Codex身份，未改全局配置。证据Git外.runtime/product-readme-20261016，完整工程/上线事实继续见前批记录，公开README不再覆盖这些事实。
+
+发布收尾补记：main与docs/acceptcat-product-readme已普通快进至b7c4646（README正文仍52dad5f，补充实际发布日志并去除三份新增文档EOF空行）。集成首次暂存diff检查发现该三份新文件末尾空行，归一化后重新通过；此前未暂存时的diff check不覆盖它们，首败保留。当前集成合入b7c4646，保留最新完整工程日志，最终内容检查189份Markdown/10Skill，不重复根功能测试。文档checkout无应用改动，已在确认发布和clean后清理；现有PR49自动接续集成文档合并，没有虚构新PR。
