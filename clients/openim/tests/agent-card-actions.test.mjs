@@ -14,6 +14,7 @@ async function load(file, imports = {}) {
 const { isAddedAgent } = await load("agent-card-actions.ts");
 const profiles = await load("agentStarterProfiles.ts");
 const links = await load("agent-starter-links.ts", { "./agentStarterProfiles": profiles });
+const { communityAgentBindings } = await load("community-agent-bindings.ts");
 const starter = profiles.agentStarters[0];
 const contact = { id: "synthetic_agent", displayName: starter.profile.displayName,
   identity: { kind: "personal_agent", ownerMemberId: "actor_A" },
@@ -70,4 +71,43 @@ test("template hints persist per account and reject unknown keys, invalid types 
   for (const value of ["invalid", "null", "[]", "12"]) assert.equal(Object.keys(links.readStarterLinks("actor_A", { ...storage, getItem: () => value })).length, 0);
   assert.equal(Object.keys(links.readStarterLinks("actor_A", { getItem() { throw Error("blocked"); } })).length, 0);
   assert.doesNotThrow(() => links.writeStarterLinks("actor_A", {}, { setItem() { throw Error("blocked"); } }));
+});
+
+const entry = { installable: true, repository: "https://github.com/synthetic-lab/research", sourcePath: "skills/literature" };
+const skill = { id: "skill_A", ownerId: "actor_A", owned: true, enabled: true, canCall: true,
+  source: { kind: "github", label: entry.repository + " · " + entry.sourcePath, revision: "a".repeat(40) },
+  settings: { enabled: true, boundAgentIds: [contact.id] } };
+test("GitHub card becomes an Agent card only for an actual enabled private installation bound to a current owned Agent", () => {
+  assert.equal(communityAgentBindings(entry, [skill], [contact], "actor_A")[0], contact);
+  assert.equal(communityAgentBindings(entry, [skill], [contact], "actor_B").length, 0);
+  assert.equal(communityAgentBindings({ ...entry, installable: false }, [skill], [contact], "actor_A").length, 0);
+});
+test("same name, another subskill, a local copy or unpinned source cannot imply the community Agent was added", () => {
+  for (const source of [
+    { ...skill.source, label: entry.repository + " · skills/another" },
+    { ...skill.source, label: "https://github.com/other/research · skills/literature" },
+    { ...skill.source, kind: "folder" }, { ...skill.source, revision: null },
+  ]) assert.equal(communityAgentBindings(entry, [{ ...skill, source }], [contact], "actor_A").length, 0);
+});
+test("disabled/unbound/not-owned/not-callable Skill never grants a card chat action", () => {
+  for (const value of [
+    { ...skill, enabled: false }, { ...skill, owned: false }, { ...skill, ownerId: "actor_B" },
+    { ...skill, canCall: false }, { ...skill, settings: null },
+    { ...skill, settings: { ...skill.settings, enabled: false } },
+    { ...skill, settings: { ...skill.settings, boundAgentIds: [] } },
+  ]) assert.equal(communityAgentBindings(entry, [value], [contact], "actor_A").length, 0);
+});
+test("deleted, foreign, external or role/relationship-changed bound targets cannot become a community chat Agent", () => {
+  assert.equal(communityAgentBindings(entry, [skill], [], "actor_A").length, 0);
+  for (const target of [
+    { ...contact, identity: { kind: "personal_agent", ownerMemberId: "actor_B" } },
+    { ...contact, identity: { kind: "human" } }, { ...contact, agentRuntime: {} },
+    { ...contact, profile: { ...contact.profile, role: "coordinator" } },
+    { ...contact, relationship: { status: "revoked" } },
+  ]) assert.equal(communityAgentBindings(entry, [skill], [target], "actor_A").length, 0);
+});
+test("multiple actual bindings remain distinct while repeated installation rows cannot duplicate a target", () => {
+  const second = { ...contact, id: "synthetic_second", displayName: "第二个助手" };
+  const two = { ...skill, settings: { ...skill.settings, boundAgentIds: [contact.id, second.id] } };
+  assert.equal(communityAgentBindings(entry, [two, two], [contact, second], "actor_A").length, 2);
 });

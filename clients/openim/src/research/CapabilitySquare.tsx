@@ -359,6 +359,8 @@ export function CapabilitySquare() {
                 onRefresh={community.refresh}
                 search={query}
                 onClearSearch={resetFilters}
+                onConfigure={setSelectedContact}
+                operationScope={`${selectedContact}:${publishing}`}
               />
             ) : (
               <>
@@ -467,7 +469,7 @@ export function CapabilitySquare() {
               </>
             )}
           </section>
-          {selectedContact && view !== "public" && (
+          {selectedContact && (
             <aside className="workspace-square-detail">
               <Button
                 type="text"
