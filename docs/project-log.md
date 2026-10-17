@@ -900,3 +900,5 @@ acceptcat-3，feature/statistics-reporting-catalog接续PR56/47060af，目录源
 15份独立原文/blob核对；原ZIP1,796,957字节/SHA256 85ca396dde40cc4b5b5a6efd04c252b76e56e5de79acccedd6ed727a7fcd2621。8原件/5参考、0脚本/素材与完整原ZIP私人存储往返、其他账号拒绝；0.10.8实际ASAR解析器一致。真实HTTP/SQLite/ChatWorker三组合成场景验证完整说明/仅选参考，跨账号源码/记录404、调用403、停用403；实际React/API/原生预览、取消零安装和确认后唯一私人安装三组，1536/1024实拍已看，无横溢/pageerror/覆盖层。已有Antd/Router警告、夹具403/404预期首败与挂载等待首败保留，产品权限未放宽。模型合成，不计真实科研质量。
 
 目录定向11项、根CI54文件/676项、构建/类型/契约/内容、生产CLI/HTTP2项、B0及隔离通过；不重复已过全套。PR56源码47060af三平台SUCCESS本轮实际读回。维护Workbench重新导航仍跳登录页，旧重新登录请求保持，未重复提问/越过登录。合并前批两项与本项的三项公共运营材料已准备，哈希见publication-prepared.json；没有上传/生产备份/目录写入/容器inspect重启/部署/迁移。线上8项/5仓库沿用旧记录，不能说已可见。现有0.10.8兼容，无新安装包、代安装、公开Release或自动更新源。详情docs/development/statistics-reporting-catalog.md，证据.runtime/community-stats-20261018；仅root活动，无共享改动冲突。
+
+草稿PR57已创建并附任务，75ba51a首次远端CI两平台运行/一排队，未计全部通过。4836/4837自建Node PID42304/35864按完整命令行核对后关闭，cleanup.json保留；旧预览与用户软件未动，阿里云登录页保留handoff供继续运营发布。
