@@ -12,6 +12,8 @@
 
 无需新后台接口/迁移；未部署API/worker、发布目录、公共Release或更新源，实际latest仍v0.6.0已核实。PR50后台边界和三项目录运营仍待既有维护登录，本轮不重复请求或新inspect生产；旧47c42ac/0.25/1.12/022仅沿用记录。仅root活动，旧预览未动；本轮4856/4857自建服务核对关闭。
 
+[草稿PR59](https://github.com/luoyan96/personal-agent/pull/59)已附任务，首读e20c155的三平台Foundation均进行中，未称全部通过；4856/4857 Node26636/29248已按完整命令核对关闭，回执cleanup.json。
+
 ## 最新Windows交付：0.10.9，真人与Agent跨设备名片
 
 `acceptcat`，`release/acceptcat-0.10.9` 接续PR57/19acbe3，最终产品/打包源码 **a44e4471262757fe0df8a7618111a82282b53ee5**。修复原名片链接实际指向桌面随机loopback地址的问题，改为携带真实服务origin/唯一Contact ID的版本化名片口令；通讯录可整段粘贴、查找真人/Agent，显示服务端实际资料，同名不猜目标。其他服务先拒绝、不外访或自动切服务；真人和私人Agent仍分别申请/审批，收件人不获管理权。复制失败全选、关闭前晚结果阻断；窄窗弹窗居中及内部滚动，修复底部裁切。详见[实现](development/portable-contact-cards.md)。
