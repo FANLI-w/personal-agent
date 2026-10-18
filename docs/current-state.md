@@ -8,6 +8,8 @@
 
 客户端27项/类型/生产Web与四份固定SDK资源检查、8组分阶段真实React/HTTP/SQLite通过，1536/1024实拍已看，通过阶段pageerror0；SDK/聊天记录为明确投影，无真实IM/模型或生产材料。夹具选择器/取消/重定向与首次登录等待首败保留，未放宽权限/限流。Git外证据 `D:/deepseek-agent/.runtime/lab-capabilities-20261018`。本批尚未制作新安装包、部署后台或公共发布；桌面0.10.13仍为原受测包。课题组目前仍由维护者开通、负责人网页签发邀请码、成员注册时加入；客户端自助创建与邀请已有个人账号尚未实现。PR50/三项目录与旧维护登录待办保持。
 
+修正提交 `2fe690fb32f72d57ca3189e4953768c25c750836`，已推送并创建/附上[草稿PR63](https://github.com/luoyan96/personal-agent/pull/63)，base为release/acceptcat-0.10.13；首读该提交三项Foundation均进行中，未计为远端通过。仅关闭本批完整命令核对的API4897/Node22000与Vite4896/Node30680，端口无监听，cleanup.json留证，旧服务未动。
+
 ## 2026-10-18 接手核验
 
 实际工作目录 `D:/deepseek-agent/research-agent-platform-chat-integration`，接手时分支 `release/acceptcat-0.10.13`、HEAD `ff0f21ea6c702c53286f04bb9c3d833be723822d`，工作区干净；未切换到 main。已读取根 AGENTS、当前状态、日志最新记录、README 与路线图。Git 因目录属主不同拒绝初次读取，后续仅使用命令级 `safe.directory`，未修改全局 Git 配置。

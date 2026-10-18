@@ -986,3 +986,5 @@ Windows x64 NSIS0.10.12实际构建并复制桌面，**87,403,174字节** / SHA2
 客户端27项、TypeScript与8组分阶段真实React/HTTP/SQLite通过；1536×1024/1024×726个人空状态、负责人目录说明和聊天列表实拍已检查，通过阶段pageerror0、无框架覆盖。验证实际注册/登录身份、个人页零目录请求、保留我的Agent、负责人/普通成员差异、身份错误重读、换账号取消旧目录、旧链接和聊天搜索/菜单/会话选择。SDK/会话记录为明确投影，无真实IM或模型。Browser plugin absent，使用已有Playwright/隔离Edge。初次retry回调类型已修，图标名称选择器、测试路由取消后重复处理、重定向旧URL等待和未等登录的夹具首败保留后续验；重复合成注册409与既有Router/findDOMNode警告解释保留。未放宽ACL/限流或使用生产数据。
 
 证据在Git外D:/deepseek-agent/.runtime/lab-capabilities-20261018，qa-summary.json合并8组事实、typecheck-final.log与focused.log保留命令结果。生产Web构建、四份固定SDK资源及资产引用检查通过，build-web.log保留既有antd指令/产物体积警告；208份Markdown/10份Skill内容及diff检查通过。无共享/内置Skill/API/迁移变更，不重复根完整CI。本批未制作新Windows安装包、安装、部署、目录发布、公共Release或更新源变更；现装0.10.13不会因此更新。PR50后台边界、三项目录与既有维护登录待办保持；下一步可按用户要求完善教师自助开组/已有账号受邀流程。详见docs/development/lab-capability-membership.md。
+
+最终修正提交2fe690fb32f72d57ca3189e4953768c25c750836已推送，草稿PR63 https://github.com/luoyan96/personal-agent/pull/63 已创建并通过attach_artifact附到当前任务，base为release/acceptcat-0.10.13。首读该提交三项Foundation均in_progress，不套用前批ff0f21e通过事实。核对完整Node命令后仅关闭本批API4897/22000及Vite4896/30680，端口无监听；cleanup-before.json/cleanup.json保留，旧服务与用户软件未动。Git作者缺省沿用本仓库既有Codex身份，以命令级配置提交，未改全局配置。
