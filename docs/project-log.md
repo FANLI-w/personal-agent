@@ -938,3 +938,5 @@ acceptcat前后端维护，release/acceptcat-0.10.9接续PR57/19acbe3，最终�
 实际生产Vite/55依赖/Electron22.3.27/NSIS/blockmap、15生产JS逐字节/新入口/无旧范围行/无QA/猫咪素材、实际安装器EXE和ASAR一致、隔离隐藏原生桥/renderer稳定启动通过；既有electron-log警告保留。桌面安装器 **87,401,103字节/SHA256 0c763b4dd18ea9f34c3d629327d83dc4bdf3f46f366a4668d273b8cbd0568530** 与说明已交付，未代安装/关闭现装，旧包/数据保持。README换当前真实组件截图（合成目录事实明确标注）和最新版本/分支；详见docs/development/square-workbench-navigation.md与docs/deployment/acceptcat-0.10.11.md，Git外证据.runtime/square-workbench-20261018。
 
 本轮只客户端，无共享或agents/skills改动，不重复根全套；前批PR59最新8b3386b三平台Foundation本轮读回SUCCESS。无需新API/迁移，没有部署API/worker、运营目录、公共Release或更新源，actual latest仍v0.6.0已核对。旧47c42ac/0.25/1.12/022仅沿用记录；旧维护登录/PR50后台边界/三项目录待办保持，不新inspect私人后台或重复请求。只按完整命令核对关闭本轮4866/4867 QA服务，旧预览未动。
+
+草稿PR60已创建并推送：https://github.com/luoyan96/personal-agent/pull/60；首读c2c70c5三平台Foundation均IN_PROGRESS，pr-final.json保留。当前attach_artifact工具已不可调用，实际TypeError后ALL_TOOLS未找到，未称已附任务，也不另造UI/插件绕行，artifact-attachment.json记待工具恢复后处理。只关闭完整命令核对的Node24244/7076 QA4867/4866，cleanup-before.json/cleanup.json留证。

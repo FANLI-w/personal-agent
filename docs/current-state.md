@@ -12,6 +12,8 @@
 
 无需后台升级/迁移；未部署API/worker、发布目录、公共Release或更新源。实际latest仍v0.6.0已核对；旧47c42ac/0.25/1.12/022仅沿用记录，本轮未新inspect生产。PR50后台边界/三项目录运营/旧维护登录待办保持，不重复请求。自建4866/4867核对完整Node命令后关闭，旧预览未动。
 
+[草稿PR60](https://github.com/luoyan96/personal-agent/pull/60)已创建并推送；首读c2c70c5三平台Foundation均进行中。当前工具列表不再提供attach_artifact，实际尝试TypeError且检索未找到，未称已附任务，链接在此保留。自建4866/4867 Node24244/7076完整命令核对关闭，cleanup.json留证。
+
 ## 最新技能库与Windows交付：0.10.10，素材导入范围与恢复
 
 `acceptcat-2`，`release/acceptcat-0.10.10` 接续PR58 / da6ec83，产品和包源码 **24858567a318ab4302f53eead42713e1405dea1f**。Skill原件加入资料库改用现有文件导入：选集合/读原件只准备，确认后才上传；保留原路径/修订/SHA256、首次快照/key的未知结果重试、已确认结果分流和范围变化阻断。读取期间锁定目标，换账号/会话/Skill/面板清除迟到结果；清单失败不再显示无原件，普通本机文件导入保持。[实现与QA](development/skill-material-import.md)。
