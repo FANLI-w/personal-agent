@@ -12,6 +12,8 @@
 
 未部署 API/worker、发布目录、公共Release或更新源；实际latest仍v0.6.0本轮核对。旧47c42ac/0.25/1.12/022仅沿用记录，无本轮生产inspect；PR50后台边界、三项目录与既有维护登录待办保持，不重复请求。
 
+[草稿PR61](https://github.com/luoyan96/personal-agent/pull/61)已创建并推送，base为release/acceptcat-0.10.11。当前工具列表没有attach_artifact，未附到任务附件列表；保留直接链接，不声称已附。核对本轮4876/4877完整Node命令后关闭API26060/Vite7536，cleanup.json留证，旧预览未动。本批GitHub检查以实际PR状态为准，不将前批三平台通过套用于本支。
+
 ## 最新用户改动与Windows0.10.11：广场发现，工作台管理
 
 `release/acceptcat-0.10.11` 接续PR59 / 8b3386b，产品和安装包固定 **d0386f0503701eff530a89e0e282ecc93354901d**。按用户截图要求移除广场“发现能力/课题组能力/我的Agent”整排顶部导航，无空toolbar占位；广场保留GitHub推荐/Star热门/最新/方向与搜索。课题组能力、本人及内置助手移入工作台独立栏目（`view=capabilities`/`view=agents`），复用原配置、资料绑定、聊天和名片管理，不改授权/API。[实现和QA](development/square-workbench-navigation.md)。

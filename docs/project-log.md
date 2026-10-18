@@ -951,3 +951,6 @@ acceptcat前后端维护，release/acceptcat-0.10.9接续PR57/19acbe3，最终�
 Windows x64 NSIS0.10.12实际构建并复制桌面，**87,403,174字节** / SHA256 **990c217477b6747d49c5ae8da32bade0437df7ce1febc01f6dc01275aa900892**。55依赖/15生产JS逐字节、无QA和品牌素材，NSIS实际payload EXE/ASAR一致，隔离隐藏原生桥/renderer稳定启动通过；既有日志初始化警告保留。[交付记录](deployment/acceptcat-0.10.12.md)。没有代安装、关用户软件或删旧包/数据。
 
 本轮latest仍v0.6.0已核对，未发公共Release/更新源、未部署API/worker或发布目录；旧生产47c42ac/0.25/1.12/022仅沿用记录。PR50后台边界、三项目录及既有维护登录待办保持。
+
+
+[草稿PR61](https://github.com/luoyan96/personal-agent/pull/61)已创建并推送，base为release/acceptcat-0.10.11。当前工具列表没有attach_artifact，未附到任务附件列表；保留直接链接，不声称已附。核对本轮4876/4877完整Node命令后关闭API26060/Vite7536，cleanup.json留证，旧预览未动。本批GitHub检查以实际PR状态为准，不将前批三平台通过套用于本支。
