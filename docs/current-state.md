@@ -12,6 +12,8 @@
 
 无API/worker部署、目录运营、公共Release或更新源变更；actual latest仍v0.6.0本轮核对。旧47c42ac/0.25/1.12/022仅沿用记录，无本轮生产inspect；PR50后台边界、三项目录与既有维护登录待办保持，不重复请求。
 
+[草稿PR62](https://github.com/luoyan96/personal-agent/pull/62)已创建并推送，base为release/acceptcat-0.10.12。当前没有attach_artifact可调用工具，未附任务附件，保留直接链接。本轮4886/4887完整命令核对后关闭API23092/Vite13592，cleanup.json留证，旧预览未动；本支CI状态以实际PR为准，不套用前批SUCCESS。
+
 ## 最新用户改动与 Windows 0.10.12：技能收进我的 Agent
 
 `release/acceptcat-0.10.12` 接续 PR60 / a6bb210，产品与安装包源码 **da1858ecb7fe2876fc25b11a714d4cdf4f51e45c**。工作台删除并列“我的技能”，我的 Agent 内增加技能库；本人站内助手配置统一“技能 / 资料”，实际读取绑定数量/版本/启停，添加和管理定位目标助手，明确绑定保留其他助手与授权，返回恢复原助手。旧 view=skills/catalog 链接兼容；无新 API/迁移。[实现与 QA](development/agent-skill-management.md)。

@@ -965,3 +965,6 @@ Windows x64 NSIS0.10.12实际构建并复制桌面，**87,403,174字节** / SHA2
 实际55运行依赖/Electron22.3.27/NSIS/blockmap、18生产JS逐字节/品牌/无QA、安装器EXE与ASAR载荷及隔离隐藏启动通过，旧electron-log警告保留。桌面0.10.13包 **87,406,620字节/SHA256 d3df15b6280a953a6065e601f357957575321334bdaecb028c743f0eacc591d7** 与说明已交付；[交付](deployment/acceptcat-0.10.13.md)。未代安装、关现装或删旧包/数据。
 
 无需新后台接口/迁移，未API/worker部署、目录运营、公共Release或更新源变更；本轮核对actual latest仍v0.6.0。旧生产47c42ac/0.25/1.12/022沿用记录，PR50正文边界、三项目录和既有维护登录待办保持，不重复请求或新inspect生产。
+
+
+[草稿PR62](https://github.com/luoyan96/personal-agent/pull/62)已创建并推送，base为release/acceptcat-0.10.12。当前没有attach_artifact可调用工具，未附任务附件，保留直接链接。本轮4886/4887完整命令核对后关闭API23092/Vite13592，cleanup.json留证，旧预览未动；本支CI状态以实际PR为准，不套用前批SUCCESS。
