@@ -1000,3 +1000,5 @@ Windows x64 NSIS0.10.12实际构建并复制桌面，**87,403,174字节** / SHA2
 复用既有后台，无部署/目录运营/公共Release/更新源变更，actual latest重新读回仍v0.6.0。旧生产47c42ac/contract0.25/chat1.12/schema022仅沿用记录，无本轮生产inspect；PR50正文边界、三项目录及既有维护登录待办保持，不重复询问。前批PR63/9b32c56三项Foundation本轮读回success；本支检查独立记录。无共享/Skill内容变化，不重复根全套；README/产品状态更新已交付本地版本，不提供不存在的公共下载。课题组自助创建、已有个人账号加入、多组和工具执行仍未完成，后续继续获准真实师生反馈。
 
 最终内容检查210份Markdown/10份Skill和diff通过。仅关闭本轮完整Node命令核对的Vite4906/22660与API4907/32612，端口无监听；cleanup-before.json/cleanup.json留证，旧服务、用户现装和旧包未动。桌面新安装器与安装说明均已读回确认。
+
+草稿PR64 https://github.com/luoyan96/personal-agent/pull/64 已创建并通过attach_artifact附当前任务，base为fix/lab-capabilities-entry。首读文档头701e03a的三项Foundation均IN_PROGRESS，回执pr-final.json，不套用前批通过或视为本支远端全过。产品/包固定6d643df，后续文档提交不改变安装器；桌面安装器最终再次SHA256读回一致。

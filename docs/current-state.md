@@ -14,6 +14,8 @@
 
 内容检查210份Markdown/10份Skill及diff通过；本批QA4906/4907按完整Node命令核对后关闭（Vite22660/API32612），端口无监听，cleanup.json留证，旧服务与用户现装保持。
 
+[草稿PR64](https://github.com/luoyan96/personal-agent/pull/64)已创建、推送并附当前任务，base为fix/lab-capabilities-entry。首读701e03a三项Foundation均IN_PROGRESS，pr-final.json留证，未声称本支远端全过；产品与包仍固定6d643df。
+
 ## 最新本地修正：聊天列表入口与课题组身份
 
 `fix/lab-capabilities-entry` 接续 `release/acceptcat-0.10.13` / `ff0f21e`。移除聊天收起/展开按钮及专用状态；“课题组能力”按服务端 session 身份显示：个人空间只有未加入说明且不读取目录，身份未知/失败保留真实状态，已加入账号沿用同组目录，负责人可打开既有网页邀请管理。此前个人空间自身成员/Agent被当成课题组内容的问题已修正。[实现与实际管理边界](development/lab-capability-membership.md)。
