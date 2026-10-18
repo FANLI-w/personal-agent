@@ -1016,3 +1016,5 @@ Windows x64 NSIS0.10.12实际构建并复制桌面，**87,403,174字节** / SHA2
 真实Electron22.3.27、55运行依赖、17生产JS逐字节/新警告/无QA/品牌素材、NSIS实际EXE/ASAR一致及隔离隐藏原生桥/renderer稳定启动通过，已有日志初始化警告保留。安装器87,413,798字节/SHA25611484e44a5f843139a513e418326dee445cf8696b287df5b79f19d8149190a58已复制桌面AcceptCat_0.10.15.exe并提供说明；未代安装、关用户现装或删旧包/账号数据。详见docs/development/service-connectivity-recovery.md、docs/deployment/acceptcat-0.10.15.md；Git外.runtime/service-recovery-20261018保留云截图、传输元数据、探针、各首败/最终QA、构建/载荷/启动证据。
 
 没有API/worker部署、数据库同步/迁移、社区目录/公开Release/更新源变更，actual latest本批读回仍v0.6.0。PR50后台正文边界、三项目录运营、课题组自助创建/已有账号加入/多组与工具执行仍独立待办；维护登录本批已恢复，不再重复要求登录。后续用真实复发证据继续定位本机代理/网络并规划磁盘维护，不以本次健康探针声称永久根治。
+
+草稿PR65 https://github.com/luoyan96/personal-agent/pull/65 已创建、推送并附任务，base release/acceptcat-0.10.14。gh首次受目录属主检查拒绝，之后用进程级Git配置重试成功，未改全局safe.directory；首读8cf79c3三项Foundation为1queued/2in_progress，pr-final.json保留，不套用前批通过。212份Markdown/10份Skill与diff检查通过。仅按完整Node命令核对关闭本批QA4916/4917的32400/29664，无监听且用户现装6048仍运行；cleanup-before/cleanup.json留证。云端本次只读shell已正常exit，不退出用户Aliyun账号。桌面包最终hash与说明读回一致，产品/包固定a3a795b，后续文档提交不改变安装器。

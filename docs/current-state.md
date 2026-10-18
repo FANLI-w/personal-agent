@@ -14,6 +14,8 @@
 
 无社区目录发布、公共Release或更新源变更，actual latest本次仍v0.6.0。PR50后台边界和三项目录运营独立待办保留；维护登录已恢复，不再需用户重复登录。课题组自助创建、已有个人账号加入、多组及工具执行仍未实现。后续围绕真实课题使用及网络复发证据继续，不能把本次短时探针当永久根治。
 
+[草稿PR65](https://github.com/luoyan96/personal-agent/pull/65)已创建、推送并附任务，base release/acceptcat-0.10.14；首读8cf79c3三项Foundation为1queued/2in_progress，pr-final.json留证，不称远端全过。212份Markdown/10份Skill及diff检查通过。本批QA4916/4917仅按完整Node命令核对后关闭32400/29664，端口无监听、用户现装仍运行，cleanup.json留证；本次云端只读shell已exit，Aliyun账号未退出。包与说明均再次读回。
+
 ## 最新 Windows 0.10.14：科研分工与个人助手任务衔接
 
 `release/acceptcat-0.10.14` 接续 PR63 / 9b32c56，产品与安装包源码 **6d643df393b91ce9f5a5c6d3bfb6b6d6a173d3fb**。科研计划与联系人协作入口分开，计划可批量安排自己/同组邀请/待认领、确认前逐步预览；稳定类型链接连接计划/总览/准确任务及返回所属计划。个人助理聊天与总览读取同一工作台待办，委派按真实turnId定位对应任务，任务可返回真实来源对话；预选Agent与成员保持一致，新建个人任务不残留科研类型。包含PR63未打包的折叠按钮移除及课题组身份边界。[实现及QA](development/assistant-workbench-tasks.md)。
