@@ -124,6 +124,8 @@ export function ResearchTeamWorkbench({ onPlan }: { onPlan: () => void }) {
       count(row.task.reviewerId, "review");
     if (row.pendingInvitation?.memberId)
       count(row.pendingInvitation.memberId, "invited");
+    else if (!isFullTask(row.task) && row.task.pendingInvitation && actor)
+      count(actor.member.id, "invited");
   }
   const openTask = (id: string) => navigate(workbenchTaskPath(id, "research"));
   const selectDirection = (id?: string) => {
@@ -228,7 +230,8 @@ export function ResearchTeamWorkbench({ onPlan }: { onPlan: () => void }) {
                   </span>
                   <h3>{group.title}</h3>
                   <p>
-                    {group.rows.length} 项任务 · 已验收 {group.accepted} 项
+                    {group.rows.length} 项任务 ·{" "}
+                    {group.progressVisible ? `已验收 ${group.accepted} 项` : "摘要可见"}
                   </p>
                   <span className="lab-direction-link">
                     查看任务与分工 <ArrowRightOutlined />
@@ -353,17 +356,26 @@ export function ResearchTeamWorkbench({ onPlan }: { onPlan: () => void }) {
                   </p>
                 </div>
                 <div className="lab-objective-progress">
-                  <strong>
-                    已验收 {group.accepted} / {group.total} 项
-                  </strong>
-                  <Progress
-                    percent={
-                      group.total ? Math.round((group.accepted / group.total) * 100) : 0
-                    }
-                    showInfo={false}
-                    strokeColor="#75b8e5"
-                  />
-                  <small>按当前成果验收计</small>
+                  {!group.progressVisible ? (
+                    <>
+                      <strong>当前仅能查看任务摘要</strong>
+                      <small>进度详情按任务权限查看</small>
+                    </>
+                  ) : !group.total ? (
+                    <strong>本组任务均已取消</strong>
+                  ) : (
+                    <>
+                      <strong>
+                        已验收 {group.accepted} / {group.total} 项
+                      </strong>
+                      <Progress
+                        percent={Math.round((group.accepted / group.total) * 100)}
+                        showInfo={false}
+                        strokeColor="#75b8e5"
+                      />
+                      <small>按当前成果验收计</small>
+                    </>
+                  )}
                 </div>
               </header>
               <div
@@ -411,6 +423,8 @@ export function ResearchTeamWorkbench({ onPlan }: { onPlan: () => void }) {
                             ? name(row.acceptedAssignment.memberId)
                             : row.pendingInvitation
                             ? "待承接"
+                            : !isFullTask(row.task) && row.task.pendingInvitation
+                            ? "待我接受"
                             : claimable
                             ? "待认领"
                             : "待分工"}

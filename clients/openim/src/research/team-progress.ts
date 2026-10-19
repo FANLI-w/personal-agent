@@ -53,6 +53,7 @@ export type TeamDirection = {
   id: string;
   title: string;
   ownGoal: boolean;
+  progressVisible: boolean;
   rows: ResearchWorkspaceRow[];
   stage: "planned" | "active" | "closed";
   accepted: number;
@@ -101,6 +102,7 @@ export function teamDirections(rows: ResearchWorkspaceRow[]): TeamDirection[] {
           grouped.length > 1 ? `等 ${grouped.length} 项任务` : ""
         }`,
       ownGoal: !!ownGoal,
+      progressVisible: grouped.every((row) => isFullTask(row.task)),
       rows: grouped,
       stage: statuses.every((s) => s === "completed" || s === "cancelled")
         ? "closed"

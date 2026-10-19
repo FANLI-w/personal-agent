@@ -158,3 +158,12 @@ test("dependency order is stable even when API rows arrive newest first", () => 
   );
   assert.equal(teamDirections([row("ready", "r", "ready")])[0].stage, "planned");
 });
+
+test("summary-only completed tasks have unknown review progress, never a misleading zero percent", () => {
+  const [summary] = teamDirections([row("summary", null, "completed")]);
+  assert.equal(summary.progressVisible, false);
+  assert.equal(
+    teamDirections([row("full", "p", "completed")])[0].progressVisible,
+    true,
+  );
+});
