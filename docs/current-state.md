@@ -14,6 +14,8 @@
 
 **后台部署已提出明确确认，当前待用户答复；未部署、未公开发布。** 公网本次ready200仍contract0.25.0，db/storage/auth ok、harness not_verified。47c42ac/b78613b5沿前批inspect，本批无容器新inspect；existing Key首尾须实际部署0.25.1新路由，新客户端安装不等于后台同步。独立backend-preview.patch/source.zip供评审，实施前核对生产差异并保留回退镜像，不能以整条桌面分支覆盖生产。实际公开latest仍v0.6.0，无Release/更新源/目录操作。
 
+[草稿PR72](https://github.com/luoyan96/personal-agent/pull/72)已推送、创建并附当前任务，base release/acceptcat-0.10.18；首读86ec606三项Foundation均QUEUED，不称远端已通过。220份Markdown/10份Skill及diff检查通过。4956/4957合成预览保留，30304/24972完整Node命令见preview-retained.json；不是正式部署。桌面最终包87,419,799字节/ad49a0c4 hash及说明已读回；包和API源码仍固定4bc8d1f。
+
 ## 最新 Windows 0.10.18：与任务规划 Agent 连续沟通并创建任务
 
 `release/acceptcat-0.10.18`接续实际干净的0.10.17 / b11e1f5，未切main；产品与最终包固定 **8bf46f17ee720f2e8c5e028001b4dda384c077db**。按用户图将右上规划按钮改为底部常驻聊天，直接说目标、回答追问、连续修改分工/交付，再在对话内说“确认创建任务”；真实版本校验后建立任务、刷新课题组进展并直达详情。研究计划为完整聊天/折叠记录，旧链接接上下文；保留既有三栏、个人助手与我的任务衔接、权限和连接恢复。[实现与限制](development/task-planning-agent.md)。
