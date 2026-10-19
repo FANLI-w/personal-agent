@@ -1052,3 +1052,5 @@ Windows x64 NSIS0.10.12实际构建并复制桌面，**87,403,174字节** / SHA2
 桌面AcceptCat_0.10.17.exe与说明已交付，**87,417,662字节/SHA256 a5369f56cdc51b5b063a79dfbe05241acf2191455332247048bfba725d5d2156**；17生产JS/8CSS逐字节，新结构/旧欢迎区消失/无QA、品牌素材、实际NSIS载荷及原生启动均检查。构建装配55个运行包、归档顶层52个包manifest分别记录；未代安装、关闭用户现装或删旧包/数据。Git外.runtime/lab-progress-20261019保留实拍/qa-summary/初败/测试类型/构建/ASAR/NSIS与原生启动。
 
 本次公网ready200/contract0.25、db/storage/auth ok，harness仍not_verified；生产47c42ac/b78613b5沿前批inspect，本次不新容器inspect、部署、数据库同步或迁移。actual latest仍v0.6.0（2026-10-08）已核对，无目录/公共Release/更新源操作。PR66目录11项/7仓库沿独立运营交接；PR68统计Skill未集成，PR50后台边界、自助开组/已有账号加入/多组、长期科研效果与磁盘/网络风险独立维护。
+
+草稿PR70 https://github.com/luoyan96/personal-agent/pull/70 已推送、创建并附当前任务，base release/acceptcat-0.10.16；首读16c6b97三项Foundation均IN_PROGRESS，不套用其他分支通过。216份Markdown/10份Skill与diff检查通过。main客户端包manifest再次读回0.3.0，未切main。为用户保留4936/4937合成预览，实际26488/28896完整Node命令已核对并留preview-retained.json；viewport reset、IAB页标交付，未将预览叫作正式部署。用户现装6048/20312/9456/29724均仍在原路径；桌面0.10.17最终87,417,662字节和a5369f56 SHA256及说明再次读回一致，包内产品仍固定12c100d。

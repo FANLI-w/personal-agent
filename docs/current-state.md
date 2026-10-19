@@ -12,6 +12,8 @@
 
 无新API/迁移/后台部署或目录/公开Release/更新源变更；本次公网ready200/0.25，harness仍not_verified，生产47c42ac/b78613b5沿前批inspect。actual latest仍v0.6.0已核对。独立共享方向编辑/跨计划OKR、自助开组/已有账号加入/多组仍待后续；PR50/PR68及真实科研质量独立。目录11项/7仓库沿PR66记录，本批未发布。保留服务器85%磁盘和代理链路长期稳定性风险，未将短时探针称根治。
 
+[草稿PR70](https://github.com/luoyan96/personal-agent/pull/70)已创建、推送并附任务，base release/acceptcat-0.10.16。首读16c6b97三项Foundation均IN_PROGRESS，pr-final.json留证，不称远端全过。216份Markdown/10份Skill及diff检查通过；main客户端0.3.0再次按远端包manifest核对。保留4936/4937合成预览供用户查看（26488/28896，完整Node命令见preview-retained.json），不是正式后台；viewport已reset、预览页标记交付。用户现装四进程未动，最终包与说明hash读回一致。
+
 ## 最新 Windows 0.10.16：清楚的科研起点、待办与进展
 
 `release/acceptcat-0.10.16`接续04dd9ba，产品/包固定 **6c50ea9c67e810a1cb5ab7c957af42bbaa519294**。总览突出新建科研计划与三个带目标的研究起点，个人待办/研究进展分栏；空状态隐藏零统计、筛选、分页和空成员栏，有任务显示简洁表格、完整详情与快速查看；范围/协作和成员下一步折叠，四主栏目及助手抽屉保持。复用原品牌照片/Ant图标，生成两状态设计后实际实现。[设计/实现/QA](development/workbench-home-redesign.md)。
