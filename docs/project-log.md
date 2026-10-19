@@ -1072,3 +1072,19 @@ Windows x64 NSIS0.10.12实际构建并复制桌面，**87,403,174字节** / SHA2
 本批公网ready200/contract0.25，db/storage/auth ok，harness仍not_verified；生产47c42ac/b78613b5沿前批inspect，本次无新容器inspect/部署/数据库同步。actual latest仍v0.6.0（2026-10-08）已读回，无Release/更新源/目录操作。PR66目录11项/7仓库、PR50后台正文边界、PR68统计Skill与自助开组/已有账号加入/多组、共享方向、长期科研质量各自独立，服务器磁盘/网络长期风险仍保留。
 
 草稿PR71 https://github.com/luoyan96/personal-agent/pull/71 已推送、创建并附当前任务，base release/acceptcat-0.10.17；首读dfaea8b三项Foundation均IN_PROGRESS，pr-final.json留证，不称远端全过。218份Markdown/10份Skill与diff通过。4946/4947合成预览保留供查看，实际Vite8824/API31556完整Node命令留preview-retained.json；不是生产后台。桌面0.10.18最终87,419,218字节/57b2c6e9 SHA256及说明读回一致，用户现装D:/0chat/ResearchWeChat/AcceptCat四进程在，本批只启动/关闭自己的隔离烟测进程。源码与包仍固定8bf46f1，后续文档提交不改变载荷。
+
+## 2026-10-20：保存后的具体模型与Key首尾脱敏，Windows0.10.19/后台待确认
+
+用户要求模型配置保存后显示具体使用哪一个，API Key中间隐藏。实际release/acceptcat-0.10.18 / 513dd3e干净，读AGENTS/当前状态/最新日志/README/roadmap后接续release/acceptcat-0.10.19；未切main或覆盖修改。源码/包固定4bc8d1f7cde314a1a9a99d3360b49a8647d43497，保留0.10.18聊天式任务规划和既有修复。
+
+模型设置顶部真实默认摘要，左列服务商+具体型号，未保存选择不冒充已生效；Key首尾只读预览、“更换”打开单独空密码输入；原值不进输入，不改变只改名称/型号时省略apiKey的保留语义。校验遮罩/空白/非法字符，保存后清新Key输入/核对ID版本；移除后预览消失，未知预览与旧版后台明确保留已保存状态，不能虚构首尾。
+
+原个人模型接口只有hasApiKey，严格响应不能直接加字段破坏0.18；契约兼容补丁0.25.1独立GET /me/model-configurations/{id}/key-preview，仅本人会话/本人配置。长Key首尾各4、短Key各2，中间8遮罩；用原AAD绑定密文即时解密裁剪，不返回完整Key/密文，不新存预览或写命令回执，不调用模型。新Schema/接口/导出/版本说明同步，无数据库迁移；匿名401、跨账号404、密文移植安全503，元数据读取保持可用。
+
+新增3个真实HTTP/SQLite测试，个人模型专项12项通过。根pnpm run ci最终54文件/680项全部通过，构建/类型/契约导出、2项生产装配/真实进程/B0/生产无夹具也通过；客户端最终类型、生产打包另验。第一轮679通过/1失败是Web测试写死旧0.25.0，按实际新契约改0.25.1，专项后完整ci重跑通过；不掩盖首败。初始UI可空类型保护已修，页面首次加载超时与HMR期间选择器失败保留。
+
+实际IAB/cua_repl/React/HTTP/SQLite：已有加密Key立即首尾；Flash改V4 Pro/改名保存仍保留原Key；未保存摘要不变；遮罩提交被拦；合成新Key替换后9012后缀，切Qwen为默认WXYZ；移除清预览/默认，恢复DeepSeek；刷新重读、旧404/预览503降级、延迟A预览切B只出现B的EFGH，不串A的9012。检查1536×1024、1024×726，文档width=scrollWidth1024，窄窗底部保存纵向可达。最后清洁重载新error0/已有Router警告2。DB只读检查证明默认、版本、原Key替换/删除实际一致，输出不含完整Key；全为合成凭据，无供应商或生产私人资料调用。
+
+Windows0.10.19已制作并复制桌面，87,419,799字节/SHA256 ad49a0c4ae921a0048152d7e9e651fb4addf49f1a269eb5b5fb4241da5b6b650；55运行包装配、52顶层包manifest、17JS/8CSS逐字节/无QA/原品牌，真实NSIS载荷和隔离隐藏原生启动通过，旧electron-log初始化警告保留。ASAR addae52ace56d9c37769b7f50a13bd0db9ba9bd711d15868aa164e36aa12eba4；EXE16536cdd585bdec7202e9fb3b3aab6d40bc10037c97475873708bc7ad358cc24。未代安装、关现装或删旧包/数据；说明文件单列后台依赖。
+
+公网本批ready200/0.25.0，db/storage/auth ok，harness not_verified；生产47c42ac/b78613b5沿前批inspect，本批未新inspect容器。独立backend-preview.patch/source.zip已备供评审，包含API/契约源码，不含运行库/Key。按AGENTS“Do not deploy or publish a package as a side effect of a code change.”，在代码、检查、安装包与补丁准备后已单独询问是否部署本人只读预览，当前待用户答复；未部署、改Key或迁移。实际公开latest仍v0.6.0，无Release/更新源/目录操作。Git外证据.runtime/model-config-summary-20261019（工作在10月19日晚开始，20日完成）；PR50/PR68/目录PR66及科研规划长期质量独立维护。
