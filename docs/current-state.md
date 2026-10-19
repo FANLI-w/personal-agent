@@ -14,6 +14,8 @@
 
 无需新API/迁移/数据库同步，本批未部署后台或发布目录/Release/更新源；公网ready实际200/0.25，db/storage/auth ok、harness仍not_verified。生产47c42ac/b78613b5沿前批inspect，本批无容器新inspect；实际公开latest仍v0.6.0。自助开组/已有账号加入/多组、独立共享方向、复杂日程、长对话管理、跨设备聊天和真实科研规划质量待后续；PR50/PR68及PR66目录运营各自独立，服务器磁盘/网络长期风险未被短时健康探针消除。
 
+[草稿PR71](https://github.com/luoyan96/personal-agent/pull/71)已推送、创建并附当前任务，base release/acceptcat-0.10.17。首读dfaea8b三项Foundation均IN_PROGRESS，pr-final.json留证，不称远端全过。218份Markdown/10份Skill与diff通过。保留4946/4947合成预览，8824/31556完整Node命令见preview-retained.json；预览不等于生产部署。桌面最终包hash/大小与说明已读回，用户现装未由本次操作替换或关闭。
+
 ## 最新 Windows 0.10.17：按用户标注调整课题组任务与进度
 
 `release/acceptcat-0.10.17`接续5c30f5d，产品与包固定 **12c100d1cd70d4a38205c1b739e402a40578f5c2**。按用户在旧版上的批注，恢复简洁布局并移除0.10.16照片欢迎区；主栏为课题组任务/我的任务/资料与素材库，计划及定时安排并入我的任务，旧链接保持。上层列正在推进/准备开展的方向，下层按真实planId归组，展示任务、分工、截止、阻碍、成果和明确验收进度；成员摘要区分承接/审阅/邀请。只读获准任务，私人目标仍仅本人可见，摘要无进度详情时标记未知，个人未入组只有说明。[实现与限制](development/lab-task-progress.md)。

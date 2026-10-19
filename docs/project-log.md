@@ -1070,3 +1070,5 @@ Windows x64 NSIS0.10.12实际构建并复制桌面，**87,403,174字节** / SHA2
 桌面AcceptCat_0.10.18.exe及说明，最终87,419,218字节/SHA256 57b2c6e94b2395b52c307c96a2fde08658fd54d5ccf800ccf2cce95bed9edbcf。55装配运行包/52归档顶层包分别核对，17生产JS/8CSS逐字节、当前聊天与原品牌/无QA入口、实际NSIS载荷一致及隐藏隔离原生启动检查通过，旧日志初始化警告保留。第一候选a5fcfabf另存Git外before-ordinal-fix.exe；桌面仅最终57b2c6e9。未代安装、关闭用户现装或删旧包/数据。证据在.runtime/planning-agent-20261019，含原始失败、SQL快照、实拍、测试/构建/ASAR/载荷/启动。
 
 本批公网ready200/contract0.25，db/storage/auth ok，harness仍not_verified；生产47c42ac/b78613b5沿前批inspect，本次无新容器inspect/部署/数据库同步。actual latest仍v0.6.0（2026-10-08）已读回，无Release/更新源/目录操作。PR66目录11项/7仓库、PR50后台正文边界、PR68统计Skill与自助开组/已有账号加入/多组、共享方向、长期科研质量各自独立，服务器磁盘/网络长期风险仍保留。
+
+草稿PR71 https://github.com/luoyan96/personal-agent/pull/71 已推送、创建并附当前任务，base release/acceptcat-0.10.17；首读dfaea8b三项Foundation均IN_PROGRESS，pr-final.json留证，不称远端全过。218份Markdown/10份Skill与diff通过。4946/4947合成预览保留供查看，实际Vite8824/API31556完整Node命令留preview-retained.json；不是生产后台。桌面0.10.18最终87,419,218字节/57b2c6e9 SHA256及说明读回一致，用户现装D:/0chat/ResearchWeChat/AcceptCat四进程在，本批只启动/关闭自己的隔离烟测进程。源码与包仍固定8bf46f1，后续文档提交不改变载荷。
