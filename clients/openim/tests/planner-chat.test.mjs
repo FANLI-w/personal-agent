@@ -286,6 +286,7 @@ test("stop never cancels a completed request or a changed account", async () => 
 });
 
 test("unsupported or ambiguous deadlines require clarification instead of silently replacing dates", () => {
+  assert.equal(plannerDeadline("第二项周五截止").target, 1);
   for (const text of [
     "不是周五截止，改成周一",
     "前两项周五交付",

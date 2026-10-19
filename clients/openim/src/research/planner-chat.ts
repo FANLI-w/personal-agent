@@ -151,9 +151,33 @@ export function plannerDeadline(
     )
   )
     return;
-  const step = text.match(/第([1-9]\d?)(?:步|项|个任务)/);
+  const steps = [
+    ...text.matchAll(/第([1-9]\d?|[一二两三四五六七八九十]+)(?:步|项|个任务)/g),
+  ];
+  if (steps.length > 1) return;
+  const step = steps[0];
+  const stepNumber = step
+    ? /^\d+$/.test(step[1])
+      ? Number(step[1])
+      : (
+          {
+            一: 1,
+            二: 2,
+            两: 2,
+            三: 3,
+            四: 4,
+            五: 5,
+            六: 6,
+            七: 7,
+            八: 8,
+            九: 9,
+            十: 10,
+          } as Record<string, number>
+        )[step[1]]
+    : undefined;
+  if (step && !stepNumber) return;
   const target = step
-    ? Number(step[1]) - 1
+    ? stepNumber! - 1
     : /全部|所有|整体|每项|每步/.test(text)
     ? "all"
     : "final";
