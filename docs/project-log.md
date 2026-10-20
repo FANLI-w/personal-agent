@@ -1146,3 +1146,19 @@ Windows x64 NSIS0.10.20已制作并复制桌面C:/Users/luo/Desktop/AcceptCat_0.
 更新当前状态、实现与候选交付说明、产品状态、README和路线图。实际GitHub latest再次核对仍v0.6.0；本批无AcceptCat公开Release、上传、更新源、公共目录或其他Skill发布。代码/本地合成检查/安装包/飞书外部配置/后台部署/公开发布分别记录。
 
 收尾：文档425da363ad3de2248e520da01e66bdacd418a687与产品2bbcfbc分别固定，分支已推送；创建并附加草稿PR73（base release/acceptcat-0.10.19），尚未合并。最终224份Markdown/10份Skill与Git diff检查通过。另已单独请求后台/schema023迁移、服务器App Secret配置及仅本人试点发布的批准，等待用户答复，未执行依赖该批准的操作。
+
+## 2026-10-20：获批部署飞书本人试点，后台023与飞书0.1.0已上线
+
+用户明确回复“继续部署并上线本人试点”，授权备份/恢复与022→023演练、科研API/worker短暂停机配对升级、该应用App Secret仅存chat.acceptcat.com服务器受限文件，以及飞书0.1.0仅罗岩可用。重新核对feat/feishu-readonly-pilot/ba6dc89与origin一致、工作区干净，保留原2bbcfbc产品代码与0.10.20包。读AGENTS及状态/日志/README/路线图，未切main或覆盖用户修改。Workbench会话初始WebSocket失败，返回登录选择已有实例免密连接恢复，没有重配网络或新建SSH凭据。
+
+实际生产原API/worker均8defb397，磁盘可用7.3GiB；从该镜像离线构建限定12个源文件覆盖，逐项SHA核对，旧公共目录种子新旧相同。新组合47c42ac+key-preview.4bc8d1f+feishu.2bbcfbc，image research-openim-api:feishu-20261020 / sha256:4ee12e77f80da2e196e6640980dbdb521a1bfa5e168ac1ced6012f387e63ea0d。网络隔离、无生产挂载的真实HTTP/合成飞书检查通过OAuth/PKCE、回调重放、匿名/账号隔离、令牌加密、wiki/docx预览、私人副本/幂等导入、断开和旧Key预览。首败为冒烟夹具漏开B3_AI_ENABLED，修正后通过，原脚本/失败日志保留，产品及包未改。
+
+仅停止科研API/worker，新备份/srv/research-openim-backups/feishu-20261020-20261020T025747Z/research.tar.gz，SHA256 8b61179e5172154dc4d022b7414d567103de2b7cbf8f7eac4bbf2f6a96c96ecd。恢复副本演练022→023→022→023，每轮91旧表、6原件、迁移1–22校验/内容、完整性/外键均一致；生产显式迁移023后、启动前再次逐项一致，三张新表为空。新API/worker同镜像running、API healthy、重启计数0；六个其他服务ID/镜像/状态不变，既有环境/挂载/命令/内存/重启/端口不变，API仅追加飞书配置和只读secret。启动后只读核对personal_model_configurations、personal_model_settings、lab_ai_settings整表哈希未变，没有读取/解密原完整模型Key。
+
+App Secret从飞书可见凭证控件读入内存、立即恢复掩码，终端read -s写服务器root/0600文件，API私有运行时副本0600。无明文输出、命令历史、本地文件、Git、镜像或安装器写入。服务器配置检查configured:true、原主密钥可用；三张飞书表仍0条。10:58飞书0.1.0页面显示已启用/已发布/审核通过，可用成员仅罗岩，对外共享关闭；三项用户只读scope及精确回调保持，没有机器人/群消息/文档写入/应用高权限身份。原草案与发布截图、应用收据留Git外。
+
+独立公网ready200/contract0.26.0，database/storage/authentication ok、Harness not_verified；飞书status匿名401、旧Key预览匿名401、无参数callback400，no-store/CSP/no-referrer正确。旧022镜像不能直接启动023库；仅新三表仍无记录时可按已演练流程退回022，不盲目覆盖新业务写入，本次未触发生产回退。部署完整日志/哈希基线在服务器ops/feishu-20261020；本机Git外.runtime/feishu-pilot-20261020保留脚本、manifest、公开JSON和production-deployed.png/feishu-published-self.png。
+
+本批没有真实OAuth、选定私人文档读取、真实模型或科研效果评估；下一步本人在0.10.20连接并选择一份docx/wiki验证来源/权限/正文及规划衔接。桌面安装器再次核对87,422,226字节与原7abe46ba哈希一致，安装说明按已部署状态更新，未代安装/关闭现装。GitHub实际latest再次核对v0.6.0，无AcceptCat公开Release、更新源、公共目录或其他Skill发布。状态/交付/部署说明、实现/路线图、README、产品状态与PR73同步；草稿PR不合并。
+
+远端ba6dc89首轮Ubuntu22/24成功，Windows既有execution A12测试5000ms超时；失败日志github-windows-failed.log保留，仅重跑失败Windows节点，未改超时或产品实现。最终远端状态在收尾补记；本批仅部署/文档，无新共享代码，不重复已过本地693项全量CI。

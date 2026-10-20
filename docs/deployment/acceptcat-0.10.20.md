@@ -10,8 +10,8 @@
 
 693项/55文件CI、2项生产CLI/HTTP、构建/类型/契约/缺DB与进程检查通过；客户端类型、6项规划helper和实际React/HTTP/SQLite合成飞书流程通过。证据在Git外 `.runtime/feishu-pilot-20261020`，含首败、迁移夹具修复、最终CI、构建、真实安装载荷、启动与界面截图。合成提供方不等同飞书真实组织联调，没有真实模型或私人资料试读。
 
-**代码、候选安装包已完成；后台未部署，飞书应用未上线，AcceptCat未公开发布。** 后台新功能需contract0.26.0与schema023，三张新增表，服务启动不会自动迁移；API/worker须配对更新。用户已独立批准的飞书企业自建应用与三项用户身份只读权限、精确回调已配置，App Secret仍留飞书后台，尚未引入服务器或绑定真实用户。试点范围只准备本人，不面向全机构发布。
+**代码、安装包及配套后台已完成；飞书应用仅本人已发布，AcceptCat未公开发布。** 用户明确批准后，API/worker已配对升级contract0.26.0/schema023，三张新表；完整备份、恢复副本与022→023→022→023演练、旧表/原件及启动后凭据检查通过。App Secret仅服务器root/0600文件、容器内0600，不进入安装器；飞书0.1.0于2026-10-20 10:58发布，可用成员仅罗岩，对外共享关闭。真实账号授权与选定文档试读仍待本人验证。
 
-部署须另行同意：先备份和恢复副本演练，再验证schema022→023旧表/原件/凭据不变，配对更新API/worker，挂载服务器受限App Secret文件后验证OAuth。沿用生产原公共目录种子，不把候选分支的独立目录变化一起上线；旧镜像不能直接启动在schema023库上，回退必须先停写并根据实际数据状态决定，不盲目覆盖新业务数据。
+部署组合 `47c42ac+key-preview.4bc8d1f+feishu.2bbcfbc` / image `4ee12e77`，只覆盖12个运行源文件、保留生产原公共目录种子；其余六服务保持。备份、完整镜像摘要、实测与回退限制见[独立部署记录](feishu-pilot-20261020.md)。旧镜像不能直接启动023库，不盲目恢复覆盖新业务数据。
 
-本次只做公网readiness检查，返回contract0.25.1、database/storage/authentication ok、Harness not_verified。旧镜像和schema022的准确已部署组合仍见[Key预览部署](key-preview-20261020.md)。GitHub latest实际再次核对仍为v0.6.0，未创建Release、上传包、改更新源或公共目录。
+独立公网readiness返回200/contract0.26.0、database/storage/authentication ok、Harness not_verified；飞书status/旧Key预览匿名401，非法callback400且no-store/CSP/no-referrer正确。服务器配置检查就绪，不等于已真实授权。原Key预览接口保持；GitHub latest记录仍为v0.6.0，未创建Release、上传包、改更新源或公共目录。

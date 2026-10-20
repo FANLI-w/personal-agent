@@ -89,7 +89,7 @@ AcceptCat 把这些事情放在同一个工作空间里：用聊天说清需求�
 | 版本入口 | 当前状态 |
 | --- | --- |
 | **最新桌面试用版：0.10.19** | 已制作并交付小范围试用，尚未上传公开 Release；保留聊天式任务规划，模型设置显示具体型号和默认配置，已有 Key 首尾预览的配套后台已部署。[查看试用与版本说明](docs/product-status.md) |
-| **飞书接入候选版：0.10.20** | 已制作安装包，支持选定文档预览、私人副本和规划片段；配套后台与真实授权仍待接通，尚不属于已上线能力。[查看试点范围](docs/development/feishu-readonly-pilot.md) |
+| **飞书本人试点版：0.10.20** | 已制作安装包，配套后台已部署、飞书应用仅本人上线；支持选定文档预览、私人副本和规划片段，真实账号授权与选定材料试读待本人验证。[查看试点范围](docs/development/feishu-readonly-pilot.md) |
 | **GitHub 公开下载：v0.6.0** | 可从 [Releases](https://github.com/luoyan96/personal-agent/releases/latest) 下载；安装文件仍叫 `ResearchWeChat_0.6.0.exe`，属于早期版本，未包含这里展示的全部体验 |
 | **产品源码** | 已交付版本在 [release/acceptcat-0.10.19](https://github.com/luoyan96/personal-agent/tree/release/acceptcat-0.10.19)，飞书候选在 [feat/feishu-readonly-pilot](https://github.com/luoyan96/personal-agent/tree/feat/feishu-readonly-pilot)；默认分支仍是较早基线，源码与软件发布分别维护 |
 

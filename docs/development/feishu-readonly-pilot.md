@@ -21,13 +21,13 @@
 - 首批不申请 `offline_access`，不保存 refresh token；授权按返回的 expires_in 到期后要求重新授权。连接状态表示最近成功授权及本地有效期，单文档读取由飞书实时决定；拒绝/失效不会回退为应用高权限身份。
 - 纯文本不包含图片、附件、评论或页面/表格视觉结构，不进行 OCR、代码执行或下载附件。暂不支持 PDF/PPT、旧版 doc、表格、多维表格、知识库目录遍历、检索整库、自动更新副本、写回文档或群消息。飞书保留原始资料和编辑协作。
 
-## 部署配置（待真实应用与独立部署授权）
+## 部署配置与本人试点
 
-用户明确批准后，已在飞书企业创建“AcceptCat 科研资料只读接入”，开通**用户身份**三项 scope：`contact:user.base:readonly`、`docx:document:readonly`、`wiki:wiki:readonly`。后台逐项显示已开通、数据范围与用户权限一致；回调 `https://chat.acceptcat.com/api/v1/feishu/callback` 已保存。应用仍待上线，发布/可用范围按飞书后台实际规则另行办理，只准备本人试点。没有读取App Secret或真实文档，详细应用ID、权限及回调截图留在Git外收据。
+用户明确批准后，已在飞书企业创建“AcceptCat 科研资料只读接入”，开通**用户身份**三项 scope：`contact:user.base:readonly`、`docx:document:readonly`、`wiki:wiki:readonly`。后台逐项显示已开通、数据范围与用户权限一致；回调 `https://chat.acceptcat.com/api/v1/feishu/callback` 已保存。另获上线批准后，2026-10-20 10:58实际发布0.1.0、审核通过、可用成员仅罗岩，对外共享关闭。App Secret仅写入批准的服务器root/0600文件，容器内复制为0600；没有真实OAuth或文档试读。详细应用ID、权限及发布截图留在Git外收据。
 
 服务设置 `FEISHU_APP_ID`，将 App Secret 保存到服务器专用、受限权限文件，通过绝对路径 `FEISHU_APP_SECRET_FILE` 引入；复用 `LAB_CREDENTIAL_KEY_FILE` 进行加密。不要把 App Secret 填入客户端、仓库、镜像或聊天。可选 `deploy/openim/compose.feishu.yaml` 在现有两个 Compose 文件后追加，提供 `FEISHU_APP_ID` 和服务器 `FEISHU_APP_SECRET_PATH`，仅 API 挂载；生产入口将 secret 复制为容器内 0600 私有文件。默认生产配置不自动启用飞书。
 
-当前运行的线上服务仍为 `47c42ac+key-preview.4bc8d1f` / image `8defb397` / contract0.25.1 / schema022。新代码、安装包、应用配置、真实授权、后台部署和公开发布分别记录，不相互代替。
+当前线上API/worker配对为 `47c42ac+key-preview.4bc8d1f+feishu.2bbcfbc` / image `4ee12e77` / contract0.26.0 / schema023，12个源文件覆盖并保留生产原目录种子；[备份/恢复、迁移/回退演练、旧数据及凭据核验](../deployment/feishu-pilot-20261020.md)通过。服务器配置检查就绪，用户真实授权与选定文档仍待验证。新代码、安装包、应用发布、真实授权、后台部署和AcceptCat公开发布分别记录。
 
 ## 核验资料
 
@@ -43,4 +43,4 @@
 
 最终 `ci-final.log`：693项/55文件通过，2项实际生产CLI/HTTP检查与进程冒烟、缺DB边界、生产产物排除夹具通过。客户端类型及6项规划helper检查通过。Windows候选包、实际安装载荷、资源字节与隔离原生启动检查见[0.10.20交付说明](../deployment/acceptcat-0.10.20.md)。未测试手机视口、真实组织OAuth、真实材料或模型科研质量。
 
-飞书0.1.0版本草案已实际保存，状态“待申请”，可用范围只选罗岩一人，对外共享关闭；保存后弹出的最终发布确认已取消，仍未上线。最终页面重载并重试连接窗口/文档预览成功，`qa-final.json`记录只剩既有AntD弃用提示，无新的运行错误；`feishu-draft-self.png`、`feishu-permissions.png`和`feishu-callback.png`是实际开发者平台截图。
+飞书0.1.0先保存草案并取消发布，获得用户独立上线批准后才发布；最终页面显示已启用/已发布/审核通过，仅罗岩可用。`feishu-published-self.png`为实际发布证明；原草案、权限和回调截图保留。React合成验收页面完整重载后，`qa-final.json`只剩既有AntD弃用提示，没有新运行错误。部署镜像的独立合成HTTP再次验证OAuth/PKCE、回调重放拒绝、账号隔离、wiki/docx预览、私人导入幂等、断开及旧Key预览；首败为该冒烟脚本漏开模型功能开关，修正后通过，产品代码未变。
