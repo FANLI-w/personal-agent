@@ -4,6 +4,8 @@
 
 ## 最新批次0.10.23：资料 Agent 底部聊天框，安装包已制作
 
+评审入口：[草稿PR76](https://github.com/luoyan96/personal-agent/pull/76)，base `feat/library-agent-0.10.22`，已推送并附任务，未合并；文档0862a04远端Foundation三项首读IN_PROGRESS，不称已通过。
+
 实际干净 `feat/library-agent-0.10.22` / `5f1becc` 接续，新分支 `fix/library-agent-dock-0.10.23`，产品固定 **316768dc5707c4c43677f046165d590da194f9b1**。[交付详情](deployment/acceptcat-0.10.23.md)。按用户反馈移除中部跳转卡片，改为底部常驻输入、原地回复/追问/停止/历史恢复和来源核对，资料范围收进聊天区；复用已有本人Agent和私聊，不跳“消息”页。未选集合只用聊天内容；私人/共享权限、模型与后台接口保持。
 
 Windows x64 **C:/Users/luo/Desktop/AcceptCat_0.10.23.exe**，**87,431,664字节**，SHA256 **11f46da4811d5ce68e489bcaf5fd9888ff8885db5b4765ad1e2ccf62a63a10c3**。实际安装载荷、18JS/8CSS、52运行包/55装配包、新样式/旧卡片移除与旧功能通过；隐藏隔离启动通过，旧electron-log提示保留。没有代安装、关闭用户客户端或公开发布。
