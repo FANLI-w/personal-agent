@@ -88,8 +88,7 @@ AcceptCat 把这些事情放在同一个工作空间里：用聊天说清需求�
 
 | 版本入口 | 当前状态 |
 | --- | --- |
-| **最新桌面试用版：0.10.18** | 已制作并交付小范围试用，尚未上传公开 Release；工作台底部与任务规划 Agent 沟通，在对话中确认创建任务，再查看分工与成果进度。[查看试用与版本说明](docs/product-status.md) |
-| **新候选包：0.10.19** | 模型设置显示具体型号及默认配置；已有 Key 的首尾预览已实现，待后台接口部署后启用。[版本与接口状态](docs/product-status.md) |
+| **最新桌面试用版：0.10.19** | 已制作并交付小范围试用，尚未上传公开 Release；保留聊天式任务规划，模型设置显示具体型号和默认配置，已有 Key 首尾预览的配套后台已部署。[查看试用与版本说明](docs/product-status.md) |
 | **GitHub 公开下载：v0.6.0** | 可从 [Releases](https://github.com/luoyan96/personal-agent/releases/latest) 下载；安装文件仍叫 `ResearchWeChat_0.6.0.exe`，属于早期版本，未包含这里展示的全部体验 |
 | **最新产品源码** | 当前集成在 [release/acceptcat-0.10.19](https://github.com/luoyan96/personal-agent/tree/release/acceptcat-0.10.19)；默认分支的应用代码仍是较早基线，文档与软件发布分别维护 |
 

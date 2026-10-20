@@ -1090,3 +1090,29 @@ Windows0.10.19已制作并复制桌面，87,419,799字节/SHA256 ad49a0c4ae921a0
 公网本批ready200/0.25.0，db/storage/auth ok，harness not_verified；生产47c42ac/b78613b5沿前批inspect，本批未新inspect容器。独立backend-preview.patch/source.zip已备供评审，包含API/契约源码，不含运行库/Key。按AGENTS“Do not deploy or publish a package as a side effect of a code change.”，在代码、检查、安装包与补丁准备后已单独询问是否部署本人只读预览，当前待用户答复；未部署、改Key或迁移。实际公开latest仍v0.6.0，无Release/更新源/目录操作。Git外证据.runtime/model-config-summary-20261019（工作在10月19日晚开始，20日完成）；PR50/PR68/目录PR66及科研规划长期质量独立维护。
 
 草稿PR72 https://github.com/luoyan96/personal-agent/pull/72 已推送、创建并附当前任务，base release/acceptcat-0.10.18；首读86ec606三项Foundation均QUEUED，pr-final.json留证，不称远端全过。220份Markdown/10份Skill及diff通过。4956/4957合成预览保留（Vite30304/API24972，完整命令见preview-retained.json），不是生产后台；桌面最终0.10.19大小/哈希和说明读回一致，用户现装未替换或关闭。客户端包/API仍固定4bc8d1f；部署确认当前仍待答复，不把经过时间视为授权。
+
+## 2026-10-20：课题组资料与素材库调研，未改产品
+
+用户要求先调研同行如何管理论文/代码、专利、申报案例和PPT，再评估自建与复用。实际从干净release/acceptcat-0.10.19 / 69d8822接续，按根AGENTS读取状态/最新日志/README/路线图，并核对research-library契约、API/SQLite/原件存储、资料库及Zotero实现文档。确认已有集合范围、不可变原件版本、SHA/页引用、Agent绑定与关键词检索；Office/PPT、扫描OCR、科研条目多附件及模板/案例业务结构尚未完整实现，Zotero不是全文/团队库同步。
+
+阅读维护方官方文档与实际许可：Zotero集合/标签/关联/组库，飞书知识库层级权限，eLabFTW资源/模板，openBIS指定20.10.12历史模型，Nextcloud文件版本，Dify元数据与附加许可，RAGFlow格式/服务依赖和官方资源建议，Docling格式/OCR/本地运行，SQLiteFTS5、pgvector及OSS版本控制。Seafile所尝试官方路径、Nextcloud35路径读取不可用，未据此形成可用性/功能断言；Nextcloud latest页面标有upcoming，仅引用通用模型。未安装或试跑这些系统，不把官方能力描述/硬件建议当作AcceptCat实测。
+
+候选建议及来源保存在docs/development/lab-knowledge-library-research.md：自建条目/关系/权限/任务归档业务层、复用存储与文档解析检索；多视图引用同一资料、模板/案例/正式成果区分，论文关联固定代码修订，专利/项目状态需证据，PPT原件/页预览分开。素材由授权团队贡献、官方模板/有许可公开来源及团队方法审阅组成，不能用AI虚构已获批案例。初期保留SQLite与既有worker，OSS/Docling可替换适配，向量检索与PostgreSQL迁移单独评估；成本仅假设10–30人/约5000份文档下的工程估计，须先以20–50份获准样本验证后承诺。
+
+本批仅新增调研文档并更新状态/日志；未修改代码、依赖、安装包或线上数据，未调用真实模型/读取私人语料。0.10.19源码/包仍4bc8d1f，前批生产0.25.0记录未重新探测/inspect，Key预览部署仍待单独答复。未新建PR/推送、部署、迁移或公开发布。检查限于Markdown链接和Git diff，不运行无产品改动所不需要的构建/功能CI；建议不代表用户已确认开发范围。
+
+## 2026-10-20：用户同意后部署本人Key脱敏接口，contract0.25.1
+
+用户明确选择“部署脱敏预览接口”，并恢复已过期的Edge Workbench连接。沿release/acceptcat-0.10.19 / 69d8822接续，保留上一批资料库调研的状态/日志/新文档修改，未切main。实际inspect生产API/worker为47c42ac/b78613b5、healthy/running、restart0/无OOM，Compose路径与既有记录一致，磁盘可用约7.73GB。
+
+只传输受测4bc8d1f的四个API/契约源文件补丁；逐一核对旧/新SHA256，继承已核对的原镜像离线构建contracts与API，没有部署整条桌面分支、PR50正文改动、目录种子或依赖。最终镜像research-openim-api:key-preview-20261020，sha256:8defb3973bfc93a5544df1fe6b715eecf91c152fb4b1544d93f913feec874986；OCI revision明确为47c42ac完整SHA+key-preview.4bc8d1f、overlay.source为完整4bc8d1f，不冒充整份该提交。新镜像network none/无生产挂载/两合成账号HTTP验证旧加密Key重启后首尾、Key不变、no-store、匿名401/跨账号404及旧元数据响应兼容，无模型请求。
+
+首次审计把/data挂只读，SQLite辅助文件打开失败；尚未启动新镜像，流程重启原API/worker，独立公网0.25.0/200确认恢复，无数据库还原。第一份deploy.log/ops保留。v2仅修审计挂载，SQL readOnly/query_only保持；脚本SHA18e5db5536435f3943f4d67111b5f312257a8e3b934180ef1f9176a88834d969核对后执行。停写备份/srv/research-openim-backups/key-preview-20261020-20261020T011803Z/research.tar.gz，SHA7addef0a868c868be4a1bc2a314835c800c57963b09bfd9a4afa09721cbdf26b；91表/6原件的恢复副本与原库摘要一致，schema022/完整性/外键/迁移checksum通过，无迁移。启动后已有模型配置及默认选择整表哈希一致，未解密生产完整Key；首次摘要诊断换行语法错误在查询前失败，initial.stderr保留，修正后通过。
+
+原Compose加仅API/worker镜像覆盖，up --no-build --no-deps成对切换；其余六组件容器ID/镜像/状态及科研服务环境哈希/命令/挂载/内存/端口/重启设置不变。最终实际inspect两者同新镜像、running/restart0/无OOM、API healthy。09:19北京时间独立公网ready200/contract0.25.1，database/storage/authentication ok；新路由匿名401、X-Contract-Version0.25.1、Cache-Control no-store。harness仍not_verified，不称真实供应商、生产本人Key响应或用户现装界面已验收。用户用0.10.19重新进入模型设置即可获取已有Key预览，不需重填Key。
+
+Git外证据.runtime/key-preview-deploy-20261020，服务器ops/key-preview-20261020-v2包含详细收据、备份/基线/原件摘要及初次失败。Workbench文件管理指旧过期会话导致上传失败，改用已连接Shell传输，payload SHA6dfc6a3a2f113f13cb797d1fb4dff1b97bf01a4a342d8711b7edcefa6a6621b1核对；未绕过认证或新建SSH凭据。旧镜像、配置和备份保留；回退须先查当前状态并成对恢复旧镜像，不覆盖新业务数据。
+
+更新当前状态、部署记录、实现说明、路线图、README/版本说明和桌面安装说明；0.10.19 EXE重新读回仍87,419,799字节/ad49a0c4原SHA，未重制/代安装/关闭用户客户端。GitHub actual latest本次再次核对v0.6.0；无公开Release、更新源、公共目录、Nginx/OpenIM或网络/认证变动。产品源未变，沿用已完成680项CI，本批执行部署镜像隔离检查、备份/生产及文档检查，不为部署重复客户端全量构建。资料库方案仍只完成调研，尚未实施。
+
+最终222份Markdown/10份Skill及Git diff检查通过；桌面安装说明已读回新部署状态，安装器仍为原字节数/哈希。Git外deployment-receipt.json从实际终端可见收据保存，public-final.json为独立公网响应；保留失败日志和空白截图，不用其冒充通过证据。后续维护以ops/key-preview-20261020-v2为当前镜像覆盖入口，原47c42ac Compose独立保留供同schema切回。

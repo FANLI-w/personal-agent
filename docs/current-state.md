@@ -2,7 +2,9 @@
 
 更新日期：2026-10-20（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 最新批次0.10.19：保存后的模型身份与密钥脱敏预览，后台待确认
+2026-10-20完成[课题组资料与素材库方案调研](development/lab-knowledge-library-research.md)：对照Zotero、飞书、eLabFTW/openBIS、Nextcloud、Dify/RAGFlow及Docling官方资料与现有代码，建议自建科研条目/关系/权限/任务复用业务层，复用成熟存储解析检索组件，分阶段验证。**资料库新方案仅调研，尚未实现或验证真实语料质量**；该调研没有改产品、打包或部署。随后用户单独授权的Key预览后台部署见下文。调研起始Git为干净release/acceptcat-0.10.19 / 69d8822，已有调研文档修改在部署时保留。
+
+## 最新批次0.10.19：保存后的模型身份与密钥脱敏预览，后台已部署
 
 实际从干净release/acceptcat-0.10.18 / 513dd3e接续0.10.19，产品/API/契约和包固定 **4bc8d1f7cde314a1a9a99d3360b49a8647d43497**。模型设置顶部显示真实默认型号/服务商/配置名；左侧列具体模型，已保存Key只读显示首尾、更换使用单独空输入框，遮罩/空白不能误提交。保存改名/型号保留原Key；移除后清预览，后台版本/账号隔离。[实现和范围](development/saved-model-preview.md)。保留0.18任务规划与既有功能，未切main或覆盖修改。
 
@@ -12,7 +14,7 @@
 
 **Windows0.10.19已制作并复制桌面** `C:/Users/luo/Desktop/AcceptCat_0.10.19.exe`及说明，**87,419,799字节 / SHA256 ad49a0c4ae921a0048152d7e9e651fb4addf49f1a269eb5b5fb4241da5b6b650**。17JS/8CSS逐字节、真实NSIS载荷与隔离原生启动通过，旧日志警告保留；未代安装/关现装/删旧数据。[交付与待部署边界](deployment/acceptcat-0.10.19.md)，证据Git外 `.runtime/model-config-summary-20261019`，根design-qa.md更新。
 
-**后台部署已提出明确确认，当前待用户答复；未部署、未公开发布。** 公网本次ready200仍contract0.25.0，db/storage/auth ok、harness not_verified。47c42ac/b78613b5沿前批inspect，本批无容器新inspect；existing Key首尾须实际部署0.25.1新路由，新客户端安装不等于后台同步。独立backend-preview.patch/source.zip供评审，实施前核对生产差异并保留回退镜像，不能以整条桌面分支覆盖生产。实际公开latest仍v0.6.0，无Release/更新源/目录操作。
+**用户明确授权后，本人只读预览接口已独立部署，未公开发布。** 生产基于实际核对的47c42ac/b78613b5镜像，只覆盖受测4bc8d1f的四个API/契约源文件；新镜像8defb397，OCI revision明确标为47c42ac完整SHA+key-preview.4bc8d1f，不是整条桌面分支覆盖生产。[部署、备份和失败记录](deployment/key-preview-20261020.md)。schema022无迁移，91表/6原件停写备份及恢复副本一致，启动后已有凭据与默认选择整表哈希未变；其余六个服务、运行设置不变。首次审计只读挂载失败后已恢复旧服务，修挂载后第二次成功，日志保留。新镜像隔离真实HTTP通过首尾/重启/匿名401/跨账号404/旧响应兼容；公网09:19 ready200/0.25.1、db/storage/auth ok，新路由匿名401，harness仍not_verified。未读取生产完整Key或调用模型；使用0.10.19重新进入模型设置即可读取已有Key预览，无需重填。实际公开latest再次核对仍v0.6.0，无Release/更新源/目录操作。证据Git外 `.runtime/key-preview-deploy-20261020`。
 
 [草稿PR72](https://github.com/luoyan96/personal-agent/pull/72)已推送、创建并附当前任务，base release/acceptcat-0.10.18；首读86ec606三项Foundation均QUEUED，不称远端已通过。220份Markdown/10份Skill及diff检查通过。4956/4957合成预览保留，30304/24972完整Node命令见preview-retained.json；不是正式部署。桌面最终包87,419,799字节/ad49a0c4 hash及说明已读回；包和API源码仍固定4bc8d1f。
 

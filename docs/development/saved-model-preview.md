@@ -26,4 +26,4 @@ Git外证据 `D:/deepseek-agent/.runtime/model-config-summary-20261019`。首轮
 
 ## 部署状态
 
-源码及Windows0.10.19已制作；后台部署已提出明确确认，当前待答复。公网本次ready200仍为contract0.25.0，db/storage/auth ok、harness not_verified；本批未新inspect生产容器，也未更改现有Key。独立backend-preview.patch与backend-preview-source.zip供评审，生产实施前仍须核对实际源码/镜像，按原部署目录备份并保存回退版本。没有公开Release或更新源操作。
+源码及Windows0.10.19已制作；2026-10-20用户明确同意后，[本人只读预览接口已独立部署](../deployment/key-preview-20261020.md)。生产是47c42ac基线加4bc8d1f的四源文件补丁，新镜像8defb397/contract0.25.1，不是整条桌面分支。停写备份/恢复副本、schema022及已有凭据/默认选择哈希通过，无迁移；隔离合成账号HTTP通过本人预览/重启/401/跨账号404/旧响应兼容，公网ready200和新路由401另验。首次审计挂载失败恢复旧服务后修正重试成功，失败日志保留。harness仍not_verified，没有生产完整Key读取、真实模型调用、公开Release或更新源操作。
