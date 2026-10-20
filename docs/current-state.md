@@ -4,6 +4,8 @@
 
 ## 最新批次0.10.22：课题组资料与资料 Agent，安装包已制作
 
+评审入口：[草稿PR75](https://github.com/luoyan96/personal-agent/pull/75)，base `fix/desktop-network-0.10.21`，已推送并附任务，未合并；文档cb729ae远端Foundation首读一项QUEUED、两项IN_PROGRESS，不称已通过。
+
 接续实际干净 `fix/desktop-network-0.10.21` / `3d5270c`，新分支 `feat/library-agent-0.10.22`，产品固定 **df184820f44f023dc8cb0363298b13a41df39e2f**。[交付与验收](deployment/acceptcat-0.10.22.md)。工作台/页标题统一“课题组资料”，新增资料Agent入口：先明确选择获准集合，再创建/复用本人Agent，保存范围并进入普通聊天；沿用真实片段检索和来源回执。私人集合不自动共享，每人使用自己的模型和私聊；不自动同步飞书、执行代码或搬移原文件。旧表单不能覆盖另一处的新范围。
 
 Windows x64 **C:/Users/luo/Desktop/AcceptCat_0.10.22.exe** 已制作，**87,432,807字节**，SHA256 **e696d8ad798ca36df5a27fa35375d33dc315d160ca22a9e76ad1184d2219a179**。实际NSIS的EXE/ASAR、18JS/8CSS逐字节、52运行包/55装配包、旧功能及无QA内容通过；隐藏隔离原生启动通过，旧electron-log提示保留。没有代安装、关闭用户客户端或公开发布。

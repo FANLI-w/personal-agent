@@ -1192,3 +1192,5 @@ Browser插件未列出，用已有CUA内置浏览器及Playwright。1280×720真
 Windows0.10.22 NSIS87,432,807字节，SHA256 e696d8ad798ca36df5a27fa35375d33dc315d160ca22a9e76ad1184d2219a179，已复制C:/Users/luo/Desktop/AcceptCat_0.10.22.exe。18JS/8CSS逐字节、52运行包/55装配包、旧联网/飞书/规划/模型/任务与品牌/无QA内容通过；实际NSIS内ASAR d4a93fb9799170742822d27edd06b0ac9dc7412b9884379ac381e706b5de956c、EXE 5569e09310601bebdf348c1c6b4e098de2808440582a3c3618c5f76efebb425c与受测目录一致，隐藏隔离原生启动OPENIM_ELECTRON_READY。旧electron-log initialize提示保留。未代安装、关闭用户客户端或删除旧包/用户数据。
 
 公开ready实读200/0.26.0，harness仍not_verified；本批未新inspect镜像，后台沿前批image4ee12e77 / 47c42ac+key-preview.4bc8d1f+feishu.2bbcfbc / schema023，飞书0.1.0仅罗岩。无后台部署/迁移/密钥/飞书权限、公开Release或更新源变更，公开latest核对仍v0.6.0。代码/包/用户安装/后台/公开发布分别记录。[交付详情](deployment/acceptcat-0.10.22.md)，Git外.runtime/library-agent-20261020保留截图、合成HTTP收据、日志、首次失败与最终安装载荷证据。下一步围绕获准真实资料评价检索/出处与中文回答，再按样本讨论分类和增量同步。
+
+收尾：文档cb729ae已推送，创建并附[草稿PR75](https://github.com/luoyan96/personal-agent/pull/75)，base fix/desktop-network-0.10.21，未合并。227份Markdown/10份Skill及diff检查通过；该head远端Foundation首读一项QUEUED、两项IN_PROGRESS，未声称通过。安装说明在桌面；本批合成页面和4934/4935服务收尾停止，未触碰Edge用户维护页、现装进程或私人数据。
