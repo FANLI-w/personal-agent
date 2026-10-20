@@ -4,6 +4,8 @@
 
 ## 最新批次0.10.21：桌面系统代理联网修复，安装包已制作
 
+评审入口：[草稿PR74](https://github.com/luoyan96/personal-agent/pull/74)，基于飞书试点分支/PR73，已推送并附本任务，尚未合并。
+
 从干净飞书试点head `94aca6b` 新建 `fix/desktop-network-0.10.21`，产品固定 **543dc9cb4716da413fd23afa5ceb2a5154ed4dcb**。现装0.10.20的地址正确、后台正常，脱敏日志有约21秒超时/重置；同机Electron22对比Node8次有1次超7秒、Chromium8次均200，系统代理已存在。桌面API转发改用Chromium net，保留固定服务、会话/CSRF/取消/截止边界；真实22版压缩、空POST和事件顺序已复验，不新增写请求自动重发。[诊断与交付](deployment/acceptcat-0.10.21.md)。
 
 Windows x64 **C:/Users/luo/Desktop/AcceptCat_0.10.21.exe** 已制作，**87,425,242字节**，SHA256 **061a5e162c74c877dd65b95d19222aa9b65e0084a65548c317fe3f9b437ee8f7**。实际NSIS载荷、17JS/8CSS、52运行包/55装配包、新调用点与旧功能核对通过，隐藏隔离原生启动通过，既有electron-log提示保留。未代安装/退出旧版或清理数据，用户需覆盖安装获得修复；无公开Release/更新源变更。

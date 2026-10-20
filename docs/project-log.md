@@ -1178,3 +1178,5 @@ Browser插件未列出，用已有CUA内置浏览器及Playwright。1280×720真
 最终Windows0.10.21 NSIS87,425,242字节，SHA256 061a5e162c74c877dd65b95d19222aa9b65e0084a65548c317fe3f9b437ee8f7，已复制C:/Users/luo/Desktop/AcceptCat_0.10.21.exe。17JS/8CSS字节、52运行包/55装配包、transport调用点、旧功能/品牌与无QA内容核对通过；真实NSIS的ASAR/EXE与受测目录相同，分别7461a96f31dea858b17c422b4b89c34ce73bd87b60377c50faba67994d7d5eda / a39f6d9576c4ac430f4a34c7bca99386692539adfe17eb7b7ff2d18d2df355d8。隐藏独立数据目录原生启动通过，旧electron-log initialize警告保留。未代安装、退出现装或删除旧包/用户数据，用户覆盖安装后生效。
 
 本批无后台、迁移、密钥/飞书权限或公开Release/更新源变更。后台仍47c42ac+key-preview.4bc8d1f+feishu.2bbcfbc / image4ee12e77 / 0.26.0 / schema023，飞书0.1.0仅罗岩；真实OAuth、私人选定文档及用户覆盖安装后的长期稳定性继续验证。更新交付/状态/README/产品说明/路线图，并修正飞书实现文档遗留的“本批不部署”措辞，保留历史部署事实。
+
+收尾：文档67963eaf80ce754964c650c645e55a18d182ea7c已推送，创建并附[草稿PR74](https://github.com/luoyan96/personal-agent/pull/74)，base feat/feishu-readonly-pilot，未合并。226份Markdown/10份Skill及diff检查通过；该head远端Foundation三项首读IN_PROGRESS，不称已通过。桌面包哈希和安装说明已读回，完整交付收据留Git外。合成浏览器页、4930/4931服务及本批独立Electron helper已停止，现装0.10.20、旧包及用户数据保留；真实公开latest核对仍v0.6.0，无发布操作。产品543dc9c及最终安装器保持。
