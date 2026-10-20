@@ -1231,3 +1231,5 @@ Windows包87431310字节，SHA256 6512d67a1508d0ea9417e6e05be3b98c48c85e3f296e1b
 停接收并排空后备份、恢复副本和上线前94表/6原件逐项一致，原Key密文/默认设置整表哈希保持。首轮审计deepStrictEqual误判SQLite null prototype和JSON对象，自动恢复旧服务，没有还原覆盖数据；原错误/脚本/备份在ops/attempt1。修正审计后原恢复副本验证通过，第二轮重新备份切换17:40:05—17:40:18；这13秒不含首轮回退维护。最终备份/srv/research-openim-backups/harness-20261020-20261020T094007Z，包SHA256 1cb070f6652899670d9dca92dfa302255b45d3efbf37113e26a44c8ab31ad3ad。
 
 公网实读ready200/0.26，DB/storage/auth ok，harness仍not_verified；人工真实探针单独记录：复用本人现有默认deepseek-flash，仅合成短句，DSH0.2.1-rc.2返回OK/流式2字符，23输入/1输出tokens、1016ms、费用未知。无私人历史、资料、真实飞书文档或正式任务；千问/豆包未真厂商验收。没有修改/输出Key、飞书范围或公开Release，客户端不用重装。旧镜像及两轮备份留存可回退；服务器ops/harness-0.2.1-rc.2-20261020和Git外.runtime/harness-upgrade-20261020保留失败及最终证据，继续真实科研质量验证。
+
+部署记录b64b4f3已推送，230份Markdown/10份Skill及diff检查通过。[草稿PR78](https://github.com/luoyan96/personal-agent/pull/78)已创建并附任务，基于fix/chat-sidebar-resize-0.10.24、未合并；该head远端三项Foundation首读IN_PROGRESS。现有Edge Workbench保持连接，无遗留本机测试服务，未关闭用户客户端。

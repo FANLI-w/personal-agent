@@ -4,6 +4,8 @@
 
 ## 最新后台批次：DSH0.2.1-rc.2已部署
 
+评审入口：[草稿PR78](https://github.com/luoyan96/personal-agent/pull/78)，base `fix/chat-sidebar-resize-0.10.24`，已推送并附任务、未合并；b64b4f3远端Foundation三项首读IN_PROGRESS，不称已通过。
+
 用户要求更新后台。从实际干净`fix/chat-sidebar-resize-0.10.24` / `46b531f`新建`chore/harness-0.2.1-rc.2`，产品固定 **47ec4969ec83c751053f229daac6b20f3271cb39**。[部署与回退](deployment/harness-0.2.1-rc.2-20261020.md)。官方LLM/provider精确**0.2.1-rc.2**，Cordis**4.0.5**；空工具/原模型选择、业务权限及contract0.26/schema023保持，无迁移。Windows0.10.24包未变，无需重装；无公开Release/飞书权限或密钥修改。
 
 生产API/worker已配对更新，镜像 **research-openim-api:harness-0.2.1-rc.2-20261020** / **sha256:34bba4d03a5d714d731c248302f1484d47382c52e833d004dda68c88e01c5130**；组合revision `47c42ac+key-preview.4bc8d1f+feishu.2bbcfbc+harness.0.2.1-rc.2`，仅五源文件覆盖旧feishu镜像，未整体部署桌面分支。实际running/restart0、API healthy；其他6服务ID/镜像/状态保持。
