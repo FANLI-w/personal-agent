@@ -467,9 +467,9 @@ function LibraryChat({
             </article>
           ))}
           {readingFeishu && (
-            <p role="status">
+            <div role="status">
               <Spin size="small" /> 正在用你的飞书授权读取这份文档…
-            </p>
+            </div>
           )}
           {generating && (
             <div className="library-chat-message role-model">
@@ -479,9 +479,9 @@ function LibraryChat({
                   <small>正在生成，最终回答与来源以完成后的回执为准。</small>
                 </>
               ) : (
-                <p role="status">
+                <div role="status">
                   <Spin size="small" /> 正在读取获准片段并准备回复…
-                </p>
+                </div>
               )}
             </div>
           )}
