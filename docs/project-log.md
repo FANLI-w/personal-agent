@@ -1126,3 +1126,21 @@ Git外证据.runtime/key-preview-deploy-20261020，服务器ops/key-preview-2026
 更新lab-knowledge-library-research.md、当前状态和路线图：优先保留飞书作为资料主要来源，AcceptCat先做用户授权、选定范围、原文引用和任务衔接；完整自建方案保留为长期参考，前估工期不套用连接器。身份与课题组/任务权限仍需绑定，授权失效/缓存/版本和PDF/PPT解析需样本验证；成果写回、群机器人及双向任务同步后置，未获对外写入/消息授权。未创建应用、索取密钥、安装SDK/MCP、绑定账号、读取课题组私人资料、打包、部署或公开发布。生产沿前批47c42ac+key-preview.4bc8d1f / 8defb397 / 0.25.1 / schema022，桌面仍原0.10.19包，本批未重新探测生产。仅文档检查，无产品代码改动，不重复功能CI。
 
 222份Markdown/10份Skill及Git diff检查通过；接入身份与资料范围尚未在用户真实飞书组织验证，不以官方可用接口等同于已接通。保留既有资料库与当前已交付任务功能。
+
+## 2026-10-20：飞书选定文档只读首批实现与Windows0.10.20候选包
+
+用户同意从连接课题组既有飞书开始；从实际干净release/acceptcat-0.10.19 / b497bde01cff96c0a24b5f3422f29485a1581e95创建feat/feishu-readonly-pilot，先读AGENTS/当前状态/最新日志/README/路线图，没有切main或覆盖修改。产品代码固定2bbcfbce2e369fe8b64a92caf0dd22350a22b870。
+
+实现本人OAuth/PKCE、会话/空间/应用绑定的一次性state、加密access token及预览、选定docx或wiki/docx纯文本预览。保存前重读飞书权限/文档ID/修订/正文哈希并再次核对集合版本，仅写本人私人集合；沿用不可变资料版本和Agent显式绑定，不自动授权Agent或加入课题组。选取最多2200字符连续原文进入新的规划输入框，附来源/读取时间/修订/副本；不会自动发送模型或建立任务。外部网络只到固定官方主机，不跟重定向，无tenant token或整库遍历。首批无offline_access和refresh token，到期重新授权。schema023仅新增三张飞书表，contract0.26.0；默认配置不启用，新增可选Compose覆盖和服务器0600 secret引入，无SDK/MCP新依赖。
+
+核对官方OAuth参数与维护方MCP OAuth实现，docx/wiki字段与维护方Node SDK生成接口。React和前端验收技能用于实现/检查；Browser插件未列出，使用已有CUA内置浏览器及Playwright。真实React/HTTP/SQLite和合成飞书提供方实际完成：空集合入口、合成回调身份、文档预览、新建私人集合、勾选保存、连续原文进入新规划对话。1280×720截图与qa-final.json保留；未读真实课题组资料、未调用真实模型或创建正式任务。既有AntD/Router弃用提示保留；热更新夹具缺getPlatform首败已补齐夹具并完整重载，不改生产原生接口。
+
+首次全量CI发现旧schema22硬编码和旧库夹具未移除新表；只修正测试重建路径/预期版本，未改历史迁移校验和或生产数据。旧聊天/助手/连接定向64项通过。最终pnpm run ci：693项/55文件、2项实际生产CLI/HTTP、构建/类型/契约/缺DB/进程/生产夹具排除检查全部通过；客户端类型与6项规划helper通过。失败ci.log、迁移定向日志、ci-final.log均留在Git外.runtime/feishu-pilot-20261020。
+
+Windows x64 NSIS0.10.20已制作并复制桌面C:/Users/luo/Desktop/AcceptCat_0.10.20.exe，87,422,226字节，SHA256 7abe46bad498dd58eac626b4325d8f966c666d83e38454d8de00909dca2eb9ad。17JS/8CSS逐字节匹配生产dist，55包装配/ASAR顶层52包与旧品牌核对，飞书入口存在、合成QA未打包。实际NSIS的ASAR和EXE与受测载荷匹配；ASAR a2d8bcb54ec37725adcc7a06bfc777e2e09269d152483cdfaede21fecb2ead7d，EXE 6d2bd192942ddaa30f7b59222b987011db655a09765057ceb39917fc6f687500。独立数据目录隐藏原生启动通过，旧electron-log初始化警告保留。未代安装、关闭现装、删除旧包或用户数据，桌面提供候选安装说明。
+
+用户说明是飞书超级管理员且Edge已登录；先准备应用表单，再得到明确“允许创建并配置上述只读权限”的操作确认后创建企业自建应用。三个scope均为用户身份、已开通、范围与用户权限一致；精确回调https://chat.acceptcat.com/api/v1/feishu/callback已保存。0.1.0草案已保存，状态待申请、仅罗岩可用、对外共享关闭，最终发布弹窗已取消。App Secret未揭示、读取、传输或保存到服务器；尚无真实OAuth和私人文档试读。应用ID/版本页/截图收据只在Git外。未添加机器人、消息或写入权限。
+
+本批未部署新后台或执行生产迁移。独立公网readiness为0.25.1，DB/storage/authentication ok，Harness not_verified，production-before.json保留。旧生产实际组合仍为47c42ac+key-preview.4bc8d1f / image8defb397 / schema022；与候选代码比较，额外目录种子文件不能顺带上线。后续另行批准后先备份及恢复副本、演练022→023并核旧表/原件/凭据，再配对更新API/worker、引入服务器secret、仅本人发布飞书试点，最后由用户选定真实文档授权验证。旧schema022镜像不能直接启动新库，不盲目恢复覆盖新增业务记录。
+
+更新当前状态、实现与候选交付说明、产品状态、README和路线图。实际GitHub latest再次核对仍v0.6.0；本批无AcceptCat公开Release、上传、更新源、公共目录或其他Skill发布。代码/本地合成检查/安装包/飞书外部配置/后台部署/公开发布分别记录。
