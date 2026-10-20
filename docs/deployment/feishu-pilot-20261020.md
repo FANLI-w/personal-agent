@@ -36,6 +36,8 @@ App Secret从该飞书应用的可见凭证控件取得，立即恢复掩码，�
 
 构建前通过693项/55文件本地CI及2项生产CLI/HTTP。部署镜像的网络隔离、无生产挂载真实HTTP冒烟通过合成OAuth/PKCE、重放400、匿名401、账号隔离、令牌加密、wiki/docx预览、私人副本/幂等导入、断开及旧Key预览。首败因新冒烟脚本漏开B3_AI_ENABLED，修正夹具后通过，原失败保留；未改产品代码或重建安装包。
 
+远端ba6dc89的run39360378751：Ubuntu22/24首轮成功，Windows既有execution A12用例5000ms超时，仅重跑失败节点后5分56秒成功，三平台最终通过；没有调整测试时限。后续部署记录提交仅改文档，内容/链接检查225份Markdown、10份Skill通过，新文档head的CI分别跟踪。
+
 公网独立验证：ready **200 / contract0.26.0**，database/storage/authentication ok，Harness **not_verified**；飞书status匿名401，旧key-preview匿名401，无参数callback400，no-store/CSP/no-referrer正确。未调用模型，没有真实OAuth、私人资料或科研质量验证。三张飞书表在部署后检查时均0条。
 
 Git外证据 `D:/deepseek-agent/.runtime/feishu-pilot-20261020`：公开探测JSON、源文件manifest、迁移审计/部署/检查脚本、`production-deployed.png`及`feishu-published-self.png`；原包与合成验收证据保留。服务器完整日志及仅含哈希的数据库基线位于 `/opt/research-openim/ops/feishu-20261020`，完整数据库备份留服务器，不传出私人原件。Workbench初次连接WebSocket失败，返回登录后使用已有免密配置重连成功，没有新建SSH凭据或改网络。

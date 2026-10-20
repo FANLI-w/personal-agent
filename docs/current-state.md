@@ -18,7 +18,7 @@ contract **0.26.0** / schema **023**，新增三张飞书表，不改旧业务�
 
 **后台已配对部署API/worker，contract0.26.0 / schema023。** 组合修订 `47c42ac+key-preview.4bc8d1f+feishu.2bbcfbc`，镜像 `research-openim-api:feishu-20261020` / `sha256:4ee12e77f80da2e196e6640980dbdb521a1bfa5e168ac1ced6012f387e63ea0d`；仅覆盖12个运行源码，生产原公共目录种子保持。新备份及恢复副本演练022→023→022→023通过，91旧表/6原件逐项哈希一致；线上显式迁移后、启动前再次一致，启动后个人/课题组模型凭据与默认选择整表哈希未变。其余六服务和既有设置不变，API仅新增飞书环境变量/只读secret挂载。公网ready200、DB/storage/auth ok、Harness not_verified；飞书匿名401、无效callback400并带no-store/CSP/no-referrer；服务器配置检查configured:true。详见[部署与回退记录](deployment/feishu-pilot-20261020.md)。
 
-保留隔离HTTP首败：测试脚本漏开B3_AI_ENABLED，修正后通过飞书OAuth/预览/私人导入幂等/旧Key预览，不改产品代码。GitHub ba6dc89首轮Ubuntu22/24成功，Windows既有execution A12用例5秒超时，已仅重跑失败节点，状态以远端记录为准。真实OAuth、用户选定文档、科研质量仍待本人在0.10.20操作验证；飞书应用发布与AcceptCat公开发布分开，本批无Release/更新源变更。Git外证据 `.runtime/feishu-pilot-20261020`。
+保留隔离HTTP首败：测试脚本漏开B3_AI_ENABLED，修正后通过飞书OAuth/预览/私人导入幂等/旧Key预览，不改产品代码。GitHub ba6dc89首轮Ubuntu22/24成功，Windows既有execution A12用例5秒超时，仅重跑失败节点后5分56秒成功，run39360378751三平台最终通过，未改测试时限。部署文档6fde7a7已推送，225份Markdown/10份Skill及diff检查通过；其新一轮远端文档head CI另行运行。真实OAuth、用户选定文档、科研质量仍待本人在0.10.20操作验证；飞书应用发布与AcceptCat公开发布分开，本批无Release/更新源变更。Git外证据 `.runtime/feishu-pilot-20261020`。
 
 ## 最新批次0.10.19：保存后的模型身份与密钥脱敏预览，后台已部署
 
