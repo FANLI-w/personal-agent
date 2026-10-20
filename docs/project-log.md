@@ -1217,3 +1217,5 @@ Windows0.10.23 NSIS87,431,664字节，SHA256 11f46da4811d5ce68e489bcaf5fd9888ff8
 从干净2a30b65接续，分支fix/chat-sidebar-resize-0.10.24，产品2b5c0db8022bbd392333bb1649ed7024b341e06c。[交付记录](deployment/acceptcat-0.10.24.md)。修正桌面固定248像素，新增拖动/本机记忆/双击复位/键盘与窄窗约束。渲染/主进程类型、34项、实际React拖动/刷新与重开/搜索和切换会话通过；1280×720视口及820像素容器，不称多真实窗口或消息质量已验。初始编译超时、分页/HMR夹具错误保留，最终新页仅两项Router警告。Git外D:/deepseek-agent/.runtime/chat-resize-20261020。
 
 Windows包87431310字节，SHA256 6512d67a1508d0ea9417e6e05be3b98c48c85e3f296e1b17066de5a6cfa38e54，桌面AcceptCat_0.10.24.exe；实际NSIS的EXE/ASAR、18JS/8CSS、52运行包/55装配及隐藏隔离启动通过，旧electron-log提示保留。未代安装/退出用户客户端/删数据；无后台、迁移、密钥、飞书或公开发布，公开latest实读v0.6.0。后台沿0.26/schema023、image4ee12e77及飞书本人试点，未重新inspect。共享代码未改，不重复693项CI；继续真实科研材料验证。
+
+交付说明16abb76已推送，229份Markdown/10份Skill与diff检查通过。[草稿PR77](https://github.com/luoyan96/personal-agent/pull/77)基于fix/library-agent-dock-0.10.23，已附任务、未合并；该head远端Foundation首读两项IN_PROGRESS、一项QUEUED，不称已通过。临时QA浏览器与4938/4939服务已关闭。

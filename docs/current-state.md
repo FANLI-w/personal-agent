@@ -4,6 +4,8 @@
 
 ## 最新批次0.10.24：聊天列表拖动宽度，安装包已制作
 
+评审入口：[草稿PR77](https://github.com/luoyan96/personal-agent/pull/77)，base `fix/library-agent-dock-0.10.23`，已推送并附任务，未合并。文档16abb76远端Foundation首读两项IN_PROGRESS、一项QUEUED，不称已通过。
+
 接续实际干净 `fix/library-agent-dock-0.10.23` / `2a30b65`，新分支 `fix/chat-sidebar-resize-0.10.24`，产品固定 **2b5c0db8022bbd392333bb1649ed7024b341e06c**。[交付与验收](deployment/acceptcat-0.10.24.md)。聊天列表分隔条支持左右拖动、本机记忆、双击复位及键盘调整；220—480像素，窄窗保留正文空间并在恢复宽窗后还原偏好。
 
 Windows x64 **C:/Users/luo/Desktop/AcceptCat_0.10.24.exe**，**87,431,310字节**，SHA256 **6512d67a1508d0ea9417e6e05be3b98c48c85e3f296e1b17066de5a6cfa38e54**。生产构建、实际NSIS载荷、18JS/8CSS逐字节、52运行包/55装配包和隐藏隔离原生启动通过；没有代安装或公开发布。
