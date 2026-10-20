@@ -1245,3 +1245,5 @@ Windows包87431310字节，SHA256 6512d67a1508d0ea9417e6e05be3b98c48c85e3f296e1b
 Windows0.10.25已制作并复制C:/Users/luo/Desktop/AcceptCat_0.10.25.exe，87,433,132字节，SHA256 5f33fee28739a4282a819d717ab1791371f1837403d6047cf3903c9592a5a015。实际NSIS内ASAR 615490cc68cd3a853d75895cac34b1d0299bf4c39fe542990927c88602803857、EXE d22884d3bab2ec0f3c76504deceb1cb0c9dfaf2240582088c92d085bf9a262f4与受测目录一致，18JS/8CSS逐字节、52运行包/55装配包、新IPC/校验模块、旧功能与品牌及无QA内容通过；隐藏隔离原生启动OPENIM_ELECTRON_READY，旧electron-log初始化提示保留。未代安装、关闭用户客户端或删除旧包/数据。
 
 纯客户端，无后台部署/迁移/密钥/飞书权限变更；后台沿已部署DSH0.2.1-rc.2、image34bba4d0、contract0.26/schema023，飞书0.1.0仅罗岩，本批未新inspect。GitHub latest实读仍v0.6.0，--publish never，无公开Release或更新源变更。下一步由本人覆盖安装后完成飞书授权与选定真实资料试读，继续资料/规划科研质量验证。
+
+交付记录97e4651已推送，231份Markdown/10份Skill与diff检查通过。[草稿PR79](https://github.com/luoyan96/personal-agent/pull/79)已创建并附任务，base chore/harness-0.2.1-rc.2、未合并；该head远端三项Foundation首读IN_PROGRESS，不称已通过。桌面安装说明已保存，本批创建的两个浏览器页与4948/4949合成服务已关闭，4946原生测试服务已退出；用户Edge维护页、现装进程和私人资料保持。

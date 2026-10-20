@@ -4,6 +4,8 @@
 
 ## 最新桌面批次0.10.25：飞书授权可操作入口，安装包已制作
 
+评审入口：[草稿PR79](https://github.com/luoyan96/personal-agent/pull/79)，base `chore/harness-0.2.1-rc.2`，已推送并附任务、未合并；文档97e4651远端三项Foundation首读IN_PROGRESS，不称已通过。
+
 从实际干净 `chore/harness-0.2.1-rc.2` / `60a6afd` 接续，新分支 `fix/feishu-authorization-entry-0.10.25`，产品固定 **d74a18768e329c70dffa28febd9e8931a621210a**。[交付与验收](deployment/acceptcat-0.10.25.md)。原提示卡只有一行链接可点、通用外开没有失败反馈；改成打开授权按钮、复制备用链接、两步指引、真实检查结果和过期重连。桌面使用等待回执的专用IPC，仅当前主窗口可打开固定飞书只读OAuth入口，并校验当前后台回调。没有证明用户机器的系统浏览器故障根因，不能声称已在用户当前会话完成真实授权。
 
 Windows x64 **C:/Users/luo/Desktop/AcceptCat_0.10.25.exe**，**87,433,132字节**，SHA256 **5f33fee28739a4282a819d717ab1791371f1837403d6047cf3903c9592a5a015**。生产构建、实际NSIS载荷、18JS/8CSS逐字节、52运行包/55装配包和隐藏隔离原生启动通过；包已制作，未代安装或公开发布。
