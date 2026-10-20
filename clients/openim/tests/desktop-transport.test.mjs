@@ -73,6 +73,8 @@ async function fixture(t, respond) {
           queueMicrotask(callback);
         },
         end(_chunk, _encoding, callback) {
+          if (this.chunkedEncoding && !this.body.length)
+            throw new TypeError("Synthetic Electron22 empty chunked stream");
           queueMicrotask(() => {
             callback();
             this.emit("finish");
@@ -84,6 +86,15 @@ async function fixture(t, respond) {
           if (this.aborted) return;
           this.aborted = true;
           this.emit("close");
+        },
+      });
+      let chunked;
+      Object.defineProperty(req, "chunkedEncoding", {
+        get: () => chunked ?? false,
+        set: (value) => {
+          if (chunked !== undefined)
+            throw new Error("Electron22 upload mode can only be chosen once");
+          chunked = value;
         },
       });
       requests.push(req);
@@ -173,6 +184,19 @@ test("a decoded compressed response drops encoding/length metadata and preserves
   assert.equal(r.headers.get("content-encoding"), null);
   assert.equal(r.headers.get("content-length"), null);
   assert.deepEqual(Buffer.from(await r.arrayBuffer()), bytes);
+});
+
+test("an empty POST does not start Electron22's empty chunked upload stream", async (t) => {
+  const f = await fixture(t, (req) =>
+    response(req, 200, { "content-type": "application/json" }, '{"data":true}'),
+  );
+  const r = await fetch(f.server.origin + "/api/v1/synthetic-empty", {
+    method: "POST",
+    headers: { Origin: f.server.origin },
+  });
+  assert.equal(r.status, 200);
+  assert.equal(f.requests[0].chunkedEncoding, false);
+  assert.equal(f.requests[0].body.length, 0);
 });
 test("network failure is bounded, redacted and never automatically repeats a mutation", async (t) => {
   const f = await fixture(t, (req) =>

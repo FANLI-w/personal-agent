@@ -33,7 +33,9 @@ export const desktopTransport: DesktopTransport = (url, options, respond) => {
   }
   // Let Chromium negotiate and decode its own supported content encodings.
   // The local hop below carries decoded bytes, with representation headers fixed.
-  request.chunkedEncoding = !["GET", "HEAD"].includes(options.method ?? "GET");
+  // Electron22's chunked stream crashes when end() has no preceding write.
+  // Enable streaming lazily on the first non-empty body chunk.
+  let uploadStarted = false;
   let reply: DesktopResponse | undefined,
     ended = false;
   const safeError = (error: unknown) => {
@@ -52,6 +54,14 @@ export const desktopTransport: DesktopTransport = (url, options, respond) => {
     autoDestroy: false,
     write(chunk, encoding, callback) {
       try {
+        if (!chunk.length) {
+          callback();
+          return;
+        }
+        if (!uploadStarted) {
+          request.chunkedEncoding = true;
+          uploadStarted = true;
+        }
         request.write(chunk, encoding, callback);
       } catch (error) {
         callback(safeError(error));

@@ -64,7 +64,7 @@ export function serviceErrorMessage(
   route?: string,
 ): string {
   if ((status === 502 || status === 504) && ["SERVICE_UNAVAILABLE", "HTTP_ERROR"].includes(code))
-    return "与科研服务的连接中断，请检查网络或系统代理后重试；当前内容已保留。";
+    return "连接中断，请检查网络或系统代理后重试。";
   if (
     status === 404 &&
     ["NOT_FOUND", "HTTP_ERROR", "NOT_IMPLEMENTED"].includes(code) &&
