@@ -4,6 +4,8 @@
 
 ## 最新批次0.10.20：飞书选定文档只读试点，代码与候选包已完成
 
+评审入口：[草稿PR73](https://github.com/luoyan96/personal-agent/pull/73)，基于release/acceptcat-0.10.19，已附本任务；代码与记录已推送，尚未合并。
+
 从实际干净 `release/acceptcat-0.10.19` / `b497bde01cff96c0a24b5f3422f29485a1581e95` 新建 `feat/feishu-readonly-pilot`；产品代码固定 **2bbcfbce2e369fe8b64a92caf0dd22350a22b870**。用户同意优先连接课题组已有飞书，[首批实现与边界](development/feishu-readonly-pilot.md)：资料库连接入口、本人 OAuth/PKCE、选定 docx 或 wiki/docx 纯文本预览、确认保存私人文字副本、连续原文片段带入新的任务规划对话。沿用资料库版本/引用与 Agent 显式集合绑定；没有知识库全量同步、自动授权 Agent、成果写回或群消息。
 
 contract **0.26.0** / schema **023**，新增三张飞书表，不改旧业务表。首批不申请 offline_access、不过期自动刷新，按令牌返回时限重新授权。保存前重读权限/修订/哈希，账号/空间/会话/连接变化拒绝迟到响应；密钥和令牌不下发客户端，预览加密、十分钟、每人最多五份。默认未配置时显示真实缺少配置状态。
