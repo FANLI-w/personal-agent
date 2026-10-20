@@ -4,6 +4,8 @@
 
 ## 最新桌面批次0.10.26：资料 Agent 直接读飞书，安装包已制作
 
+评审入口：[草稿PR80](https://github.com/luoyan96/personal-agent/pull/80)，base `fix/feishu-authorization-entry-0.10.25`，已推送并附任务、未合并；文档d34f59c远端三项Foundation首读IN_PROGRESS，不称已通过。
+
 从实际干净 `fix/feishu-authorization-entry-0.10.25` / `d999864` 接续，新分支 `feat/feishu-library-chat-0.10.26`，产品最终 **96780bcdc7385e27ebd55ba6aff64169ded1cd06**。[交付与边界](deployment/acceptcat-0.10.26.md)。连接后主操作“去和资料 Agent 聊”，返回底部输入并保留问题；发送链接和需求，经本人飞书授权读取实际纯文本快照，复用本人私聊文件阅读，原地回答/追问并显示真实读取范围。导入资料集合变为可选，不再前置。首次仍需具体docx/wiki文档链接，一次一份，暂不按名称搜整库。
 
 Windows x64 **C:/Users/luo/Desktop/AcceptCat_0.10.26.exe**，**87,434,668字节**，SHA256 **0b130ef385acc1599b1446af6c0e9aa7419816aeab8e5827a7119c22b83612ab**。最终18JS/8CSS逐字节、52运行包/55装配包、实际NSIS载荷与隐藏隔离启动通过；未代安装或公开发布。

@@ -1261,3 +1261,5 @@ Windows0.10.25已制作并复制C:/Users/luo/Desktop/AcceptCat_0.10.25.exe，87,
 最终Windows0.10.26已制作并复制C:/Users/luo/Desktop/AcceptCat_0.10.26.exe，87,434,668字节，SHA256 0b130ef385acc1599b1446af6c0e9aa7419816aeab8e5827a7119c22b83612ab；实际NSIS内ASAR 1a99e2af9ae320d8dbae55b83c6c631d74089dca8b2a3deaf43a9fe7d20e943d、EXE 8bde950ea3dddaf68ab758ef1ebbe49628a008268cb7f23585d86d027daee29d与受测目录一致。18JS/8CSS逐字节、52运行包/55装配、新快照分支与旧功能/品牌/无QA内容、隐藏隔离原生启动通过，旧electron-log提示保留。未代安装、退出用户客户端或删除旧包/数据。
 
 本批无需后台同步/部署/迁移/新飞书权限，未改密钥、模型配置或更新源；后台沿已部署DSH0.2.1-rc.2、image34bba4d0、contract0.26/schema023，飞书0.1.0仅罗岩，本批未新inspect。公开latest实读v0.6.0，--publish never，无公开Release。下一步本人覆盖安装后用选定资料验证真实阅读和中文回答，再根据需求研究按名称查找。
+
+交付记录d34f59c已推送，232份Markdown/10份Skill与diff检查通过。[草稿PR80](https://github.com/luoyan96/personal-agent/pull/80)已创建并附任务，base fix/feishu-authorization-entry-0.10.25、未合并；该head三项Foundation首读IN_PROGRESS，不称通过。桌面安装说明已保存，三个合成浏览器页及4950/4951测试服务已关闭，原用户Edge页、现装进程、生产服务和私人数据保持。
