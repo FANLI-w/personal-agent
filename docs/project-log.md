@@ -1276,3 +1276,17 @@ Windows0.10.25已制作并复制C:/Users/luo/Desktop/AcceptCat_0.10.25.exe，87,
 本批仅文档，无新代码/包/安装、部署/迁移、权限/密钥/模型或公开发布。产品仍96780bcdc7385e27ebd55ba6aff64169ded1cd06 / Windows0.10.26，原包保持。后台沿DSH0.2.1-rc.2/image34bba4d0/contract0.26/schema023，未重新inspect。未修改下载声明或重查公开Release，不将历史核对称为本次实时结果；无共享改动，不重复根694项CI。内容和diff检查于收尾记录。
 
 收尾本地验证：233份Markdown/10份Skill内容链接检查及git diff --check通过；新增调研文件与三份状态文档已核对，无私人链接/token/题目/作者进入Git。仅文档，无产品构建或全量CI声明。
+
+## 2026-10-21 — 0.10.27 对话绑定与查询飞书论文库，包与本人试点后台已更新
+
+用户要求完成从资料Agent命名绑定飞书多维表格、后续按库名查询。接续干净 docs/feishu-paper-library-investigation / 27aa8b4，新分支 feat/feishu-paper-library-0.10.27，产品583068035abc9928997c90cb0d5c453376ae082f。[完整交付与边界](deployment/acceptcat-0.10.27.md)。支持私人外部集合、字段映射与分页、年度/等级/关键词及多轮条件、真实来源回执进入原DSH本人对话；缺日期澄清，不做PDF全量、转授权或写回。绑定去重、原Key/字节恢复、字段/授权/集合版本边界与A/B隔离保持。
+
+根714项/57文件完整CI、2项生产CLI/B0/生产无夹具、客户端渲染/主进程类型及20项定向、Linux最终候选25项通过。实际React/HTTP/SQLite/worker配合合成Feishu/模型验证命名绑定、丢回执刷新后仍仅一份集合、实时新增匹配2→3、去年1条及继续对比、日期澄清、拒绝派发、原提交恢复和账号隔离；1280×720与820容器实看，短窗压缩重复标题并调整聊天占比。Browser插件缺席采用CUA/Playwright。类型声明超限/本地file包未复制新增模块、额外libcheck内存退出、各轮契约断言/生产旧版本断言/旧连续补充时间窗失败及夹具状态误判均保留；修正后正常类型和完整CI通过，未放宽校验或产品时间窗，不将合成模型误报算真实质量证据。
+
+Windows桌面 AcceptCat_0.10.27.exe，87,434,027字节，SHA256 a95b176b6ab4be1afbceee0a192c2ba6893573d857a18767f1768badf19f1d7b；最终18JS/8CSS逐字节、52运行包/55装配包、实际NSIS载荷与隐藏隔离启动通过。首包保留Git外first-candidate，未代安装或公开发布。
+
+浏览器恢复后实际核对旧API/worker34bba4d0，再基于其17个限定源文件构建，旧源哈希先校验；目录种子/个人模型/ai与worker/生产入口/023与DSH源原件保持。用户在新增权限执行前明确批准，飞书用户身份 bitable:app:readonly 已开通，0.2.0于10:22发布通过、仍仅罗岩；无新应用身份/写入/群消息/其他成员/Key变更。API/worker配对部署 research-openim-api:bitable-20261021-final / sha256:75aed5b940f57e2570c130336b16d8534ea9a102533dcb536600f0f82dad1e0c，实际running/restart0、API healthy，公网ready200/0.27，schema024。DSH0.2.1-rc.2/Cordis4.0.5与模型选择保持，health Harness仍not_verified。
+
+备份 /srv/research-openim-backups/bitable-20261021-20261021T022159Z/research.tar.gz，SHA256 ba4d61c9241e37d872353060ea0113e543ee217e1709e22b8ab4ed0cb243bcb。原94表/6文件独立恢复逐项一致，副本023→024核对95表、守卫回退至原23/94表通过；正式仅新增024/95表，凭据/默认及6原件保持，其他6服务及原配对运行设置不变。维护10:21:56—10:22:13。旧镜像/首候选/备份保留；有真实绑定后守卫拒绝删表，不用备份覆盖后续写入。生产证据 /opt/research-openim/ops/bitable-20261021-final，本机Git外.runtime/feishu-library-20261021。
+
+真实验收待本人重新授权：只读核对线上连接已于2026-10-20 22:43过期，未取密钥明文、未读取指定私人表或保存真实绑定。已请本人安装最终包，在底部发送命名链接后使用Agent的连接入口申请新scope；顶部旧文档入口仍仅原三项。不要把Edge登录或前批网页年度4条结果称为本批API/模型端到端已验。下一步接续授权后验证指定原库，不重复部署或换Key。项目状态/交付日志与评审记录继续收尾。
