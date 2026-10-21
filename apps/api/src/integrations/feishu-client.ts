@@ -5,6 +5,7 @@ import { fail, ApiError } from '../errors.js'
 export type FeishuTransport = typeof fetch
 const root = 'https://open.feishu.cn/open-apis'
 export const feishuScopes = 'contact:user.base:readonly docx:document:readonly wiki:wiki:readonly'
+export const feishuLibraryScope = 'bitable:app:readonly'
 // URLs select opaque IDs only. Never fetch a user-supplied URL or follow redirects.
 export function feishuLink(value: string) {
   let url: URL
@@ -39,7 +40,7 @@ const meta = z.object({
 })
 export class FeishuClient {
   constructor(private readonly transport: FeishuTransport = fetch) {}
-  private async json(path: string, token?: string, body?: unknown, signal?: AbortSignal) {
+  protected async json(path: string, token?: string, body?: unknown, signal?: AbortSignal) {
     const deadline = AbortSignal.any([AbortSignal.timeout(8000), ...(signal ? [signal] : [])])
     try {
       const response = await this.transport(root + path, {

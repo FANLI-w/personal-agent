@@ -9,7 +9,7 @@ import { encrypt, decrypt, masterAvailable } from './lab-ai-settings.js'
 import { fail } from './errors.js'
 import { ResearchLibraryService } from './research-library.js'
 import { cleanBlobs } from './coordination.js'
-import { FeishuClient, feishuLink, feishuScopes } from './integrations/feishu-client.js'
+import { FeishuClient, feishuLink, feishuScopes, feishuLibraryScope } from './integrations/feishu-client.js'
 
 const now = () => new Date().toISOString(),
   later = (ms: number) => new Date(Date.now() + ms).toISOString()
@@ -78,7 +78,7 @@ export class FeishuService {
       }
     }
   }
-  connect(actor: Actor, sessionToken: string): ResponseFor<'connectFeishu'> {
+  connect(actor: Actor, sessionToken: string, libraryRead = false): ResponseFor<'connectFeishu'> {
     this.secret()
     this.cleanup()
     const state = randomBytes(32).toString('base64url'),
@@ -102,7 +102,7 @@ export class FeishuService {
       response_type: 'code',
       redirect_uri: this.callbackUrl(),
       state,
-      scope: feishuScopes,
+      scope: feishuScopes + (libraryRead ? ` ${feishuLibraryScope}` : ''),
       code_challenge: createHash('sha256').update(verifier).digest('base64url'),
       code_challenge_method: 'S256'
     }).toString()
