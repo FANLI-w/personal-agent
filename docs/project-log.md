@@ -1374,3 +1374,5 @@ README已按实际公开结果更新下载、main开发基线和飞书本人试�
 本批仅源码修正，PR于收尾建立，未合并main。未制作或代安装新包、未公开发布或修改自动更新源，现装及Latest仍为v0.10.29；未部署/重启后台、迁移数据库、修改Key或扩展飞书本人试点。后台沿既有6597f58d/contract0.27/schema024/DSH0.2.1-rc.2记录，本次未新inspect。注册超时和课题组自助加入/成员管理保持未完成；当前状态同步实际交付边界。
 
 收尾237份Markdown/10份Skill内容检查与git diff --check通过；Git提示既有project-log工作副本CRLF提交时转LF，保留原历史内容。
+
+分支推送成功；GitHub连接器创建PR返回403/Resource not accessible by integration，改用本机既有gh身份成功创建[PR84](https://github.com/luoyan96/personal-agent/pull/84)，base main，已附本任务、未合并，无新增仓库权限。现装包、公开Release及后台均保持。
