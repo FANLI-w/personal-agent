@@ -1376,3 +1376,17 @@ README已按实际公开结果更新下载、main开发基线和飞书本人试�
 收尾237份Markdown/10份Skill内容检查与git diff --check通过；Git提示既有project-log工作副本CRLF提交时转LF，保留原历史内容。
 
 分支推送成功；GitHub连接器创建PR返回403/Resource not accessible by integration，改用本机既有gh身份成功创建[PR84](https://github.com/luoyan96/personal-agent/pull/84)，base main，已附本任务、未合并，无新增仓库权限。现装包、公开Release及后台均保持。
+
+## 2026-10-21 — Windows0.10.30：飞书论文库打开回执与复制链接，安装包放桌面
+
+用户进一步明确旧按钮点击无反应，不能只移动位置；并要求提供能自行安装体验的成品。接续同一fix/feishu-library-open-source/PR84，未另选功能，fetch后origin/main仍b7f5742，无其他新主线提交。旧“查询此库”实际只展开/聚焦聊天，原表href由通用窗口处理而无成功/失败回传；未独立复现用户机器上旧按钮无响应的唯一原因。
+
+最终产品6e882217b7cedcc57166d600bcbf546977c88a3a、客户端0.10.30，[交付记录](deployment/acceptcat-0.10.30.md)。顶部“在飞书打开资料库”新增专用IPC/preload，主框架/当前服务与HTTPS飞书base/table白名单校验，等待系统打开结果，五秒无结果或失败显示可操作错误；仅显示已请求，不假称飞书页面加载/权限已验。新增“复制链接”与失败时可选中的原始地址；“去下方提问”说明需本人发送，等配置就绪选择集合、聚焦/滚动，不清原待确认消息或错误，手动收起不因旧请求再次展开。没有新增论文列表、复制PDF或共享私人资料，无服务端接口、数据库、公共包、依赖或锁文件变更。
+
+首轮渲染类型检查跨Electron项目引用新文件报TS6305，失败日志保留；前端改为复用原飞书链接解析，主进程独立严格校验，不降低类型检查。最终渲染/主进程类型exit0。465aa5d首包成功后，收尾修正聚焦完成标记，防止忙碌变化重开手动收起的聊天；首包保留first-candidate-465aa5d，未放桌面。最终6e88221重新生产编译与Windows x64 NSIS打包exit0，55个运行装配包，--publish never。
+
+最终C:/Users/luo/Desktop/AcceptCat_0.10.30.exe，87,431,591字节，SHA256 19c0abb4478df684c18343204ca86909c30113d834c440653db96c1fc5a9357f。旧0.10.29包及正在使用的客户端保留，未代安装；原始类型/构建/失败日志、首包和delivery.json在Git外D:/deepseek-agent/.runtime/feishu-open-source-20261021/0.10.30。按用户自行检查的安排，本批不新增测试或执行额外界面、真实账号/飞书、安装载荷提取、原生启动与安装后验收，不把文件哈希、类型或NSIS成功当功能通过。无共享层变更，不重复根CI。
+
+源码继续向main的PR84交负责人审阅，未合并；Windows包仅本机交付，未创建标签/公开Release/更新源，Latest沿v0.10.29。无后台部署、重启、迁移、Key或飞书试点成员变化；当前后台沿6597f58d/contract0.27/schema024/DSH0.2.1-rc.2，本批未新inspect。他人注册超时仍未定因，课题组自助加入/完整成员管理仍未完成。
+
+收尾238份Markdown/10份Skill内容检查及git diff --check通过；PR84标题/描述随最终打开反馈与本机安装包范围更新。
