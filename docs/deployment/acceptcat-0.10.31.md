@@ -1,6 +1,6 @@
 # Windows 0.10.31：飞书资料库的课题组共享与撤回
 
-2026-10-21（北京时间）。从fetch后的主仓库main / `b7f5742`新建 `feat/feishu-library-lab-sharing`，再快进纳入未合并[PR84](https://github.com/luoyan96/personal-agent/pull/84)的0.10.30作为依赖，保留打开原表、复制链接与聊天聚焦修正。最终产品源码 **bd0a718686e4057b74ab5a86496885fc02cc27e3**。本批另向main提交PR，不代负责人合并；PR和本机包标识于交付收尾记录。
+2026-10-21（北京时间）。从fetch后的主仓库main / `b7f5742`新建 `feat/feishu-library-lab-sharing`，再快进纳入未合并[PR84](https://github.com/luoyan96/personal-agent/pull/84)的0.10.30作为依赖，保留打开原表、复制链接与聊天聚焦修正。最终产品源码 **bd0a718686e4057b74ab5a86496885fc02cc27e3**。[PR85](https://github.com/luoyan96/personal-agent/pull/85)已提交main并附当前任务，未合并；使用本机既有CLI权限，无新增仓库授权。
 
 ## 产品行为与共享授权
 

@@ -1404,3 +1404,5 @@ README已按实际公开结果更新下载、main开发基线和飞书本人试�
 最终生产编译和Windows x64 NSIS打包exit0、55个装配运行包，--publish never。C:/Users/luo/Desktop/AcceptCat_0.10.31.exe，87,433,023字节，SHA256 7bd3df6a8925f7497fbbf43e97c0d419045fb98a39beb2f43c46914f561162f5；已复制桌面，旧0.10.29/0.10.30包与当前客户端保留，未代安装。用户自行检查功能体验；不追加浏览器/真实飞书或模型/载荷提取/原生启动/安装后验收，不把合成模型、文件哈希或NSIS成功当真实团队效果。Git外D:/deepseek-agent/.runtime/feishu-lab-sharing-20261021保存依赖安装、类型、定向、两轮CI/原失败、打包和delivery.json；backend-candidate含5份源文件/元数据与1份合成测试及SHA256/main基底Git blob清单，未上传或部署。
 
 本批PR目标main、未合并，继续由负责人审阅；未公开Release/更新源或打标签，Latest仍v0.10.29。源码、安装包、后台四种状态分别记录：共享代码与本机包已完成，当前生产共享尚未可用。后台保持既有6597f58d/contract0.27/schema024/DSH0.2.1-rc.2记录，本批未inspect、重启/部署或迁移；需要按原约定另行处理后台0.28更新。飞书直接应用授权仍仅罗岩，课题组成员必须实际同组；注册超时、已有个人账号自助加入/开组与完整成员管理仍未完成。
+
+收尾再次fetch确认main仍b7f5742，未出现待合入主线提交。分支已推送，使用本机既有CLI权限创建并附当前任务的[PR85](https://github.com/luoyan96/personal-agent/pull/85)，base main、未合并，无新增仓库授权。239份Markdown/10份Skill内容检查与git diff --check通过；后台部署继续等待单独安排。
