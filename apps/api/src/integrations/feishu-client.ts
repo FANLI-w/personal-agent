@@ -53,7 +53,8 @@ export class FeishuClient {
         },
         ...(body ? { body: JSON.stringify(body) } : {})
       })
-      if (!response.ok) {
+      // Feishu also returns structured authorization errors with HTTP 400.
+      if (!response.ok && response.status !== 400) {
         await response.body?.cancel()
         if (response.status === 401) fail('FEISHU_REAUTHORIZE')
         if (response.status === 403 || response.status === 404) fail('FEISHU_ACCESS_DENIED')
@@ -78,10 +79,11 @@ export class FeishuClient {
       }
       const result = JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>
       if (result.error || (result.code !== undefined && result.code !== 0)) {
-        if ([99991661, 99991663, 99991664, 99991668].includes(Number(result.code))) fail('FEISHU_REAUTHORIZE')
+        if ([99991661, 99991663, 99991664, 99991668, 99991679].includes(Number(result.code))) fail('FEISHU_REAUTHORIZE')
         // Never expose provider error messages: they can contain tokens, document text or identifiers.
         fail(token ? 'FEISHU_ACCESS_DENIED' : 'FEISHU_REAUTHORIZE')
       }
+      if (!response.ok) fail('FEISHU_UNAVAILABLE')
       return result
     } catch (error) {
       if (error instanceof ApiError) throw error
