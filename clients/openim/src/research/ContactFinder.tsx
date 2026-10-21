@@ -61,6 +61,9 @@ export function ContactFinder({
     if (query === next) void refresh();
     else setQuery(next);
   };
+  const contacts = data?.data.filter(
+    (contact) => contact.profile.role !== "coordinator",
+  );
   return (
     <div className="space-y-3">
       <AcceptCatAccountNumber username={own?.username} isSelf active={active} />
@@ -90,7 +93,7 @@ export function ContactFinder({
         </Button>
       </div>
       {error && <Alert type="error" message={error} />}
-      {data?.data.map((contact) => (
+      {contacts?.map((contact) => (
         <ContactRow
           key={contact.id}
           contact={contact}
@@ -98,9 +101,9 @@ export function ContactFinder({
           onOpen={() => onOpen(contact.id)}
         />
       ))}
-      {data && !data.data.length && (
+      {contacts && !contacts.length && (
         <p className="py-3 text-sm text-slate-500">
-          没有找到这个 AcceptCat 号，请核对完整号码及大小写。
+          没有找到可添加的联系人，请核对 AcceptCat 号或名片。
         </p>
       )}
     </div>
