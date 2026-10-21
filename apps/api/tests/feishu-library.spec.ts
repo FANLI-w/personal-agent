@@ -44,10 +44,10 @@ async function setup(){
  return {db,call,remote,bind,query,app}
 }
 it('binds a private named collection, survives service re-entry, preserves old OAuth and opts into read-only scope',async()=>{
- const s=await setup(),r=await s.bind();expect(r.status,r.text).toBe(200);const id=r.value.data.library.collectionId
+ const s=await setup(),legacy=await s.call('connectFeishu',{});expect(new URL(legacy.value.data.authorizationUrl).searchParams.get('scope')).not.toContain('bitable');const r=await s.bind();expect(r.status,r.text).toBe(200);const id=r.value.data.library.collectionId
  expect(r.value.data.library.name).toBe('论文库');expect((await s.call('feishuLibraries')).value.data[0].collectionId).toBe(id)
  const c=(await s.call('researchCollections',null,0,{}, {scope:'mine',limit:'100'})).value.data[0];expect(c).toMatchObject({id,scope:'owner_private',externalSource:'feishu_bitable',fileCount:0})
- const old=await s.call('connectFeishu',{}),fresh=await s.call('connectFeishu',{libraryRead:true});expect(new URL(old.value.data.authorizationUrl).searchParams.get('scope')).not.toContain('bitable');expect(new URL(fresh.value.data.authorizationUrl).searchParams.get('scope')).toContain('bitable:app:readonly')
+ const reconnect=await s.call('connectFeishu',{}),fresh=await s.call('connectFeishu',{libraryRead:true});expect(new URL(reconnect.value.data.authorizationUrl).searchParams.get('scope')).toContain('bitable:app:readonly');expect(new URL(fresh.value.data.authorizationUrl).searchParams.get('scope')).toContain('bitable:app:readonly')
  expect(String(s.db.prepare('SELECT encrypted_source FROM feishu_library_sources').get()!.encrypted_source)).not.toContain('SyntheticBase123')
 })
 it('retries binding idempotently, including concurrent lost acknowledgements, and does not duplicate collections',async()=>{
