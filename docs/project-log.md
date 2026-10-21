@@ -1300,3 +1300,15 @@ Windows桌面 AcceptCat_0.10.27.exe，87,434,027字节，SHA256 a95b176b6ab4be1a
 后台修正0c6b620将HTTP400结构化鉴权错误映射重新授权并屏蔽上游正文；19a5c3316359f082993ab68fe64f79c4ef817361让已绑定私人库重连保留原只读scope，未绑定者的旧空请求保持原三项。最终根715项/57文件完整CI与2生产CLI/B0/无夹具通过。无新权限、Key、迁移或客户端变动，已安装包及哈希保持。两个限定源文件候选/部署材料在Git外http400，Edge控制连接再次超时，已请本人恢复后再核对构建并配对切换；当前线上仍75aed5b9，不能称补修已部署。原024迁移已完成且有绑定，禁止盲目重复迁移/删表回退。
 
 分支已推送；GitHub CLI API TLS超时，连接器搜索成功但PR创建403无写权限，尚无草稿PR；不新增仓库授权。交付文档和current-state已更新真实结果与当前限制。原源码、失败、首包、旧镜像和备份均保留。
+
+### 2026-10-21 收尾：权限补修已配对部署，评审入口已建立
+
+本人恢复浏览器控制后，原维护页绑定仍报未附加，保留原页；新开同实例既有免密Workbench会话恢复。上传两个限定源文件，先校验75aed5b9基底哈希，构建候选并核对受保护文件与实际源码，Linux3文件/26项通过。源码19a5c3316359f082993ab68fe64f79c4ef817361，API/worker配对切换至 research-openim-api:bitable-http400-final-20261021 / sha256:6597f58de71c6208b8ccbf86ae1002230c0b95fd059ca4d0cacfc8cbb72cd7ac。实际均running/restart0、API healthy，公网ready200/0.27；DSH0.2.1-rc.2/Cordis4.0.5、schema024及health not_verified保持。
+
+维护11:50:02—11:50:16，14秒。停止接收、排空后备份 /srv/research-openim-backups/bitable-http400-20261021-20261021T035004Z/research.tar.gz，SHA256 6805dd0ec503217d807be874ca367335f113914c0936abf091db87f2a2cc207e。95表/6原件独立恢复逐项一致，凭据/默认模型、配对设置和其他6服务保持；上线后私人绑定仍1，整表哈希与停写基线一致，两个实际源文件匹配。只读核对已保存真实答案4个标题均在、1029字符，未重复模型调用。完整服务器收据 /opt/research-openim/ops/bitable-http400-final-20261021，本机Git外http400保留上传/构建材料与deployed-proof.png。
+
+无新权限、Key、迁移、客户端源码或安装包变化，本人已安装0.10.27无需重装或再授权；不执行原024空表回退，不用旧备份覆盖后续业务数据。真实试读仍为服务层与实际DSH，桌面真人完整流程/科研语义质量继续核对，当前无PDF全文或团队隐式共享。Windows包已制作并由本人确认安装、后台补修已部署、飞书仅本人0.2.0已发布；AcceptCat无公开Release，四者分开记录。
+
+原GitHub CLI TLS超时与连接器403证据保留，恢复后使用原CLI权限成功创建并附任务的[草稿PR82](https://github.com/luoyan96/personal-agent/pull/82)，base docs/feishu-paper-library-investigation、未合并；无新增仓库授权。最终715项完整CI沿已通过结果，无新产品源码不重复全量，状态/部署/路线图收尾并做内容及diff检查。
+
+收尾内容检查234份Markdown/10份Skill及git diff --check通过。已按命令行核对并停止本批4960/4961合成测试进程，端口无监听；临时维护页与可访问测试/参考页关闭，旧data错误页被浏览器策略拦截而未操作。原Edge用户页、已安装客户端、私人数据及生产服务保留。PR82文档收尾前首读三项Foundation均IN_PROGRESS，不能称远端检查已通过。
