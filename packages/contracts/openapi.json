@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.27.0"
+    "version": "0.28.0"
   },
   "paths": {
     "/api/v1/community-catalog": {
@@ -55757,7 +55757,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.27.0"
+                          "const": "0.28.0"
                         },
                         "checks": {
                           "type": "object",
@@ -55816,7 +55816,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.27.0",
+                    "contractVersion": "0.28.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -55990,7 +55990,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.27.0"
+                          "const": "0.28.0"
                         },
                         "checks": {
                           "type": "object",
@@ -56049,7 +56049,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.27.0",
+                    "contractVersion": "0.28.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -56201,7 +56201,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.27.0"
+                          "const": "0.28.0"
                         },
                         "checks": {
                           "type": "object",
@@ -56260,7 +56260,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.27.0",
+                    "contractVersion": "0.28.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -108346,7 +108346,7 @@
     "/api/v1/feishu/library": {
       "get": {
         "operationId": "feishuLibraries",
-        "description": "Named private external source. Current user identity only; bounded live record reads, no Feishu writes, source and completeness receipt.",
+        "description": "Named external source, private by default. Only its owner may explicitly share with the current laboratory. Current members may query that table through its owner connection; no transfer of credentials or other sources. Recheck current membership, owner connection, source scope and version after network reads. No Feishu writes; bounded records, source and completeness receipt.",
         "x-stage": "FEISHU1",
         "x-implemented": true,
         "security": [
@@ -108661,7 +108661,7 @@
     "/api/v1/feishu/library/bind": {
       "post": {
         "operationId": "bindFeishuLibrary",
-        "description": "Named private external source. Current user identity only; bounded live record reads, no Feishu writes, source and completeness receipt.",
+        "description": "Named external source, private by default. Only its owner may explicitly share with the current laboratory. Current members may query that table through its owner connection; no transfer of credentials or other sources. Recheck current membership, owner connection, source scope and version after network reads. No Feishu writes; bounded records, source and completeness receipt.",
         "x-stage": "FEISHU1",
         "x-implemented": true,
         "security": [
@@ -109099,7 +109099,7 @@
     "/api/v1/feishu/library/query": {
       "post": {
         "operationId": "queryFeishuLibrary",
-        "description": "Named private external source. Current user identity only; bounded live record reads, no Feishu writes, source and completeness receipt.",
+        "description": "Named external source, private by default. Only its owner may explicitly share with the current laboratory. Current members may query that table through its owner connection; no transfer of credentials or other sources. Recheck current membership, owner connection, source scope and version after network reads. No Feishu writes; bounded records, source and completeness receipt.",
         "x-stage": "FEISHU1",
         "x-implemented": true,
         "security": [
@@ -109627,6 +109627,7 @@
               "code": {
                 "type": "string",
                 "enum": [
+                  "FEISHU_SHARED_SOURCE_UNAVAILABLE",
                   "FEISHU_LIBRARY_SCHEMA",
                   "FEISHU_LIBRARY_LIMIT",
                   "FEISHU_LIBRARY_NAME_CONFLICT",

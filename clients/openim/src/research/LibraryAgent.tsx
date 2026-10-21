@@ -43,11 +43,13 @@ export function LibraryAgent({
   focusRequest,
   onLibraryBound,
   queryCollectionId,
+  visibleCollections,
 }: {
   onConnectFeishu: () => void;
   focusRequest: number;
   onLibraryBound?: (id:string) => Promise<void>;
   queryCollectionId?: string;
+  visibleCollections?: ResponseFor<"researchCollections">["data"];
 }) {
   const actor = useResearchStore((s) => s.actor),
     generation = useResearchStore((s) => s.generation);
@@ -78,6 +80,7 @@ export function LibraryAgent({
       focusRequest={focusRequest}
       onLibraryBound={onLibraryBound}
       queryCollectionId={queryCollectionId}
+      visibleCollections={visibleCollections}
     />
   );
 }
@@ -89,6 +92,7 @@ function LibraryChat({
   focusRequest,
   onLibraryBound,
   queryCollectionId,
+  visibleCollections,
 }: {
   actorId: string;
   storageKey: string;
@@ -96,6 +100,7 @@ function LibraryChat({
   focusRequest: number;
   onLibraryBound?: (id:string) => Promise<void>;
   queryCollectionId?: string;
+  visibleCollections?: ResponseFor<"researchCollections">["data"];
 }) {
   const { links, remember } = useAgentStarterLinks(actorId),
     remembered = useRef(links[libraryAgentStarter.id]);
@@ -217,6 +222,13 @@ function LibraryChat({
     })();
     return operation.dispose;
   }, [actorId, reload]);
+  useEffect(() => {
+    if (!visibleCollections || !ready) return;
+    setCollections(current => [...new Map([
+      ...current.filter(c => selected.includes(c.id) || bindings?.collectionIds.includes(c.id)),
+      ...visibleCollections,
+    ].map(c => [c.id, c])).values()]);
+  }, [visibleCollections, ready, selected, bindings]);
   const history = useResearchRead(
     async (signal) => {
       const conversation = (
@@ -576,7 +588,7 @@ function LibraryChat({
           )}
           {readingFeishu && (
             <div role="status">
-              <Spin size="small" /> 正在用你的飞书授权读取选定资料…
+              <Spin size="small" /> 正在读取已获准的飞书资料…
             </div>
           )}
           {generating && (
@@ -650,7 +662,7 @@ function LibraryChat({
           </div>
         )}
         <p className="library-chat-note">
-          多维表格链接保存为私人资料库；查询记录交给当前模型并随本人对话保存。单篇文档仍为文字快照；不会自动共享或写回飞书。
+          新资料库默认仅自己，可在集合设置中共享给课题组。查询文字交给当前模型并随本人对话保存；不会自动写回飞书。
         </p>
         <footer>
           <span>

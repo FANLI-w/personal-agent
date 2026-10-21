@@ -6,7 +6,7 @@ import { researchApi, ResearchApiError } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import { useResearchStore } from "./store";
 import { usePersonalOperation } from "./usePersonalOperation";
-import { workspaceAvailability } from "./workspace-availability";
+import { workspaceAvailability, readFeishuLibrarySharingAvailability } from "./workspace-availability";
 import { withRequestDeadline } from "./request-deadline";
 import { researchScopeLabels } from "./research-library-api";
 import { ResearchFileDownload } from "./ResearchFileDownload";
@@ -37,10 +37,17 @@ function CollectionEditor({ collection, onClose, onSaved }: { collection?: Resea
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   const version = useRef(collection?.version);
   const operation = usePersonalOperation(true, `collection-editor:${collection?.id || "new"}`);
+  const hasLab = useResearchStore(s => s.actor?.spaceKind === "laboratory");
+  const sharing = useResearchRead(readFeishuLibrarySharingAvailability, "feishu-library-sharing-availability", !!collection?.externalSource);
+  const availableScopes = collection?.externalSource ? [
+    { value: "owner_private", label: "仅自己（私人资料）" },
+    { value: "lab_shared", label: "课题组共享", disabled: !hasLab || !sharing.data?.available },
+  ] : scopeOptions;
   const tasks = useResearchRead((signal) => researchApi("workbench", { query: { category: "all", limit: 100 }, signal }), "library-task-options", scope === "task_scoped");
   const { modal } = App.useApp();
   const save = async () => {
     if (!name.trim() || busy || (scope === "task_scoped" && !taskIds.length)) return;
+    if (collection?.externalSource && scope === "lab_shared" && (!hasLab || !sharing.data?.available)) { setError("飞书资料库共享尚未就绪，请核对课题组身份和后台版本。"); return; }
     const { isCurrent } = operation.capture(); setBusy(true); setError("");
     try {
       const settings = { name: name.trim(), description, scope, taskIds: scope === "task_scoped" ? taskIds : [] };
@@ -61,11 +68,13 @@ function CollectionEditor({ collection, onClose, onSaved }: { collection?: Resea
     <div className="research-library-form">
       <label>集合名称<Input aria-label="集合名称" maxLength={200} value={name} disabled={busy} onChange={e => setName(e.target.value)} /></label>
       <label>说明<Input.TextArea aria-label="集合说明" maxLength={4000} rows={3} value={description} disabled={busy} onChange={e => setDescription(e.target.value)} /></label>
-      <label>资料范围<Select aria-label="资料范围" options={scopeOptions} value={scope} disabled={busy || !!collection?.externalSource} onChange={setScope} /></label>
+      <label>资料范围<Select aria-label="资料范围" options={availableScopes} value={scope} disabled={busy} onChange={setScope} /></label>
+      {collection?.externalSource && !hasLab && <p className="research-library-muted">你当前使用个人空间，加入课题组后可以共享资料库。</p>}
+      {collection?.externalSource && hasLab && !sharing.data?.available && <p role="status" className="research-library-muted">{sharing.error || (sharing.data ? "当前后台尚未启用飞书资料库共享，需升级后台后使用；私人资料库仍可使用。" : "正在检查资料库共享服务…")}<Button type="link" size="small" onClick={sharing.refresh}>重新检查</Button></p>}
       {scope === "task_scoped" && <label>获准任务<Select mode="multiple" aria-label="资料授权任务" value={taskIds} disabled={busy || !tasks.data} onChange={setTaskIds} options={tasks.data?.data.filter(c => c.taskId && !c.summaryOnly && c.source === "research_task").map(c => ({ value: c.taskId!, label: c.title }))} />{tasks.error && <Alert type="warning" message={tasks.error} action={<Button onClick={tasks.refresh}>重试</Button>} />}<small>仅本页可完整查看的科研任务；没有可选任务时，可先保存为仅自己。</small></label>}
-      <p className="research-library-muted">{scope === "public" ? "公开集合会让注册用户读取原始资料，请确认材料可公开。" : scope === "lab_shared" ? "课题组当前成员可读取资料，成员变化后使用时会重新核对权限。" : scope === "task_scoped" ? "仅获准完整查看所选科研任务的人可读取。" : "仅你本人可读取，不随 Agent 名片公开。"}</p>
+      <p className="research-library-muted">{scope === "public" ? "公开集合会让注册用户读取原始资料，请确认材料可公开。" : scope === "lab_shared" ? collection?.externalSource ? "课题组成员可查看此库，并通过你为这个库提供的飞书连接只读查询。其他飞书资料和账号授权不会共享；打开原表仍需飞书自身权限。改回仅自己后停止后续查询，已保存到成员对话的文字不会被删除。" : "课题组当前成员可读取资料，成员变化后使用时会重新核对权限。" : scope === "task_scoped" ? "仅获准完整查看所选科研任务的人可读取。" : "仅你本人可读取；可选择课题组共享，不随 Agent 名片公开。"}</p>
       {error && <Alert type="error" message={error} />}
-      <Button type="primary" loading={busy} disabled={!name.trim() || (scope === "task_scoped" && !taskIds.length)} onClick={() => scope === "public" && collection?.scope !== "public" ? modal.confirm({ title: "公开此集合的资料？", content: "其他注册用户将可读取与下载集合中的原始资料。", onOk: save }) : void save()}>保存集合</Button>
+      <Button type="primary" loading={busy} disabled={!name.trim() || (scope === "task_scoped" && !taskIds.length)} onClick={() => collection?.externalSource && scope === "lab_shared" && collection.scope !== "lab_shared" ? modal.confirm({ title: "将此资料库共享给课题组？", content: "本课题组成员将能查看这个库，通过你为此库提供的连接查询原表中你可读的记录，并将查询文字保存在各自的对话中。你的其他飞书资料和账号授权不会共享。你可随时改回仅自己，停止后续查询。", okText: "确认共享", onOk: save }) : scope === "public" && collection?.scope !== "public" ? modal.confirm({ title: "公开此集合的资料？", content: "其他注册用户将可读取与下载集合中的原始资料。", onOk: save }) : void save()}>保存集合</Button>
     </div>
   </Modal>;
 }
@@ -106,10 +115,11 @@ function LibraryBody() {
   const [chatFocus, setChatFocus] = useState(0);
   const [chatCollectionId,setChatCollectionId]=useState<string>();
   const [zoteroId, setZoteroId] = useState<string>();
-  const [scope, setScope] = useState<"mine" | "visible">("visible"), [collectionSearch, setCollectionSearch] = useState(""), [selectedId, setSelectedId] = useState<string>(), [sourceId, setSourceId] = useState<string>(), [search, setSearch] = useState(""), [query, setQuery] = useState("");
+  const [scope, setScope] = useState<"mine" | "visible" | "lab">("visible"), [collectionSearch, setCollectionSearch] = useState(""), [selectedId, setSelectedId] = useState<string>(), [sourceId, setSourceId] = useState<string>(), [search, setSearch] = useState(""), [query, setQuery] = useState("");
   const [editing, setEditing] = useState<ResearchCollection | "new">(), [importing, setImporting] = useState<{ collection: ResearchCollection; source?: ResearchFile }>();
-  const collections = useResearchRead((signal) => researchApi("researchCollections", { query: { scope, q: collectionSearch, limit: 100 }, signal }), `library-collections:${scope}:${collectionSearch}`);
-  const collection = collections.data?.data.find(c => c.id === selectedId) ?? (!selectedId ? collections.data?.data[0] : undefined);
+  const collections = useResearchRead((signal) => researchApi("researchCollections", { query: { scope: scope === "mine" ? "mine" : "visible", q: collectionSearch, limit: 100 }, signal }), `library-collections:${scope}:${collectionSearch}`);
+  const shownCollections = collections.data?.data.filter(c => scope !== "lab" || c.scope === "lab_shared");
+  const collection = shownCollections?.find(c => c.id === selectedId) ?? (!selectedId ? shownCollections?.[0] : undefined);
   const files = useResearchRead((signal) => researchApi("researchFiles", { params: { id: collection!.id }, query: { limit: 100 }, signal }), `library-files:${collection?.id}`, !!collection && !collection.externalSource);
   const matches = useResearchRead((signal) => researchApi("researchLibrarySearch", { query: { q: query, collectionId: collection!.id, limit: 20 }, signal }), `library-search:${collection?.id}:${query}`, !!collection && !!query);
   const [failure, setFailure] = useState("");
@@ -122,21 +132,21 @@ function LibraryBody() {
     catch (error) { if (isCurrent()) { setFailure(failureText(error)); await collections.refresh(); } }
   };
   return <div className="research-library">
-    <header className="research-library-heading"><div><h2>课题组资料</h2><p>汇集论文、专利、项目申请与模板，按集合范围与课题组共享；私人集合仅自己可见。</p></div><div className="research-library-actions"><Button onClick={() => setFeishuOpen(true)}>连接飞书资料</Button><Button type="primary" onClick={() => setEditing("new")}>新建集合</Button></div></header>
+    <header className="research-library-heading"><div><h2>资料库</h2><p>管理自己的科研资料，也可明确共享给课题组；每个资料库分别设置可见范围。</p></div><div className="research-library-actions"><Button onClick={() => setFeishuOpen(true)}>连接飞书资料</Button><Button type="primary" onClick={() => setEditing("new")}>新建集合</Button></div></header>
     {failure && <Alert type="warning" message={failure} />}
     <div className={`research-library-body ${sourceId ? "has-source" : ""}`}>
       <aside className="research-collection-rail" aria-label="资料集合">
-        <Segmented aria-label="集合范围" value={scope} options={[{ label: "获准资料", value: "visible" }, { label: "我的集合", value: "mine" }]} onChange={v => { setScope(v as typeof scope); setSelectedId(undefined); setSourceId(undefined); }} />
+        <Segmented aria-label="集合范围" value={scope} options={[{ label: "全部", value: "visible" }, { label: "课题组", value: "lab" }, { label: "我的", value: "mine" }]} onChange={v => { setScope(v as typeof scope); setSelectedId(undefined); setSourceId(undefined); }} />
         <Input.Search aria-label="搜索资料集合" placeholder="搜索集合" onSearch={setCollectionSearch} allowClear />
         {collections.error && <Alert type="warning" message={collections.error} action={<Button onClick={collections.refresh}>重试</Button>} />}
         {!collections.data && !collections.error && <p role="status">正在读取集合…</p>}
-        {collections.data?.data.map(c => <button className="research-collection-row" key={c.id} aria-pressed={collection?.id === c.id} onClick={() => { setSelectedId(c.id); setSourceId(undefined); setQuery(""); setSearch(""); }}><FolderOutlined /><span><strong>{c.name}</strong><small>{researchScopeLabels[c.scope]} · {c.externalSource ? '飞书实时资料库' : `${c.fileCount} 份来源`}</small></span></button>)}
-        {collections.data && !collections.data.data.length && <div className="research-library-empty"><h3>暂无资料集合</h3><p>新建集合后，导入论文、笔记与素材。</p></div>}
+        {shownCollections?.map(c => <button className="research-collection-row" key={c.id} aria-pressed={collection?.id === c.id} onClick={() => { setSelectedId(c.id); setSourceId(undefined); setQuery(""); setSearch(""); }}><FolderOutlined /><span><strong>{c.name}</strong><small>{researchScopeLabels[c.scope]} · {c.externalSource ? '飞书实时资料库' : `${c.fileCount} 份来源`}</small></span></button>)}
+        {shownCollections && !shownCollections.length && <div className="research-library-empty"><h3>{scope === "lab" ? "暂无课题组共享资料" : "暂无资料集合"}</h3><p>{scope === "lab" ? "私人库不会自动出现。库主人可在集合设置中选择课题组共享。" : "新建集合后，导入论文、笔记与素材。"}</p></div>}
       </aside>
       <section className="research-file-list" aria-label="集合文件">
         {collection ? <>
           <div className="research-library-subheading"><div><h3>{collection.name}</h3><p>{collection.description || researchScopeLabels[collection.scope]}</p></div>{collection.owned && <Button onClick={() => setEditing(collection)}>集合设置</Button>}</div>
-          {collection.externalSource ? <FeishuLibrarySource id={collection.id} onAsk={()=>{setChatCollectionId(collection.id);setChatFocus(n=>n+1);}}/> : <>
+          {collection.externalSource ? <FeishuLibrarySource id={collection.id} scope={collection.scope} owned={collection.owned} onAsk={()=>{setChatCollectionId(collection.id);setChatFocus(n=>n+1);}}/> : <>
           <div className="research-library-actions">{collection.owned && <Button type="primary" icon={<UploadOutlined />} onClick={() => setImporting({ collection })}>导入文件</Button>}{collection.owned && collection.scope === "owner_private" && <Button onClick={() => setZoteroId(collection.id)}>从 Zotero 选择</Button>}<Input.Search aria-label="检索资料正文" placeholder="检索实际提取文字" value={search} allowClear onChange={e => setSearch(e.target.value)} onSearch={v => setQuery(v.trim())} /></div>
           {(files.error || matches.error) && <Alert type="warning" message={files.error || matches.error} action={<Button onClick={() => { void files.refresh(); void matches.refresh(); }}>重试</Button>} />}
           {query ? <div className="research-search-results">{matches.loading && <p role="status">正在检索…</p>}{matches.data?.data.map((match, i) => <button key={`${match.citation.sourceId}:${match.citation.version}:${match.citation.pageNumber}:${i}`} onClick={() => setSourceId(match.citation.sourceId)}><strong>{match.filename}</strong><small>v{match.citation.version} · 第 {match.citation.pageNumber} 页 · 字符 {match.citation.start}–{match.citation.end}</small><p>{match.text}</p>{match.partial && <small>此处为实际提取页的局部片段</small>}</button>)}{matches.data && !matches.data.data.length && <div className="research-library-empty"><h3>未找到实际文字片段</h3><p>调整关键词；仅保存原件的素材不会产生文字检索结果。</p></div>}<Button onClick={() => { setQuery(""); setSearch(""); }}>返回文件列表</Button></div> : <>
@@ -149,7 +159,7 @@ function LibraryBody() {
       </section>
       {sourceId && collection && <SourceDetail key={sourceId} id={sourceId} collection={collection} onClose={() => setSourceId(undefined)} onChanged={refresh} onVersion={source => setImporting({ collection, source })} />}
     </div>
-    <LibraryAgent onConnectFeishu={() => {setFeishuLibraryRead(true);setFeishuOpen(true);}} focusRequest={chatFocus} queryCollectionId={chatCollectionId} onLibraryBound={async id=>{await collections.refreshChecked();setSelectedId(id);setChatCollectionId(id);setSourceId(undefined);setQuery('');}} />
+    <LibraryAgent onConnectFeishu={() => {setFeishuLibraryRead(true);setFeishuOpen(true);}} focusRequest={chatFocus} queryCollectionId={chatCollectionId} visibleCollections={collections.data?.data} onLibraryBound={async id=>{await collections.refreshChecked();setSelectedId(id);setChatCollectionId(id);setSourceId(undefined);setQuery('');}} />
     {feishuOpen && <FeishuImport libraryRead={feishuLibraryRead} collectionId={collection?.owned && collection.scope === "owner_private" && !collection.externalSource ? collection.id : undefined} onClose={() => {setFeishuOpen(false);setFeishuLibraryRead(false);}} onSaved={refreshAfterImport} onChat={() => { setFeishuOpen(false); setFeishuLibraryRead(false);setChatFocus(n => n + 1); }} />}
     {zoteroId && collection?.id === zoteroId && collection.owned && collection.scope === "owner_private" && <ZoteroImport key={zoteroId} collection={collection} onClose={() => setZoteroId(undefined)} onSaved={refresh} />}
     {editing && <CollectionEditor key={editing === "new" ? "new" : editing.id} collection={editing === "new" ? undefined : editing} onClose={() => setEditing(undefined)} onSaved={refresh} />}

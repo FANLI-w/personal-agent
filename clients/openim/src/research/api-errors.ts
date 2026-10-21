@@ -19,6 +19,7 @@ export function validationMessage(issues: readonly ValidationIssue[]): string {
 }
 
 const messages: Record<string, string> = {
+  FEISHU_SHARED_SOURCE_UNAVAILABLE: "共享资料库暂不可读，请联系库主人检查飞书连接、原表权限或字段设置；无需重新连接你自己的飞书。",
   FEISHU_LIBRARY_SCHEMA: "资料库字段不再匹配。请在飞书提供题目、年份、CCF等级等字段，再把链接发给资料 Agent 重新绑定。",
   FEISHU_LIBRARY_LIMIT: "这次资料表或字段超出可读取范围，请提供具体数据表链接或缩小资料范围。",
   FEISHU_LIBRARY_NAME_CONFLICT: "已经有一个同名资料集合，请给这个库换一个名字后再发链接。",

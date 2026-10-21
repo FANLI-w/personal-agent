@@ -157,7 +157,11 @@ export class ResearchLibraryService {
       const settings=ResearchCollectionSettings.parse(body);this.validateSettings(settings);const created=randomUUID(),at=now()
       this.db.prepare('INSERT INTO research_collections VALUES (?,?,?,?,?,?,?,1,?,?,?)').run(created,this.actor.id,this.actor.labId,settings.name,settings.description,settings.scope,JSON.stringify(settings.taskIds),'available',at,at);result={data:this.view(this.collection(created))}
     }else if(name==='updateResearchCollection'){
-      this.owned(id!,body.expectedVersion);const settings=ResearchCollectionSettings.parse(body.settings);this.validateSettings(settings);if(settings.scope!=='owner_private'&&this.db.prepare('SELECT 1 FROM feishu_library_sources WHERE collection_id=?').get(id!))fail('FORBIDDEN')
+      const current=this.owned(id!,body.expectedVersion);const settings=ResearchCollectionSettings.parse(body.settings);this.validateSettings(settings)
+      if(this.db.prepare('SELECT 1 FROM feishu_library_sources WHERE collection_id=?').get(id!)){
+        if(!['owner_private','lab_shared'].includes(settings.scope))fail('FORBIDDEN')
+        if(settings.scope==='lab_shared'&&(current.lab_id!==this.actor.labId||this.db.prepare('SELECT 1 FROM personal_spaces WHERE lab_id=?').get(this.actor.labId)))fail('FORBIDDEN')
+      }
       this.db.prepare('UPDATE research_collections SET name=?,description=?,scope=?,task_ids=?,version=version+1,updated_at=? WHERE id=?').run(settings.name,settings.description,settings.scope,JSON.stringify(settings.taskIds),now(),id!);result={data:this.view(this.collection(id!))}
     }else if(name==='withdrawResearchCollection'){
       this.owned(id!,body.expectedVersion);this.db.prepare("UPDATE research_collections SET status='withdrawn',version=version+1,updated_at=? WHERE id=?").run(now(),id!);result={data:this.view(this.collection(id!,true))}

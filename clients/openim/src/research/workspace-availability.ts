@@ -36,3 +36,6 @@ export function readWorkspaceAvailability(signal?: AbortSignal) {
 export function readResearchTeamAvailability(signal?: AbortSignal) {
   return readAvailability(23, signal);
 }
+export function readFeishuLibrarySharingAvailability(signal?: AbortSignal) {
+  return readAvailability(28, signal);
+}
