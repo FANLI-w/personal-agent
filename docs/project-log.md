@@ -1336,3 +1336,11 @@ Git外.runtime/library-notices-20261021保存原证据、隔离库、调用/恢�
 最终新包隔离启动通过OPENIM_ELECTRON_READY；235份Markdown/10份Skill及diff检查通过。4970/4971合成助手按命令行核对后关闭，端口无监听，验收页关闭且视口恢复；现装用户客户端、原Edge页面与注册诊断维护页保留。
 
 交付c2564cf已推送，[草稿PR83](https://github.com/luoyan96/personal-agent/pull/83)已创建并附任务，base feat/feishu-paper-library-0.10.27、未合并；没有新增仓库权限。远端检查尚待实际结果，不将本地通过称为远端已通过。
+
+## 2026-10-21 — Windows0.10.29：添加联系人不显示系统个人助理
+
+用户要求“添加联系人”不再出现对方个人助理。接续实际干净fix/library-agent-notices-0.10.28 / c8efe0f，新分支fix/contact-search-no-assistant-0.10.29，产品a6256f8。ContactFinder按服务端profile.role排除coordinator，账号查询与完整名片共用过滤；真人和自建specialist保留，名字含“个人助理”不构成过滤依据。空结果文案覆盖账号与名片，不修改服务端目录、已有联系人关系或本人助理会话。
+
+用户中途明确“不要检查，我自己检查”，已停止界面验收并关闭本地夹具服务，未追加测试、载荷提取/对比或隔离原生启动。此前类型检查、生产Web构建已通过；合成ContactFinder/HTTP页面仅启动打开，未完成搜索、名片、点击或窄窗验证，不记为通过。浏览器标签关闭返回已不在当前会话中，未继续重开/接管。原始日志和未完成夹具保留Git外 .runtime/contact-search-20261021，不把构建通过说成安装后功能验收。
+
+Windows x64安装包已制作并复制至C:/Users/luo/Desktop/AcceptCat_0.10.29.exe，87,439,504字节，SHA256 20cdaf56795d5fc35489c22ab60b70ae783308b091aadcef23b46628620027bc。--publish never，未代安装、公开Release或更新源，未部署后台/迁移数据库/修改飞书或Key，当前后台沿前批6597f58d/schema024/contract0.27。安装后检查由用户进行，他人注册超时问题仍待设备证据。本批本地提交保存，未创建远端PR。
