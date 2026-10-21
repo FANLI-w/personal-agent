@@ -2,7 +2,7 @@ import type {
   ConversationItem as ConversationItemType,
   MessageItem,
 } from "@openim/wasm-client-sdk/lib/types/entity";
-import { Badge } from "antd";
+import { Badge, Dropdown } from "antd";
 import { PushpinOutlined } from "@ant-design/icons";
 import clsx from "clsx";
 import { t } from "i18next";
@@ -11,7 +11,11 @@ import { useNavigate } from "react-router-dom";
 
 import OIMAvatar from "@/components/OIMAvatar";
 import { useConversationStore } from "@/store";
+import { IMSDK } from "@/layout/MainContentWrap";
+import { MessageReceiveOption } from "@openim/wasm-client-sdk";
+import { researchApi } from "@/research/api";
 import { formatConversionTime, getConversationContent } from "@/utils/imCommon";
+import { feedbackToast } from "@/utils/common";
 
 import styles from "./conversation-item.module.scss";
 import { useResearchStore } from "@/research/store";
@@ -56,7 +60,75 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
 
   const latestMessageTime = formatConversionTime(conversation.latestMsgSendTime);
 
+  const mapping = useResearchStore((s) =>
+    s.mappings.find((c) => c.imConversationID === conversation.conversationID),
+  );
+
+  const contextMenuItems = [
+    { key: "pin", label: conversation.isPinned ? "取消置顶" : "置顶聊天" },
+    { key: "mute", label: "免打扰" },
+    { key: "delete", label: "删除聊天", danger: true },
+  ];
+
+  const syncConversation = async () => {
+    const { data } = await IMSDK.getOneConversation({
+      sourceID: conversation.groupID || conversation.userID,
+      sessionType: conversation.conversationType,
+    });
+    useConversationStore.getState().updateConversationList([data], "filter");
+  };
+
+  const togglePin = async () => {
+    const value = !conversation.isPinned;
+    try {
+      if (mapping) {
+        const canonical = await researchApi("chatConversation", {
+          params: { id: mapping.researchConversationId },
+        });
+        await researchApi("updateChatPreferences", {
+          params: { id: mapping.researchConversationId },
+          body: {
+            expectedVersion: canonical.data.viewerState.version,
+            pinned: value,
+          },
+        });
+      }
+      await IMSDK.setConversation({
+        conversationID: conversation.conversationID,
+        isPinned: value,
+      });
+      await syncConversation();
+    } catch (cause) {
+      feedbackToast({ error: cause, msg: "置顶设置失败，请重试" });
+    }
+  };
+
+  const toggleMute = async () => {
+    const value = conversation.recvMsgOpt !== MessageReceiveOption.Receive;
+    try {
+      await IMSDK.setConversation({
+        conversationID: conversation.conversationID,
+        recvMsgOpt: value
+          ? MessageReceiveOption.ReceiveWithoutNotification
+          : MessageReceiveOption.Receive,
+      });
+      await syncConversation();
+    } catch (cause) {
+      feedbackToast({ error: cause, msg: "免打扰设置失败，请重试" });
+    }
+  };
+
+  const onContextMenuClick = ({ key }: { key: string }) => {
+    if (key === "pin") void togglePin();
+    else if (key === "mute") void toggleMute();
+    else if (key === "delete") feedbackToast({ msg: "删除功能接入中" });
+  };
+
   return (
+    <Dropdown
+      trigger={["contextMenu"]}
+      menu={{ items: contextMenuItems, onClick: onContextMenuClick }}
+    >
     <button
       type="button"
       aria-current={isActive ? "true" : undefined}
@@ -98,6 +170,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
         </div>
       </div>
     </button>
+    </Dropdown>
   );
 };
 
