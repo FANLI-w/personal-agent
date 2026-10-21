@@ -133,9 +133,9 @@ function LibraryChat({
   const input = useRef<TextAreaRef>(null);
   const handledFocus = useRef(0);
   useEffect(() => {
-    if (focusRequest) {
+    if (focusRequest && handledFocus.current !== focusRequest) {
       setExpanded(true);
-      if (!ready || busy || pending || handledFocus.current === focusRequest) return;
+      if (!ready || busy || pending) return;
       handledFocus.current = focusRequest;
       if(queryCollectionId)setSelected([queryCollectionId]);
       input.current?.focus();
