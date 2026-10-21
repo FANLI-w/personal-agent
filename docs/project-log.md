@@ -1344,3 +1344,13 @@ Git外.runtime/library-notices-20261021保存原证据、隔离库、调用/恢�
 用户中途明确“不要检查，我自己检查”，已停止界面验收并关闭本地夹具服务，未追加测试、载荷提取/对比或隔离原生启动。此前类型检查、生产Web构建已通过；合成ContactFinder/HTTP页面仅启动打开，未完成搜索、名片、点击或窄窗验证，不记为通过。浏览器标签关闭返回已不在当前会话中，未继续重开/接管。原始日志和未完成夹具保留Git外 .runtime/contact-search-20261021，不把构建通过说成安装后功能验收。
 
 Windows x64安装包已制作并复制至C:/Users/luo/Desktop/AcceptCat_0.10.29.exe，87,439,504字节，SHA256 20cdaf56795d5fc35489c22ab60b70ae783308b091aadcef23b46628620027bc。--publish never，未代安装、公开Release或更新源，未部署后台/迁移数据库/修改飞书或Key，当前后台沿前批6597f58d/schema024/contract0.27。安装后检查由用户进行，他人注册超时问题仍待设备证据。本批本地提交保存，未创建远端PR。
+
+## 2026-10-21 — 当前0.10.29同步main并公开发布
+
+用户明确要求以本机当前版本覆盖GitHub main与Release。先fetch实际远端，main=b7c4646f0967600e5c3e031616092d57ca03e938，为本机229bf4d831266da6b857a0b445c041fccf1187b9祖先，相差180提交；普通push快进main至229bf4d，无force、历史重写或删除旧发布。此前未合并草稿PR属于历史工作链，后续协作从最新main各开功能分支，不再把旧main或旧试用分支当基线。
+
+首轮gh repo view的--repo参数不支持已改位置参数；Git annotated tag首次缺提交者身份已用单次-c身份修正，未改全局配置。标签push连续schannel/OpenSSL TLS失败，CLI Release创建GraphQL与REST握手超时、现有本机loopback代理仍失败；用既有CLI权限POST完全一致的tag对象552b1639f3fe3b3117bfc7116c49c97986a81031和ref成功，目标commit229bf4d，没有新增仓库权限或降低TLS校验。CLI查询确认此前Release未创建，Edge以现有登录打开新发布页、上传4项附件并发布。页面导航/发布后观察超时均重读结果，未重复提交；textarea换行失败用标准LF填入，截图API不适用改用已有getScreenshot，保留实际结果而不伪称首次成功。
+
+北京时间2026-10-21 15:35，v0.10.29已公开且Latest：https://github.com/luoyan96/personal-agent/releases/tag/v0.10.29 。附件AcceptCat_0.10.29.exe（87,439,504字节、SHA256 20cdaf56795d5fc35489c22ab60b70ae783308b091aadcef23b46628620027bc）、blockmap（91,351字节）、latest.yml（340字节）、SHA256SUMS.txt（265字节）均在可见发布页，EXE服务端digest对应本机交付标识；源码zip/tar.gz由GitHub提供。未重打或代安装，旧v0.6.0等发布保留。公开最新入口与更新文件现指向0.10.29，不把附件就绪当作真实客户端更新验收。
+
+README已按实际公开结果更新下载、main开发基线和飞书本人试点范围；交接、路线图和0.10.29交付记录追加事实。用户要求自行检查，未追加功能/载荷/启动验收，推送触发的GitHub既有CI不声明全绿。本轮无后台重启/部署/迁移、飞书成员或权限扩大、模型Key变化，仍保留他人注册超时未决事项。Git外 .runtime/publish-0.10.29-20261021保存发布说明、校验清单、tag对象请求和发布实拍。标签固定229bf4d，main后续文档提交不改变安装包代码。

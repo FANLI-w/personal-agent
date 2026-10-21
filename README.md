@@ -68,7 +68,7 @@ AcceptCat 把这些事情放在同一个工作空间里：用聊天说清需求�
 
 资料集合保留来源和版本，Agent 使用当前授权的材料；本机 Zotero 可选入个人库的元数据与摘要。你可以从文件夹、ZIP 或固定 GitHub 来源预览 Skill，再安装到自己的私人空间，选择本次要用的参考。**公开一个 Agent，不等于公开它背后的私人材料。**
 
-已有飞书资料时，可在“课题组资料 → 连接飞书资料”用自己的账号授权，再直接向底部资料 Agent 发送文档链接和问题，继续追问同一份文字快照；无需先导入集合。需要归档时仍可预览并保存私人资料副本。首次需要具体文档链接，暂不按名称搜索整个飞书。
+已有飞书资料时，可在“课题组资料 → 连接飞书资料”用自己的账号授权，再直接向底部资料 Agent 发送文档链接和问题，继续追问同一份文字快照；无需先导入集合。多维表格论文库可通过“这是我的论文库＋链接”命名绑定，再按库名、年度、CCF 等级和关键词查询实际记录、核对来源。只有年份时会澄清“最近一年”的口径，不把年份当成过去十二个月。目前飞书仍仅罗岩本人试点可用，尚未面向所有成员开放，也不会按名称搜索整个飞书。
 
 ## 找到适合当前研究的能力
 
@@ -90,13 +90,15 @@ AcceptCat 把这些事情放在同一个工作空间里：用聊天说清需求�
 
 | 版本入口 | 当前状态 |
 | --- | --- |
-| **最新桌面试用版：0.10.26** | 连接飞书后，直接在资料 Agent 聊天中发文档链接和问题，支持快照阅读、连续追问和读取范围；导入集合保留为可选。安装包已制作供覆盖安装，尚未上传公开Release。[查看交付说明](docs/deployment/acceptcat-0.10.26.md) |
-| **飞书本人试点版：0.10.20** | 已制作安装包，配套后台已部署、飞书应用仅本人上线；支持选定文档预览、私人副本和规划片段，真实账号授权与选定材料试读待本人验证。[查看试点范围](docs/development/feishu-readonly-pilot.md) |
+| **最新公开桌面试用版：0.10.29** | Windows x64 安装包已发布：[下载 AcceptCat_0.10.29.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.29/AcceptCat_0.10.29.exe)。包含聊天式任务规划、课题组资料、底部资料 Agent、模型配置显示及联系人搜索调整。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.29) · [交付范围](docs/deployment/acceptcat-0.10.29.md) |
+| **飞书只读本人试点** | 文档快照与命名多维表格论文库代码已包含，配套后台及飞书 0.2.0 已部署；指定论文库的真实读取、私人绑定和 DSH 试读已完成。飞书应用仍仅罗岩本人可用，其他成员不会因安装客户端而自动获得权限。[试点记录与边界](docs/deployment/acceptcat-0.10.27.md) |
 | **后台模型运行层：DSH 0.2.1-rc.2** | 已部署并验证现有模型的真实短句回复，保留现有账号、资料与模型设置；已有客户端无需重装。[部署说明](docs/deployment/harness-0.2.1-rc.2-20261020.md) |
-| **GitHub 公开下载：v0.6.0** | 可从 [Releases](https://github.com/luoyan96/personal-agent/releases/latest) 下载；安装文件仍叫 `ResearchWeChat_0.6.0.exe`，属于早期版本，未包含这里展示的全部体验 |
-| **产品源码** | 最新桌面改进在 [feat/feishu-library-chat-0.10.26](https://github.com/luoyan96/personal-agent/tree/feat/feishu-library-chat-0.10.26)，保留 [fix/desktop-network-0.10.21](https://github.com/luoyan96/personal-agent/tree/fix/desktop-network-0.10.21) 联网修复和飞书试点；默认分支仍是较早基线，源码与发布分别维护 |
+| **历史公开版本** | 原 v0.6.0 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.29 |
+| **产品源码与协作基线** | [main](https://github.com/luoyan96/personal-agent/tree/main) 已同步当前 0.10.29 代码；[v0.10.29 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.29)固定本次安装包源码。后续从 main 新建功能分支，通过 PR 合并 |
 
 已有试用版的团队：登录后在“我的 → 模型设置”配置自己的模型，从一个真实课题的小任务开始。新团队如希望参与试用，可以在 [Issues](https://github.com/luoyan96/personal-agent/issues) 留下使用场景和试用意向；请不要提交账号密钥、未公开论文或学生的私人材料。
+
+当前仍有他人注册新账号超时的反馈，原因待进一步定位；课题组自助创建、已有账号接受邀请也尚未完成。0.10.29 的安装后使用检查由维护者进行，本次公开发布不代表这些问题已解决。
 
 应用侧栏“广场”下面提供“我的 → 版本与帮助”，左上头像也直接进入“我的”。它检查正式发布源；本地制作的新包或单纯推送代码不会自动变成可下载更新。社区目录更新由后台提供，通常无需重装客户端。
 
@@ -119,8 +121,10 @@ AcceptCat 把这些事情放在同一个工作空间里：用聊天说清需求�
 git clone https://github.com/luoyan96/personal-agent.git
 cd personal-agent
 
-# 最新试用功能暂在此集成分支，main 仍保留较早应用基线。
-git switch release/acceptcat-0.10.17
+# main 为当前共同开发基线；每项功能从最新 main 单独开分支。
+git switch main
+git pull --ff-only
+git switch -c feat/your-feature
 pnpm install --frozen-lockfile
 pnpm run ci
 ```

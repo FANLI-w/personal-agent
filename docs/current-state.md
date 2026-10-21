@@ -2,6 +2,14 @@
 
 更新日期：2026-10-21（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 当前共同开发基线与公开 Release：main / v0.10.29
+
+用户明确要求以本机当前版本更新 GitHub main 和 Release。实际 fetch 后远端旧 main 为 `b7c4646f0967600e5c3e031616092d57ca03e938`，是本机 `229bf4d831266da6b857a0b445c041fccf1187b9` 的祖先，相差180提交；已普通快进推送到 main，无强制推送、历史重写或删除旧发布。后续两人从最新 main 新建功能分支，不再接旧试用分支链。
+
+**v0.10.29 已于2026-10-21 15:35（北京时间）公开并标记 Latest**：[Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.29)。标签固定 `229bf4d831266da6b857a0b445c041fccf1187b9`，安装包产品提交 `a6256f8`；上传 EXE、blockmap、latest.yml 与 SHA256SUMS.txt，GitHub页面确认4项附件及安装包SHA256 `20cdaf56795d5fc35489c22ab60b70ae783308b091aadcef23b46628620027bc`。main 后续仅补本次公开状态/README说明；标签和安装包不重打。Git外证据 `.runtime/publish-0.10.29-20261021`。[交付记录](deployment/acceptcat-0.10.29.md)。
+
+Git推送标签多次TLS失败、CLI创建Release的GraphQL/REST握手超时保留；用既有CLI身份创建完全相同的annotated tag对象与ref，再用Edge现有GitHub登录上传并发布，未新增权限。浏览器导航/发布后的观察曾超时，重新读取可见页面确认成功，没有重复发布。按用户要求不追加产品验收；GitHub推送可能触发仓库既有CI，未将其声明为全部通过。本次无后台部署/迁移、飞书可用成员扩展或Key变更；注册超时与多人组员自助流程仍待完成。
+
 ## 最新桌面批次0.10.29：添加联系人隐藏系统个人助理，用户自行验收
 
 从实际干净 `fix/library-agent-notices-0.10.28` / `c8efe0f` 接续，分支 `fix/contact-search-no-assistant-0.10.29`，产品 `a6256f8`。[交付与边界](deployment/acceptcat-0.10.29.md)。“添加联系人”的账号/名片结果排除系统 coordinator，保留真人及自建 specialist Agent，不按名称过滤；空结果显示可添加联系人提示。纯客户端显示调整，未删除助理、关系或会话。
