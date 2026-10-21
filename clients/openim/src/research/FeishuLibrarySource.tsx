@@ -1,7 +1,10 @@
-import { ExportOutlined } from "@ant-design/icons";
-import { Alert, Button } from "antd";
+import { CopyOutlined, ExportOutlined } from "@ant-design/icons";
+import { Alert, Button, Input } from "antd";
+import { useRef, useState } from "react";
 import { useResearchRead } from "./useResearchRead";
 import { researchApi } from "./api";
+import { openFeishuLibrary } from "./feishu-library-link";
+import { usePersonalOperation } from "./usePersonalOperation";
 
 export function FeishuLibrarySource({ id, onAsk }: { id: string; onAsk: () => void }) {
   const read = useResearchRead(
@@ -27,18 +30,11 @@ export function FeishuLibrarySource({ id, onAsk }: { id: string; onAsk: () => vo
     );
   return (
     <section className="feishu-library-source" aria-label="飞书资料库">
-      <div className="research-library-actions">
-        <Button
-          type="primary"
-          icon={<ExportOutlined />}
-          href={library.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          在飞书打开资料库
-        </Button>
-        <Button onClick={onAsk}>向资料 Agent 提问</Button>
-      </div>
+      <FeishuLibraryActions
+        key={id + library.sourceUrl}
+        url={library.sourceUrl}
+        onAsk={onAsk}
+      />
       <p>{library.tableName} · 飞书多维表格 · 仅自己可见</p>
       <p>
         打开资料库可查看原表中的论文和附件；需要筛选、归纳或对比时，在下方和资料 Agent
@@ -58,5 +54,109 @@ export function FeishuLibrarySource({ id, onAsk }: { id: string; onAsk: () => vo
         <p>没有复制全部论文或读取 PDF 附件；不会自动分享你的飞书权限。</p>
       </details>
     </section>
+  );
+}
+
+function FeishuLibraryActions({ url, onAsk }: { url: string; onAsk: () => void }) {
+  const [busy, setBusy] = useState(false),
+    [showLink, setShowLink] = useState(false);
+  const [feedback, setFeedback] = useState<{ error: boolean; message: string }>();
+  const operation = usePersonalOperation(true, "feishu-library-link:" + url);
+  const locked = useRef(false);
+  async function open() {
+    if (locked.current) return;
+    const { isCurrent } = operation.capture();
+    if (!isCurrent()) return;
+    locked.current = true;
+    setBusy(true);
+    setFeedback(undefined);
+    try {
+      await openFeishuLibrary(url);
+      if (isCurrent())
+        setFeedback({
+          error: false,
+          message:
+            "已请求浏览器打开飞书资料库。若没有出现窗口，可复制链接到浏览器地址栏。",
+        });
+    } catch (error) {
+      if (isCurrent()) {
+        setShowLink(true);
+        setFeedback({
+          error: true,
+          message:
+            error instanceof Error
+              ? error.message
+              : "打开失败，请复制资料库链接到浏览器。",
+        });
+      }
+    } finally {
+      locked.current = false;
+      if (isCurrent()) setBusy(false);
+    }
+  }
+  async function copy() {
+    const { isCurrent } = operation.capture();
+    if (!isCurrent()) return;
+    setShowLink(true);
+    try {
+      await navigator.clipboard.writeText(url);
+      if (isCurrent())
+        setFeedback({
+          error: false,
+          message: "资料库链接已复制，可粘贴到浏览器地址栏打开。",
+        });
+    } catch {
+      if (isCurrent())
+        setFeedback({
+          error: true,
+          message: "未能自动复制，请选中下面的链接，按 Ctrl+C 复制到浏览器地址栏。",
+        });
+    }
+  }
+  return (
+    <>
+      <div className="research-library-actions">
+        <Button
+          type="primary"
+          icon={<ExportOutlined />}
+          loading={busy}
+          onClick={() => void open()}
+        >
+          在飞书打开资料库
+        </Button>
+        <Button icon={<CopyOutlined />} onClick={() => void copy()}>
+          复制链接
+        </Button>
+        <Button
+          onClick={() => {
+            onAsk();
+            setFeedback({
+              error: false,
+              message: "请在下方资料 Agent 输入问题并发送；这里不会自动发送查询。",
+            });
+          }}
+        >
+          去下方提问
+        </Button>
+      </div>
+      {feedback && (
+        <p
+          className={
+            feedback.error ? "research-download-error" : "research-library-muted"
+          }
+          role={feedback.error ? "alert" : "status"}
+        >
+          {feedback.message}
+        </p>
+      )}
+      {showLink && (
+        <Input
+          aria-label="飞书资料库链接"
+          value={url}
+          readOnly
+          onFocus={(event) => event.target.select()}
+        />
+      )}
+    </>
   );
 }

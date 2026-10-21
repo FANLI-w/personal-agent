@@ -131,16 +131,17 @@ function LibraryChat({
   const [lastQuery,setLastQuery]=useState(()=>{try{return readLibraryQueryContext(localStorage.getItem(storageKey+':query'));}catch{return undefined;}});
   const [libraryReceipt,setLibraryReceipt]=useState("");
   const input = useRef<TextAreaRef>(null);
+  const handledFocus = useRef(0);
   useEffect(() => {
     if (focusRequest) {
       setExpanded(true);
-      setFailure("");
-      setFailureCode("");
-      setNeedsFeishu(false);
+      if (!ready || busy || pending || handledFocus.current === focusRequest) return;
+      handledFocus.current = focusRequest;
       if(queryCollectionId)setSelected([queryCollectionId]);
       input.current?.focus();
+      input.current?.resizableTextArea?.textArea?.scrollIntoView({ block: "nearest" });
     }
-  }, [focusRequest,queryCollectionId]);
+  }, [focusRequest,queryCollectionId,ready,busy,pending]);
   const lock = useRef(false),
     bottom = useRef<HTMLDivElement>(null);
   const checkpoint = (intent: LibrarySendIntent) => {

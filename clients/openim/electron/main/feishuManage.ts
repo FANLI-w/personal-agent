@@ -1,6 +1,43 @@
 import { ipcMain, shell, type IpcMainInvokeEvent } from "electron";
 import { getWebContents, getResearchServiceStatus } from "./windowManage";
 import { validateFeishuAuthorizationUrl } from "../utils/feishuAuthorization";
+import { validateFeishuLibraryUrl } from "../utils/feishuLibrary";
+
+export function registerFeishuLibraryBridge() {
+  ipcMain.handle(
+    "open-feishu-library",
+    async (event: IpcMainInvokeEvent, value: unknown) => {
+      const contents = getWebContents(),
+        service = getResearchServiceStatus();
+      if (
+        !service.connected ||
+        service.error ||
+        !service.rendererOrigin ||
+        contents.isDestroyed() ||
+        contents.isLoadingMainFrame() ||
+        event.sender !== contents ||
+        event.senderFrame !== contents.mainFrame ||
+        new URL(event.senderFrame.url).origin !== service.rendererOrigin ||
+        new URL(contents.getURL()).origin !== service.rendererOrigin
+      )
+        throw new Error("请从当前 AcceptCat 主窗口打开资料库。");
+      const url = validateFeishuLibraryUrl(value);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          shell.openExternal(url),
+          new Promise<never>((_, reject) => {
+            timer = setTimeout(() => reject(new Error()), 5000);
+          }),
+        ]);
+      } catch {
+        throw new Error("未能打开系统浏览器，请复制资料库链接到浏览器。");
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    },
+  );
+}
 
 export function registerFeishuAuthorizationBridge() {
   ipcMain.handle(
