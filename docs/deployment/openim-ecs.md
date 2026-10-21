@@ -1,5 +1,11 @@
 # 新 ECS：OpenIM 科研微信（2026-10-06）
 
+## 当前后台补记：飞书库课题组共享（2026-10-21）
+
+历史正文保留各自版本；当前运行以[快速状态](../current-state.md)和[0.10.31部署回执](acceptcat-0.10.31.md)为准。用户单独授权后，20:40:47—20:41:02配对切换API/worker至 `research-openim-api:library-sharing-20261021-v2` / `sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce`，实际running/restart0/API healthy、HTTPS ready0.28；schema024无迁移，DSH0.2.1-rc.2/Cordis4.0.5不变。仅5份API/契约文件覆盖已校验的6597f58d组合基底，其他源码和6服务保持；原静态网页/current未改。
+
+95表/6原件的停写备份和独立恢复全行/文件哈希、integrity/外键/24迁移checksum通过；备份 `/srv/research-openim-backups/library-sharing-20261021-v2-20261021T124050Z`。凭据、默认模型、飞书连接/来源、集合/范围不变，已有1个源仍私人，未替用户开共享。服务器证据 `/opt/research-openim/ops/library-sharing-20261021-v2`，该目录images.yaml须追加在原http400覆盖链之后；完整Compose和回退参数见deploy.sh。回退旧0.27要保持现有024数据库和新写入，不能套用下文历史schema18/更早回退；共享源查询将暂停。未做异地/整栈或真实模型/团队体验验收，无新增SSH/Key/端口/飞书应用权限。
+
 ## 最新补发：旧消息停留与阅读全文验收（22:01:49北京时间）
 
 固定客户端 `622e84bff20af8cefdd6d9004286da6ba6ba4a22` 已于2026-10-06 22:01:49静态上线；[PR8](https://github.com/luoyan96/personal-agent/pull/8)已合入main（288b56f），[三平台完整CI](https://github.com/luoyan96/personal-agent/actions/runs/37474793438)全部通过。发布标签 `personal-agent-2026-10-06.4` 指向这份源码；API / worker仍94b26d1、镜像d56ee747、contract0.19 / chat1.8 / schema18，没有迁移。

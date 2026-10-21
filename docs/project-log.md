@@ -1406,3 +1406,19 @@ README已按实际公开结果更新下载、main开发基线和飞书本人试�
 本批PR目标main、未合并，继续由负责人审阅；未公开Release/更新源或打标签，Latest仍v0.10.29。源码、安装包、后台四种状态分别记录：共享代码与本机包已完成，当前生产共享尚未可用。后台保持既有6597f58d/contract0.27/schema024/DSH0.2.1-rc.2记录，本批未inspect、重启/部署或迁移；需要按原约定另行处理后台0.28更新。飞书直接应用授权仍仅罗岩，课题组成员必须实际同组；注册超时、已有个人账号自助加入/开组与完整成员管理仍未完成。
 
 收尾再次fetch确认main仍b7f5742，未出现待合入主线提交。分支已推送，使用本机既有CLI权限创建并附当前任务的[PR85](https://github.com/luoyan96/personal-agent/pull/85)，base main、未合并，无新增仓库授权。239份Markdown/10份Skill内容检查与git diff --check通过；后台部署继续等待单独安排。
+
+## 2026-10-21 — 用户单独授权部署课题组资料共享后台0.28
+
+用户明确表示“后台需要修改吗，那你改吧，我同意”。继续同一feat/feishu-library-lab-sharing/PR85，不合并main、不公开Release；实际fetch后main仍b7f5742、工作树干净。部署范围是配套0.10.31产品bd0a718的后台权限，不新增功能、修改现存库范围或扩展飞书应用成员。安装包C:/Users/luo/Desktop/AcceptCat_0.10.31.exe保持此前文件及SHA256，未重打或代安装。
+
+沿用Edge已有Workbench免密连接；原文件会话过期，正常刷新后同实例/同权限重新登录，无新SSH授权、Key或公网端口。线上先核对API/worker均为6597f58d/0.27/running/restart0/API healthy、schema024，其他6服务运行，磁盘约7.3GiB可用。部署包只叠加已提交的5份API/契约源文件，基底是现有组合生产镜像；不整包覆盖main或原47c42ac与后续功能组合。旧镜像依赖及锁文件保持。
+
+首候选严格基底检查因packages/contracts/package.json的CRLF/LF差异提前停止，未构建或停机；核对公开元数据完全相同，Git精确内容转CRLF后哈希e83dcfd3与线上一致，其余4文件直接匹配。按线上实际字节哈希制作第二候选；首归档和服务器失败输出保留，未跳过守卫。最终33,308字节归档SHA256 90288006bd38d9a5e748a142fcce02e363740ad193ac39a580db2a0841520844，离线构建成功，Linux隔离3文件/35项检查通过（资料库18项/飞书9项/领域规则8项）。除本批源外的API/契约源码、24迁移及依赖锁文件逐哈希保持，实际两容器中的5文件匹配清单。
+
+正式维护北京时间20:40:47—20:41:02。先停API、确认execution/chat的queued/running均0，再停worker；停写一致备份95表/6原件，独立解包恢复及启动前在线数据的表结构/行数/全行哈希、文件/权限哈希一致，integrity/foreign_key及24迁移checksum通过。无SQL迁移，schema024保持。备份/srv/research-openim-backups/library-sharing-20261021-v2-20261021T124050Z/research.tar.gz，SHA256 29ec7de38ccc014736448e5b75139dedd077acef465d293f782883fe9aa83d86；仍在同ECS，不称异地或完整组件恢复。
+
+API/worker现为research-openim-api:library-sharing-20261021-v2，sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce；实际running/restart0、API healthy、公网HTTPS ready200/contract0.28。三条未登录受保护入口401；运行配置/挂载/端口/网络/内存/重启策略及其余6容器ID/镜像/状态保持。个人/团队模型配置与默认值、Feishu连接/源、资料集合整表哈希不变，现有1个源仍owner_private，未代用户开启共享。DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified，没有追加真实模型探测。
+
+有效Compose在旧47c42ac基础/production/私有images及community/key-preview/feishu/harness/bitable/http400链末尾追加本批images.yaml；原current指针/静态网页不变。证据/脚本/manifest及检查回执在/opt/research-openim/ops/library-sharing-20261021-v2；首失败同级library-sharing-20261021。本机Git外D:/deepseek-agent/.runtime/feishu-lab-sharing-20261021/backend-deploy保存两归档、部署脚本、失败说明、部署摘要和可见回执图；服务器完整数据哈希清单及受限备份不入Git。回退须配对恢复旧镜像并保留当前024数据/绑定/新写入，不回灌旧备份、不down -v；旧0.27会暂停共享源查询。成功未触发自动回退，不称已演练。
+
+用户自行体验安装包和功能，未新增生产测试账号、调用真实私人资料/模型或执行浏览器产品/载荷/原生/安装后验收。飞书应用直接OAuth仍仅罗岩，AcceptCat共享由库主人明确选择，实际同组成员可读指定表，原表网页仍受飞书本人权限约束。注册超时未定因、自助加入/开组/完整成员管理仍未完成。docs/current-state.md、0.10.31交付文档与部署入口同步实际已部署状态；PR85只更新记录，待负责人审阅，不合并或公开发布。

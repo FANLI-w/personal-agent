@@ -20,9 +20,23 @@
 
 数据库继续schema **024**，复用已有scope、owner、lab及加密源记录，无新增表或迁移。无新增Feishu scope、应用可用成员、密钥、依赖或锁文件变化。部署后不会自动共享任何现存来源。
 
-客户端对共享功能单独检查后台契约至少0.28。当前线上记录仍为0.27/schema024/镜像6597f58d/DSH0.2.1-rc.2；在未更新的后台上，0.10.31明确提示共享服务待升级并禁用该选项，私人库和普通查看保持可用，不伪造共享成功。后台部署是独立操作，本批未获准替换生产服务，未对生产数据、权限或飞书应用作变更。
+客户端对共享功能单独检查后台契约至少0.28。在未更新的0.27后台上，0.10.31明确提示共享服务待升级并禁用该选项，私人库和普通查看保持可用，不伪造共享成功。安装包交付时尚未部署；用户随后单独授权后台更新，已完成下述0.28部署。安装包没有重打。
 
-Git外 `backend-candidate` 已整理5份后台/契约源文件和1份合成测试，附本批SHA256与main基底Git blob清单；没有将其上传或构建成生产镜像。若另行部署，需先核对实际旧镜像及源文件、构建候选、停写备份/恢复核对，再配对更新API和worker，保留024数据及原凭据。回退0.27会暂停已设共享的飞书库查询；应保留数据库及共享状态，恢复0.28或由库主人用0.10.31改回私人，不用旧数据库备份覆盖新写入。
+Git外 `backend-candidate` 保存最初整理的5份后台/契约源文件和1份合成测试，附本批SHA256与main基底Git blob清单；实际部署包及回执另存 `backend-deploy`。回退0.27会暂停已设共享的飞书库查询；应保留数据库及共享状态，恢复0.28或由库主人用0.10.31改回私人，不用旧数据库备份覆盖新写入。
+
+## 已授权的后台部署：2026-10-21 20:41北京时间
+
+用户明确同意后，沿用既有Edge Workbench免密连接；文件会话过期一次，正常刷新并重新登录同实例/同权限，无新增SSH、Key、端口或云授权。实际核对旧API/worker均为6597f58d/0.27/restart0/API healthy，磁盘约7.3GiB可用。只从旧生产镜像叠加本产品bd0a718的5份API/契约文件：`apps/api/src/{feishu-library,research-library}.ts`、`packages/contracts/src/{models,feishu-library}.ts`、`packages/contracts/package.json`；没有以main整包覆盖既有组合后台。
+
+首候选严格源码检查因线上contracts/package.json为CRLF、Git为LF而停止，未构建或停机；公开包元数据相同，精确Git字节转CRLF后的SHA256 `e83dcfd35950b075702eb3e1662ce6853c41ca6325eacc53f804cf479d71208c` 与线上一致。第二候选固定此实际基底哈希，其余4份源文件直接匹配。两份原候选归档及失败输出保留。最终传输包33,308字节，SHA256 `90288006bd38d9a5e748a142fcce02e363740ad193ac39a580db2a0841520844`；无网络构建contracts/research-core/API并运行隔离Linux检查，3文件/35项通过（含18项资料库权限检查）。新旧镜像其他API源码、迁移、契约源码及依赖锁文件逐哈希保持，候选及实际API/worker五文件均匹配清单。
+
+正式切换 **20:40:47—20:41:02**：先停API接入、确认execution/chat队列和运行数均0，再停worker；一致备份schema024的 **95表/6原件**。独立目录解包恢复与在线启动前数据的全部表结构/行数/行哈希及文件/权限哈希一致，SQLite integrity/外键及24份迁移checksum通过，无迁移。备份 `/srv/research-openim-backups/library-sharing-20261021-v2-20261021T124050Z/research.tar.gz`，SHA256 **29ec7de38ccc014736448e5b75139dedd077acef465d293f782883fe9aa83d86**；备份仍在同ECS，未做异地或整栈恢复演练。
+
+API和worker现用 **research-openim-api:library-sharing-20261021-v2** / **sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce**。实际两容器running/restart0，API healthy、HTTPS ready200/contract0.28；三条未登录受保护入口401。运行环境变量哈希/挂载/命令/内存/端口/网络/重启策略保持，其余6容器ID/镜像/状态不变。个人模型配置及默认设置、团队模型设置、飞书连接、飞书源与资料集合整表哈希保持；现有1个飞书库仍owner_private，无自动共享。DSH0.2.1-rc.2/Cordis4.0.5保持，health的Harness仍not_verified，不据此声称真实模型通过。
+
+服务器操作/回执在 `/opt/research-openim/ops/library-sharing-20261021-v2`，失败首候选在同级 `library-sharing-20261021`；本机Git外 `D:/deepseek-agent/.runtime/feishu-lab-sharing-20261021/backend-deploy` 保存传输包/manifest/操作脚本/失败说明/部署截图与摘要。有效Compose沿原47c42ac基础、生产配置、私有images及后续community/key-preview/feishu/harness/bitable/http400覆盖链，**最后追加本批images.yaml**；后续维护不能只用更早覆盖链把本批退回。完整参数见本批deploy.sh。`/opt/research-openim/current` 和原静态网页未改，此次仅桌面配套后台。
+
+应急回退使用本批deploy.sh中的old覆盖链配对恢复6597f58d，先停接入并排空任务，再停API/worker；保留当前024数据库、源绑定和后来业务写入，不能回灌本次备份或down -v。旧0.27暂停共享源查询的限制见上文。脚本含失败时恢复原配对镜像且保留当前业务数据的处理，本次成功未触发，不称已实际演练回退。没有替用户改任何库权限、发布飞书应用或增加可用成员；真实组员共享体验、飞书/模型与安装后验收仍由用户进行。PR85未合并，未公开Release或更新源，原0.10.31本机包保持。
 
 ## 实际检查与安装包
 
