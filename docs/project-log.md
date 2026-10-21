@@ -1312,3 +1312,11 @@ Windows桌面 AcceptCat_0.10.27.exe，87,434,027字节，SHA256 a95b176b6ab4be1a
 原GitHub CLI TLS超时与连接器403证据保留，恢复后使用原CLI权限成功创建并附任务的[草稿PR82](https://github.com/luoyan96/personal-agent/pull/82)，base docs/feishu-paper-library-investigation、未合并；无新增仓库授权。最终715项完整CI沿已通过结果，无新产品源码不重复全量，状态/部署/路线图收尾并做内容及diff检查。
 
 收尾内容检查234份Markdown/10份Skill及git diff --check通过。已按命令行核对并停止本批4960/4961合成测试进程，端口无监听；临时维护页与可访问测试/参考页关闭，旧data错误页被浏览器策略拦截而未操作。原Edge用户页、已安装客户端、私人数据及生产服务保留。PR82文档收尾前首读三项Foundation均IN_PROGRESS，不能称远端检查已通过。
+
+## 2026-10-21 — 他人注册超时，只读排查未定因
+
+用户反馈给他人使用时连接超时，补充发生在新账号注册阶段。实际Git保持feat/feishu-paper-library-0.10.27，从干净1ed8a90接续，未切main或改产品源码。公网入口/ready响应正常，固定实际IP绕过本机显式代理4次ready200/0.27，约122—176毫秒；注册路径使用空/非法合成输入验证，真实400/VALIDATION_ERROR返回约127毫秒，不创建账号。实际Electron22.3.27、隔离profile、当前desktopServer/desktopTransport经真实公网校验：health200（首次1807毫秒）、两次注册校验400（79/43毫秒），无转发错误。没有真实密码/会话/新账号完整成功路径检查，不把非法输入校验称完整注册通过。
+
+经既有免密Workbench只读检查，API/worker均running/restart0，其他6服务运行；磁盘85%但仍7.3GiB可用，内存充足。生产数据库只读统计近30分钟注册回执0、有效registration_work为0、超限注册键0；合成密码KDF单次161毫秒，未输出哈希、用户身份、IP或请求正文。注册源代码仅本地密码处理/事务，不调用IM、DSH或飞书。科研入口access_log已off，错误日志有界尾部没有上游超时/拒连；尾部两项TLS握手错误尚无时间关联，不作为本次根因。不能以无访问日志推断请求未到达。
+
+已向用户询问对方同机浏览器ready结果和安装版本，仍待具体失败证据。当前尚未确定原因，未重启/部署、改网络/证书/权限、创建生产账号或更换包，无新全量测试声明；当前线上沿6597f58d/schema024/contract0.27。Git外本机 .runtime/connection-timeout-20261021 保存公开请求与原生转发回执，服务器 /opt/research-openim/ops/connection-timeout-20261021 保留脱敏聚合诊断，原资料及运行服务保持。
