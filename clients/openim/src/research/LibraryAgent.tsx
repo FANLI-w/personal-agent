@@ -567,7 +567,7 @@ function LibraryChat({
               )}
             </article>
           ))}
-          {pending && !history.data?.messages.some((m) => m.origin === "human" && m.text === pending.text) && (
+          {pending && (!pending.conversationId || !history.data?.messages.some((m) => m.origin === "human" && m.text === pending.text)) && (
             <article className="library-chat-message role-human" aria-label="待确认的原消息">
               <SafeMessageMarkdown text={pending.text} />
               <small>原消息 · 结果待确认</small>
