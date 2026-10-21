@@ -2,6 +2,8 @@
 
 ## 科研能力中心分阶段推进（2026-10-10）
 
+2026-10-21：负责人确认多人共同开发并预计新增合作者，[CONTRIBUTING](../CONTRIBUTING.md)明确Fork/独立功能分支→主仓库main的PR→负责人审阅决定合并；[新聊天交接prompt](development/collaboration-handoff.md)已整理，AGENTS提供入口。后续新增功能按此流程开展，不将一次性主线同步当作持续自动发布授权。
+
 2026-10-21：按用户指令以当前0.10.29设定共同开发基线，main从旧b7c4646普通快进至229bf4d，保留历史；[v0.10.29](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.29)已公开并标记Latest，EXE/更新文件/校验文件已上传。后续双方从main分功能分支，通过PR汇总；界面验收仍由用户进行，不扩展飞书本人试点或代部署后台。
 
 2026-10-21：[添加联系人隐藏系统个人助理/Windows0.10.29](deployment/acceptcat-0.10.29.md)已实现：账号和名片查找结果按 coordinator 身份过滤，保留真人与用户自建 Agent。用户要求自行检查后停止界面验收，不将已完成的类型/构建检查作为交互通过；安装及实际使用由用户验证，无后台或权限变化。
