@@ -1,4 +1,6 @@
 import { ReuseService, reuseCommands } from './reuse.js'
+import {labMembershipCommands,runLabMembership,type LabMembershipCommand} from './lab-membership.js'
+import {teamLabId} from './lab-access.js'
 import type { ReuseCommand } from './reuse.js'
 import { AiService, aiCommands } from './ai.js'
 import type { AiCommand } from './ai.js'
@@ -203,7 +205,8 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
       try { return transaction(connection, () => {
         const actor = authenticate(connection, token)
         if (route.method !== 'GET') requireCsrf(actor, request.headers['x-csrf-token'])
-        if (name === 'session') return routes.session.response.parse({ data: { member: new Collaboration(connection, actor).member(actor.id), csrfToken: csrfToken(connection, token), expiresAt: actor.expiresAt, isLabManager:isLabManager(connection,actor), spaceKind:connection.prepare('SELECT 1 FROM personal_spaces WHERE lab_id=?').get(actor.labId)?'personal':'laboratory' } })
+        if (name === 'session') return routes.session.response.parse({ data: { member: new Collaboration(connection, actor).member(actor.id), csrfToken: csrfToken(connection, token), expiresAt: actor.expiresAt, isLabManager:isLabManager(connection,actor), spaceKind:connection.prepare('SELECT 1 FROM personal_spaces WHERE lab_id=?').get(teamLabId(actor))?'personal':'laboratory' } })
+        if((labMembershipCommands as readonly string[]).includes(name))return runLabMembership(connection,actor,name as LabMembershipCommand,parsed.data as RequestFor<LabMembershipCommand>)
         if (name === 'logout') {
           connection.prepare('UPDATE sessions SET revoked_at=? WHERE token_hash=?').run(new Date().toISOString(), hash(token))
           reply.header('Set-Cookie', cookie('', 0)); return { data: { loggedOut: true } }
@@ -214,7 +217,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
         if((personalModelCommands as readonly string[]).includes(name)){const result=runPersonalModel(connection,actor,name as typeof personalModelCommands[number],parsed.data as RequestFor<typeof personalModelCommands[number]>,config);reconcileChat(connection,config);return route.response.parse(result)}
         if (name === 'labAiSettings') return routes.labAiSettings.response.parse(labAiSettings(connection,actor,parsed.data as RequestFor<'labAiSettings'>,config))
         if (name === 'updateLabAiSettings') return routes.updateLabAiSettings.response.parse(updateLabAiSettings(connection,actor,parsed.data as RequestFor<'updateLabAiSettings'>,config))
-        const labAi = labAiRuntime(connection,actor.labId,config)
+        const labAi = labAiRuntime(connection,teamLabId(actor),config)
         collaboration = new Collaboration(connection,actor,config.blobRoot,labAi)
         reconcile(connection,config)
         reconcileChat(connection,config)

@@ -1,3 +1,4 @@
+import {hasLabMembership} from './lab-access.js'
 import type { DatabaseSync } from 'node:sqlite'
 import { randomUUID } from 'node:crypto'
 import type { z } from 'zod'
@@ -36,8 +37,8 @@ export class OpenImBridge {
   }
   contacts(chat:ChatService){
     const shared=this.db.prepare("SELECT g.id FROM chat_conversations g JOIN chat_members self ON self.conversation_id=g.id AND self.contact_id=? AND self.status='joined'").all(chat.human().id).flatMap(row=>{try{return chat.conversation(String(row.id),false).members.filter(m=>m.status==='joined').map(m=>m.contactId)}catch{return []}})
-    const ids=[...new Set([...chat.mineContactIds(),...shared,...this.db.prepare('SELECT id FROM chat_contacts WHERE lab_id=?').all(chat.c.actor.labId).map(row=>String(row.id))])]
-    const all=ids.flatMap(id=>{try{const contact=chat.contact(id);if(contact.labId!==chat.c.actor.labId&&!shared.includes(id)&&!['own','accepted'].includes(contact.relationship.status))return [];return [this.identity(chat,contact.id)]}catch{return []}})
+    const ids=[...new Set([...chat.mineContactIds(),...shared,...this.db.prepare('SELECT c.id FROM chat_contacts c WHERE c.lab_id=? OR EXISTS(SELECT 1 FROM effective_lab_memberships e WHERE e.lab_id=? AND e.member_id=c.owner_id)').all(chat.c.actor.labId,chat.c.labId).map(row=>String(row.id))])]
+    const all=ids.flatMap(id=>{try{const contact=chat.contact(id);if(contact.labId!==chat.c.actor.labId&&!hasLabMembership(this.db,contact.identity.kind==='human'?contact.identity.memberId:contact.identity.ownerMemberId,chat.c.labId)&&!shared.includes(id)&&!['own','accepted'].includes(contact.relationship.status))return [];return [this.identity(chat,contact.id)]}catch{return []}})
     return {contacts:all.slice(0,100),truncated:all.length>100}
   }
   conversations(chat:ChatService,imConversationID?:string){

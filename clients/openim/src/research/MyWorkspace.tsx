@@ -22,6 +22,7 @@ import { WorkbenchCapabilities } from "./CapabilitySquare";
 import { ModelSettings } from "./ModelSettings";
 import { PersonalMemoryPanel } from "./PersonalMemoryPanel";
 import { MyProfile } from "./MyProfile";
+import { LabWorkspace } from "./LabWorkspace";
 import { useResearchStore } from "./store";
 import { usePersonalOperation } from "./usePersonalOperation";
 import "./my-workspace.scss";
@@ -29,6 +30,7 @@ import "./my-workspace.scss";
 const sections = [
   { value: "profile", label: "个人资料", icon: UserOutlined },
   { value: "agents", label: "我的 Agent", icon: RobotOutlined },
+  { value: "labs", label: "课题组", icon: TeamOutlined },
   { value: "capabilities", label: "课题组能力", icon: TeamOutlined },
   { value: "models", label: "模型设置", icon: ApiOutlined },
   { value: "memory", label: "记忆与偏好", icon: BookOutlined },
@@ -117,6 +119,8 @@ export function MyWorkspace() {
           {failure && <Alert type="warning" message={failure} />}
           {view === "agents" ? (
             <MyAgentsWorkspace />
+          ) : view === "labs" ? (
+            <LabWorkspace />
           ) : view === "capabilities" ? (
             <WorkbenchCapabilities view="lab" />
           ) : view === "models" ? (

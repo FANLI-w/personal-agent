@@ -9,6 +9,7 @@ import type { Actor } from './auth.js'
 import { Coordination, coordinationCommands } from './coordination.js'
 import type { CoordinationCommand } from './coordination.js'
 import { fail } from './errors.js'
+import {hasLabMembership,teamLabId} from './lab-access.js'
 import {planTasks, researchWorkspace} from './research-team.js'
 
 export const authorizedPlanSources=`NOT EXISTS(SELECT 1 FROM reuse_denials rd WHERE rd.target_kind='plan' AND rd.target_id=plans.id AND rd.member_id=plans.owner_id) AND NOT EXISTS (SELECT 1 FROM execution_jobs j,json_each(j.request_json,'$.inputs') ref
@@ -41,12 +42,13 @@ export class Collaboration {
   readonly createdBlobs: string[] = []
   readonly coordination = new Coordination(this)
   constructor(readonly db: DatabaseSync, readonly actor: Actor, readonly blobRoot?: string, readonly execution?: {enabled:boolean;model:string}) {}
-  sameLab(labId: string) { if (this.actor.labId !== labId) fail('NOT_FOUND') }
+  get labId(){const id=teamLabId(this.actor);if(this.actor.teamLabId!==undefined&&!hasLabMembership(this.db,this.actor.id,id))fail('NOT_FOUND');return id}
+  sameLab(labId: string) { if (this.labId !== labId) fail('NOT_FOUND') }
   checkVersion(actual: number, expected: number) { if (actual !== expected) fail('VERSION_CONFLICT') }
   revision() { return createHmac('sha256', signingKey(this.db)).update(String(this.db.prepare("SELECT value FROM runtime_meta WHERE key='revision'").get()!.value)).digest('hex') }
   changed() { this.db.exec("UPDATE runtime_meta SET value=CAST(value AS INTEGER)+1 WHERE key='revision'") }
   plan(planId: string): PlanModel {
-    const row = this.db.prepare(`SELECT document FROM plans WHERE id=? AND owner_id=? AND lab_id=? AND ${authorizedPlanSources} AND NOT EXISTS(SELECT 1 FROM chat_invalid_plans invalid WHERE invalid.plan_id=plans.id)`).get(planId, this.actor.id, this.actor.labId)
+    const row = this.db.prepare(`SELECT document FROM plans WHERE id=? AND owner_id=? AND lab_id=? AND ${authorizedPlanSources} AND NOT EXISTS(SELECT 1 FROM chat_invalid_plans invalid WHERE invalid.plan_id=plans.id)`).get(planId, this.actor.id, this.labId)
     if (!row) fail('NOT_FOUND')
     // Chat-generated private drafts retain live source authority independently of chat visibility.
     const chatSource=this.db.prepare('SELECT t.request_json FROM chat_plan_sources s JOIN chat_turns t ON t.id=s.turn_id WHERE s.plan_id=? AND t.owner_id=?').get(planId,this.actor.id)
@@ -74,7 +76,7 @@ export class Collaboration {
       AND NOT EXISTS(SELECT 1 FROM chat_invalid_plans invalid WHERE invalid.plan_id=t.plan_id)
       AND (acl.access='full' OR t.claimable=1 OR EXISTS(SELECT 1 FROM assignments a WHERE a.task_id=t.id AND a.member_id=? AND a.status='pending'))
       AND (?='lab' OR t.initiator_id=? OR t.lead_id=? OR t.reviewer_id=? OR (acl.access='full' AND EXISTS(SELECT 1 FROM json_each(t.document,'$.participantIds') p WHERE p.value=?)) OR EXISTS(SELECT 1 FROM assignments a WHERE a.task_id=t.id AND a.member_id=? AND a.status='pending'))`,
-      values: [this.actor.id, this.actor.labId, this.actor.id, this.actor.id, scope, this.actor.id, this.actor.id, this.actor.id, this.actor.id, this.actor.id] }
+      values: [this.actor.id, this.labId, this.actor.id, this.actor.id, scope, this.actor.id, this.actor.id, this.actor.id, this.actor.id, this.actor.id] }
   }
   taskRow(taskId: string) {
     const v = this.visible()
@@ -96,7 +98,7 @@ export class Collaboration {
     const metadata = this.db.prepare('SELECT task_id,member_id FROM assignments WHERE id=?').get(assignmentId)
     if (!metadata) fail('NOT_FOUND')
     // Own decision history remains replayable after declining, but explicit revocation wins.
-    const allowed = this.db.prepare("SELECT t.id FROM tasks t LEFT JOIN task_access acl ON acl.task_id=t.id AND acl.member_id=? WHERE t.id=? AND t.lab_id=? AND COALESCE(acl.access,'')!='revoked' AND NOT EXISTS(SELECT 1 FROM reuse_denials rd WHERE rd.target_kind='task' AND rd.target_id=t.id AND rd.member_id=acl.member_id) AND NOT EXISTS(SELECT 1 FROM chat_invalid_plans invalid WHERE invalid.plan_id=t.plan_id)").get(this.actor.id, metadata.task_id!, this.actor.labId)
+    const allowed = this.db.prepare("SELECT t.id FROM tasks t LEFT JOIN task_access acl ON acl.task_id=t.id AND acl.member_id=? WHERE t.id=? AND t.lab_id=? AND COALESCE(acl.access,'')!='revoked' AND NOT EXISTS(SELECT 1 FROM reuse_denials rd WHERE rd.target_kind='task' AND rd.target_id=t.id AND rd.member_id=acl.member_id) AND NOT EXISTS(SELECT 1 FROM chat_invalid_plans invalid WHERE invalid.plan_id=t.plan_id)").get(this.actor.id, metadata.task_id!, this.labId)
     if (!allowed) fail('NOT_FOUND')
     if (metadata.member_id !== this.actor.id && this.access(String(metadata.task_id)) !== 'full') fail('NOT_FOUND')
     const row = this.db.prepare('SELECT document,offer_scope,offer_schedule FROM assignments WHERE id=?').get(assignmentId)!
@@ -110,17 +112,17 @@ export class Collaboration {
     return Deliverable.parse(JSON.parse(String(row.document)))
   }
   member(memberId: string) {
-    const row = this.db.prepare('SELECT id,lab_id,display_name,version FROM members WHERE id=? AND lab_id=?').get(memberId, this.actor.labId)
+    const row = this.db.prepare('SELECT id,lab_id,display_name,version FROM members WHERE id=? AND (id=? OR EXISTS(SELECT 1 FROM effective_lab_memberships e WHERE e.member_id=members.id AND e.lab_id=?))').get(memberId, this.actor.id, this.labId)
     if (!row) fail('NOT_FOUND')
     const commitments = this.db.prepare(`SELECT a.document FROM assignments a JOIN tasks t ON t.id=a.task_id
       JOIN task_access acl ON acl.task_id=t.id AND acl.member_id=? AND acl.access='full'
-      WHERE NOT EXISTS(SELECT 1 FROM reuse_denials rd WHERE rd.target_kind='task' AND rd.target_id=t.id AND rd.member_id=acl.member_id) AND a.member_id=? AND a.status='accepted' AND t.lab_id=? AND t.status NOT IN ('completed','cancelled') ORDER BY t.id LIMIT 101`).all(this.actor.id, memberId, this.actor.labId)
+      WHERE NOT EXISTS(SELECT 1 FROM reuse_denials rd WHERE rd.target_kind='task' AND rd.target_id=t.id AND rd.member_id=acl.member_id) AND a.member_id=? AND a.status='accepted' AND t.lab_id=? AND t.status NOT IN ('completed','cancelled') ORDER BY t.id LIMIT 101`).all(this.actor.id, memberId, this.labId)
       .map(r => Assignment.parse(JSON.parse(String(r.document)))).map(a => ({ taskId: a.taskId, scope: a.commitment!.scope, schedule: a.commitment!.schedule }))
     const saved = this.db.prepare('SELECT document FROM member_availability WHERE member_id=?').get(memberId)
     const availability = saved ? Availability.parse(JSON.parse(String(saved.document))) : null
     const date = availability ? new Intl.DateTimeFormat('en-CA', { timeZone: availability.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(this.readSnapshot?.at ?? now())) : ''
     const availabilityStatus = !availability ? 'unknown' : date < availability.from ? 'upcoming' : date > availability.to ? 'expired' : 'current'
-    return Member.parse({ id: row.id, labId: row.lab_id, displayName: row.display_name, version: row.version, publicExpertise: [], availability, availabilityStatus, visibleCommitmentsTruncated: commitments.length > 100, visibleCommitments: commitments.slice(0, 100) })
+    return Member.parse({ id: row.id, labId: this.labId, displayName: row.display_name, version: row.version, publicExpertise: [], availability, availabilityStatus, visibleCommitmentsTruncated: commitments.length > 100, visibleCommitments: commitments.slice(0, 100) })
   }
   actions(task: TaskModel): TaskModel {
     const allowedActions: TaskModel['allowedActions'] = []
@@ -240,7 +242,7 @@ export class Collaboration {
   run<K extends CollaborationCommand>(name: K, request: RequestFor<K>): unknown {
     const route = routes[name]
     const params = request.params as { id?: string }
-    const resource = params.id ?? this.actor.labId
+    const resource = params.id ?? this.labId
     // Must run inside caller's transaction, after authenticating the current session.
     this.authorize(name, resource, request.body)
     if(['invite','withdraw'].includes(name)){const b=request.body as {memberId?:string;transferToMemberId?:string};const member=b.memberId??b.transferToMemberId;if(member){const refs=this.db.prepare("SELECT conclusion_id,revision FROM reuse_closure WHERE target_kind='task' AND target_id=?").all(resource).map(r=>new ReuseService(this).conclusion(String(r.conclusion_id),Number(r.revision)));new ReuseService(this).range(refs,[member])}}
@@ -281,12 +283,12 @@ export class Collaboration {
         const [payload, signature, extra] = token.split('.')
         if (!payload || extra || signature !== createHmac('sha256', signingKey(this.db)).update(`snapshot:${payload}`).digest('hex')) fail('CURSOR_EXPIRED')
         const v = JSON.parse(Buffer.from(payload, 'base64url').toString())
-        if (v.actor !== this.actor.id || v.lab !== this.actor.labId || v.revision !== this.revision() || v.expires <= Date.now()) fail('CURSOR_EXPIRED')
+        if (v.actor !== this.actor.id || v.lab !== this.labId || v.revision !== this.revision() || v.expires <= Date.now()) fail('CURSOR_EXPIRED')
         return { token, at: v.at as string, expiresAt: new Date(v.expires).toISOString() }
       } catch { fail('CURSOR_EXPIRED') }
     }
     const at = now(), expires = Date.now() + 900000
-    const payload = Buffer.from(encode({ actor: this.actor.id, lab: this.actor.labId, revision: this.revision(), at, expires })).toString('base64url')
+    const payload = Buffer.from(encode({ actor: this.actor.id, lab: this.labId, revision: this.revision(), at, expires })).toString('base64url')
     return { token: `${payload}.${createHmac('sha256', signingKey(this.db)).update(`snapshot:${payload}`).digest('hex')}`, at, expiresAt: new Date(expires).toISOString() }
   }
   cursor(query: unknown, cursor: string | undefined): { last: string; created: string } | null {
@@ -341,7 +343,7 @@ export class Collaboration {
       const rows = this.db.prepare(`SELECT document,id,json_extract(document,'$.createdAt') created FROM plans
         WHERE owner_id=? AND lab_id=? AND ${authorizedPlanSources} AND NOT EXISTS(SELECT 1 FROM chat_invalid_plans invalid WHERE invalid.plan_id=plans.id) AND (?='all' OR json_extract(document,'$.status')=?)
         AND (? IS NULL OR json_extract(document,'$.createdAt')<? OR (json_extract(document,'$.createdAt')=? AND id<?))
-        ORDER BY created DESC,id DESC LIMIT ?`).all(this.actor.id, this.actor.labId, base.status, base.status, cursor?.last ?? null, cursor?.created ?? '', cursor?.created ?? '', cursor?.last ?? '', base.limit + 1)
+        ORDER BY created DESC,id DESC LIMIT ?`).all(this.actor.id, this.labId, base.status, base.status, cursor?.last ?? null, cursor?.created ?? '', cursor?.created ?? '', cursor?.last ?? '', base.limit + 1)
       const last = rows[base.limit - 1]
       return { data: rows.slice(0, base.limit).map(r => { const p = Plan.parse(JSON.parse(String(r.document))); return PlanSummary.parse({ id: p.id, ownerId: p.ownerId, labId: p.labId, goal: p.goal, version: p.version, status: p.status, createdAt: p.createdAt }) }), nextCursor: rows.length > base.limit ? this.nextCursor(base, String(last!.id), String(last!.created)) : null }
     },
@@ -388,7 +390,7 @@ export class Collaboration {
       this.sameLab(params.id)
       const base = { kind: 'members', labId: params.id, limit: query.limit ?? 30 }
       const cursor = this.cursor(base, query.cursor)
-      const rows = this.db.prepare('SELECT id FROM members WHERE lab_id=? AND id>? ORDER BY id LIMIT ?').all(params.id, cursor?.last ?? '', base.limit + 1)
+      const rows = this.db.prepare('SELECT m.id FROM members m WHERE (EXISTS(SELECT 1 FROM effective_lab_memberships e WHERE e.member_id=m.id AND e.lab_id=?) OR m.id=? AND EXISTS(SELECT 1 FROM personal_spaces p WHERE p.lab_id=? AND p.owner_id=m.id)) AND m.id>? ORDER BY m.id LIMIT ?').all(params.id, this.actor.id, params.id, cursor?.last ?? '', base.limit + 1)
       return { data: rows.slice(0, base.limit).map(r => this.member(String(r.id))), nextCursor: rows.length > base.limit ? this.nextCursor(base, String(rows[base.limit - 1]!.id)) : null }
     },
     createPlan: ({ body }) => {

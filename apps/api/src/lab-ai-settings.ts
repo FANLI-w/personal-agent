@@ -7,12 +7,13 @@ import { signingKey } from './auth.js'
 import type { Config } from './config.js'
 import { fail } from './errors.js'
 import { isLabManager } from './invite-management.js'
+import {teamLabId} from './lab-access.js'
 
 type LabModel = 'deepseek-flash' | 'deepseek-v4-pro'
 type Setting = { enabled: number; model: LabModel; encrypted_api_key: string | null; version: number; updated_at: string }
 
 function requireManager(db: DatabaseSync, actor: Actor, labId: string) {
-  if (actor.labId !== labId) fail('NOT_FOUND')
+  if (teamLabId(actor) !== labId) fail('NOT_FOUND')
   if (!isLabManager(db, actor)) fail('FORBIDDEN')
 }
 
@@ -61,31 +62,31 @@ function view(db: DatabaseSync, labId: string, setting: Setting | undefined, con
 
 export function labAiSettings(db: DatabaseSync, actor: Actor, input: RequestFor<'labAiSettings'>, config: Config): ResponseFor<'labAiSettings'> {
   requireManager(db, actor, input.params.id)
-  return { data: view(db, actor.labId, row(db, actor.labId), config) }
+  return { data: view(db, teamLabId(actor), row(db, teamLabId(actor)), config) }
 }
 
 export function updateLabAiSettings(db: DatabaseSync, actor: Actor, input: RequestFor<'updateLabAiSettings'>, config: Config): ResponseFor<'updateLabAiSettings'> {
   requireManager(db, actor, input.params.id)
   const { expectedVersion, enabled, model, apiKey, removeApiKey } = input.body
   const requestKey = input.headers['Idempotency-Key']!
-  const requestHash = createHmac('sha256', signingKey(db)).update(JSON.stringify({ actorId: actor.id, labId: actor.labId, expectedVersion, enabled, model, apiKey, removeApiKey })).digest('hex')
-  const prior = db.prepare('SELECT request_hash,response_json FROM lab_ai_setting_receipts WHERE actor_id=? AND lab_id=? AND request_key=?').get(actor.id, actor.labId, requestKey)
+  const requestHash = createHmac('sha256', signingKey(db)).update(JSON.stringify({ actorId: actor.id, labId: teamLabId(actor), expectedVersion, enabled, model, apiKey, removeApiKey })).digest('hex')
+  const prior = db.prepare('SELECT request_hash,response_json FROM lab_ai_setting_receipts WHERE actor_id=? AND lab_id=? AND request_key=?').get(actor.id, teamLabId(actor), requestKey)
   if (prior) {
     if (prior.request_hash !== requestHash) fail('IDEMPOTENCY_CONFLICT')
     return JSON.parse(String(prior.response_json)) as ResponseFor<'updateLabAiSettings'>
   }
-  const current = row(db, actor.labId)
+  const current = row(db, teamLabId(actor))
   if ((current?.version ?? 0) !== expectedVersion) fail('VERSION_CONFLICT')
   if (removeApiKey && (apiKey || enabled)) fail('VALIDATION_ERROR')
   if (apiKey && !/^sk-[\x21-\x7e]{5,509}$/.test(apiKey)) fail('VALIDATION_ERROR')
   if (enabled && !config.aiEnabled) fail('MODEL_UNAVAILABLE')
-  const ciphertext = removeApiKey ? null : apiKey ? encrypt(config, actor.labId, apiKey) : current?.encrypted_api_key ?? null
+  const ciphertext = removeApiKey ? null : apiKey ? encrypt(config, teamLabId(actor), apiKey) : current?.encrypted_api_key ?? null
   if (enabled && !ciphertext) fail('MODEL_UNAVAILABLE')
-  if (enabled) decrypt(config, actor.labId, ciphertext!)
+  if (enabled) decrypt(config, teamLabId(actor), ciphertext!)
   const at = new Date().toISOString()
-  db.prepare('INSERT INTO lab_ai_settings(lab_id,enabled,model,encrypted_api_key,version,updated_by,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(lab_id) DO UPDATE SET enabled=excluded.enabled,model=excluded.model,encrypted_api_key=excluded.encrypted_api_key,version=excluded.version,updated_by=excluded.updated_by,updated_at=excluded.updated_at').run(actor.labId, enabled ? 1 : 0, model, ciphertext, expectedVersion + 1, actor.id, at)
-  const response = { data: view(db, actor.labId, row(db, actor.labId), config) } as ResponseFor<'updateLabAiSettings'>
-  db.prepare('INSERT INTO lab_ai_setting_receipts VALUES(?,?,?,?,?,?)').run(actor.id, actor.labId, requestKey, requestHash, JSON.stringify(response), at)
+  db.prepare('INSERT INTO lab_ai_settings(lab_id,enabled,model,encrypted_api_key,version,updated_by,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(lab_id) DO UPDATE SET enabled=excluded.enabled,model=excluded.model,encrypted_api_key=excluded.encrypted_api_key,version=excluded.version,updated_by=excluded.updated_by,updated_at=excluded.updated_at').run(teamLabId(actor), enabled ? 1 : 0, model, ciphertext, expectedVersion + 1, actor.id, at)
+  const response = { data: view(db, teamLabId(actor), row(db, teamLabId(actor)), config) } as ResponseFor<'updateLabAiSettings'>
+  db.prepare('INSERT INTO lab_ai_setting_receipts VALUES(?,?,?,?,?,?)').run(actor.id, teamLabId(actor), requestKey, requestHash, JSON.stringify(response), at)
   return response
 }
 

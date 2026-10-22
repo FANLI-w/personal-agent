@@ -27,14 +27,14 @@ async function setup(personal=false){
  const accounts=['A','B','C'].map(l=>({memberId:'member_'+l,username:'library_'+l,password:syntheticPassword}));for(const a of accounts)db.prepare('INSERT INTO auth_accounts VALUES (?,?,?,0)').run(a.memberId,a.username,syntheticHash)
  db.prepare('INSERT INTO labs VALUES (?,?)').run('lab_other','Another synthetic lab');db.prepare('UPDATE members SET lab_id=? WHERE id=?').run('lab_other','member_C')
  if(personal){db.prepare('INSERT INTO labs VALUES (?,?)').run('lab_personal','Synthetic personal space');db.prepare('UPDATE members SET lab_id=? WHERE id=?').run('lab_personal','member_A');db.prepare('INSERT INTO personal_spaces VALUES (?,?)').run('lab_personal','member_A')}
- const remote={tables:[{table_id:'tblSynthetic1',name:'合成论文汇总'}],fields:[...fields],rows:[record('recSynthetic1'),record('recSynthetic2',2026,'CCF A(ACL Findings)'),record('recSynthetic3',2025),record('recSynthetic4',2026,'CCF A','Findings of Synthetic'),record('recSynthetic5')],denied:false,failSecond:false,repeatCursor:false,afterRead:undefined as undefined|(()=>void),calls:[] as {url:string;method:string}[],tokens:[] as string[]}
+ const remote={tables:[{table_id:'tblSynthetic1',name:'合成论文汇总'}],fields:[...fields],rows:[record('recSynthetic1'),record('recSynthetic2',2026,'CCF A(ACL Findings)'),record('recSynthetic3',2025),record('recSynthetic4',2026,'CCF A','Findings of Synthetic'),record('recSynthetic5')],denied:false,failSecond:false,repeatCursor:false,afterRead:undefined as undefined|(()=>void|Promise<void>),calls:[] as {url:string;method:string}[],tokens:[] as string[]}
  const app=createServer(config,{feishuTransport:async(input,init)=>{
   const url=new URL(String(input));remote.calls.push({url:url.pathname,method:init?.method??'GET'});remote.tokens.push(new Headers(init?.headers).get('authorization')??'');expect(url.origin).toBe('https://open.feishu.cn');expect(init?.redirect).toBe('error');
   if(remote.denied)return json({code:99991672,msg:'synthetic secret must never escape'})
   if(url.pathname.endsWith('/tables'))return json({code:0,data:{has_more:false,items:remote.tables}})
   if(url.pathname.endsWith('/fields'))return json({code:0,data:{has_more:false,items:remote.fields}})
   expect(url.pathname.endsWith('/records/search')).toBe(true);expect(init?.method).toBe('POST');const body=JSON.parse(String(init?.body));expect(body.field_names).toContain('题目');expect(body.field_names).not.toContain('附件');expect(body.automatic_fields).toBe(false)
-  const next=url.searchParams.has('page_token');if(next&&remote.failSecond)return new Response('upstream unavailable',{status:503});remote.afterRead?.();
+  const next=url.searchParams.has('page_token');if(next&&remote.failSecond)return new Response('upstream unavailable',{status:503});await remote.afterRead?.();
   return json({code:0,data:{has_more:remote.repeatCursor||!next,page_token:remote.repeatCursor?'repeat':!next?'page2':undefined,items:next?remote.rows.slice(2):remote.rows.slice(0,2)}})
  }})
  await app.listen({host:'127.0.0.1',port:0});cleanup.push(()=>app.close())
@@ -132,4 +132,30 @@ it('paginates fields with the official 100-column limit and preserves field iden
  const calls:string[]=[]
  const client=new FeishuBitableClient(async(input)=>{const url=new URL(String(input));calls.push(url.href);expect(url.searchParams.get('page_size')).toBe('100');return json({code:0,data:{has_more:!url.searchParams.has('page_token'),page_token:'nextFields',items:url.searchParams.has('page_token')?fields:[...Array.from({length:100},(_,i)=>({field_id:'fldExtra'+i,field_name:'合成'+i,type:1}))]}})})
  const result=await client.fields('SyntheticBase123','tblSynthetic1','synthetic_user_token');expect(result).toHaveLength(105);expect(calls[1]).toContain('page_token=nextFields');expect(result.at(-1)?.id).toBe('fldAbstract')
+})
+
+it('shares an existing personal Feishu binding with newly joined accounts while retaining home encryption and IM identity',async()=>{
+ const s=await setup(true),id=(await s.bind()).value.data.library.collectionId
+ const original=s.db.prepare('SELECT * FROM feishu_connections WHERE member_id=?').get('member_A')
+ const lab=(await s.call('createLab',{name:'Synthetic new group'})).value.data
+ const invite=(await s.call('inviteLabMember',{username:'library_C'},0,{id:lab.id})).value.data
+ expect((await s.call('decideLabInvitation',{expectedVersion:invite.version,decision:'accepted'},2,{id:invite.id})).status).toBe(200)
+ expect((await s.query(id,'2026年CCF A',2)).status).toBe(404)
+ expect((await s.changeScope(id)).status).toBe(200)
+ s.db.prepare('DELETE FROM feishu_connections WHERE member_id=?').run('member_C');s.remote.tokens=[]
+ const queried=await s.query(id,'2026年CCF A',2);expect(queried.status,queried.text).toBe(200)
+ expect(new Set(s.remote.tokens)).toEqual(new Set(['Bearer synthetic_user_token_0']))
+ expect(s.db.prepare('SELECT * FROM feishu_connections WHERE member_id=?').get('member_A')).toEqual(original)
+ expect(s.db.prepare('SELECT lab_id FROM members WHERE id=?').get('member_A')!.lab_id).toBe('lab_personal')
+ expect(s.db.prepare('SELECT lab_id FROM research_collection_labs WHERE collection_id=?').get(id)!.lab_id).toBe(lab.id)
+})
+it('fences a shared Feishu response when a newly joined member is removed during the external read',async()=>{
+ const s=await setup(true),id=(await s.bind()).value.data.library.collectionId,lab=(await s.call('createLab',{name:'Synthetic revoke group'})).value.data
+ const invite=(await s.call('inviteLabMember',{username:'library_C'},0,{id:lab.id})).value.data
+ await s.call('decideLabInvitation',{expectedVersion:invite.version,decision:'accepted'},2,{id:invite.id});await s.changeScope(id)
+ s.remote.afterRead=async()=>{s.remote.afterRead=undefined;const r=await s.call('removeLabMember',{expectedVersion:1},0,{id:lab.id,memberId:'member_C'});expect(r.status,r.text).toBe(200)}
+ const queried=await s.query(id,'2026年CCF A',2);expect(queried.status,queried.text).toBe(403);expect(queried.value.error.code).toBe('FORBIDDEN');expect(queried.text).not.toContain('recSynthetic')
+ expect((await s.call('feishuLibraries',null,2)).value.data).toEqual([])
+ expect(s.db.prepare('SELECT lab_id FROM members WHERE id=?').get('member_C')!.lab_id).toBe('lab_other')
+ expect((await s.call('session',null,2)).value.data.spaceKind).toBe('personal')
 })

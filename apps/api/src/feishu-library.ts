@@ -10,10 +10,11 @@ import { encrypt,decrypt } from './lab-ai-settings.js'
 import { fail,ApiError } from './errors.js'
 import { FeishuBitableClient,feishuBaseLink } from './integrations/feishu-bitable.js'
 import { ResearchLibraryService } from './research-library.js'
+import {sharedCollectionAccess,teamLabId} from './lab-access.js'
 
 const stored=FeishuLibrary.omit({collectionId:true,name:true,version:true}).extend({appToken:z.string()})
 type FeishuIdentity = Pick<Actor,'id'|'labId'>
-const sourceAccess = `c.status='available' AND c.scope IN ('owner_private','lab_shared') AND c.owner_id=f.member_id AND c.lab_id=f.lab_id AND c.lab_id=? AND f.app_id=? AND (f.member_id=? OR c.scope='lab_shared') AND EXISTS(SELECT 1 FROM members m JOIN auth_accounts a ON a.member_id=m.id WHERE m.id=f.member_id AND m.lab_id=f.lab_id AND a.disabled=0)`
+const sourceAccess = `c.status='available' AND c.scope IN ('owner_private','lab_shared') AND c.owner_id=f.member_id AND c.lab_id=f.lab_id AND f.app_id=? AND (f.member_id=? OR c.scope='lab_shared' AND ${sharedCollectionAccess}) AND EXISTS(SELECT 1 FROM members m JOIN auth_accounts a ON a.member_id=m.id WHERE m.id=f.member_id AND m.lab_id=f.lab_id AND a.disabled=0)`
 export class FeishuLibraryService {
   constructor(readonly db:DatabaseSync,readonly config:Config,readonly client:FeishuBitableClient){}
   private scope(actor:FeishuIdentity){return `feishu:${this.config.feishu.appId}:${actor.labId}:${actor.id}`}
@@ -22,7 +23,7 @@ export class FeishuLibraryService {
     if(!row||String(row.expires_at)<=new Date(Date.now()+10000).toISOString())fail('FEISHU_REAUTHORIZE')
     return {version:row.version,token:decrypt(this.config,this.scope(actor),String(row.encrypted_token))}
   }
-  private recheck(actor:Actor,version:unknown,reauthorize:()=>Actor,identity:FeishuIdentity=actor){const current=reauthorize();if(current.id!==actor.id||current.labId!==actor.labId)fail('FORBIDDEN');if(this.connection(identity).version!==version)fail('FEISHU_REAUTHORIZE')}
+  private recheck(actor:Actor,version:unknown,reauthorize:()=>Actor,identity:FeishuIdentity=actor){const current=reauthorize();if(current.id!==actor.id||current.labId!==actor.labId||teamLabId(current)!==teamLabId(actor))fail('FORBIDDEN');if(this.connection(identity).version!==version)fail('FEISHU_REAUTHORIZE')}
   private async read<T>(actor:FeishuIdentity,version:unknown,operation:()=>Promise<T>):Promise<T>{
     try{return await operation()}catch(error){
       if(error instanceof Error&&error.message==='FEISHU_REAUTHORIZE')this.db.prepare('DELETE FROM feishu_connections WHERE member_id=? AND lab_id=? AND app_id=? AND version=?').run(actor.id,actor.labId,this.config.feishu.appId!,version as string)
@@ -30,14 +31,14 @@ export class FeishuLibraryService {
     }
   }
   private source(actor:Actor,id:string){
-    const row=this.db.prepare(`SELECT f.*,c.name,c.version,c.scope FROM feishu_library_sources f JOIN research_collections c ON c.id=f.collection_id WHERE f.collection_id=? AND ${sourceAccess}`).get(id,actor.labId,this.config.feishu.appId??'',actor.id)
+    const row=this.db.prepare(`SELECT f.*,c.name,c.version,c.scope FROM feishu_library_sources f JOIN research_collections c ON c.id=f.collection_id WHERE f.collection_id=? AND ${sourceAccess}`).get(id,this.config.feishu.appId??'',actor.id,actor.id)
     if(!row)fail('NOT_FOUND')
     const owner={id:String(row.member_id),labId:String(row.lab_id)}
     const value=stored.parse(JSON.parse(decrypt(this.config,this.scope(owner),String(row.encrypted_source))))
-    return {...value,collectionId:id,name:String(row.name),version:Number(row.version),ownerId:owner.id,scope:String(row.scope)}
+    return {...value,collectionId:id,name:String(row.name),version:Number(row.version),ownerId:owner.id,ownerLabId:owner.labId,scope:String(row.scope)}
   }
   list(actor:Actor):ResponseFor<'feishuLibraries'>{
-    const rows=this.db.prepare(`SELECT f.collection_id FROM feishu_library_sources f JOIN research_collections c ON c.id=f.collection_id WHERE ${sourceAccess} ORDER BY c.updated_at DESC,c.id LIMIT 100`).all(actor.labId,this.config.feishu.appId??'',actor.id)
+    const rows=this.db.prepare(`SELECT f.collection_id FROM feishu_library_sources f JOIN research_collections c ON c.id=f.collection_id WHERE ${sourceAccess} ORDER BY c.updated_at DESC,c.id LIMIT 100`).all(this.config.feishu.appId??'',actor.id,actor.id)
     return {data:rows.map(r=>FeishuLibrary.strip().parse(this.source(actor,String(r.collection_id))))}
   }
   async bind(actor:Actor,body:RequestFor<'bindFeishuLibrary'>['body'],key:string,reauthorize:()=>Actor,signal?:AbortSignal):Promise<ResponseFor<'bindFeishuLibrary'>>{
@@ -80,7 +81,7 @@ export class FeishuLibraryService {
     })
   }
   async query(actor:Actor,body:RequestFor<'queryFeishuLibrary'>['body'],reauthorize:()=>Actor,signal?:AbortSignal):Promise<ResponseFor<'queryFeishuLibrary'>>{
-    const source=this.source(actor,body.collectionId),identity={id:source.ownerId,labId:actor.labId}
+    const source=this.source(actor,body.collectionId),identity={id:source.ownerId,labId:source.ownerLabId}
     try {
     const connection=this.connection(identity)
     const fields=await this.read(identity,connection.version,()=>this.client.fields(source.appToken,source.tableId,connection.token,signal))

@@ -8,6 +8,7 @@ import { signingKey } from './auth.js'
 import { encrypt, decrypt, masterAvailable, labAiRuntime, labApiKey } from './lab-ai-settings.js'
 import type { Config } from './config.js'
 import { fail } from './errors.js'
+import {hasLabMembership} from './lab-access.js'
 
 type Provider=z.infer<typeof ModelProvider>
 type Row={id:string;member_id:string;name:string;provider:Provider;model:string;enabled:number;encrypted_api_key:string|null;version:number;created_at:string;updated_at:string}
@@ -19,7 +20,7 @@ function owned(db:DatabaseSync,actor:Actor,id:string){const row=db.prepare('SELE
 const secretScope=(actor:Actor,id:string,provider:Provider)=>`personal-model:${actor.id}:${id}:${provider}`
 function view(db:DatabaseSync,actor:Actor,row:Row){return PersonalModelConfiguration.parse({id:row.id,name:row.name,provider:row.provider,model:row.model,baseUrl:baseUrls[row.provider],enabled:row.enabled===1,hasApiKey:!!row.encrypted_api_key,isDefault:state(db,actor)?.default_configuration_id===row.id,version:row.version,createdAt:row.created_at,updatedAt:row.updated_at})}
 export function personalModels(db:DatabaseSync,actor:Actor,config:Config){
- const current=state(db,actor),legacy=!db.prepare('SELECT 1 FROM personal_spaces WHERE lab_id=?').get(actor.labId)&&labAiRuntime(db,actor.labId,config).enabled
+ const current=state(db,actor),legacy=hasLabMembership(db,actor.id,actor.labId)&&!db.prepare('SELECT 1 FROM personal_spaces WHERE lab_id=?').get(actor.labId)&&labAiRuntime(db,actor.labId,config).enabled
  return PersonalModelSettings.parse({configurations:(db.prepare('SELECT * FROM personal_model_configurations WHERE member_id=? ORDER BY created_at,id').all(actor.id) as Row[]).map(row=>view(db,actor,row)),version:current?.version??0,platformEnabled:config.aiEnabled&&masterAvailable(config),defaultConfigurationId:current?.default_configuration_id??null,source:current?'personal':legacy?'legacy_lab':'unconfigured',legacyLabAvailable:legacy})
 }
 export function personalModelRuntime(db:DatabaseSync,actor:Actor,config:Config){
@@ -29,7 +30,7 @@ export function personalModelRuntime(db:DatabaseSync,actor:Actor,config:Config){
   return {source:'personal' as const,enabled:config.aiEnabled&&masterAvailable(config)&&row?.enabled===1&&!!row.encrypted_api_key,disabled:row?.enabled===0,provider:row?.provider??'deepseek' as Provider,model:row?.model??config.model,fingerprint:`personal:${current.version}:${row?.id??''}:${row?.version??0}`,configurationId:row?.id??null}
  }
  const legacy=labAiRuntime(db,actor.labId,config),isolated=!!db.prepare('SELECT 1 FROM personal_spaces WHERE lab_id=?').get(actor.labId),version=db.prepare('SELECT version FROM lab_ai_settings WHERE lab_id=?').get(actor.labId)?.version??0
- return {source:'legacy_lab' as const,enabled:!isolated&&legacy.enabled,disabled:false,provider:'deepseek' as Provider,model:legacy.model,fingerprint:`lab:${actor.labId}:${version}:${isolated}`,configurationId:null}
+ return {source:'legacy_lab' as const,enabled:!isolated&&hasLabMembership(db,actor.id,actor.labId)&&legacy.enabled,disabled:false,provider:'deepseek' as Provider,model:legacy.model,fingerprint:`lab:${actor.labId}:${version}:${isolated}`,configurationId:null}
 }
 export function personalModelKey(db:DatabaseSync,actor:Actor,config:Config){
  const runtime=personalModelRuntime(db,actor,config);if(!runtime.enabled)fail('MODEL_UNAVAILABLE')

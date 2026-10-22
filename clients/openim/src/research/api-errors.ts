@@ -19,13 +19,27 @@ export function validationMessage(issues: readonly ValidationIssue[]): string {
 }
 
 const messages: Record<string, string> = {
-  FEISHU_SHARED_SOURCE_UNAVAILABLE: "共享资料库暂不可读，请联系库主人检查飞书连接、原表权限或字段设置；无需重新连接你自己的飞书。",
-  FEISHU_LIBRARY_SCHEMA: "资料库字段不再匹配。请在飞书提供题目、年份、CCF等级等字段，再把链接发给资料 Agent 重新绑定。",
-  FEISHU_LIBRARY_LIMIT: "这次资料表或字段超出可读取范围，请提供具体数据表链接或缩小资料范围。",
-  FEISHU_LIBRARY_NAME_CONFLICT: "已经有一个同名资料集合，请给这个库换一个名字后再发链接。",
-  FEISHU_LINK_INVALID: "请提供飞书新版文档、其中为新版文档的知识库链接，或在资料 Agent 中发送 /base/ 多维表格链接。",
+  LAB_MEMBER_HAS_ACTIVE_TASKS:
+    "该成员仍担任未完成任务的发起人或审阅人，请先完成或取消相关任务，再退出或移除。",
+  LAB_ALREADY_MANAGED: "你已有负责的课题组，请在当前组邀请和管理成员。",
+  LAB_MANAGER_CANNOT_LEAVE:
+    "负责人暂不能直接退出或被移除，请联系维护者处理课题组交接。",
+  LAB_ACCOUNT_NOT_FOUND:
+    "未找到这个 AcceptCat 号，请核对账号；对方尚未注册时，可生成邀请码。",
+  LAB_ALREADY_JOINED: "这个账号已经是课题组成员。",
+  FEISHU_SHARED_SOURCE_UNAVAILABLE:
+    "共享资料库暂不可读，请联系库主人检查飞书连接、原表权限或字段设置；无需重新连接你自己的飞书。",
+  FEISHU_LIBRARY_SCHEMA:
+    "资料库字段不再匹配。请在飞书提供题目、年份、CCF等级等字段，再把链接发给资料 Agent 重新绑定。",
+  FEISHU_LIBRARY_LIMIT:
+    "这次资料表或字段超出可读取范围，请提供具体数据表链接或缩小资料范围。",
+  FEISHU_LIBRARY_NAME_CONFLICT:
+    "已经有一个同名资料集合，请给这个库换一个名字后再发链接。",
+  FEISHU_LINK_INVALID:
+    "请提供飞书新版文档、其中为新版文档的知识库链接，或在资料 Agent 中发送 /base/ 多维表格链接。",
   FEISHU_REAUTHORIZE: "飞书授权已失效或过期，请重新连接飞书后再试。",
-  FEISHU_ACCESS_DENIED: "飞书拒绝读取，请核对当前飞书账号、文档阅读权限和应用的只读权限。",
+  FEISHU_ACCESS_DENIED:
+    "飞书拒绝读取，请核对当前飞书账号、文档阅读权限和应用的只读权限。",
   FEISHU_UNAVAILABLE: "飞书读取暂未完成，请稍后重试；尚未保存资料。",
   AGENT_LIMIT_REACHED: "个人 Agent 数量已达上限，请先整理已有 Agent。",
   EXTERNAL_CONSENT_REQUIRED: "请先明确授权将本条文字发送到外部服务。",
@@ -59,7 +73,8 @@ const messages: Record<string, string> = {
   INTERNAL_ERROR: "服务处理失败，请稍后重试。",
   INVITE_UNAVAILABLE:
     "邀请码无效、已过期、已撤销或名额已满，请向实验室负责人索取有效邀请码。",
-  USERNAME_TAKEN: "这个 AcceptCat 号已被使用，请换一个；如果是你刚注册的账号，可以直接登录。",
+  USERNAME_TAKEN:
+    "这个 AcceptCat 号已被使用，请换一个；如果是你刚注册的账号，可以直接登录。",
 };
 
 export function serviceErrorMessage(
@@ -67,7 +82,10 @@ export function serviceErrorMessage(
   status: number,
   route?: string,
 ): string {
-  if ((status === 502 || status === 504) && ["SERVICE_UNAVAILABLE", "HTTP_ERROR"].includes(code))
+  if (
+    (status === 502 || status === 504) &&
+    ["SERVICE_UNAVAILABLE", "HTTP_ERROR"].includes(code)
+  )
     return "连接中断，请检查网络或系统代理后重试。";
   if (
     status === 404 &&

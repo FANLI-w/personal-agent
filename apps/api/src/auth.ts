@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes, scrypt, timingSafeEqual } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
 import { transaction } from './database.js'
+import {selectedLab} from './lab-access.js'
 import { fail } from './errors.js'
 import { AccountUsername, AccountPassword } from '@research-agent-platform/contracts'
 
@@ -30,15 +31,15 @@ export function cookieToken(cookie: string | undefined) {
   const token = matches[0]!.slice('rap_session='.length)
   return /^[a-f0-9]{64}$/.test(token) ? token : ''
 }
-export function authenticate(db: DatabaseSync, token: string) {
+export type Actor = {id:string;labId:string;teamLabId?:string;expiresAt:string;csrfHash:string}
+export function authenticate(db: DatabaseSync, token: string):Actor {
   if (!token) fail('UNAUTHENTICATED')
   const row = db.prepare(`SELECT m.id,m.lab_id,s.expires_at,s.csrf_hash FROM sessions s
     JOIN members m ON m.id=s.member_id JOIN auth_accounts a ON a.member_id=m.id
     WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>? AND a.disabled=0`).get(hash(token), new Date().toISOString())
   if (!row) fail('UNAUTHENTICATED')
-  return { id: String(row.id), labId: String(row.lab_id), expiresAt: String(row.expires_at), csrfHash: String(row.csrf_hash) }
+  return { id: String(row.id), labId: String(row.lab_id), teamLabId:selectedLab(db,String(row.id),String(row.lab_id)), expiresAt: String(row.expires_at), csrfHash: String(row.csrf_hash) }
 }
-export type Actor = ReturnType<typeof authenticate>
 export function csrfToken(db: DatabaseSync, token: string) { return csrfFor(db, token) }
 export function requireCsrf(actor: Actor, supplied: unknown) {
   if (typeof supplied !== 'string' || !/^[a-f0-9]{64}$/.test(supplied) || !timingSafeEqual(Buffer.from(hash(supplied), 'hex'), Buffer.from(actor.csrfHash, 'hex'))) fail('FORBIDDEN')
