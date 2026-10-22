@@ -1422,3 +1422,21 @@ API/worker现为research-openim-api:library-sharing-20261021-v2，sha256:595bed1
 有效Compose在旧47c42ac基础/production/私有images及community/key-preview/feishu/harness/bitable/http400链末尾追加本批images.yaml；原current指针/静态网页不变。证据/脚本/manifest及检查回执在/opt/research-openim/ops/library-sharing-20261021-v2；首失败同级library-sharing-20261021。本机Git外D:/deepseek-agent/.runtime/feishu-lab-sharing-20261021/backend-deploy保存两归档、部署脚本、失败说明、部署摘要和可见回执图；服务器完整数据哈希清单及受限备份不入Git。回退须配对恢复旧镜像并保留当前024数据/绑定/新写入，不回灌旧备份、不down -v；旧0.27会暂停共享源查询。成功未触发自动回退，不称已演练。
 
 用户自行体验安装包和功能，未新增生产测试账号、调用真实私人资料/模型或执行浏览器产品/载荷/原生/安装后验收。飞书应用直接OAuth仍仅罗岩，AcceptCat共享由库主人明确选择，实际同组成员可读指定表，原表网页仍受飞书本人权限约束。注册超时未定因、自助加入/开组/完整成员管理仍未完成。docs/current-state.md、0.10.31交付文档与部署入口同步实际已部署状态；PR85只更新记录，待负责人审阅，不合并或公开发布。
+
+## 2026-10-22 — Windows0.10.32：资料独立页面替换广场，代码保留并隐藏
+
+用户认为当前广场缺少日常价值，要求先打包保留代码并隐藏，以独立资料页面替换。核对实际干净feat/feishu-library-lab-sharing/e302926、origin为luoyan96/personal-agent、legacy保持；fetch后最新main仍b7f5742。从origin/main新建feat/standalone-library，再快进纳入未合并PR84/PR85依赖，保留原表打开/复制、飞书课题组共享及已有部署记录，不改共享main或丢弃已有工作。最终产品2364cd292fad7abe7431afa11009c47f37715650，客户端0.10.32，[交付与代码备份](deployment/acceptcat-0.10.32.md)。
+
+侧栏原广场位置改为书本图标“资料”，独立/library包含资料库/本机报告，复用全部/课题组/我的筛选、原件/版本、飞书入口与明确共享、底部聊天式资料Agent。工作台删除资料栏目，继续课题组任务/我的任务、原任务规划/研究计划/定时安排与任务详情。旧/workbench?view=library和view=reports兼容转到新地址并保留报告/其他查询参数；旧/square及子路径转到资料。窄屏补资料与工作台入口，添加联系人/发起群聊菜单保持。独立资料容器负责高度/滚动，资料按钮样式移回资料模块，避免依赖广场或我的页面的样式加载。
+
+广场、社区发现与公开发布源码保留，固定代码开关squareEnabled=false控制导航/路由/公开我的能力入口与对应读取；共用组件仍服务我的Agent、私人Skill与课题组能力。没有删除后台目录、公开名片/资料或改变运营任务，也未声称其他人的旧客户端已自动隐藏。改动前18份相关源码从固定Git提交e302926打包到Git外D:/deepseek-agent/.runtime/standalone-library-20261022/square-source-0.10.31.zip，43,515字节、SHA256 623457371af5cf50c1dd0f066b3e06711c1f76f754b14bea173c8530b039131f；完整恢复仍依赖仓库，后续在新分支审阅开启，不能整文件覆盖新增协作改动。
+
+客户端渲染/主进程TypeScript exit0；最终生产Web/Electron构建、内建完整dist及4固定SDK资源检查和Windows x64 NSIS exit0，55个装配运行包，--publish never。构建既有use client/WASM脚本与大小提示保留原日志，无新依赖/锁文件。未改API、契约、数据库、公共包或Skill，不重复根CI。按用户原安排未新增测试或追加浏览器/窄屏产品、真实账号/飞书/模型、载荷提取、原生启动或安装后验收，不以类型/构建或哈希代替实际使用通过。
+
+已复制C:/Users/luo/Desktop/AcceptCat_0.10.32.exe，87,437,394字节，SHA256 e32c2e34f5362252b7b58831858c3d03057a00b7b81aa82c745804274ec7547e；目标原先不存在，旧包与运行客户端保持，未代安装。Git外上述目录保存类型/完整打包日志、源码备份与delivery.json。用户自行体验是否符合要求。
+
+代码已普通推送，沿既有CLI权限创建并附任务的[PR87](https://github.com/luoyan96/personal-agent/pull/87)，base main，依赖未合并PR84/85，未合并。收尾fetch确认main仍b7f5742；无新仓库授权、公开Release/标签或更新源，公开版本沿v0.10.29。README去掉广场主图/主入口介绍，区分开发版独立资料与公开0.10.29的旧布局，保留历史截图文件；current-state、roadmap与交付记录同步本批事实。
+
+本次仅客户端，后台无需修改，未inspect、重启/部署或迁移；沿已部署595bed13/contract0.28/schema024/DSH0.2.1-rc.2/Cordis4.0.5记录。资料/共享/模型和原飞书网页权限不因迁页改变，没有新增SSH、Key、云权限或飞书成员。注册超时仍未定因，已有账号加入、自助开组、完整成员管理仍未完成。
+
+收尾240份Markdown/10份Skill内容检查与git diff --check通过；文档提交不重打上述安装包或更改最终产品SHA。
