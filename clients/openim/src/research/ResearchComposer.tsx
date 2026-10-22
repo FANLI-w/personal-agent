@@ -1,5 +1,5 @@
 import { Alert, Button, Checkbox, InputNumber, Modal, Select, Space } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AgentTurn, RequestFor } from "@research-agent-platform/contracts";
 type ChatResource = NonNullable<
   RequestFor<"sendChatMessage">["body"]["context"]
@@ -169,7 +169,7 @@ export function useResearchComposer() {
     setMode("chat");
     setCreationFailure(undefined);
   }, [imID, actorGeneration]);
-  const mentionContacts =
+  const mentionContacts = useMemo(() =>
     canonical.data?.data.members
       .filter((member) => member.status === "joined")
       .flatMap((member) => {
@@ -186,7 +186,7 @@ export function useResearchComposer() {
               },
             ]
           : [];
-      }) || [];
+      }) || [], [canonical.data?.data.members, contacts]);
 
   const prepareResearch = (text: string): PreparedResearchSend | undefined => {
     const advancedRequest = advanced && mode === "ask_agent";

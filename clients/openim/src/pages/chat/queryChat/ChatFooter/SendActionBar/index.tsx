@@ -56,6 +56,7 @@ const SendActionBar = ({
   const panelId = useId();
   const mediaEpoch = useRef(0);
   const fileIntent = useRef<{ conversationID: string; epoch: number; operation: AgentChatOperation }>();
+  const mentionIntent = useRef<AgentChatOperation>();
   const captureOperation = useAgentChatOperation();
   const fileInputs = useRef<Partial<Record<"image" | "file", HTMLInputElement>>>({});
   const conversationID = useConversationStore((s) => s.currentConversation?.conversationID);
@@ -68,9 +69,11 @@ const SendActionBar = ({
     setVoiceVisible(false);
     setEmojiMode(undefined);
     setMentionOpen(false);
+    mentionIntent.current?.dispose();
+    mentionIntent.current = undefined;
     fileIntent.current?.operation.dispose();
     fileIntent.current = undefined;
-    return () => { mediaEpoch.current++; fileIntent.current?.operation.dispose(); };
+    return () => { mediaEpoch.current++; fileIntent.current?.operation.dispose(); mentionIntent.current?.dispose(); };
   }, [conversationID, actorGeneration]);
 
   const chooseFile = (kind: "image" | "file") => {
@@ -119,7 +122,17 @@ const SendActionBar = ({
         <button type="button" className={toolbarClass} aria-label="发送文件" title="文件" onClick={() => chooseFile("file")}><FileOutlined />{window.electronAPI && <span>文件</span>}</button>
         <button type="button" className={toolbarClass} aria-label="打开语音面板" title="语音消息" onClick={() => { setEmojiMode(undefined); setVoiceVisible(true); }}><AudioOutlined />{window.electronAPI && <span>语音</span>}</button>
         {isGroupSession && mentionContacts.length > 0 && (
-          <Popover content={<MentionList contacts={mentionContacts} onSelect={(name) => { insertMention(name); setMentionOpen(false); }} />} open={mentionOpen} onOpenChange={setMentionOpen} trigger="click" placement="top" arrow={false}>
+          <Popover content={<MentionList contacts={mentionContacts} onSelect={(name) => {
+            const operation = mentionIntent.current;
+            if (actorGeneration === useResearchStore.getState().generation &&
+              conversationID === useConversationStore.getState().currentConversation?.conversationID &&
+              operation?.isCurrent()) insertMention(name);
+            operation?.dispose(); mentionIntent.current = undefined; setMentionOpen(false);
+          }} />} open={mentionOpen} onOpenChange={(open) => {
+            mentionIntent.current?.dispose();
+            mentionIntent.current = open ? captureOperation() : undefined;
+            setMentionOpen(open);
+          }} trigger="click" placement="top" arrow={false}>
             <button type="button" className={toolbarClass} aria-label="提及成员" title="提及成员"><span className="font-semibold">@</span>{window.electronAPI && <span>提及</span>}</button>
           </Popover>
         )}

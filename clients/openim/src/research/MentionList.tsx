@@ -10,7 +10,7 @@ export function MentionList({
   return (
     <div
       className="max-h-52 w-44 overflow-y-auto py-0.5"
-      role="listbox"
+      role="group"
       aria-label="选择要提及的成员"
     >
       {contacts.map((contact) => (
