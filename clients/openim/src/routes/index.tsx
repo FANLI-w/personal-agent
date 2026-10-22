@@ -1,9 +1,10 @@
-import { createHashRouter } from "react-router-dom";
+import { createHashRouter, Navigate } from "react-router-dom";
 
 import { MainContentLayout } from "@/layout/MainContentLayout";
 import { MainContentWrap } from "@/layout/MainContentWrap";
 import { EmptyChat } from "@/pages/chat/EmptyChat";
 import { QueryChat } from "@/pages/chat/queryChat";
+import { squareEnabled } from "@/research/square-feature";
 
 import contactRoutes from "./ContactRoutes";
 import GlobalErrorElement from "./GlobalErrorElement";
@@ -58,11 +59,22 @@ const router = createHashRouter([
             },
           },
           {
-            path: "square",
+            path: "library",
             async lazy() {
-              const { CapabilitySquare } = await import("@/research/CapabilitySquare");
-              return { Component: CapabilitySquare };
+              const { LibraryWorkspace } = await import("@/research/LibraryWorkspace");
+              return { Component: LibraryWorkspace };
             },
+          },
+          {
+            path: "square/*",
+            ...(squareEnabled
+              ? {
+                  async lazy() {
+                    const { CapabilitySquare } = await import("@/research/CapabilitySquare");
+                    return { Component: CapabilitySquare };
+                  },
+                }
+              : { element: <Navigate to="/library" replace /> }),
           },
         ],
       },

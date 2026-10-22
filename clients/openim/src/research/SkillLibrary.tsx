@@ -283,7 +283,7 @@ export function SkillLibrary({
         <p role="status">正在读取已审阅的社区来源…</p>
       )}
       {candidate && !candidate.installable && (
-        <Alert type="info" message="该社区条目尚未开放安装，请查看广场中的接入说明。" />
+        <Alert type="info" message="该社区条目尚未开放安装，接入适配完成后再开放使用。" />
       )}
       {read.error && (
         <Alert
