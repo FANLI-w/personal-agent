@@ -2,7 +2,7 @@
 
 更新日期：2026-10-22（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 本机0.10.33：课题组自助创建、邀请、加入与成员管理，后台025待单独部署
+## 本机0.10.33与已部署后台0.29/schema025：课题组创建、邀请与成员管理
 
 用户要求把已有账号创建课题组并邀请他人的流程做完。从fetch后origin/main / b7f5742新建feat/lab-membership，快进纳入未合并PR84/85/87至c6c2efd，产品 **c46295f58d613b97f8b2a97e37290edb861b22db**。[交付与检查](deployment/acceptcat-0.10.33.md)、[接口与权限设计](development/lab-membership.md)。客户端「我的 → 课题组」可创建、按AcceptCat号邀请/接受/谢绝，生成或撤销邀请码供新注册与已有账号加入，查看成员、修改名称、切换多个已加入组及个人空间、移除普通成员或退出。当前每人最多负责一个组，负责人不直接退出/交接；未完成任务发起/审阅职责须先完成或取消，避免遗留无人负责的任务。
 
@@ -10,7 +10,13 @@
 
 最终根完整CI **749项/58文件**、2项生产CLI/HTTP、B0与生产无夹具通过；11项成员HTTP/SQLite检查及20项合成Feishu检查包括跨home共享/读取中移除，模拟024升级及密文/会话/原行保持通过。客户端渲染/主进程类型、2 service/3 auth、最终生产Web/4 SDK资源和55运行包装配的NSIS打包通过；首次失败与首包保留Git外 `.runtime/lab-membership-20261022`。按用户安排，未追加浏览器、真实账号/资料/模型、安装载荷、原生启动或安装后体验验收，不以自动检查代替其实际使用判断。
 
-桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.33.exe**，**87,433,858字节**，SHA256 **e3bdde49eeef858469b49528bbd66b123ac9bea8bcb2e14e1ae62df71e1028e3**，已制作、未代安装，旧包保留。**后台尚未更新**：本功能须0.29/schema025配套部署，当前仍沿595bed13/0.28/schema024及广场同步关闭记录，本批未重新inspect或停写/迁移/重启。714,405字节Git外候选已备、尚未上传/Linux构建，需另行批准并完成一致备份/恢复校验后配对部署；旧后台本页会明确提示管理未开放。未合并main、打标签或公开Release/更新源，公开沿v0.10.29；注册超时未定因，飞书直接授权仍本人试点。[PR88](https://github.com/luoyan96/personal-agent/pull/88)已推送并附当前任务，目标main、依赖PR84/85/87，待负责人审阅，未合并。
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.33.exe**，**87,433,858字节**，SHA256 **e3bdde49eeef858469b49528bbd66b123ac9bea8bcb2e14e1ae62df71e1028e3**，已制作、未代安装，旧包保留。用户随后明确授权“阿里云页面已经打开了，你升级吧”，后台已于北京时间 **2026-10-22 12:16:24—12:16:44** 配对升级API/worker至 **research-openim-api:lab-membership-20261022-v2** / **sha256:0212513c5e9d4109cba892462c4953f9c440e96dc13007178635aca6c58395fb**，实际running/restart0/API healthy、公网ready200/contract0.29.0，数据库迁移至025。DSH0.2.1-rc.2/Cordis4.0.5保持、Harness仍not_verified；未新增真实模型探测或用户体验验收。
+
+停写并排空execution/chat后，一致备份、独立恢复和副本025迁移核对通过；正式迁移原95表结构/全行、7份原件及旧24迁移校验和保持，新增5表后共100表，integrity/外键正常。15份既有运行配置/密钥文件哈希与权限保持，个人Key/默认值、飞书连接/源/私人范围与目录缓存不变；已有1个飞书库仍owner_private，没有替用户开共享。其他6服务及API/worker环境、挂载/端口等运行设置保持，广场实际enabled=false/state=disabled/nextCheckAt=null。备份 **/srv/research-openim-backups/lab-membership-20261022-v2-20261022T041627Z**；完整回执见[部署记录](deployment/acceptcat-0.10.33.md)。备份仍在同ECS，不称异地/整栈或实际回退演练。
+
+首候选在停机前因既有community-catalog-seed.ts运营差异被103文件守卫拦截；核对后保留实际运营种子，仅叠加27份已审源码，Linux离线编译50项规范哈希与31项隔离检查通过，运行中两容器逐份匹配。原失败包/日志保留。025不能直接换回024旧镜像；已有新写入后须保留新数据前向修复或单独协调兼容恢复，不能回灌停写前快照。有效Compose链末尾新增lab-membership-20261022-v2/images.yaml，原静态网页/current指针未改。
+
+未合并main、打标签或公开Release/更新源，公开沿v0.10.29；注册超时未定因，飞书直接授权仍本人试点。[PR88](https://github.com/luoyan96/personal-agent/pull/88)目标main、依赖PR84/85/87，待负责人审阅，未合并。源码、安装包、后台升级与公开发布分别记录。
 
 ## 后续运维：广场每日GitHub同步已关闭
 

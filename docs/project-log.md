@@ -1472,3 +1472,19 @@ API/worker仍research-openim-api:library-sharing-20261021-v2 / sha256:595bed1364
 Git外后台候选714,405字节，SHA256 e62de30b06bb560bad31fc3a22e8a2b62a8cfcfc02752ad74b11274e386620c4，270份覆盖文件/103份基底源码换行规范哈希守卫，固定595bed13原镜像，025迁移待停写备份与恢复校验后另行获准配对部署。本批未上传、Linux构建、重新inspect生产、停写/备份线上、迁移或重启；现产仍按0.28/schema024/595及GITHUB_CATALOG_SYNC=0记录，新安装包不能单独使成员接口上线。未合并main、打标签或公开Release/更新源，公开v0.10.29保持；注册超时未定因、飞书直接试点范围保持。PR在本批收尾提交，负责人审阅决定合并。
 
 收尾分支已推送，并使用本机既有GitHub CLI身份创建并附任务的[PR88](https://github.com/luoyan96/personal-agent/pull/88)，目标main、依赖PR84/85/87，待负责人审阅，未合并。再次fetch后main仍b7f5742，产品与桌面包保持原c46295f；后台配套部署待本批单独确认，未新增账号授权或运维操作。
+
+## 2026-10-22 — 用户单独授权课题组后台0.29与schema025升级完成
+
+用户明确表示“阿里云页面已经打开了，你升级吧”，据此沿既有Edge Workbench同实例/同权限更新后台；没有新增SSH/密钥/端口、飞书授权或扩大应用成员。沿feat/lab-membership与PR88继续本批部署，产品c46295f保持，不自行合并main、公开Release或重打/代安装桌面0.10.33。初始源码批次“待部署”记录保留为历史，此批补实际部署事实。
+
+先核对现产API/worker为595bed13/0.28/schema024及GITHUB_CATALOG_SYNC=0。首候选714,405字节在构建基底守卫处因community-catalog-seed.ts运营差异停止，尚未停生产；103份中其他源符合。核对唯一运营seed的实际哈希后保留该文件，改用27份已审源码增量，固定旧镜像内Linux编译器离线构建，不安装依赖或覆盖其他组合功能。最终候选137,971字节/SHA256 4b79b9d4903d4995ce81d894cdc4864dee7f3d4bdfadc02a5500186082d98a08；50项编译规范哈希、103基底检查及2文件31项Linux隔离检查通过。
+
+上线前审计脚本规范化SQLite空原型行和对象，audit-normalized.mjs SHA256 df31d37511d4b5af996011985622932fdb01bc70436d785dcbbc0b5bf61b17a7；deploy.sh改引用此文件、原稿保留。初次空库隔离演练因回执放入被审目录造成额外文件差异，改为外置回执后024/95表→025/100表、integrity/外键与旧行/文件保持通过。这些修订与失败均先于生产停写；没有把演练失败记作生产故障，失败包/日志不删除。
+
+正式维护北京时间 **12:16:24—12:16:44**（UTC04:16:24—04:16:44）。停止API，等待execution/chat的queued/running均0，再停止worker；一致备份原95表与7原件、独立恢复全行/结构/文件/权限哈希和旧24迁移校验和通过。恢复副本025迁移及隔离API ready200/0.29、未登录401通过，没有新账号/会话、模型或外部连接；正式迁移前在线数据仍与基线一致，正式025后原95表/7文件保持、新增5表共100表、完整性与外键正常。备份 **/srv/research-openim-backups/lab-membership-20261022-v2-20261022T041627Z/research.tar.gz**，SHA256 **efbccd218027ef6d7769ef030314cd675bf14ffb876527d450720217382ea4498**；仍同ECS，不称异地/整栈恢复。
+
+API/worker配对启动 **research-openim-api:lab-membership-20261022-v2** / **sha256:0212513c5e9d4109cba892462c4953f9c440e96dc13007178635aca6c58395fb**，实际running/restart0/API healthy、公网ready200/contract0.29.0，三条未登录受保护路由401。两运行容器27份精确源码、50项编译规范检查匹配候选。15份既有配置/密钥文件在服务器备份且哈希/权限不变，不输出或下载内容；个人及团队模型密文/默认值、Feishu连接/来源和集合范围保持，原1库仍私人。社区原缓存保持、11收录/19候选，enabled=false/state=disabled/nextCheckAt=null，未恢复每日抓取；其他6服务ID/镜像/状态及API/worker环境/挂载/端口/命令/内存/网络/重启策略保持。DSH0.2.1-rc.2/Cordis4.0.5不变，Harness仍not_verified，没有追加真实模型探测。
+
+Compose在原47c42ac基础与production、私有images、community/key-preview/feishu/harness/bitable/http400/library-sharing链末尾新增lab-membership-20261022-v2/images.yaml；原current、Nginx/静态网页不变。部署成功未触发回退；脚本只在新服务未启动、无新写入时可恢复停写数据库，新服务一旦尝试启动则要求保全数据前向修复。025不能换回024镜像读取，现在不能直接回灌旧快照，后续恢复需单独协调新写入及兼容数据/代码。
+
+服务器回执/逐表文件校验与日志在 **/opt/research-openim/ops/lab-membership-20261022-v2**，首失败在同级lab-membership-20261022；本机Git外 **D:/deepseek-agent/.runtime/lab-membership-20261022/backend-deploy-v2** 保留运维包/脚本、失败说明、部署摘要及deployed-proof.png，delivery.json改为后台已部署。源代码/安装包保持原产品标识，用户自行检查功能与安装体验；未追加浏览器产品、真实账号/私人材料/模型、载荷或原生验收。注册超时仍未定因，飞书直接OAuth仍仅本人试点。current-state、部署文档、ECS入口/路线图及PR88补实际状态；不合并main、打标签或改公开v0.10.29/更新源。
