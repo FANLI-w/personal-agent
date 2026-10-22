@@ -1,4 +1,5 @@
 import { Popover } from "antd";
+import { MessageReceiveOption } from "@openim/wasm-client-sdk";
 import ConversationItem from "@/pages/chat/ConversationSider/ConversationItem";
 import { MentionList } from "@/research/MentionList";
 import { feedbackToast } from "@/utils/common";
@@ -10,6 +11,7 @@ const previewConversations = [
   { conversationID: "g_1", showName: "科研小组", groupID: "g1", unreadCount: 0, isPinned: false, latestMsgSendTime: Date.now() - 7200000, conversationType: 2, faceURL: "" },
   { conversationID: "si_2", showName: "欧阳娜娜", unreadCount: 0, isPinned: false, latestMsgSendTime: Date.now() - 86400000, conversationType: 1, groupID: "", faceURL: "" },
   { conversationID: "si_3", showName: "吴凡", unreadCount: 0, isPinned: false, latestMsgSendTime: Date.now() - 172800000, conversationType: 1, groupID: "", faceURL: "" },
+  { conversationID: "si_4", showName: "李四", unreadCount: 2, isPinned: false, latestMsgSendTime: Date.now() - 300000, conversationType: 1, groupID: "", faceURL: "", recvMsgOpt: MessageReceiveOption.ReceiveWithoutNotification },
 ];
 
 const previewMentionContacts = [
