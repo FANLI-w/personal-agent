@@ -2,13 +2,21 @@
 
 更新日期：2026-10-22（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## main已按用户指令合并PR89，双方功能与提交记录保留
+
+北京时间 **2026-10-22 23:26:58**，[PR89](https://github.com/luoyan96/personal-agent/pull/89)以 **merge commit** 合入主仓库main，合并提交 **2498a486848258086968baf5f310e35746605910**，受核对PR head **17807e7ba6e7c131407d4ea93b1be70785b1a306**。同事PR86/dda1cb1、资料独立页/飞书打开与明确共享、课题组创建/邀请/成员管理及既有功能都在合并树中；原作者与提交祖先关系保持，合并树与PR head逐文件相同，运行源码与公开0.10.34/e4bdbe6相同。已同步本地main，下一功能仍从主仓库最新main另开分支。
+
+合并前3项GitHub foundation检查全部success。Windows首轮有1项旧lab-ai-settings测试超过5000ms（748通过/1超时），本机首次同样超时；诊断运行临时使用30秒观察限额，随后移除诊断、恢复原5秒，3项定向检查通过。只重跑原失败Windows job后完整CI通过；原失败/诊断日志保留Git外 **D:/deepseek-agent/.runtime/merge-pr89-20261022**，没有通过修改代码或放宽最终阈值来合并，也未确认超时波动的唯一根因。未新增产品/真实账号/资料/模型或安装后验收。
+
+本批只合并并更新文档。公开Latest/安装包仍v0.10.34，源码标签e4bdbe6、四附件及桌面文件保持；后台仍0.29/schema025与0212513c镜像，广场同步保持关闭，无重新打包、公开发布或后台部署。合并后的main自动CI与文档检查分别记录，不把待完成任务声称已通过。
+
 ## 最新公开0.10.34：整合同事聊天改动与资料/课题组功能
 
 用户要求提交GitHub更新及安装包，随后明确选择纳入同事聊天改动、审阅整合后一起发布。再次fetch main/b7f5742后新建release/acceptcat-0.10.34，纳入PR88/e3922e7并普通merge FANLI-w的[PR86](https://github.com/luoyan96/personal-agent/pull/86)/dda1cb1，保留作者与提交；最终产品 **e4bdbe689ec94b9de5b90ff9dee5e0d4ed5ed96d**。头像末两字、Agent/群标记、昵称宽度、右键菜单、@选择与原资料/课题组功能一起保留；审阅修正免打扰原样写回、无条件生产预览页，补明确意图重试、账号/会话与迟到写入保护和删除范围说明。[完整交付](deployment/acceptcat-0.10.34.md)。
 
 最终渲染/Electron类型、18项定向合成检查、生产编译/4 SDK资源/55运行包装配及NSIS/更新清单通过，DEV预览未进入生产输出。无API/契约/数据库/共享包或依赖锁变化，不重复已有749项根CI；用户自行检查功能，未追加浏览器产品、真实账号/资料/模型、载荷或原生/安装体验验收。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.34.exe**，**87,433,531字节**，SHA256 **0fdc3741ec65993925a0345d80408cb8bc9d62e2e284e483eeae25e9d43d7eb8**，未代安装，旧包保持。
 
-[PR89](https://github.com/luoyan96/personal-agent/pull/89)已推送并附任务，目标main、尚未合并；v0.10.34标签固定上述产品SHA。北京时间 **2026-10-22 16:51:11**，[v0.10.34](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.34)已公开并设为Latest，四附件的GitHub大小/SHA256与本地一致，未登录公开latest API确认0.10.34。0.10.33空草稿/原固定标签保留、未公开，不重指标签或删除历史。安装器可[直接下载](https://github.com/luoyan96/personal-agent/releases/download/v0.10.34/AcceptCat_0.10.34.exe)，附件就绪不代表客户端真实更新链路或安装体验通过。后台保持已部署0.29/schema025及广场同步关闭，本批无再部署；原Key/默认模型、飞书连接/私库权限保持。注册超时未定因、飞书直接OAuth本人试点、负责人交接/解散限制继续保留。
+[PR89](https://github.com/luoyan96/personal-agent/pull/89)已按用户指令合并main（见上文），v0.10.34标签固定上述产品SHA。北京时间 **2026-10-22 16:51:11**，[v0.10.34](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.34)已公开并设为Latest，四附件的GitHub大小/SHA256与本地一致，未登录公开latest API确认0.10.34。0.10.33空草稿/原固定标签保留、未公开，不重指标签或删除历史。安装器可[直接下载](https://github.com/luoyan96/personal-agent/releases/download/v0.10.34/AcceptCat_0.10.34.exe)，附件就绪不代表客户端真实更新链路或安装体验通过。后台保持已部署0.29/schema025及广场同步关闭，本批无再部署；原Key/默认模型、飞书连接/私库权限保持。注册超时未定因、飞书直接OAuth本人试点、负责人交接/解散限制继续保留。
 
 ## 前批本机0.10.33与已部署后台0.29/schema025：课题组创建、邀请与成员管理
 

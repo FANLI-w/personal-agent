@@ -24,7 +24,7 @@
 
 ## 源码与后台
 
-[v0.10.34标签](https://github.com/luoyan96/personal-agent/tree/v0.10.34)固定产品 **e4bdbe689ec94b9de5b90ff9dee5e0d4ed5ed96d**，[PR89](https://github.com/luoyan96/personal-agent/pull/89)整合FANLI-w的PR86与PR88，原作者提交保留，等待负责人决定合入main。公开安装包与main合并分别处理，下一功能从主仓库最新main另开分支，不能把发布标签当永久开发基线。
+[v0.10.34标签](https://github.com/luoyan96/personal-agent/tree/v0.10.34)固定产品 **e4bdbe689ec94b9de5b90ff9dee5e0d4ed5ed96d**，[PR89](https://github.com/luoyan96/personal-agent/pull/89)整合FANLI-w的PR86与PR88，原作者提交保留，现已按负责人明确指令通过PR89合入main。公开安装包与main合并分别处理，下一功能从主仓库最新main另开分支，不能把发布标签当永久开发基线。
 
 后台此前已部署 **contract0.29.0/schema025**，API/worker为 **sha256:0212513c5e9d4109cba892462c4953f9c440e96dc13007178635aca6c58395fb**，DSH0.2.1-rc.2/Cordis4.0.5；本次纯客户端整合未再次部署/迁移。前批停写备份、独立恢复及025迁移保全原账号、配置和原件，详情见[0.10.33部署回执](deployment/acceptcat-0.10.33.md)。广场同步GITHUB_CATALOG_SYNC=0，正常科研提醒/任务调度保持；不从代码或框架版本推断真实模型质量。
 

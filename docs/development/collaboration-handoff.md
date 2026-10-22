@@ -7,7 +7,7 @@
 
 工作目录：D:\deepseek-agent\research-agent-platform-chat-integration
 主仓库：https://github.com/luoyan96/personal-agent
-共同开发基线：主仓库最新 main，已包含我当前使用的 Windows 0.10.29 代码。
+共同开发基线：主仓库最新 main，已合入 Windows 0.10.34 对应的聊天、资料及课题组整合代码。
 
 先读取根目录 AGENTS.md，然后读取 CONTRIBUTING.md、docs/current-state.md、docs/project-log.md 最新记录、README.md、docs/roadmap.md 和 docs/development/collaboration-handoff.md。
 
@@ -24,7 +24,7 @@
 6. 代码合并、安装包制作、公开 Release、后台部署分别记录，不能把其中一项完成说成全部完成。此前同步 main/发布0.10.29的授权已履行，不是以后自动合并或发布的长期授权；按我当前指令推进，不重复询问已明确授权的同一操作。
 
 当前交付事实：
-- 最近核对main仍b7f5742，包含0.10.29；当前公开Latest为v0.10.34，标签固定e4bdbe689ec94b9de5b90ff9dee5e0d4ed5ed96d。整合源码在PR89待负责人审阅，不能把公开发布当成main已合并。
+- main已按本人指令以merge commit合入PR89（2498a486848258086968baf5f310e35746605910），保留同事PR86与资料/课题组功能及原作者记录；当前公开Latest仍v0.10.34，发布标签固定e4bdbe689ec94b9de5b90ff9dee5e0d4ed5ed96d，main后续可有文档提交，开始前仍需fetch实际最新状态。
 - 本机安装包：C:\Users\luo\Desktop\AcceptCat_0.10.34.exe；发布页：https://github.com/luoyan96/personal-agent/releases/tag/v0.10.34 。后续是否仍是最新版须按实际状态确认。
 - 最近改动：整合同事PR86聊天交互、独立资料页面、飞书库打开/复制与明确课题组共享、自助课题组创建/已有账号邀请接受。个人和自建Agent、聊天式规划与资料交互保持。
 - 已部署后台为contract0.29/schema025、DSH0.2.1-rc.2/Cordis4.0.5，镜像0212513c及一致备份/恢复见current-state；本次0.10.34纯客户端整合没有再次部署。广场每日同步已关闭，后续维护保持GITHUB_CATALOG_SYNC=0。

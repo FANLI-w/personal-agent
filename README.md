@@ -86,7 +86,7 @@ AcceptCat 把这些事情放在同一个工作空间里：用聊天说清需求�
 | **飞书只读本人试点** | 文档快照与命名多维表格论文库代码已包含，配套后台及飞书 0.2.0 已部署；指定论文库的真实读取、私人绑定和 DSH 试读已完成。飞书应用仍仅罗岩本人可用，其他成员不会因安装客户端而自动获得权限。[试点记录与边界](docs/deployment/acceptcat-0.10.27.md) |
 | **后台模型运行层：DSH 0.2.1-rc.2** | 已部署并验证现有模型的真实短句回复，保留现有账号、资料与模型设置；已有客户端无需重装。[部署说明](docs/deployment/harness-0.2.1-rc.2-20261020.md) |
 | **历史公开版本** | 原 v0.6.0 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.34 |
-| **产品源码与协作基线** | [v0.10.34 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.34)固定本次安装包源码；整合代码在[PR89](https://github.com/luoyan96/personal-agent/pull/89)等待负责人审阅合入main。后续从主仓库最新main新建功能分支，通过PR合并 |
+| **产品源码与协作基线** | [v0.10.34 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.34)固定本次安装包源码；[main](https://github.com/luoyan96/personal-agent/tree/main)已按负责人指令合入[PR89](https://github.com/luoyan96/personal-agent/pull/89)，保留同事聊天修改及资料、课题组功能。后续从主仓库最新main新建功能分支，通过PR合并 |
 
 已有试用版的团队：登录后在“我的 → 模型设置”配置自己的模型，从一个真实课题的小任务开始。新团队如希望参与试用，可以在 [Issues](https://github.com/luoyan96/personal-agent/issues) 留下使用场景和试用意向；请不要提交账号密钥、未公开论文或学生的私人材料。
 

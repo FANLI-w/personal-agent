@@ -1512,3 +1512,15 @@ Compose在原47c42ac基础与production、私有images、community/key-preview/f
 附件为AcceptCat_0.10.34.exe（87,433,531字节、SHA256 0fdc3741ec65993925a0345d80408cb8bc9d62e2e284e483eeae25e9d43d7eb8）、blockmap（91,168字节）、latest.yml（340字节）和SHA256SUMS.txt（262字节）。完整摘要/上传回执、published-release.json、public-latest-release.json与public-latest.yml保留Git外D:/deepseek-agent/.runtime/publish-0.10.34-20261022；delivery更新已公开。失败请求及错误说明保留，传输成功不称真实客户端更新或功能验收。
 
 README、product-status、current-state、0.10.34交付、路线图和交接/PR89补当前公开入口。后续文档提交不改变固定安装包源码，不重跑已通过的代码检查或重打包。没有再次后台部署/迁移，0.29/schema025、0212513c镜像、广场同步关闭、私人模型/资料/飞书本人试点及注册超时未决保持；用户继续自行检查安装和实际体验。
+
+## 2026-10-22 — 用户明确授权合并PR89，main保留同事聊天与资料/课题组功能
+
+用户明确要求“那你把PR89合并到main吧，保留同事的聊天修改和我们这次的资料、课题组功能”。开始核对干净release/acceptcat-0.10.34/17807e7、origin指主仓库、legacy未改；fetch后main仍b7f5742，PR89 head17807e7，GitHub可合并但Windows检查失败，未直接绕过。
+
+原运行39751186268的Windows job119731866638：749项中748通过、lab-ai-settings旧权限/CSRF/加密/幂等用例超过5000ms，Linux22.19/24均success。本机首次原测试也超时；保留失败后临时加耗时观察/30秒诊断运行，3项通过，诊断随后完全移除，原文件与Git无内容差异，默认5秒复检3项通过。只重跑原失败Windows job（同一head），完整运行与另外两项Linux检查均成功后再合并；不放宽最终阈值、不删断言、不声称已确定超时波动唯一根因。未修改运行代码，不追加用户自行负责的产品/真实用户/资料/模型/安装验收。
+
+北京时间 **2026-10-22 23:26:58**，PR89使用merge方法合入main，合并提交 **2498a486848258086968baf5f310e35746605910**，预期head **17807e7ba6e7c131407d4ea93b1be70785b1a306**。核对b7f5742、同事PR86/dda1cb1、成员c46295f、资料2364cd2与整个PR head均为合并提交祖先；合并树与PR head逐文件相同，运行源码/锁文件与已发布e4bdbe6完全相同。保留原作者与双方提交，没有squash/rebase、强推或整文件覆盖；本地main通过普通ff同步。
+
+合并前3项CI回执、原失败/诊断/默认时限复检及preservation.json存Git外 **D:/deepseek-agent/.runtime/merge-pr89-20261022**，用户资料、凭据、数据库和产物不入Git。current-state、README、0.10.34交付、产品状态、路线图与新聊天交接补主线已合并事实，后续新功能仍从主仓库最新main另开分支。合并后自动main CI与本地文档检查分别记录，未完成的自动任务不算新通过。
+
+本批没有重打或代安装、公开新Release或部署后台：Latest仍v0.10.34，标签e4bdbe6与四附件及桌面包保持；生产仍0.29/schema025、0212513c镜像与GITHUB_CATALOG_SYNC=0，模型配置/私人资料/飞书本人试点保持。注册超时未定因、负责人交接/解散限制继续保留。

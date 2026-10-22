@@ -46,3 +46,11 @@ GitHub四项附件的state均uploaded，size/digest与本机一致：
 未登录公开latest API实际返回v0.10.34与同一Release/四附件，公开latest.yml下载与本机340字节逐字节相同；校验清单也与公开附件摘要一致。未启动真实桌面更新、安装或产品验收。更新源仍原公开GitHub Releases配置，无新凭据；SHA和元数据核对只证明交付文件。0.10.33空草稿420459530及既有标签保持，旧公开v0.10.29等继续保留。
 
 本机Git外published-release.json、public-latest-release.json、public-latest.yml、delivery和上传回执保存实际结果。README、版本说明、交接、路线图与PR89同步公开状态；main仍按PR由负责人决定合并。后台保持前批0.29/schema025，不重新部署或扩展飞书授权。
+
+## 后续：用户明确批准PR89合入main
+
+北京时间 **2026-10-22 23:26:58**，按用户“把PR89合并到main，保留同事的聊天修改和本次资料、课题组功能”的指令，使用普通merge方法合并，提交 **2498a486848258086968baf5f310e35746605910**。预期head固定 **17807e7ba6e7c131407d4ea93b1be70785b1a306**；同事dda1cb1及成员c46295f、资料2364cd2等提交均是main祖先。合并树与受审PR head完全相同，apps/packages/integrations/clients/agents/deploy及锁文件与已发布e4bdbe6相同，没有整文件覆盖、压扁作者、强推或删除分支。
+
+合并前PR的3项foundation检查全部success；Windows原轮旧权限/加密/幂等测试5000ms超时，本机首次同样失败。临时30秒诊断仅用于观察，最终移除诊断后原5秒的3项检查通过，同一提交仅重跑原失败Windows job完成完整CI。原始失败、诊断和完整复跑回执保留Git外merge-pr89-20261022；不能宣布已确认并修复超时的唯一根因。未改产品或测试源码/最终阈值，没有追加真实账号、私人资料/模型或安装后验收。
+
+README、状态/日志、交接及路线图同步主线已合并事实。0.10.34的固定标签、安装包和公开Release保持，后台0.29/schema025及广场同步关闭保持；本次合并不触发新打包、发布或部署。main自动CI若尚运行，不将其当作新增通过证据。
