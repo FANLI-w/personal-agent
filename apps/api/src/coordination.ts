@@ -78,7 +78,7 @@ export class Coordination {
     for (const d of dependencies) {
       if (d.kind !== 'accepted_deliverable') fail('NOT_IMPLEMENTED')
       if (d.taskId === task.id) fail('VALIDATION_ERROR')
-      if(!this.db.prepare("SELECT 1 FROM tasks t JOIN task_access a ON a.task_id=t.id AND a.member_id=? AND a.access='full' WHERE t.id=? AND t.lab_id=?").get(authorId,d.taskId,this.c.actor.labId)) fail('NOT_FOUND')
+      if(!this.db.prepare("SELECT 1 FROM tasks t JOIN task_access a ON a.task_id=t.id AND a.member_id=? AND a.access='full' WHERE t.id=? AND t.lab_id=?").get(authorId,d.taskId,this.c.labId)) fail('NOT_FOUND')
       const cycle = this.db.prepare(`WITH RECURSIVE chain(id) AS (SELECT ? UNION SELECT e.upstream_id FROM task_dependencies e JOIN chain c ON e.task_id=c.id) SELECT 1 FROM chain WHERE id=?`).get(d.taskId,task.id)
       if (cycle) fail('VALIDATION_ERROR')
     }

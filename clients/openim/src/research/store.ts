@@ -1,7 +1,7 @@
 import type { ResponseFor } from "@research-agent-platform/contracts";
 import { create } from "zustand";
 import type { ConversationItem } from "@openim/wasm-client-sdk/lib/types/entity";
-import { researchApi } from "./api";
+import { researchApi, cancelResearchRequests } from "./api";
 
 type State = {
   generation: number;
@@ -22,6 +22,7 @@ type State = {
     actor: ResponseFor<"session">["data"],
   ) => void;
   refresh: () => Promise<void>;
+  refreshActor: () => Promise<void>;
   clear: () => void;
 };
 export const useResearchStore = create<State>((set) => ({
@@ -41,6 +42,13 @@ export const useResearchStore = create<State>((set) => ({
       coordinatorPinPending: false,
       generation: state.generation + 1,
     })),
+  refreshActor: async () => {
+    const generation = useResearchStore.getState().generation;
+    const actor = await researchApi("session");
+    if (generation !== useResearchStore.getState().generation) return;
+    cancelResearchRequests();
+    set({ actor: actor.data, generation: generation + 1 });
+  },
   refresh: async () => {
     const generation = useResearchStore.getState().generation;
     const sequence = useResearchStore.getState().refreshSequence + 1;
@@ -55,12 +63,16 @@ export const useResearchStore = create<State>((set) => ({
         generation === useResearchStore.getState().generation &&
         sequence === useResearchStore.getState().refreshSequence
       )
-        set({
+        set((state) => ({
+          generation:
+            state.actor?.member.labId !== actor.data.member.labId
+              ? state.generation + 1
+              : state.generation,
           actor: actor.data,
           contacts: contacts.data.contacts,
           mappings: mappings.data.conversations,
           error: "",
-        });
+        }));
     } catch (error) {
       if (
         generation === useResearchStore.getState().generation &&

@@ -1,5 +1,5 @@
 import { Alert, Button, Checkbox, InputNumber, Modal, Select, Space } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AgentTurn, RequestFor } from "@research-agent-platform/contracts";
 type ChatResource = NonNullable<
   RequestFor<"sendChatMessage">["body"]["context"]
@@ -169,30 +169,30 @@ export function useResearchComposer() {
     setMode("chat");
     setCreationFailure(undefined);
   }, [imID, actorGeneration]);
+  const mentionContacts = useMemo(() =>
+    canonical.data?.data.members
+      .filter((member) => member.status === "joined")
+      .flatMap((member) => {
+        const contact = contacts.find(
+          (item) => item.contact.id === member.contactId,
+        )?.contact;
+        return contact
+          ? [
+              {
+                id: contact.id,
+                displayName: contact.displayName,
+                agent: contact.identity.kind !== "human",
+                external: !!contact.agentRuntime,
+              },
+            ]
+          : [];
+      }) || [], [canonical.data?.data.members, contacts]);
+
   const prepareResearch = (text: string): PreparedResearchSend | undefined => {
     const advancedRequest = advanced && mode === "ask_agent";
     const addressed =
       researchMode && mapping?.kind === "group" && !advanced
-        ? groupMentions(
-            text,
-            canonical.data?.data.members
-              .filter((member) => member.status === "joined")
-              .flatMap((member) => {
-                const contact = contacts.find(
-                  (item) => item.contact.id === member.contactId,
-                )?.contact;
-                return contact
-                  ? [
-                      {
-                        id: contact.id,
-                        displayName: contact.displayName,
-                        agent: contact.identity.kind !== "human",
-                        external: !!contact.agentRuntime,
-                      },
-                    ]
-                  : [];
-              }) || [],
-          )
+        ? groupMentions(text, mentionContacts)
         : undefined;
     if (addressed) {
       if (!mapping || !canonical.data?.data.allowedActions.includes("send"))
@@ -542,6 +542,7 @@ export function useResearchComposer() {
     sendPrepared,
     acceptSendIntent,
     controls,
+    mentionContacts,
     isCoordinator: mapping?.kind === "personal",
     advanced,
     advancedToggle:

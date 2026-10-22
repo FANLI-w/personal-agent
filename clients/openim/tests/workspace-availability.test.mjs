@@ -12,7 +12,7 @@ await esbuild.build({
   entryPoints: [new URL("../src/research/workspace-availability.ts", import.meta.url).pathname.replace(/^\/(\w:)/, "$1")],
   outfile: path.join(dir, "health.cjs"), bundle: true, platform: "node", format: "cjs",
 });
-const { readWorkspaceAvailability, readResearchTeamAvailability } = require(path.join(dir, "health.cjs"));
+const { readWorkspaceAvailability, readResearchTeamAvailability, readFeishuLibrarySharingAvailability } = require(path.join(dir, "health.cjs"));
 
 test("one health version supports independently checked workspace and team boundaries without authentication", async (t) => {
   const original = globalThis.fetch;
@@ -43,6 +43,14 @@ test("caller cancellation aborts the health transport and cannot report a late s
   await rejected;
   assert.equal(transportSignal.aborted, true);
   finish(Response.json({ data: { status: "ok", contractVersion: "0.25.0" } }));
+});
+test("Feishu library sharing stays unavailable on the current 0.27 backend and enables at 0.28", async (t) => {
+  const original = globalThis.fetch;
+  t.after(() => { globalThis.fetch = original; });
+  for (const [version, available] of [["0.27.0", false], ["0.28.0", true]]) {
+    globalThis.fetch = async () => Response.json({ data: { status: "ok", contractVersion: version } });
+    assert.deepEqual(await readFeishuLibrarySharingAvailability(), { available, version });
+  }
 });
 
 test("unhealthy and malformed responses never establish compatibility", async (t) => {

@@ -250,3 +250,6 @@ function resetResearchSession(except?: AbortController) {
   for (const controller of pendingRequests)
     if (controller !== except) controller.abort();
 }
+
+// A team switch preserves the login and retry receipts for private writes.
+export function cancelResearchRequests(){for(const controller of pendingRequests)controller.abort();}

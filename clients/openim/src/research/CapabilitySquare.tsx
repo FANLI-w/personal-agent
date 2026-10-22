@@ -6,6 +6,7 @@ import type {
 } from "@research-agent-platform/contracts";
 import OIMAvatar from "@/components/OIMAvatar";
 import { researchApi } from "./api";
+import { squareEnabled } from "./square-feature";
 import { useResearchRead } from "./useResearchRead";
 import { useResearchStore } from "./store";
 import { usePersonalOperation } from "./usePersonalOperation";
@@ -166,12 +167,12 @@ function CapabilityBrowser({
     (signal) =>
       researchApi("chatContacts", { query: { view: "mine", limit: 100 }, signal }),
     "square-own-contacts",
-    publishing && supported,
+    squareEnabled && publishing && supported,
   );
   const mine = useResearchRead(
     () => workspaceApi.square("mine", "all", ""),
     "square-own-publications",
-    publishing && supported,
+    squareEnabled && publishing && supported,
   );
   const [busy, setBusy] = useState(false),
     [failure, setFailure] = useState(""),
@@ -357,7 +358,7 @@ function CapabilityBrowser({
         {view === "mine" && onOpenSkills && (
           <Button onClick={() => onOpenSkills()}>技能库</Button>
         )}
-        {view !== "public" && (
+        {squareEnabled && view !== "public" && (
           <Button
             type="primary"
             disabled={!supported}
@@ -580,7 +581,7 @@ function CapabilityBrowser({
       <ResearchUserCard contactId={managedContact} ref={profile} />
       <Modal
         title="公开我的能力"
-        open={publishing}
+        open={squareEnabled && publishing}
         onCancel={() => setPublishing(false)}
         footer={null}
         destroyOnClose

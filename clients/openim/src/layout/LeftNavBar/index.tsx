@@ -1,4 +1,5 @@
 import {
+  BookOutlined,
   CompassOutlined,
   ContactsOutlined,
   FolderOpenOutlined,
@@ -37,6 +38,7 @@ import { LabSettings } from "@/research/LabSettings";
 import { PersonalAssistantPanel } from "@/research/PersonalAssistantPanel";
 import { AcceptCatAccountNumber } from "@/research/AcceptCatAccountNumber";
 import { useResearchStore } from "@/research/store";
+import { squareEnabled } from "@/research/square-feature";
 
 const { Sider } = Layout;
 
@@ -62,9 +64,19 @@ const NavList = [
   {
     icon: contact_icon,
     icon_active: contact_icon_active,
-    title: "广场",
-    path: "/square",
+    title: "资料",
+    path: "/library",
   },
+  ...(squareEnabled
+    ? [
+        {
+          icon: contact_icon,
+          icon_active: contact_icon_active,
+          title: "广场",
+          path: "/square",
+        },
+      ]
+    : []),
   { icon: contact_icon, icon_active: contact_icon_active, title: "我的", path: "/me" },
 ];
 
@@ -142,6 +154,7 @@ const NavItem = ({
       >
         {window.electronAPI ||
         path === "/workbench" ||
+        path === "/library" ||
         path === "/square" ||
         path === "/me" ? (
           path === "/chat" ? (
@@ -150,6 +163,8 @@ const NavItem = ({
             <ContactsOutlined />
           ) : path === "/workbench" ? (
             <FolderOpenOutlined />
+          ) : path === "/library" ? (
+            <BookOutlined />
           ) : path === "/me" ? (
             <UserOutlined />
           ) : (

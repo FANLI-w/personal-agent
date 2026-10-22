@@ -9,7 +9,7 @@ import {personalModelRuntime} from './personal-models.js'
 // ordinary members never inherit an administrator's key for private planning.
 export function planningModelRuntime(db:DatabaseSync,actor:Actor,config:Config){
   const runtime=personalModelRuntime(db,actor,config)
-  return {...runtime,enabled:Boolean(runtime.enabled&&(runtime.source==='personal'||isLabManager(db,actor)))}
+  return {...runtime,enabled:Boolean(runtime.enabled&&(runtime.source==='personal'||isLabManager(db,{...actor,teamLabId:actor.labId})))}
 }
 export type PlanningModelRuntime=ReturnType<typeof planningModelRuntime>
 export type PlanningModelBinding=Pick<PlanningModelRuntime,'source'|'provider'|'model'|'fingerprint'>

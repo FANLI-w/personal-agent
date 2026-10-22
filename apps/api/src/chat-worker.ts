@@ -30,13 +30,13 @@ export const ChatModelOutput = z.strictObject({
   group: z.strictObject({ title: Title, plan: PlanInput, contactIds: z.array(Id).min(1).max(99), sharedContext: SharedContext }).nullable(),
   actions: z.array(ChatActionPayload).max(5),
 })
-function service(db: DatabaseSync, owner: string, config: Config) { return new ChatService(serviceFor(db, owner, config).c, config) }
+function service(db: DatabaseSync, owner: string, config: Config,turnId?:string) { const context=turnId?db.prepare('SELECT lab_id FROM chat_turn_lab_contexts WHERE turn_id=?').get(turnId):null;return new ChatService(serviceFor(db, owner, config,context?String(context.lab_id):undefined).c, config) }
 export function reconcileChat(db: DatabaseSync, config: Config) {
   for (const row of db.prepare("SELECT * FROM chat_turns WHERE status IN ('queued','running')").all()) {
     const turn = AgentTurn.parse(JSON.parse(String(row.document)))
     let failure: AgentTurn['failure'] = null
     try {
-      const s = service(db, String(row.owner_id), config)
+      const s = service(db, String(row.owner_id), config,String(row.id))
       const { group } = s.checkTurnInput(turn.id)
       if (s.joinedAgent(group,turn.agentContactId).availability.status !== 'available') failure = 'MODEL_UNAVAILABLE'
     } catch (error) { failure = error instanceof ApiError && error.code==='VERSION_CONFLICT' ? 'INPUT_CHANGED' : 'AUTHORITY_CHANGED' }
@@ -56,7 +56,7 @@ export class ChatWorker {
       reconcileChat(this.db, this.config)
       const row = this.db.prepare("SELECT * FROM chat_turns WHERE status='queued' AND (json_extract(request_json,'$.continuous.dueAt') IS NULL OR json_extract(request_json,'$.continuous.dueAt')<=?) ORDER BY rowid LIMIT 1").get(this.clock())
       if (!row) return null
-      const s = service(this.db, String(row.owner_id), this.config), { turn, input, group } = s.checkTurnInput(String(row.id))
+      const s = service(this.db, String(row.owner_id), this.config,String(row.id)), { turn, input, group } = s.checkTurnInput(String(row.id))
       let system:string,prompt:string
       const external=input.externalAgent?externalForChat(s,turn.agentContactId):null
       if(input.externalAgent&&!external)throw new ApiError('FORBIDDEN')
@@ -209,7 +209,7 @@ export class ChatWorker {
       if(controller.signal.aborted||typeof text!=='string')return
       draft+=text
       if(draft.length>8000||/^[\s]*[\[{`]/.test(draft)||Date.now()-lastPublished<80)return
-      try{transaction(this.db,()=>{if(!saveChatDelta(service(this.db,job.ownerId,this.config),job.id,job.fence,draft))controller.abort()});lastPublished=Date.now()}catch{controller.abort()}
+      try{transaction(this.db,()=>{if(!saveChatDelta(service(this.db,job.ownerId,this.config,job.id),job.id,job.fence,draft))controller.abort()});lastPublished=Date.now()}catch{controller.abort()}
     }:undefined
     let result: ModelResult
     try { result = await Promise.race([job.externalEndpoint?this.externalCall({endpoint:job.externalEndpoint,model:job.modelInput.model,apiKey:job.credential.apiKey,text:job.modelInput.prompt,maxTokens:job.modelInput.maxTokens,timeoutMs:job.modelInput.timeoutMs},controller.signal):this.call(job.modelInput, controller.signal, job.credential,onDelta), expired]) } catch { result = { text: '', failure: 'MODEL_FAILED', inputTokens: null, outputTokens: null, elapsedMs: Date.now() - started } }
@@ -237,7 +237,7 @@ export class ChatWorker {
         }
         return
       }
-      const s = service(this.db, job.ownerId, this.config), { turn, group } = s.checkTurnInput(job.id)
+      const s = service(this.db, job.ownerId, this.config,job.id), { turn, group } = s.checkTurnInput(job.id)
       turn.usage = usage
       if (result.failure) { turn.status = 'failed'; turn.failure = result.failure==='OUTPUT_LIMIT'?'BUDGET_EXCEEDED':'MODEL_FAILED';diagnostic(result.failure==='OUTPUT_LIMIT'?'output_limit':'provider_error') }
       else if (result.inputTokens===null||result.outputTokens===null) { turn.status='failed';turn.failure='MODEL_FAILED' }
@@ -290,7 +290,7 @@ export class ChatWorker {
             if (payload.kind === 'run_task' && payload.inputArtifactRefs.some(ref => !job.input.context.some(r => r.kind === 'artifact' && r.ref.id === ref.id && r.ref.version === ref.version))) throw new Error('INVALID_MODEL_OUTPUT')
           }
           if (output.group) {
-            if (group.kind !== 'personal' || s.contact(turn.agentContactId).profile.role!=='coordinator' || output.group.plan.labId !== s.c.actor.labId) throw new Error('INVALID_MODEL_OUTPUT')
+            if (group.kind !== 'personal' || s.contact(turn.agentContactId).profile.role!=='coordinator' || output.group.plan.labId !== s.c.labId) throw new Error('INVALID_MODEL_OUTPUT')
             for (const ref of output.group.sharedContext.artifactRefs) if (!job.input.context.some(r => r.kind === 'artifact' && r.ref.id === ref.id && r.ref.version === ref.version)) throw new Error('INVALID_MODEL_OUTPUT')
             if(coordinated&&output.group.sharedContext.selectedText!==null&&output.group.sharedContext.selectedText!==s.projectedMessage(turn.inputMessageId).text)throw new Error('INVALID_MODEL_OUTPUT')
             if(coordinated){const allowed=[turn.agentContactId,...assistantCandidates(s).map(c=>c.id),...assistantPeople(s).map(c=>c.id)];if(output.group.contactIds.some(id=>!allowed.includes(id)))throw new Error('INVALID_MODEL_OUTPUT')}

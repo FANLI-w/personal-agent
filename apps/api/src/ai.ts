@@ -29,12 +29,12 @@ export class AiService {
   get db(){return this.c.db}
   permission(taskId:string){return Number(this.db.prepare('SELECT version FROM task_permissions WHERE task_id=?').get(taskId)!.version)}
   capability(){
-    const row=this.db.prepare('SELECT version,enabled,owner_id FROM public_capabilities WHERE lab_id=? AND id=?').get(this.c.actor.labId,capabilityId)
+    const row=this.db.prepare('SELECT version,enabled,owner_id FROM public_capabilities WHERE lab_id=? AND id=?').get(this.c.labId,capabilityId)
     if(!row)return null
-    return Capability.parse({allowedActions:row.owner_id===this.c.actor.id?['manage_methods']:[],id:capabilityId,labId:this.c.actor.labId,ownerId:String(row.owner_id),maintainerIds:[],visibility:'lab_public',version:row?.version??1,name:'Text evidence checklist',inputContract:'Authorized same-task UTF-8 text, at most 20000 bytes; no OCR or web.',outputContract:'Checklist with exact source quotations and explicit gaps; human review required.',status:this.enabled && row?.enabled===1?'available':'unavailable',validationResultIds:[]})
+    return Capability.parse({allowedActions:row.owner_id===this.c.actor.id?['manage_methods']:[],id:capabilityId,labId:this.c.labId,ownerId:String(row.owner_id),maintainerIds:[],visibility:'lab_public',version:row?.version??1,name:'Text evidence checklist',inputContract:'Authorized same-task UTF-8 text, at most 20000 bytes; no OCR or web.',outputContract:'Checklist with exact source quotations and explicit gaps; human review required.',status:this.enabled && row?.enabled===1?'available':'unavailable',validationResultIds:[]})
   }
   available(ref:{id:string;version:number}){const cap=this.capability();if(!cap||cap.status!=='available'||ref.id!==cap.id||ref.version!==cap.version)fail('CAPABILITY_UNAVAILABLE')}
-  row(id:string){const row=this.db.prepare('SELECT * FROM execution_jobs WHERE id=? AND lab_id=?').get(id,this.c.actor.labId);if(!row)fail('NOT_FOUND');return row}
+  row(id:string){const row=this.db.prepare('SELECT * FROM execution_jobs WHERE id=? AND lab_id=?').get(id,this.c.labId);if(!row)fail('NOT_FOUND');return row}
   inputRefs(ids:string[],taskId?:string){
     if(new Set(ids).size!==ids.length)fail('VALIDATION_ERROR')
     let bytes=0
@@ -64,7 +64,7 @@ export class AiService {
     this.db.prepare('UPDATE execution_jobs SET status=?,version=?,document=? WHERE id=?').run(document.status,document.version,encode(document),id)
   }
   insert(kind:'planning'|'capability',doc:Run|Planning,request:unknown){
-    this.db.prepare('INSERT INTO execution_jobs(id,kind,owner_id,lab_id,task_id,status,version,available_at,request_json,document,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(doc.id,kind,this.c.actor.id,this.c.actor.labId,'taskId' in doc?doc.taskId:null,doc.status,doc.version,Date.now(),encode(request),encode(doc),instant())
+    this.db.prepare('INSERT INTO execution_jobs(id,kind,owner_id,lab_id,task_id,status,version,available_at,request_json,document,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(doc.id,kind,this.c.actor.id,this.c.labId,'taskId' in doc?doc.taskId:null,doc.status,doc.version,Date.now(),encode(request),encode(doc),instant())
   }
   facts(intent:'progress'|'find_work',taskIds:string[]){
     const v=this.c.visible(intent==='progress'?'mine':'lab')
@@ -111,7 +111,7 @@ export class AiService {
     return {task,inputs}
   }
   run(name:AiCommand,req:RequestFor<AiCommand>):unknown{
-    const resource=(req.params as {id?:string}).id??this.c.actor.labId
+    const resource=(req.params as {id?:string}).id??this.c.labId
     // Authorization is performed before looking up any successful response.
     if(['getPlanRequest','cancelPlanning'].includes(name))this.planningAccess(this.row(resource))
     if(['getRun','cancelRun','retryRun','submitCandidate'].includes(name))this.runAccess(resource,name!=='getRun')
@@ -150,7 +150,7 @@ export class AiService {
       const b=req.body as RequestFor<'run'>['body'],{task:t,inputs}=this.validateNewRun(id,b)
       const reuse=new ReuseService(this.c)
       if(b.inputArtifactIds.length||(b.conclusionRefs??[]).length)this.c.coordination.runnable(t,true)
-      const r:Run={methodVersion:Number(this.db.prepare('SELECT active_version FROM public_method_state WHERE lab_id=?').get(this.c.actor.labId)!.active_version),configurationGeneration:b.capability.version,methodTrial:false,conclusionRefs:b.conclusionRefs??[],id:randomUUID(),taskId:id,capability:b.capability,status:b.inputArtifactIds.length||(b.conclusionRefs??[]).length?'queued':'waiting_input',attempt:0,usage:null,failure:b.inputArtifactIds.length||(b.conclusionRefs??[]).length?null:'Authorized text input required.',resultRefs:[],createdAt:instant(),startedAt:null,endedAt:null,version:1,requestedBy:this.c.actor.id,taskVersion:t.version,plan:{id:t.planId,version:t.planVersion},permissionVersion:this.permission(t.id),inputs,budget:b.budget,maxAttempts:3,nextAttemptAt:null,candidate:null,candidateDeliverableId:null,allowedActions:[],provider:'deepseek-official',model:this.model,harnessVersion:executionHarnessVersion,updatedAt:instant(),usageDetail:null}
+      const r:Run={methodVersion:Number(this.db.prepare('SELECT active_version FROM public_method_state WHERE lab_id=?').get(this.c.labId)!.active_version),configurationGeneration:b.capability.version,methodTrial:false,conclusionRefs:b.conclusionRefs??[],id:randomUUID(),taskId:id,capability:b.capability,status:b.inputArtifactIds.length||(b.conclusionRefs??[]).length?'queued':'waiting_input',attempt:0,usage:null,failure:b.inputArtifactIds.length||(b.conclusionRefs??[]).length?null:'Authorized text input required.',resultRefs:[],createdAt:instant(),startedAt:null,endedAt:null,version:1,requestedBy:this.c.actor.id,taskVersion:t.version,plan:{id:t.planId,version:t.planVersion},permissionVersion:this.permission(t.id),inputs,budget:b.budget,maxAttempts:3,nextAttemptAt:null,candidate:null,candidateDeliverableId:null,allowedActions:[],provider:'deepseek-official',model:this.model,harnessVersion:executionHarnessVersion,updatedAt:instant(),usageDetail:null}
       this.insert('capability',r,b);reuse.bind('job',r.id,r.conclusionRefs??[]);reuse.bind('task',id,r.conclusionRefs??[]);this.c.event(t,'execution_updated','Public capability execution authorized.');return {data:this.projectedRun(r.id)}
     }
     const {r,t}=this.runAccess(id,true),b=req.body as RequestFor<'retryRun'>['body'];this.c.checkVersion(r.version,b.expectedVersion)

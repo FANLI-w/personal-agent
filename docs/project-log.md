@@ -1362,3 +1362,153 @@ README已按实际公开结果更新下载、main开发基线和飞书本人试�
 新增docs/development/collaboration-handoff.md，可供负责人新聊天直接复制；外部合作者替换本机目录并补具体任务。交接涵盖产品方向、0.10.29代码与公开Release、后台沿原部署、注册超时未决、课题组自助流程缺口、飞书仅本人及用户自行验收安排。只要求看PR不等于授权合并，合并/打包/公开发布/后台部署分别记录，之前一次性主线同步不作为未来自动操作授权；已明确的当前授权也不反复询问。
 
 本批按要求补交接记录并同步主仓库main，不创建新聊天、不分配未知任务；具体合作者账号和职责尚未提供，未新增成员、分支保护、自动合并或部署设置。仅文档更新，无产品代码、包、Release、后台、数据库或权限变化，不追加用户已要求自行完成的产品测试。docs/current-state.md和docs/roadmap.md同步入口，后续每批继续维护状态和日志。
+
+## 2026-10-21 — 飞书论文库将查看原表设为首要操作
+
+用户提供截图，指出绑定论文库后只看到“已连接飞书数据表”和字段说明，无法直观查看论文，接受直接跳转原飞书链接。实际干净main / b7f5742，origin为luoyan96/personal-agent，legacy保留；fetch后从最新origin/main新建fix/feishu-library-open-source，未回旧交接分支或改写历史。产品提交3436789。
+
+原FeishuLibrarySource把原表链接放在说明与查询按钮之后，并复用了40像素居中空状态布局；短窗滚动时入口落在可视范围之外。改为详情顶部优先显示“在飞书打开资料库”主按钮，href直接取当前绑定的sourceUrl，沿既有Electron外部浏览器/网页新标签逻辑；“向资料 Agent 提问”保留为次操作。删除居中空状态呈现，连接、已识别字段和日期查询限制折叠保留。没有在AcceptCat新增论文列表、复制PDF全文或修改飞书资料，私人绑定、当前只读查询与聊天范围保持；无接口、数据库、公共模块、依赖或锁文件变化。
+
+使用现有客户端本地工具执行TypeScript与生产Web构建，均exit0；生产资源检查确认完整Web dist及4份固定SDK资源。构建依赖use client提示保留在Git外D:/deepseek-agent/.runtime/feishu-open-source-20261021/build-web.log，类型日志同目录。未改共享层，不重复根CI；遵照用户自行检查体验的要求，不新增测试或开展浏览器跳转、私人真实飞书、安装载荷、原生启动与安装后验收，不用构建结果替代功能通过。
+
+本批仅源码修正，PR于收尾建立，未合并main。未制作或代安装新包、未公开发布或修改自动更新源，现装及Latest仍为v0.10.29；未部署/重启后台、迁移数据库、修改Key或扩展飞书本人试点。后台沿既有6597f58d/contract0.27/schema024/DSH0.2.1-rc.2记录，本次未新inspect。注册超时和课题组自助加入/成员管理保持未完成；当前状态同步实际交付边界。
+
+收尾237份Markdown/10份Skill内容检查与git diff --check通过；Git提示既有project-log工作副本CRLF提交时转LF，保留原历史内容。
+
+分支推送成功；GitHub连接器创建PR返回403/Resource not accessible by integration，改用本机既有gh身份成功创建[PR84](https://github.com/luoyan96/personal-agent/pull/84)，base main，已附本任务、未合并，无新增仓库权限。现装包、公开Release及后台均保持。
+
+## 2026-10-21 — Windows0.10.30：飞书论文库打开回执与复制链接，安装包放桌面
+
+用户进一步明确旧按钮点击无反应，不能只移动位置；并要求提供能自行安装体验的成品。接续同一fix/feishu-library-open-source/PR84，未另选功能，fetch后origin/main仍b7f5742，无其他新主线提交。旧“查询此库”实际只展开/聚焦聊天，原表href由通用窗口处理而无成功/失败回传；未独立复现用户机器上旧按钮无响应的唯一原因。
+
+最终产品6e882217b7cedcc57166d600bcbf546977c88a3a、客户端0.10.30，[交付记录](deployment/acceptcat-0.10.30.md)。顶部“在飞书打开资料库”新增专用IPC/preload，主框架/当前服务与HTTPS飞书base/table白名单校验，等待系统打开结果，五秒无结果或失败显示可操作错误；仅显示已请求，不假称飞书页面加载/权限已验。新增“复制链接”与失败时可选中的原始地址；“去下方提问”说明需本人发送，等配置就绪选择集合、聚焦/滚动，不清原待确认消息或错误，手动收起不因旧请求再次展开。没有新增论文列表、复制PDF或共享私人资料，无服务端接口、数据库、公共包、依赖或锁文件变更。
+
+首轮渲染类型检查跨Electron项目引用新文件报TS6305，失败日志保留；前端改为复用原飞书链接解析，主进程独立严格校验，不降低类型检查。最终渲染/主进程类型exit0。465aa5d首包成功后，收尾修正聚焦完成标记，防止忙碌变化重开手动收起的聊天；首包保留first-candidate-465aa5d，未放桌面。最终6e88221重新生产编译与Windows x64 NSIS打包exit0，55个运行装配包，--publish never。
+
+最终C:/Users/luo/Desktop/AcceptCat_0.10.30.exe，87,431,591字节，SHA256 19c0abb4478df684c18343204ca86909c30113d834c440653db96c1fc5a9357f。旧0.10.29包及正在使用的客户端保留，未代安装；原始类型/构建/失败日志、首包和delivery.json在Git外D:/deepseek-agent/.runtime/feishu-open-source-20261021/0.10.30。按用户自行检查的安排，本批不新增测试或执行额外界面、真实账号/飞书、安装载荷提取、原生启动与安装后验收，不把文件哈希、类型或NSIS成功当功能通过。无共享层变更，不重复根CI。
+
+源码继续向main的PR84交负责人审阅，未合并；Windows包仅本机交付，未创建标签/公开Release/更新源，Latest沿v0.10.29。无后台部署、重启、迁移、Key或飞书试点成员变化；当前后台沿6597f58d/contract0.27/schema024/DSH0.2.1-rc.2，本批未新inspect。他人注册超时仍未定因，课题组自助加入/完整成员管理仍未完成。
+
+收尾238份Markdown/10份Skill内容检查及git diff --check通过；PR84标题/描述随最终打开反馈与本机安装包范围更新。
+
+## 2026-10-21 — Windows0.10.31：明确的私人/课题组共享与撤回，待后台升级
+
+用户要求修正飞书论文库在“课题组资料”中却锁定仅自己的体验。核对干净fix/feishu-library-open-source/876a78a、远端origin为主仓库，fetch后main仍b7f5742。按协作约定从origin/main新建feat/feishu-library-lab-sharing，再快进纳入PR84作为未合并依赖，保留0.10.30及其历史记录；没有沿旧功能分支直接堆功能或合并共享main。最终产品bd0a718686e4057b74ab5a86496885fc02cc27e3，客户端0.10.31，[交付范围](deployment/acceptcat-0.10.31.md)。
+
+资料页标明私人/共享范围并分全部/课题组/我的视图。飞书来源允许主人明确设为lab_shared并确认，或改回owner_private；普通组员不能改、个人空间不能伪装课题组、不开放public/task范围。新绑定和撤回后恢复仍默认私人，有效来源重绑保留此前明确范围。组员按当前同课题组身份发现/查询已共享的指定表，后台只用库主人连接读取这个获准表，不向成员返回Token或其他私人来源；飞书原网页权限另行适用。已保存的成员查询文字不会因后续撤回而删除，确认时明确说明。资料Agent可选择获准的非本人共享库，同名以明确选择区分，多个不同库仍澄清，查询/模型仍在发问人自己的对话和模型范围。
+
+契约0.28、新错误FEISHU_SHARED_SOURCE_UNAVAILABLE/503，正常来源/查询响应形状保持；前端共享能力检查最低0.28，在实际旧0.27上提示待升级而非假成功。无新增表/迁移，继续schema024。网络返回前复核真实请求人会话和课题组、有效库主人/归属、范围与集合/连接版本，读取中撤权不返回结果；共享连接过期/字段或原表权限失败引导联系库主人，不让组员错误地重新授权自己。无新Feishu scope或OAuth可用成员、Key、依赖/锁文件变化。
+
+18项本地实际HTTP/SQLite＋合成Feishu检查通过，覆盖私人、主人共享、组员无需自己OAuth、限定表/无凭据输出、跨组、撤回、读取中改私人/撤回/主人停用/成员换组、连接分型、重绑和个人空间。首轮冷启动三组合成账号准备超过用例5秒，原日志保留；复用一次随机生成的合成密码哈希，真实HTTP登录仍验证密码，未改生产KDF或放宽测试时限。完整CI首轮723通过/1旧网页契约版本断言失败，更新该断言至实际0.28后完整重跑，最终57文件/724项、2生产CLI/B0/生产无夹具exit0。客户端14项及渲染/主进程类型通过。根pnpm11.21与客户端corepack pnpm10.28分别frozen安装，客户端实际契约0.28；prepare因目录所有者检查跳过Husky，保留原提示，不改全局Git设置或声称hook已安装。
+
+最终生产编译和Windows x64 NSIS打包exit0、55个装配运行包，--publish never。C:/Users/luo/Desktop/AcceptCat_0.10.31.exe，87,433,023字节，SHA256 7bd3df6a8925f7497fbbf43e97c0d419045fb98a39beb2f43c46914f561162f5；已复制桌面，旧0.10.29/0.10.30包与当前客户端保留，未代安装。用户自行检查功能体验；不追加浏览器/真实飞书或模型/载荷提取/原生启动/安装后验收，不把合成模型、文件哈希或NSIS成功当真实团队效果。Git外D:/deepseek-agent/.runtime/feishu-lab-sharing-20261021保存依赖安装、类型、定向、两轮CI/原失败、打包和delivery.json；backend-candidate含5份源文件/元数据与1份合成测试及SHA256/main基底Git blob清单，未上传或部署。
+
+本批PR目标main、未合并，继续由负责人审阅；未公开Release/更新源或打标签，Latest仍v0.10.29。源码、安装包、后台四种状态分别记录：共享代码与本机包已完成，当前生产共享尚未可用。后台保持既有6597f58d/contract0.27/schema024/DSH0.2.1-rc.2记录，本批未inspect、重启/部署或迁移；需要按原约定另行处理后台0.28更新。飞书直接应用授权仍仅罗岩，课题组成员必须实际同组；注册超时、已有个人账号自助加入/开组与完整成员管理仍未完成。
+
+收尾再次fetch确认main仍b7f5742，未出现待合入主线提交。分支已推送，使用本机既有CLI权限创建并附当前任务的[PR85](https://github.com/luoyan96/personal-agent/pull/85)，base main、未合并，无新增仓库授权。239份Markdown/10份Skill内容检查与git diff --check通过；后台部署继续等待单独安排。
+
+## 2026-10-21 — 用户单独授权部署课题组资料共享后台0.28
+
+用户明确表示“后台需要修改吗，那你改吧，我同意”。继续同一feat/feishu-library-lab-sharing/PR85，不合并main、不公开Release；实际fetch后main仍b7f5742、工作树干净。部署范围是配套0.10.31产品bd0a718的后台权限，不新增功能、修改现存库范围或扩展飞书应用成员。安装包C:/Users/luo/Desktop/AcceptCat_0.10.31.exe保持此前文件及SHA256，未重打或代安装。
+
+沿用Edge已有Workbench免密连接；原文件会话过期，正常刷新后同实例/同权限重新登录，无新SSH授权、Key或公网端口。线上先核对API/worker均为6597f58d/0.27/running/restart0/API healthy、schema024，其他6服务运行，磁盘约7.3GiB可用。部署包只叠加已提交的5份API/契约源文件，基底是现有组合生产镜像；不整包覆盖main或原47c42ac与后续功能组合。旧镜像依赖及锁文件保持。
+
+首候选严格基底检查因packages/contracts/package.json的CRLF/LF差异提前停止，未构建或停机；核对公开元数据完全相同，Git精确内容转CRLF后哈希e83dcfd3与线上一致，其余4文件直接匹配。按线上实际字节哈希制作第二候选；首归档和服务器失败输出保留，未跳过守卫。最终33,308字节归档SHA256 90288006bd38d9a5e748a142fcce02e363740ad193ac39a580db2a0841520844，离线构建成功，Linux隔离3文件/35项检查通过（资料库18项/飞书9项/领域规则8项）。除本批源外的API/契约源码、24迁移及依赖锁文件逐哈希保持，实际两容器中的5文件匹配清单。
+
+正式维护北京时间20:40:47—20:41:02。先停API、确认execution/chat的queued/running均0，再停worker；停写一致备份95表/6原件，独立解包恢复及启动前在线数据的表结构/行数/全行哈希、文件/权限哈希一致，integrity/foreign_key及24迁移checksum通过。无SQL迁移，schema024保持。备份/srv/research-openim-backups/library-sharing-20261021-v2-20261021T124050Z/research.tar.gz，SHA256 29ec7de38ccc014736448e5b75139dedd077acef465d293f782883fe9aa83d86；仍在同ECS，不称异地或完整组件恢复。
+
+API/worker现为research-openim-api:library-sharing-20261021-v2，sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce；实际running/restart0、API healthy、公网HTTPS ready200/contract0.28。三条未登录受保护入口401；运行配置/挂载/端口/网络/内存/重启策略及其余6容器ID/镜像/状态保持。个人/团队模型配置与默认值、Feishu连接/源、资料集合整表哈希不变，现有1个源仍owner_private，未代用户开启共享。DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified，没有追加真实模型探测。
+
+有效Compose在旧47c42ac基础/production/私有images及community/key-preview/feishu/harness/bitable/http400链末尾追加本批images.yaml；原current指针/静态网页不变。证据/脚本/manifest及检查回执在/opt/research-openim/ops/library-sharing-20261021-v2；首失败同级library-sharing-20261021。本机Git外D:/deepseek-agent/.runtime/feishu-lab-sharing-20261021/backend-deploy保存两归档、部署脚本、失败说明、部署摘要和可见回执图；服务器完整数据哈希清单及受限备份不入Git。回退须配对恢复旧镜像并保留当前024数据/绑定/新写入，不回灌旧备份、不down -v；旧0.27会暂停共享源查询。成功未触发自动回退，不称已演练。
+
+用户自行体验安装包和功能，未新增生产测试账号、调用真实私人资料/模型或执行浏览器产品/载荷/原生/安装后验收。飞书应用直接OAuth仍仅罗岩，AcceptCat共享由库主人明确选择，实际同组成员可读指定表，原表网页仍受飞书本人权限约束。注册超时未定因、自助加入/开组/完整成员管理仍未完成。docs/current-state.md、0.10.31交付文档与部署入口同步实际已部署状态；PR85只更新记录，待负责人审阅，不合并或公开发布。
+
+## 2026-10-22 — Windows0.10.32：资料独立页面替换广场，代码保留并隐藏
+
+用户认为当前广场缺少日常价值，要求先打包保留代码并隐藏，以独立资料页面替换。核对实际干净feat/feishu-library-lab-sharing/e302926、origin为luoyan96/personal-agent、legacy保持；fetch后最新main仍b7f5742。从origin/main新建feat/standalone-library，再快进纳入未合并PR84/PR85依赖，保留原表打开/复制、飞书课题组共享及已有部署记录，不改共享main或丢弃已有工作。最终产品2364cd292fad7abe7431afa11009c47f37715650，客户端0.10.32，[交付与代码备份](deployment/acceptcat-0.10.32.md)。
+
+侧栏原广场位置改为书本图标“资料”，独立/library包含资料库/本机报告，复用全部/课题组/我的筛选、原件/版本、飞书入口与明确共享、底部聊天式资料Agent。工作台删除资料栏目，继续课题组任务/我的任务、原任务规划/研究计划/定时安排与任务详情。旧/workbench?view=library和view=reports兼容转到新地址并保留报告/其他查询参数；旧/square及子路径转到资料。窄屏补资料与工作台入口，添加联系人/发起群聊菜单保持。独立资料容器负责高度/滚动，资料按钮样式移回资料模块，避免依赖广场或我的页面的样式加载。
+
+广场、社区发现与公开发布源码保留，固定代码开关squareEnabled=false控制导航/路由/公开我的能力入口与对应读取；共用组件仍服务我的Agent、私人Skill与课题组能力。没有删除后台目录、公开名片/资料或改变运营任务，也未声称其他人的旧客户端已自动隐藏。改动前18份相关源码从固定Git提交e302926打包到Git外D:/deepseek-agent/.runtime/standalone-library-20261022/square-source-0.10.31.zip，43,515字节、SHA256 623457371af5cf50c1dd0f066b3e06711c1f76f754b14bea173c8530b039131f；完整恢复仍依赖仓库，后续在新分支审阅开启，不能整文件覆盖新增协作改动。
+
+客户端渲染/主进程TypeScript exit0；最终生产Web/Electron构建、内建完整dist及4固定SDK资源检查和Windows x64 NSIS exit0，55个装配运行包，--publish never。构建既有use client/WASM脚本与大小提示保留原日志，无新依赖/锁文件。未改API、契约、数据库、公共包或Skill，不重复根CI。按用户原安排未新增测试或追加浏览器/窄屏产品、真实账号/飞书/模型、载荷提取、原生启动或安装后验收，不以类型/构建或哈希代替实际使用通过。
+
+已复制C:/Users/luo/Desktop/AcceptCat_0.10.32.exe，87,437,394字节，SHA256 e32c2e34f5362252b7b58831858c3d03057a00b7b81aa82c745804274ec7547e；目标原先不存在，旧包与运行客户端保持，未代安装。Git外上述目录保存类型/完整打包日志、源码备份与delivery.json。用户自行体验是否符合要求。
+
+代码已普通推送，沿既有CLI权限创建并附任务的[PR87](https://github.com/luoyan96/personal-agent/pull/87)，base main，依赖未合并PR84/85，未合并。收尾fetch确认main仍b7f5742；无新仓库授权、公开Release/标签或更新源，公开版本沿v0.10.29。README去掉广场主图/主入口介绍，区分开发版独立资料与公开0.10.29的旧布局，保留历史截图文件；current-state、roadmap与交付记录同步本批事实。
+
+本次仅客户端，后台无需修改，未inspect、重启/部署或迁移；沿已部署595bed13/contract0.28/schema024/DSH0.2.1-rc.2/Cordis4.0.5记录。资料/共享/模型和原飞书网页权限不因迁页改变，没有新增SSH、Key、云权限或飞书成员。注册超时仍未定因，已有账号加入、自助开组、完整成员管理仍未完成。
+
+收尾240份Markdown/10份Skill内容检查与git diff --check通过；文档提交不重打上述安装包或更改最终产品SHA。
+
+## 2026-10-22 — 广场隐藏后的每日GitHub同步补充停用
+
+用户追问“广场之前每天自动获取最新消息的定时任务关了吗”。前批只隐藏客户端，原交付文档明确后台目录运营/定时未改；本批据此核对并补齐停用，未假称之前已关。Git仍干净feat/standalone-library/ee5fbcb，保留PR87及所有原修改，无新产品源码或安装包。检查本机Codex标准automations目录仅有jitter元数据，没有对应automation.toml，不扩大推断为其他云服务调度状态；确认本产品自动更新由worker内GITHUB_CATALOG_SYNC配置控制。
+
+沿原Workbench同实例/同权限正常免密连接，只读核对API/worker镜像仍595bed13、GITHUB_CATALOG_SYNC均1，目录enabled=true/state=ok，11项收录/19候选；最近完成UTC2026-10-21T16:00:09.075Z即22日零点，下次原定UTC22日16:00即23日零点。按隐藏广场的后续要求补关：北京时间10:07:12—10:07:27停止API接入、等待execution/chat排空、停止worker，备份及核验后将/srv/research-openim/compose.env的单个开关和/opt/research-openim/ops/community-47c42ac/images.yaml的API/worker同名配置共三处设为0，沿原完整Compose覆盖链配对重建。无镜像构建、代码替换或迁移。
+
+停写一致备份及独立解包恢复核对95表/7份当时原件的结构/行数/全行哈希、原件/权限哈希一致，integrity/外键/24迁移checksum通过。7份是本批停止时实际原件数，未读取或复制正文到本机/Git。备份/srv/research-openim-backups/square-sync-off-20261022-20261022T020715Z/research.tar.gz，SHA256 a9f3c0ebf92060e8e0046f1122a9583bbec4a9be9567cb4a1d6869c57453ca2a；仍在同ECS，不称异地/整栈恢复。
+
+关闭后有效Compose和两个实际容器均GITHUB_CATALOG_SYNC=0；通过现有目录读取逻辑核对enabled=false/state=disabled/nextCheckAt=null，11项收录/19候选与原始缓存行哈希保持，没有清除历史时间或其他记录。worker关闭开关后直接跳过该同步，API读取只读缓存，不因隐藏客户端继续发GitHub自动请求。源/Feishu连接/资料集合与范围、个人及团队模型凭据/默认值整表哈希保持，外部源仍1个私人。其余环境变量哈希、挂载/命令/重启策略/内存/端口/网络及其他6容器ID/镜像/状态不变，用户提醒和科研调度未停。
+
+API/worker仍research-openim-api:library-sharing-20261021-v2 / sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce，实际running/restart0、API healthy、公网HTTPS ready200/contract0.28，schema024保持。DSH0.2.1-rc.2/Cordis4.0.5不变，Harness仍not_verified，无新真实模型探测或私人资料/账号/安装验收。未新增SSH/Key/云权限，维护终端已关闭。关闭脚本有失败时恢复原配置/配对服务且保留当前数据的处理，实际成功未触发，不称已演练。
+
+服务器证据/受限配置备份在/opt/research-openim/ops/square-sync-off-20261022，本机Git外D:/deepseek-agent/.runtime/square-sync-off-20261022保存前后摘要、脚本、传输包及disabled-proof.png；私有配置只留服务器。传输包4,607字节、SHA256 7865a89b24b34c2fc4bfdaa5b00744978c0d00a4ed5284929d4b28a115365723，展开前checksum/Bash及Python语法核验通过。current-state、同步说明、0.10.32交付和ECS入口补当前关闭事实，历史“每日开启”保留为历史。未来维护须保持开关0，恢复须另行明确操作，不用旧compose.env覆盖新配置。
+
+本批只改运行配置和文档，不重新执行根CI或重打/代安装0.10.32；PR87补此后续事实，不合并main、打标签或公开Release，公开版本沿v0.10.29。注册超时、课题组自助流程未因此修复。
+
+## 2026-10-22 — 本机Windows0.10.33：同账号课题组创建、邀请和接受，后台025待部署
+
+用户问如何创建课题组和邀请后明确要求「那你做好吧」。核对干净feat/standalone-library/c6c2efd、origin指主仓库，fetch后main仍b7f5742。从origin/main新建feat/lab-membership，再快进纳入PR84/85/87未合并依赖；最终产品c46295f58d613b97f8b2a97e37290edb861b22db，不强推或覆盖主线。[交付](deployment/acceptcat-0.10.33.md)、[实现边界](development/lab-membership.md)。
+
+「我的→课题组」提供当前账号创建、按AcceptCat号邀请和本人接受/谢绝、生成/撤销邀请码及已有账号先查看组名再确认加入、真实成员/待接受/邀请码状态、改名、个人/多组切换、移除普通成员与退出。复用新注册邀请码；每账号最多负责一个组，负责人交接/解散暂由维护者处理，未完成发起/审阅职责需先完成/取消。此前旧网页/manage/invites链接实际返回OpenIM SPA，已换为客户端管理入口，不将其当作可用邀请网页。
+
+保持members.lab_id为稳定账号home，新增独立成员授权/当前组与资料共享目标，避免账号加入时搬动聊天/联系人、私人模型或飞书密文。contract0.29新增12接口/5错误，schema025新增5表/1兼容视图、沿原24份校验和，无新依赖/锁文件。session.member.labId表示当前协作上下文；后台执行和聊天回合保存受理时的上下文。入组不自动分享私库/Key/飞书，移除收回任务ACL并结束分工/停止派发、本人共享库转私人，其他共享库递增版本以围住迟到读取，重新加入不恢复旧授权；从原home组移除也停止旧模型兼容，个人Key/默认配置保持。
+
+根pnpm11.21 frozen安装与最终完整CI exit0：58文件749项、2生产CLI/HTTP、B0两次实际HTTP启动和生产无夹具通过。新11项HTTP/SQLite成员检查包括接受者/负责人/Origin/CSRF、邀请码容量并发/新注册、任务邀请/移除/重加、私人密文/会话保持、旧模型撤权及模拟024迁移；20项Feishu合成检查新增跨home主人连接与读取中移除。早期重复导入收集失败、POST空body夹具、任务移除事件枚举500、403断言及旧模型表夹具列数错误均保存原日志，修正后通过，未以放宽限制代替修复。
+
+客户端corepack pnpm10.28 frozen安装，渲染/主进程类型、2service/3auth通过；Husky因目录所有者跳过，不改全局Git信任。最终生产Web/4 SDK资源检查与NSIS --publish never exit0、55运行包装配。首包后保留切组时私人写操作重试键，按产品提交重打；桌面C:/Users/luo/Desktop/AcceptCat_0.10.33.exe，87,433,858字节，SHA256 e3bdde49eeef858469b49528bbd66b123ac9bea8bcb2e14e1ae62df71e1028e3。未代安装，旧包及首包保留；不追加浏览器/真实账号/私人资料/模型、载荷/原生启动或安装后体验验收，由用户自行检查。证据Git外D:/deepseek-agent/.runtime/lab-membership-20261022。
+
+Git外后台候选714,405字节，SHA256 e62de30b06bb560bad31fc3a22e8a2b62a8cfcfc02752ad74b11274e386620c4，270份覆盖文件/103份基底源码换行规范哈希守卫，固定595bed13原镜像，025迁移待停写备份与恢复校验后另行获准配对部署。本批未上传、Linux构建、重新inspect生产、停写/备份线上、迁移或重启；现产仍按0.28/schema024/595及GITHUB_CATALOG_SYNC=0记录，新安装包不能单独使成员接口上线。未合并main、打标签或公开Release/更新源，公开v0.10.29保持；注册超时未定因、飞书直接试点范围保持。PR在本批收尾提交，负责人审阅决定合并。
+
+收尾分支已推送，并使用本机既有GitHub CLI身份创建并附任务的[PR88](https://github.com/luoyan96/personal-agent/pull/88)，目标main、依赖PR84/85/87，待负责人审阅，未合并。再次fetch后main仍b7f5742，产品与桌面包保持原c46295f；后台配套部署待本批单独确认，未新增账号授权或运维操作。
+
+## 2026-10-22 — 用户单独授权课题组后台0.29与schema025升级完成
+
+用户明确表示“阿里云页面已经打开了，你升级吧”，据此沿既有Edge Workbench同实例/同权限更新后台；没有新增SSH/密钥/端口、飞书授权或扩大应用成员。沿feat/lab-membership与PR88继续本批部署，产品c46295f保持，不自行合并main、公开Release或重打/代安装桌面0.10.33。初始源码批次“待部署”记录保留为历史，此批补实际部署事实。
+
+先核对现产API/worker为595bed13/0.28/schema024及GITHUB_CATALOG_SYNC=0。首候选714,405字节在构建基底守卫处因community-catalog-seed.ts运营差异停止，尚未停生产；103份中其他源符合。核对唯一运营seed的实际哈希后保留该文件，改用27份已审源码增量，固定旧镜像内Linux编译器离线构建，不安装依赖或覆盖其他组合功能。最终候选137,971字节/SHA256 4b79b9d4903d4995ce81d894cdc4864dee7f3d4bdfadc02a5500186082d98a08；50项编译规范哈希、103基底检查及2文件31项Linux隔离检查通过。
+
+上线前审计脚本规范化SQLite空原型行和对象，audit-normalized.mjs SHA256 df31d37511d4b5af996011985622932fdb01bc70436d785dcbbc0b5bf61b17a7；deploy.sh改引用此文件、原稿保留。初次空库隔离演练因回执放入被审目录造成额外文件差异，改为外置回执后024/95表→025/100表、integrity/外键与旧行/文件保持通过。这些修订与失败均先于生产停写；没有把演练失败记作生产故障，失败包/日志不删除。
+
+正式维护北京时间 **12:16:24—12:16:44**（UTC04:16:24—04:16:44）。停止API，等待execution/chat的queued/running均0，再停止worker；一致备份原95表与7原件、独立恢复全行/结构/文件/权限哈希和旧24迁移校验和通过。恢复副本025迁移及隔离API ready200/0.29、未登录401通过，没有新账号/会话、模型或外部连接；正式迁移前在线数据仍与基线一致，正式025后原95表/7文件保持、新增5表共100表、完整性与外键正常。备份 **/srv/research-openim-backups/lab-membership-20261022-v2-20261022T041627Z/research.tar.gz**，SHA256 **efbccd218027ef6d7769ef030314cd675bf14ffb876527d450720217382ea4498**；仍同ECS，不称异地/整栈恢复。
+
+API/worker配对启动 **research-openim-api:lab-membership-20261022-v2** / **sha256:0212513c5e9d4109cba892462c4953f9c440e96dc13007178635aca6c58395fb**，实际running/restart0/API healthy、公网ready200/contract0.29.0，三条未登录受保护路由401。两运行容器27份精确源码、50项编译规范检查匹配候选。15份既有配置/密钥文件在服务器备份且哈希/权限不变，不输出或下载内容；个人及团队模型密文/默认值、Feishu连接/来源和集合范围保持，原1库仍私人。社区原缓存保持、11收录/19候选，enabled=false/state=disabled/nextCheckAt=null，未恢复每日抓取；其他6服务ID/镜像/状态及API/worker环境/挂载/端口/命令/内存/网络/重启策略保持。DSH0.2.1-rc.2/Cordis4.0.5不变，Harness仍not_verified，没有追加真实模型探测。
+
+Compose在原47c42ac基础与production、私有images、community/key-preview/feishu/harness/bitable/http400/library-sharing链末尾新增lab-membership-20261022-v2/images.yaml；原current、Nginx/静态网页不变。部署成功未触发回退；脚本只在新服务未启动、无新写入时可恢复停写数据库，新服务一旦尝试启动则要求保全数据前向修复。025不能换回024镜像读取，现在不能直接回灌旧快照，后续恢复需单独协调新写入及兼容数据/代码。
+
+服务器回执/逐表文件校验与日志在 **/opt/research-openim/ops/lab-membership-20261022-v2**，首失败在同级lab-membership-20261022；本机Git外 **D:/deepseek-agent/.runtime/lab-membership-20261022/backend-deploy-v2** 保留运维包/脚本、失败说明、部署摘要及deployed-proof.png，delivery.json改为后台已部署。源代码/安装包保持原产品标识，用户自行检查功能与安装体验；未追加浏览器产品、真实账号/私人材料/模型、载荷或原生验收。注册超时仍未定因，飞书直接OAuth仍仅本人试点。current-state、部署文档、ECS入口/路线图及PR88补实际状态；不合并main、打标签或改公开v0.10.29/更新源。
+
+## 2026-10-22 — 用户要求GitHub发布，并选择审阅整合PR86后重打0.10.34
+
+用户要求“github提交我们的更新和安装包”。初始沿干净feat/lab-membership/e3922e7准备0.10.33，确认公开Latest仍v0.10.29，0.10.33安装包/更新清单一致。固定c46295f的annotated tag v0.10.33（f04b86ed9e2ab5933b3534e63073eaa5b2e30737）已推送，草稿Release420459530已创建；安装器两个上传尝试均TLS阶段失败，读回空附件/未公开。随后用户说明同事提交了聊天修改，并明确选择“包含，审阅整合后一起发布”；因此保留旧固定标签和空草稿，另打0.10.34，不重指标签或假称0.10.33已公开。
+
+核对同事FANLI-w的PR86/head dda1cb1304489bd4275ae5dbafb390a36c9dc8e8尚未合并，main仍b7f5742。再次fetch成功后从main新建release/acceptcat-0.10.34，ff纳入PR88/e3922e7，再普通merge PR86，合并提交419af5e。原作者和5个功能提交保留，无整文件覆盖。纳入9文件：头像末两字、Agent/群标记、昵称宽度、右键置顶/免打扰/删除、@成员选择与开发预览。最终产品e4bdbe689ec94b9de5b90ff9dee5e0d4ed5ed96d。
+
+按React最佳实践审阅发现免打扰计算会写回原状态、DEV预览页无条件进入生产路由。修正实际开关/明确标签，按菜单目标值写入使未知结果重试不反向；后台置顶沿版本校验，个人助理固定/不可删除，SDK调用有时限和账号/会话/迟到回执栅栏。删除确认说明只处理OpenIM，不误称后台科研记录已清除；成功移除对应行并退出正在查看的会话，过期确认不触发删除。@弹窗随上下文关闭，成员按依赖缓存，DEV动态加载且生产输出无假预览；MentionList语义与原生按钮保持。新增7项必要动作合成检查，未实施真实删除/设置或账号验收。
+
+最终渲染与Electron类型、18项定向自动检查（7动作/6提及/3auth/2service）通过，生产编译、4固定SDK/完整引用、55运行包装配与NSIS --publish never、更新清单一致性通过；中间检查和最终意图修正后复检均保留。桌面C:/Users/luo/Desktop/AcceptCat_0.10.34.exe，87,433,531字节/SHA256 0fdc3741ec65993925a0345d80408cb8bc9d62e2e284e483eeae25e9d43d7eb8；与构建相同，旧包及用户客户端保持，未代安装。没有追加浏览器产品、真实账号/私人资料/模型、载荷提取或原生启动/安装体验验收，用户自行检查。
+
+相对e3922e7无API/契约/数据库/共享包/依赖锁变化，沿此前749项根CI，不重复完整检查；e3922e7的三项GitHub foundation实际success，不将其扩大为新提交CI。后台仍已部署0.29/schema025、0212513c镜像、DSH0.2.1-rc.2/Cordis4.0.5与GITHUB_CATALOG_SYNC=0，没有本批重启/迁移或新真实模型探测。飞书本人试点、私人配置/资料和注册超时未决保持。
+
+已普通推送源码并创建、附任务[PR89](https://github.com/luoyan96/personal-agent/pull/89)，目标main、包含PR86/88及84/85/87依赖；用户审阅决定主线合并，未合并。v0.10.34 annotated tag对象7a5fdde4ee5639bcf30697cb4648c7859b1857da固定产品e4bdbe6并已推送，公开附件上传处理中。API部分查询/创建出现TLS或EOF，浏览器既有页连接超时，使用既有CLI和当前系统代理的命令级连接处理，未改持久配置或暴露Token；未知创建结果先读回404再重试。Git外D:/deepseek-agent/.runtime/publish-0.10.34-20261022保留日志、附件/校验、delivery和原回执；0.10.33准备与失败保持同级publish-0.10.33-20261022。current-state/路线图先区分本机交付与待公开，最终公开结果后续追加。
+
+## 2026-10-22 — v0.10.34公开为Latest，四附件与公开更新清单核对完成
+
+北京时间 **2026-10-22 16:51:11**，Release420488025 / [v0.10.34](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.34)正式公开为Latest，标签7a5fdde4固定e4bdbe6，没有合并main或重打/代安装。包含同事PR86原提交与本批资料/课题组更新，PR89等待主线审阅。原v0.10.33/c462固定标签与空草稿保持未公开，不覆盖历史；旧公开v0.10.29等继续保留。
+
+创建0.10.34两次TLS/EOF失败，先读回404确认未创建，再用既有GitHub CLI身份、命令级SOCKS连接及curl完成创建。Token只在子进程内存/标准输入中用于官方GitHub TLS请求，没有写入文件、参数或输出。安装器上传成功后小附件一次TLS失败，先列远端并核对已有文件，再按缺失继续，不重复或覆盖安装器。四附件state均uploaded、大小/SHA256逐份与本机一致；未登录公开latest API确认同一v0.10.34/Release和四附件，公开latest.yml与本机340字节完全相同。
+
+附件为AcceptCat_0.10.34.exe（87,433,531字节、SHA256 0fdc3741ec65993925a0345d80408cb8bc9d62e2e284e483eeae25e9d43d7eb8）、blockmap（91,168字节）、latest.yml（340字节）和SHA256SUMS.txt（262字节）。完整摘要/上传回执、published-release.json、public-latest-release.json与public-latest.yml保留Git外D:/deepseek-agent/.runtime/publish-0.10.34-20261022；delivery更新已公开。失败请求及错误说明保留，传输成功不称真实客户端更新或功能验收。
+
+README、product-status、current-state、0.10.34交付、路线图和交接/PR89补当前公开入口。后续文档提交不改变固定安装包源码，不重跑已通过的代码检查或重打包。没有再次后台部署/迁移，0.29/schema025、0212513c镜像、广场同步关闭、私人模型/资料/飞书本人试点及注册超时未决保持；用户继续自行检查安装和实际体验。

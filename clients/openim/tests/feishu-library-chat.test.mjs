@@ -17,6 +17,15 @@ test('resolves a saved name or explicit selected source without guessing across 
  assert.equal(h.chooseFeishuLibrary('找论文库里的论文',[{...source,owned:false}],[]),undefined);
  assert.throws(()=>h.chooseFeishuLibrary('找今年论文',[source,{...source,id:'collection_B',name:'第二库'}],['collection_A','collection_B']));
 });
+test('selects an explicitly shared laboratory source without requiring ownership and disambiguates by selection',()=>{
+ const shared={...source,id:'collection_shared',owned:false,scope:'lab_shared'};
+ assert.equal(h.chooseFeishuLibrary('查询论文库',[shared],[]),shared);
+ assert.equal(h.chooseFeishuLibrary('2026年CCF A',[shared],['collection_shared']),shared);
+ assert.equal(h.chooseFeishuLibrary('查询论文库',[source,shared],['collection_shared']),shared);
+ assert.throws(()=>h.chooseFeishuLibrary('查询论文库',[source,shared],[]));
+ assert.throws(()=>h.chooseFeishuLibrary('比较论文库和第二库',[source,{...shared,name:'第二库'}],['collection_shared']));
+ assert.equal(h.chooseFeishuLibrary('查询论文库',[{...shared,status:'withdrawn'}],[]),undefined);
+});
 test('caps model context, reports actual provided records and preserves the authority boundary',()=>{
  const row={id:'recSynthetic',title:'合成标题'.repeat(200),year:'2026',date:'',grade:'CCF A',venue:'Synthetic',authors:'Synthetic',abstract:'合成摘要'.repeat(500),url:'https://synthetic.feishu.cn/base/SyntheticBase123'};
  const result={library:{name:'论文库',sourceUrl:row.url},readAt:'2026-10-21T01:00:00Z',question:'2026年论文',conditions:['2026年度'],state:'results',clarification:null,scanned:2000,matched:500,complete:false,records:Array.from({length:50},()=>row),limitations:['仅已读部分']};

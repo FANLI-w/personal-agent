@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { ResearchCollection, ResearchFile, ResearchFileVersion, ResearchCollectionSettings, ResearchFileImport, ResearchContextSnapshot, AgentResearchContext, researchLibraryRoutes } from '@research-agent-platform/contracts'
 import type { Actor } from './auth.js'
 import { fail, ApiError } from './errors.js'
+import {sharedCollectionAccess,teamLabId,hasLabMembership} from './lab-access.js'
 import { extractAgentFile } from './agent-files.js'
 
 type Row = Record<string, string | number | bigint | Uint8Array | null>
@@ -15,7 +16,7 @@ export type LibraryRequest = {params:Record<string,string>;query:Record<string,u
 type Extraction = {pages:{pageNumber:number;text:string}[]; extraction:'text_extracted'|'original_only'|'extraction_failed'; reason:string|null}
 const decode = (v:unknown) => JSON.parse(String(v)), now = () => new Date().toISOString()
 const digest = (v:Buffer) => createHash('sha256').update(v).digest('hex')
-const collectionAcl = `(c.owner_id=? OR c.scope='public' OR (c.scope='lab_shared' AND c.lab_id=?) OR (c.scope='task_scoped' AND EXISTS(SELECT 1 FROM json_each(c.task_ids) ref JOIN tasks t ON t.id=ref.value JOIN task_access a ON a.task_id=t.id WHERE a.member_id=? AND a.access='full' AND t.status!='cancelled')))`
+const collectionAcl = `(c.owner_id=? OR c.scope='public' OR (c.scope='lab_shared' AND ${sharedCollectionAccess}) OR (c.scope='task_scoped' AND EXISTS(SELECT 1 FROM json_each(c.task_ids) ref JOIN tasks t ON t.id=ref.value JOIN task_access a ON a.task_id=t.id WHERE a.member_id=? AND a.access='full' AND t.status!='cancelled')))`
 const searchStopTerms=new Set(('a an the and or but of in on at to for from with without by as is are was were be been being do does did can could would should will shall may might have has had it its this that these those what which who whom whose how when where why please tell explain about give me my our your you we they their there here also just not into over under than then some any each such only find show read summarize summarise overview sources source materials material documents document papers paper files file collection collections 请 帮我 帮忙 请问 这个 那个 这些 那些 一下 什么 哪个 哪些 如何 怎么 怎么样 告诉 解释 说明 介绍 关于 有关 需要 查看 阅读 浏览 总结 概括 资料 材料 文献 论文 文档 文件 里面 一个 我们 你们 他们 的 是 了 在').split(' '))
 function queryTerms(query:string){
   const identifiers:string[]=[],plain=query.toLowerCase().replace(/[a-z0-9]+(?:[-_][a-z0-9]+)+/g,id=>{identifiers.push(id);return ' '.repeat(id.length)})
@@ -42,19 +43,21 @@ export async function parseResearchImport(raw:z.input<typeof ResearchFileImport>
 export class ResearchLibraryService {
   readonly createdBlobs:string[]=[]
   constructor(readonly db:DatabaseSync,readonly actor:Actor,readonly blobRoot?:string){}
-  private aclArgs(){return [this.actor.id,this.actor.labId,this.actor.id]}
+  private aclArgs(){return [this.actor.id,this.actor.id,this.actor.id]}
   collection(id:string,includeWithdrawn=false):Row {
     const r=this.db.prepare(`SELECT c.* FROM research_collections c WHERE c.id=? AND ${collectionAcl} AND (c.status='available' OR (c.owner_id=? AND ?=1))`).get(id,...this.aclArgs(),this.actor.id,includeWithdrawn?1:0)
     if(!r)fail('NOT_FOUND');return r
   }
   private owned(id:string,expected?:number,withdrawn=false){const r=this.collection(id,withdrawn);if(r.owner_id!==this.actor.id)fail('NOT_FOUND');if(expected!==undefined&&r.version!==expected)fail('VERSION_CONFLICT');return r}
   private view(r:Row):ResearchCollection {
-    return ResearchCollection.parse({id:r.id,ownerId:r.owner_id,labId:r.lab_id,name:r.name,description:r.description,scope:r.scope,taskIds:decode(r.task_ids),version:r.version,status:r.status,owned:r.owner_id===this.actor.id,...(this.db.prepare('SELECT 1 FROM feishu_library_sources WHERE collection_id=?').get(r.id!)?{externalSource:'feishu_bitable'}:{}),fileCount:this.db.prepare("SELECT count(*) n FROM research_files WHERE collection_id=? AND status='available'").get(r.id!)!.n,createdAt:r.created_at,updatedAt:r.updated_at})
+    return ResearchCollection.parse({id:r.id,ownerId:r.owner_id,labId:r.scope==='lab_shared'?this.db.prepare('SELECT lab_id FROM research_collection_labs WHERE collection_id=?').get(r.id!)?.lab_id??r.lab_id:r.lab_id,name:r.name,description:r.description,scope:r.scope,taskIds:decode(r.task_ids),version:r.version,status:r.status,owned:r.owner_id===this.actor.id,...(this.db.prepare('SELECT 1 FROM feishu_library_sources WHERE collection_id=?').get(r.id!)?{externalSource:'feishu_bitable'}:{}),fileCount:this.db.prepare("SELECT count(*) n FROM research_files WHERE collection_id=? AND status='available'").get(r.id!)!.n,createdAt:r.created_at,updatedAt:r.updated_at})
   }
   private validateSettings(settings:z.infer<typeof ResearchCollectionSettings>){
-    for(const taskId of settings.taskIds)if(!this.db.prepare("SELECT t.id FROM tasks t JOIN task_access a ON a.task_id=t.id WHERE t.id=? AND t.lab_id=? AND a.member_id=? AND a.access='full' AND t.status!='cancelled'").get(taskId,this.actor.labId,this.actor.id))fail('NOT_FOUND')
+    for(const taskId of settings.taskIds)if(!this.db.prepare("SELECT t.id FROM tasks t JOIN task_access a ON a.task_id=t.id WHERE t.id=? AND t.lab_id=? AND a.member_id=? AND a.access='full' AND t.status!='cancelled'").get(taskId,teamLabId(this.actor),this.actor.id))fail('NOT_FOUND')
+    if(settings.scope==='lab_shared'&&(!hasLabMembership(this.db,this.actor.id,teamLabId(this.actor))||this.db.prepare('SELECT 1 FROM personal_spaces WHERE lab_id=?').get(teamLabId(this.actor))))fail('FORBIDDEN')
     if(new Set(settings.taskIds).size!==settings.taskIds.length)fail('VALIDATION_ERROR')
   }
+  private share(collectionId:string){this.db.prepare('INSERT INTO research_collection_labs VALUES (?,?) ON CONFLICT(collection_id) DO UPDATE SET lab_id=excluded.lab_id').run(collectionId,teamLabId(this.actor))}
   private touch(collectionId:string){this.db.prepare('UPDATE research_collections SET version=version+1,updated_at=? WHERE id=?').run(now(),collectionId)}
   file(id:string,includeWithdrawn=false):Row {
     const r=this.db.prepare('SELECT * FROM research_files WHERE id=?').get(id);if(!r)fail('NOT_FOUND')
@@ -155,10 +158,14 @@ export class ResearchLibraryService {
       const q=req.query,rows=this.db.prepare(`SELECT c.* FROM research_collections c WHERE c.status='available' AND ${collectionAcl} ${q.scope==='mine'?'AND c.owner_id=?':''} AND (instr(lower(c.name),lower(?))>0 OR instr(lower(c.description),lower(?))>0) ORDER BY c.updated_at DESC,c.id LIMIT ?`).all(...this.aclArgs(),...(q.scope==='mine'?[this.actor.id]:[]),String(q.q??''),String(q.q??''),Number(q.limit??50));result={data:rows.map(r=>this.view(r))}
     }else if(name==='createResearchCollection'){
       const settings=ResearchCollectionSettings.parse(body);this.validateSettings(settings);const created=randomUUID(),at=now()
-      this.db.prepare('INSERT INTO research_collections VALUES (?,?,?,?,?,?,?,1,?,?,?)').run(created,this.actor.id,this.actor.labId,settings.name,settings.description,settings.scope,JSON.stringify(settings.taskIds),'available',at,at);result={data:this.view(this.collection(created))}
+      this.db.prepare('INSERT INTO research_collections VALUES (?,?,?,?,?,?,?,1,?,?,?)').run(created,this.actor.id,this.actor.labId,settings.name,settings.description,settings.scope,JSON.stringify(settings.taskIds),'available',at,at);if(settings.scope==='lab_shared')this.share(created);result={data:this.view(this.collection(created))}
     }else if(name==='updateResearchCollection'){
-      this.owned(id!,body.expectedVersion);const settings=ResearchCollectionSettings.parse(body.settings);this.validateSettings(settings);if(settings.scope!=='owner_private'&&this.db.prepare('SELECT 1 FROM feishu_library_sources WHERE collection_id=?').get(id!))fail('FORBIDDEN')
-      this.db.prepare('UPDATE research_collections SET name=?,description=?,scope=?,task_ids=?,version=version+1,updated_at=? WHERE id=?').run(settings.name,settings.description,settings.scope,JSON.stringify(settings.taskIds),now(),id!);result={data:this.view(this.collection(id!))}
+      const current=this.owned(id!,body.expectedVersion);const settings=ResearchCollectionSettings.parse(body.settings);this.validateSettings(settings)
+      if(this.db.prepare('SELECT 1 FROM feishu_library_sources WHERE collection_id=?').get(id!)){
+        if(!['owner_private','lab_shared'].includes(settings.scope))fail('FORBIDDEN')
+        // The sharing target is independent of original source storage.
+      }
+      this.db.prepare('UPDATE research_collections SET name=?,description=?,scope=?,task_ids=?,version=version+1,updated_at=? WHERE id=?').run(settings.name,settings.description,settings.scope,JSON.stringify(settings.taskIds),now(),id!);if(settings.scope==='lab_shared'&&current.scope!=='lab_shared')this.share(id!);else if(settings.scope!=='lab_shared') this.db.prepare('DELETE FROM research_collection_labs WHERE collection_id=?').run(id!);result={data:this.view(this.collection(id!))}
     }else if(name==='withdrawResearchCollection'){
       this.owned(id!,body.expectedVersion);this.db.prepare("UPDATE research_collections SET status='withdrawn',version=version+1,updated_at=? WHERE id=?").run(now(),id!);result={data:this.view(this.collection(id!,true))}
     }else if(name==='importResearchFile'){

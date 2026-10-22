@@ -20,7 +20,7 @@ import { WorkspaceUnavailable } from "./WorkspaceUnavailable";
 
 import { ResearchTeamWorkbench } from "./ResearchTeamWorkbench";
 import { relocatedWorkspace } from "./workspace-navigation";
-import { WorkbenchPlanning, WorkbenchLibrary } from "./WorkbenchSections";
+import { WorkbenchPlanning } from "./WorkbenchSections";
 import { workbenchTaskPath, workbenchTaskTarget } from "./workbench-links";
 import { PlanningAgent } from "./PlanningAgent";
 type Category = "ongoing" | "awaiting_me" | "completed";
@@ -133,11 +133,9 @@ export function DesktopWorkbench() {
   const [params, setParams] = useSearchParams();
   const relocated = relocatedWorkspace(params);
   const tab =
-    params.get("view") === "library"
-      ? "library"
-      : params.get("view") === "planning" ||
-        params.get("plan") ||
-        params.get("planning")
+    params.get("view") === "planning" ||
+    params.get("plan") ||
+    params.get("planning")
       ? "planning"
       : params.get("view") === "team" || (!params.get("view") && !params.get("task"))
       ? "team"
@@ -160,7 +158,7 @@ export function DesktopWorkbench() {
   const generation = useResearchStore((s) => s.generation),
     actor = useResearchStore((s) => s.actor),
     contacts = useResearchStore((s) => s.contacts);
-  const availability = useWorkspaceAvailability(!relocated && tab !== "library");
+  const availability = useWorkspaceAvailability(!relocated);
   const supported = availability.supports(21);
   const read = useResearchRead(
     () => workspaceApi.tasks(category, cursor),
@@ -291,7 +289,6 @@ export function DesktopWorkbench() {
           options={[
             { label: "课题组任务", value: "team" },
             { label: "我的任务", value: "tasks" },
-            { label: "课题组资料", value: "library" },
           ]}
         />
       </div>
@@ -363,9 +360,7 @@ export function DesktopWorkbench() {
             : ""
         }`}
       >
-        {tab === "library" ? (
-          <WorkbenchLibrary />
-        ) : !supported ? (
+        {!supported ? (
           <WorkspaceUnavailable
             feature="工作台"
             pending={!availability.data && !availability.error}
@@ -529,7 +524,7 @@ export function DesktopWorkbench() {
           </div>
         )}
       </div>
-      {tab !== "library" && !!actor && (
+      {!!actor && (
         <PlanningAgent
           available={supported && availability.supports(23)}
           full={tab === "planning" && params.get("panel") !== "scheduled"}

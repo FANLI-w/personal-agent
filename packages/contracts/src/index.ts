@@ -1,3 +1,4 @@
+export * from './lab-membership.js'
 export * from './models.js'
 export * from './routes.js'
 export * from './chat.js'

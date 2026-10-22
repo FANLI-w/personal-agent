@@ -28,7 +28,7 @@ export type FeishuLibraryResult = z.infer<typeof FeishuLibraryResult>
 const empty = z.strictObject({})
 function route<B extends z.ZodType, R extends z.ZodType>(method: 'GET'|'POST', path: string, body: B, response: R, keyed = false) {
   return { method, path: `/api/v1/feishu/library${path}`, stage: 'FEISHU1' as const, implemented: true, access: 'session', status: 200,
-    idempotent: keyed, rule: 'Named private external source. Current user identity only; bounded live record reads, no Feishu writes, source and completeness receipt.',
+    idempotent: keyed, rule: 'Named external source, private by default. Only its owner may explicitly share with the current laboratory. Current members may query that table through its owner connection; no transfer of credentials or other sources. Recheck current membership, owner connection, source scope and version after network reads. No Feishu writes; bounded records, source and completeness receipt.',
     request: z.strictObject({ params: empty, query: empty, body, headers: keyed ? z.strictObject({'Idempotency-Key':z.string().regex(/^[A-Za-z0-9_-]{16,128}$/)}) : empty }),
     response, errors: ErrorResponse, errorStatuses: errorStatus }
 }

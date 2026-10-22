@@ -13,6 +13,9 @@ export function MobileNavigation() {
       <Button type="text" onClick={() => navigate("/contact")}>
         联系人
       </Button>
+      <Button type="text" onClick={() => navigate("/library")}>
+        资料
+      </Button>
       <Dropdown
         trigger={["click"]}
         menu={{
@@ -31,12 +34,14 @@ export function MobileNavigation() {
       <Dropdown
         menu={{
           items: [
+            { key: "workbench", label: "工作台" },
             { key: "requests", label: "联系人申请" },
             { key: "invitations", label: "群邀请与任务" },
             { key: "me", label: "我的" },
           ],
           onClick: ({ key }) => {
-            if (key === "requests") navigate("/contact/newFriends");
+            if (key === "workbench") navigate("/workbench");
+            else if (key === "requests") navigate("/contact/newFriends");
             else if (key === "invitations") navigate("/contact/groupNotifications");
             else navigate("/me");
           },

@@ -1,9 +1,6 @@
-import { Segmented } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { PersonalFollowupPanel } from "./PersonalFollowupPanel";
 import { PlanningHistory } from "./PlanningHistory";
-import { ResearchLibrary } from "./ResearchLibrary";
-import { WorkspaceReports } from "./WorkspaceReports";
 
 export function WorkbenchPlanning() {
   const [params, setParams] = useSearchParams();
@@ -17,35 +14,6 @@ export function WorkbenchPlanning() {
       ) : (
         <PlanningHistory />
       )}
-    </div>
-  );
-}
-
-export function WorkbenchLibrary() {
-  const [params, setParams] = useSearchParams();
-  const reports = params.get("panel") === "reports";
-  return (
-    <div className="workspace-group-panel">
-      <div className="workspace-subnavigation">
-        <Segmented
-          aria-label="课题组资料栏目"
-          value={reports ? "reports" : "collections"}
-          options={[
-            { label: "资料集合", value: "collections" },
-            { label: "本机报告", value: "reports" },
-          ]}
-          onChange={(value) =>
-            setParams(
-              value === "reports"
-                ? { view: "library", panel: "reports" }
-                : { view: "library" },
-            )
-          }
-        />
-      </div>
-      <div className="workspace-full-panel research-library-panel">
-        {reports ? <WorkspaceReports active /> : <ResearchLibrary />}
-      </div>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import {hasLabMembership} from './lab-access.js'
 import {skillContext,type SkillCall} from './skills.js'
 import { captureResearchSnapshot, libraryHistoryCurrent } from './research-chat-context.js'
 import { ResearchLibraryService } from './research-library.js'
@@ -42,19 +43,21 @@ export class ChatService {
   availability(): Contact['availability'] {
     const personal=personalModelRuntime(this.db,this.c.actor,this.config)
     if(personal.source==='personal')return {status:personal.enabled?'available':personal.disabled?'disabled':'unavailable',reason:personal.enabled||personal.disabled?null:!this.config.aiEnabled?'platform_disabled':'missing_credentials'}
+    if(!hasLabMembership(this.db,this.c.actor.id,this.c.actor.labId))return {status:'unavailable',reason:'owner_authorization_required'}
     const s = this.db.prepare('SELECT enabled,encrypted_api_key FROM lab_ai_settings WHERE lab_id=?').get(this.c.actor.labId)
     const reason = !this.config.aiEnabled ? 'platform_disabled' : s?.enabled !== 1 ? 'lab_disabled' : !s.encrypted_api_key || !this.ai.enabled ? 'missing_credentials' : null
     return { status: reason ? 'unavailable' as const : 'available' as const, reason }
   }
   ensureContacts() {
-    const insert = (kind: string, owner: string, principal: string) => {
-      const id = `contact_${hash(`${this.c.actor.labId}:${kind}:${principal}`).slice(0, 40)}`
-      this.db.prepare('INSERT INTO chat_contacts VALUES (?,?,?,?,?) ON CONFLICT(lab_id,kind,principal) DO NOTHING').run(id, this.c.actor.labId, kind, owner, principal)
+    const insert = (kind: string, owner: string, principal: string,labId=this.c.actor.labId) => {
+      const id = `contact_${hash(`${labId}:${kind}:${principal}`).slice(0, 40)}`
+      this.db.prepare('INSERT INTO chat_contacts VALUES (?,?,?,?,?) ON CONFLICT(lab_id,kind,principal) DO NOTHING').run(id, labId, kind, owner, principal)
     }
     for (const r of this.db.prepare('SELECT m.id FROM members m JOIN auth_accounts a ON a.member_id=m.id WHERE m.lab_id=? AND a.disabled=0').all(this.c.actor.labId)) {
       insert('human', String(r.id), String(r.id)); insert('personal_agent', String(r.id), String(r.id))
     }
-    const cap = this.ai.capability(); if (cap) insert('public_agent', cap.ownerId, cap.id)
+    for(const r of this.db.prepare('SELECT e.member_id FROM effective_lab_memberships e JOIN auth_accounts a ON a.member_id=e.member_id AND a.disabled=0 WHERE e.lab_id=?').all(this.c.labId))this.ensureMemberContacts(String(r.member_id))
+    const cap = this.ai.capability(); if (cap) insert('public_agent', cap.ownerId, cap.id,this.c.labId)
   }
   ensureMemberContacts(memberId:string){
     const member=this.db.prepare('SELECT m.lab_id FROM members m JOIN auth_accounts a ON a.member_id=m.id WHERE m.id=? AND a.disabled=0').get(memberId)
@@ -81,7 +84,7 @@ export class ChatService {
   baseContact(id: string): Contact {
     const row = this.db.prepare('SELECT * FROM chat_contacts WHERE id=?').get(id)
     if (!row) fail('NOT_FOUND')
-    const owner = this.db.prepare('SELECT m.display_name,m.version,a.disabled,a.username FROM members m JOIN auth_accounts a ON a.member_id=m.id WHERE m.id=? AND m.lab_id=?').get(row.owner_id!, row.lab_id!)
+    const owner = this.db.prepare("SELECT m.display_name,m.version,a.disabled,a.username FROM members m JOIN auth_accounts a ON a.member_id=m.id WHERE m.id=? AND (?='public_agent' OR m.lab_id=?)").get(row.owner_id!,row.kind!, row.lab_id!)
     if (!owner || owner.disabled !== 0) fail('NOT_FOUND')
     const base = { id, labId: row.lab_id, version: owner.version }
     if (row.kind === 'human') return Contact.parse({ ...base, username:owner.username, displayName: owner.display_name, identity: { kind: 'human', memberId: row.principal }, availability: { status: 'available', reason: null } })
@@ -89,14 +92,14 @@ export class ChatService {
       const authorized = row.owner_id === this.c.actor.id || !!this.db.prepare("SELECT 1 FROM chat_members agent JOIN chat_members human ON human.conversation_id=agent.conversation_id JOIN chat_contacts self ON self.id=human.contact_id WHERE agent.contact_id=? AND agent.status='joined' AND human.status='joined' AND self.owner_id=? AND self.kind='human'").get(id, this.c.actor.id)
       return Contact.parse({ ...base, displayName: `${owner.display_name}的个人助理`, identity: { kind: 'personal_agent', ownerMemberId: row.owner_id }, availability: authorized ? this.availability() : { status: 'unavailable', reason: 'owner_authorization_required' } })
     }
-    if(row.lab_id!==this.c.actor.labId)fail('NOT_FOUND')
+    if(row.lab_id!==this.c.labId)fail('NOT_FOUND')
     const cap = this.ai.capability(); if (!cap || cap.id !== row.principal || cap.ownerId !== row.owner_id) fail('NOT_FOUND')
     return Contact.parse({ ...base, version: cap.version, displayName: cap.name, identity: { kind: 'public_agent', ownerMemberId: cap.ownerId, capability: { id: cap.id, version: cap.version, visibility: 'lab_public' } }, availability: cap.status === 'available' ? this.availability() : { status: 'unavailable', reason: 'capability_unavailable' } })
   }
   conversation(id: string, withViewerState = true): Conversation {
     const row = this.db.prepare('SELECT * FROM chat_conversations WHERE id=?').get(id)
     const social=!!row&&isSocialGroup(this,id)
-    if(row && row.kind!=='direct' && row.lab_id!==this.c.actor.labId&&!social)fail('NOT_FOUND')
+    if(row && row.kind!=='direct' && row.lab_id!==this.c.actor.labId&&row.lab_id!==this.c.labId&&!social)fail('NOT_FOUND')
     if (!row || (row.kind === 'personal' && row.owner_id !== this.c.actor.id)) fail('NOT_FOUND')
     const self = this.human().id
     // Authorizing an owned AI to participate is independent from the owner's
@@ -143,16 +146,17 @@ export class ChatService {
     this.db.prepare('UPDATE chat_conversations SET document=? WHERE id=?').run(encode(document), value.id)
   }
   rawConversation(id: string): Conversation { return Conversation.parse(decode(this.db.prepare('SELECT document FROM chat_conversations WHERE id=?').get(id)!.document)) }
+  private teamContact(contact:Contact){const owner=contact.identity.kind==='human'?contact.identity.memberId:contact.identity.ownerMemberId;return hasLabMembership(this.db,owner,this.c.labId)}
   newConversation(kind: Conversation['kind'], title: string, contactIds: string[], scope: string | null, taskIds: string[] = [],socialTaskId?:string|true) {
     if (scope) { const old = this.db.prepare('SELECT id FROM chat_conversations WHERE scope_key=?').get(scope); if (old) return this.conversation(String(old.id)) }
-    const value = Conversation.parse({ id: randomUUID(), labId: this.c.actor.labId, kind, title, ownerMemberId: this.c.actor.id, version: 1, members: [], taskIds, lastSequence: 0, createdAt: instant(), updatedAt: instant(), allowedActions: [] })
+    const value = Conversation.parse({ id: randomUUID(), labId: kind==='group'&&!socialTaskId?this.c.labId:this.c.actor.labId, kind, title, ownerMemberId: this.c.actor.id, version: 1, members: [], taskIds, lastSequence: 0, createdAt: instant(), updatedAt: instant(), allowedActions: [] })
     const { viewerState: _viewerState, ...document } = value
     this.db.prepare('INSERT INTO chat_conversations VALUES (?,?,?,?,?,?)').run(value.id, value.labId, value.ownerMemberId, kind, scope, encode(document))
     if(socialTaskId){if(kind!=='group'||socialTaskId!==true&&!this.db.prepare("SELECT 1 FROM personal_work_tasks WHERE id=? AND owner_id=? AND status='proposed'").get(socialTaskId,this.c.actor.id))fail('FORBIDDEN');this.db.prepare('INSERT INTO social_groups VALUES (?,?)').run(value.id,socialTaskId===true?null:socialTaskId)}
     const self = this.human().id
     for (const contactId of new Set([self, ...contactIds])) {
       const contact = this.contact(contactId)
-      if(kind==='group' && (socialTaskId?!socialContactAllowed(this,this.c.actor.id,contactId):contact.labId!==this.c.actor.labId))fail('FORBIDDEN')
+      if(kind==='group' && (socialTaskId?!socialContactAllowed(this,this.c.actor.id,contactId):!this.teamContact(contact)))fail('FORBIDDEN')
       // Selecting one's own Agent while explicitly confirming a social group
       // is already its owner's consent. Other owners decide their invitations.
       const ownedSocialAgent = !!socialTaskId && contact.identity.kind === 'personal_agent' && contact.identity.ownerMemberId === this.c.actor.id
@@ -169,7 +173,7 @@ export class ChatService {
     this.db.prepare('INSERT INTO chat_invitations VALUES (?,?,?,?,?) ON CONFLICT(conversation_id,contact_id) DO UPDATE SET invited_by=excluded.invited_by,document=excluded.document').run(invitation.id, group.id, contactId, this.c.actor.id, encode(invitation))
   }
   invitation(id: string) {
-    const row = this.db.prepare('SELECT i.*,c.owner_id group_owner FROM chat_invitations i JOIN chat_conversations c ON c.id=i.conversation_id WHERE i.id=? AND (c.lab_id=? OR EXISTS(SELECT 1 FROM social_groups s WHERE s.conversation_id=c.id))').get(id, this.c.actor.labId)
+    const row = this.db.prepare('SELECT i.*,c.owner_id group_owner FROM chat_invitations i JOIN chat_conversations c ON c.id=i.conversation_id WHERE i.id=? AND (c.lab_id=? OR EXISTS(SELECT 1 FROM social_groups s WHERE s.conversation_id=c.id))').get(id, this.c.labId)
     if (!row) fail('NOT_FOUND')
     const contact = this.contact(String(row.contact_id))
     if(isSocialGroup(this,String(row.conversation_id))&&!socialContactAllowed(this,String(row.group_owner),contact.id))fail('NOT_FOUND')
@@ -372,7 +376,7 @@ export class ChatService {
     if (group.kind !== 'group' || (payload.kind !== 'run_task' && group.ownerMemberId !== this.c.actor.id)) fail('FORBIDDEN')
     const contact = this.contact(payload.contactId)
     if(payload.kind==='invite_contact'&&isSocialGroup(this,group.id)){if(!socialContactAllowed(this,group.ownerMemberId,contact.id))fail('FORBIDDEN');return}
-    if(contact.labId!==this.c.actor.labId)fail('FORBIDDEN')
+    if(!this.teamContact(contact))fail('FORBIDDEN')
     if (payload.kind === 'invite_contact') return
     if (!group.members.some(m => m.contactId === contact.id && m.status === 'joined')) fail('NOT_FOUND')
     this.checkResource({ kind: 'task', ref: payload.task }, groupId, true)
@@ -390,7 +394,7 @@ export class ChatService {
   validateGroupInput(payload:RequestFor<'imCreateGroup'>['body'],groupId:string) {
       if (new Set(payload.contactIds).size !== payload.contactIds.length) fail('VALIDATION_ERROR')
       const social=!payload.plan&&payload.contactIds.some(id=>this.contact(id).labId!==this.c.actor.labId)
-      for(const id of payload.contactIds)if(social?!socialContactAllowed(this,this.c.actor.id,id):this.contact(id).labId!==this.c.actor.labId)fail('FORBIDDEN')
+      for(const id of payload.contactIds)if(social?!socialContactAllowed(this,this.c.actor.id,id):!this.teamContact(this.contact(id)))fail('FORBIDDEN')
       if(payload.plan){
       const plan = this.c.plan(payload.plan.id); this.c.checkVersion(plan.version, payload.plan.version)
       if (plan.status !== 'draft' || !plan.proposedItems.length || plan.proposedItems.length > 20) fail('INVALID_STATE')
@@ -451,6 +455,7 @@ export class ChatService {
     const turn = AgentTurn.parse({ id: randomUUID(), conversationId: group.id, inputMessageId: message.id, agentContactId: agentId, status: availability.status === 'available' ? 'queued' : 'unavailable', failure: availability.status === 'available' ? null : 'MODEL_UNAVAILABLE', availability, outputMessageId: null, usage: null, budget: input.budget, remainingBudget: input.budget, allowedActions: [], version: 1, createdAt: instant(), updatedAt: instant() })
     input.createdAgent=undefined;input.creationFailure=undefined;input.assistantFailure=undefined;input.assistantReceipt=undefined;input.memoryReceipt=undefined;input.followupReceipt=undefined
     this.db.prepare('INSERT INTO chat_turns(id,conversation_id,owner_id,root_id,status,request_json,document) VALUES (?,?,?,?,?,?,?)').run(turn.id, group.id, this.c.actor.id, root ?? turn.id, turn.status, encode(input), encode(legacyTurnDocument(turn)))
+    this.db.prepare('INSERT INTO chat_turn_lab_contexts VALUES (?,?)').run(turn.id,this.c.labId)
     return this.turn(turn.id)
   }
   // Persistent snapshot IDs keep signed cursors bounded while preserving sort keys across updates.

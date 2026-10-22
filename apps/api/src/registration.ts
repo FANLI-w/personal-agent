@@ -56,6 +56,7 @@ export async function register(db: DatabaseSync, input: RequestFor<'register'>, 
     if(db.prepare('SELECT 1 FROM lab_managers WHERE lab_id=?').get(invite.lab_id!))fail('INVITE_UNAVAILABLE')
     db.prepare('INSERT INTO lab_managers VALUES (?,?,?,?)').run(invite.lab_id!,memberId,at,invite.id!)
    }
+   if(invite)db.prepare("INSERT INTO lab_memberships VALUES (?,?,'active',?,1)").run(labId,memberId,at)
    if(invite)db.prepare('UPDATE registration_invites SET used_count=used_count+1 WHERE id=?').run(invite.id!)
    const result: ResponseFor<'register'> = { data: { registered:true,username:body.username } }
    db.prepare('INSERT INTO registration_receipts VALUES (?,?,?,?,?,?)').run(key,digest,invite?.id??null,memberId,JSON.stringify(result),at)

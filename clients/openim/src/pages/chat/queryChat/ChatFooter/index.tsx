@@ -379,6 +379,8 @@ const ChatFooter = () => {
           sendFile={sendFile}
           getSoundMessage={getSoundMessage}
           insertEmoji={(emoji) => editor.current?.insertText(emoji)}
+          insertMention={(name) => editor.current?.insertText(`@${name} `)}
+          mentionContacts={composer.mentionContacts}
           stageImages={(files) => imageTray.current?.stage(files)}
           pasteImages={() => imageTray.current?.readClipboard()}
         />
