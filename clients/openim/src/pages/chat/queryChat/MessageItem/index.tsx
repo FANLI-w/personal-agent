@@ -86,7 +86,7 @@ const MessageItem: FC<IMessageItemProps> = ({
               <div
                 title={message.senderNickname}
                 className={clsx(
-                  "max-w-[30%] truncate text-[var(--sub-text)]",
+                  "max-w-[10em] truncate text-[var(--sub-text)]",
                   isSender ? "ml-2" : "mr-2",
                 )}
               >

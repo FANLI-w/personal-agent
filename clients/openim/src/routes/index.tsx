@@ -8,6 +8,7 @@ import { squareEnabled } from "@/research/square-feature";
 
 import contactRoutes from "./ContactRoutes";
 import GlobalErrorElement from "./GlobalErrorElement";
+import DevPreview from "@/pages/DevPreview";
 
 const router = createHashRouter([
   {
@@ -86,6 +87,10 @@ const router = createHashRouter([
         },
       },
     ],
+  },
+  {
+    path: "/dev-preview",
+    element: <DevPreview />,
   },
 ]);
 

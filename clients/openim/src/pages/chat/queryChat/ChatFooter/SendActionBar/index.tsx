@@ -15,6 +15,8 @@ import { useAgentChatOperation, type AgentChatOperation } from "@/research/useAg
 import { useResearchStore } from "@/research/store";
 import type { SelectedFileKind } from "@/research/useScopedFileSender";
 import LocalFolderAction from "@/research/LocalFolderAction";
+import type { GroupMentionContact } from "@/research/group-mentions";
+import { MentionList } from "@/research/MentionList";
 
 import { SendMessageParams } from "../useSendMessage";
 import CallPopContent from "./CallPopContent";
@@ -33,6 +35,8 @@ const SendActionBar = ({
   sendFile,
   getSoundMessage,
   insertEmoji,
+  insertMention,
+  mentionContacts,
   stageImages,
   pasteImages,
 }: {
@@ -40,11 +44,14 @@ const SendActionBar = ({
   sendFile: (file: File, kind: SelectedFileKind, isCurrent?: () => boolean, agentFileText?: string) => Promise<boolean>;
   getSoundMessage: (file: File, duration: number) => Promise<MessageItem>;
   insertEmoji: (emoji: string) => void;
+  insertMention: (name: string) => void;
+  mentionContacts: GroupMentionContact[];
   stageImages?: (files: File[]) => void;
   pasteImages?: () => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [voiceVisible, setVoiceVisible] = useState(false);
+  const [mentionOpen, setMentionOpen] = useState(false);
   const [emojiMode, setEmojiMode] = useState<"desktop" | "mobile">();
   const panelId = useId();
   const mediaEpoch = useRef(0);
@@ -60,6 +67,7 @@ const SendActionBar = ({
     setExpanded(false);
     setVoiceVisible(false);
     setEmojiMode(undefined);
+    setMentionOpen(false);
     fileIntent.current?.operation.dispose();
     fileIntent.current = undefined;
     return () => { mediaEpoch.current++; fileIntent.current?.operation.dispose(); };
@@ -110,6 +118,11 @@ const SendActionBar = ({
         {window.electronAPI && pasteImages && <button type="button" className={toolbarClass} aria-label="粘贴图片" title="从剪贴板粘贴图片 · Ctrl+V" onClick={pasteImages}><CopyOutlined /></button>}
         <button type="button" className={toolbarClass} aria-label="发送文件" title="文件" onClick={() => chooseFile("file")}><FileOutlined />{window.electronAPI && <span>文件</span>}</button>
         <button type="button" className={toolbarClass} aria-label="打开语音面板" title="语音消息" onClick={() => { setEmojiMode(undefined); setVoiceVisible(true); }}><AudioOutlined />{window.electronAPI && <span>语音</span>}</button>
+        {isGroupSession && mentionContacts.length > 0 && (
+          <Popover content={<MentionList contacts={mentionContacts} onSelect={(name) => { insertMention(name); setMentionOpen(false); }} />} open={mentionOpen} onOpenChange={setMentionOpen} trigger="click" placement="top" arrow={false}>
+            <button type="button" className={toolbarClass} aria-label="提及成员" title="提及成员"><span className="font-semibold">@</span>{window.electronAPI && <span>提及</span>}</button>
+          </Popover>
+        )}
         <LocalFolderAction sendFile={sendFile} />
         {!researchMode && !isGroupSession && <Popover content={<CallPopContent closeAllPop={() => setExpanded(false)} />} trigger="click" arrow={false} placement="top"><button type="button" className={toolbarClass} aria-label={t("placeholder.call")}><img src={rtc} width={20} alt="" /></button></Popover>}
       </div>

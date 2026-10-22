@@ -2,8 +2,8 @@ import type {
   ConversationItem as ConversationItemType,
   MessageItem,
 } from "@openim/wasm-client-sdk/lib/types/entity";
-import { Badge } from "antd";
-import { PushpinOutlined } from "@ant-design/icons";
+import { Badge, Dropdown, Modal } from "antd";
+import { PushpinOutlined, BellOutlined } from "@ant-design/icons";
 import clsx from "clsx";
 import { t } from "i18next";
 import { memo, useMemo } from "react";
@@ -11,7 +11,11 @@ import { useNavigate } from "react-router-dom";
 
 import OIMAvatar from "@/components/OIMAvatar";
 import { useConversationStore } from "@/store";
+import { IMSDK } from "@/layout/MainContentWrap";
+import { MessageReceiveOption } from "@openim/wasm-client-sdk";
+import { researchApi } from "@/research/api";
 import { formatConversionTime, getConversationContent } from "@/utils/imCommon";
+import { feedbackToast } from "@/utils/common";
 
 import styles from "./conversation-item.module.scss";
 import { useResearchStore } from "@/research/store";
@@ -28,6 +32,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
     (s) => s.contacts.find((c) => c.userID === conversation.userID)?.contact,
   );
   const isCoordinator = coordinator?.imConversationID === conversation.conversationID;
+  const isMuted = conversation.recvMsgOpt === MessageReceiveOption.ReceiveWithoutNotification;
   const updateCurrentConversation = useConversationStore(
     (state) => state.updateCurrentConversation,
   );
@@ -56,7 +61,97 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
 
   const latestMessageTime = formatConversionTime(conversation.latestMsgSendTime);
 
+  const mapping = useResearchStore((s) =>
+    s.mappings.find((c) => c.imConversationID === conversation.conversationID),
+  );
+
+  const contextMenuItems = [
+    { key: "pin", label: conversation.isPinned ? "取消置顶" : "置顶聊天" },
+    { key: "mute", label: "免打扰" },
+    { key: "delete", label: "删除聊天", danger: true },
+  ];
+
+  const syncConversation = async () => {
+    const { data } = await IMSDK.getOneConversation({
+      sourceID: conversation.groupID || conversation.userID,
+      sessionType: conversation.conversationType,
+    });
+    useConversationStore.getState().updateConversationList([data], "filter");
+  };
+
+  const togglePin = async () => {
+    const value = !conversation.isPinned;
+    try {
+      if (mapping) {
+        const canonical = await researchApi("chatConversation", {
+          params: { id: mapping.researchConversationId },
+        });
+        await researchApi("updateChatPreferences", {
+          params: { id: mapping.researchConversationId },
+          body: {
+            expectedVersion: canonical.data.viewerState.version,
+            pinned: value,
+          },
+        });
+      }
+      await IMSDK.setConversation({
+        conversationID: conversation.conversationID,
+        isPinned: value,
+      });
+      await syncConversation();
+    } catch (cause) {
+      feedbackToast({ error: cause, msg: "置顶设置失败，请重试" });
+    }
+  };
+
+  const toggleMute = async () => {
+    const value = conversation.recvMsgOpt !== MessageReceiveOption.Receive;
+    try {
+      await IMSDK.setConversation({
+        conversationID: conversation.conversationID,
+        recvMsgOpt: value
+          ? MessageReceiveOption.ReceiveWithoutNotification
+          : MessageReceiveOption.Receive,
+      });
+      await syncConversation();
+    } catch (cause) {
+      feedbackToast({ error: cause, msg: "免打扰设置失败，请重试" });
+    }
+  };
+
+  const deleteConversation = () => {
+    if (isCoordinator) {
+      feedbackToast({ msg: "个人助理会话无法删除" });
+      return;
+    }
+    Modal.confirm({
+      title: "删除聊天",
+      content: "将删除该会话及全部消息记录，此操作无法撤销。",
+      okText: "删除",
+      okButtonProps: { danger: true },
+      cancelText: "取消",
+      onOk: async () => {
+        try {
+          await IMSDK.deleteConversationAndDeleteAllMsg(conversation.conversationID);
+          await useConversationStore.getState().getConversationListByReq();
+        } catch (cause) {
+          feedbackToast({ error: cause, msg: "删除会话失败，请重试" });
+        }
+      },
+    });
+  };
+
+  const onContextMenuClick = ({ key }: { key: string }) => {
+    if (key === "pin") void togglePin();
+    else if (key === "mute") void toggleMute();
+    else if (key === "delete") deleteConversation();
+  };
+
   return (
+    <Dropdown
+      trigger={["contextMenu"]}
+      menu={{ items: contextMenuItems, onClick: onContextMenuClick }}
+    >
     <button
       type="button"
       aria-current={isActive ? "true" : undefined}
@@ -67,7 +162,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
       )}
       onClick={() => void toSpecifiedConversation()}
     >
-      <Badge size="small" count={conversation.unreadCount}>
+      <Badge size="small" count={conversation.unreadCount} color={isMuted ? "rgba(0,0,0,0.25)" : undefined}>
         <OIMAvatar
           src={conversation.faceURL}
           isgroup={Boolean(conversation.groupID)}
@@ -80,9 +175,11 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
         <div className="flex items-center justify-between">
           <div className="flex-1 truncate font-medium">
             {contact?.displayName || conversation.showName}
-            {contact && contact.identity.kind !== "human" && (
-              <span className="desktop-agent-label ml-1 text-xs text-blue-600">AI</span>
-            )}
+            {contact && contact.identity.kind !== "human" ? (
+              <span className="desktop-agent-label ml-1 text-xs text-blue-600">Agent</span>
+            ) : conversation.groupID ? (
+              <span className="desktop-agent-label ml-1 text-xs text-slate-500">群</span>
+            ) : null}
           </div>
           <div className="desktop-conversation-time ml-2 text-xs text-[var(--sub-text)]">{latestMessageTime}</div>
         </div>
@@ -95,9 +192,11 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
             </div>
           </div>
           {(isCoordinator || conversation.isPinned) && <PushpinOutlined className="desktop-conversation-pin" aria-label={isCoordinator ? "个人助理置顶" : "聊天置顶"} />}
+          {isMuted && <BellOutlined className="desktop-conversation-pin" aria-label="免打扰" />}
         </div>
       </div>
     </button>
+    </Dropdown>
   );
 };
 

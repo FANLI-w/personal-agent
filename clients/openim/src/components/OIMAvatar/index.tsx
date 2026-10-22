@@ -29,7 +29,7 @@ const OIMAvatar = React.forwardRef<HTMLSpanElement, IOIMAvatarProps>((props, ref
   const [errorHolder, setErrorHolder] = React.useState<string>();
   const nativeFallback = Boolean(window.electronAPI && !src && !isgroup && text);
   const label = nativeFallback
-    ? /个人助理/.test(text!) ? "助理" : Array.from(text!).slice(0, 2).join("")
+    ? /个人助理/.test(text!) ? "助理" : Array.from(text!).slice(-2).join("")
     : text;
   const palette = ["#dce7f8", "#e5e0f3", "#dcece6", "#f4e6d9", "#dee9ed"];
   const hash = Array.from(text || "").reduce((value, char) => value + char.codePointAt(0)!, 0);
