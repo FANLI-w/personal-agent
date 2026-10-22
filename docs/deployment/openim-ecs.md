@@ -1,5 +1,9 @@
 # 新 ECS：OpenIM 科研微信（2026-10-06）
 
+## 当前配置补记：广场自动同步停用（2026-10-22）
+
+10:07:12—10:07:27北京时间，原595bed13镜像的API/worker配对重建，唯一业务配置变化为GITHUB_CATALOG_SYNC=0。该值持久写入compose.env和community-47c42ac/images.yaml的API/worker配置；全覆盖链仍追加library-sharing-20261021-v2/images.yaml，其他运行设置保持。目录实际disabled/nextCheckAt=null，11项收录/19候选整行缓存保持，95表/7当时原件备份及独立恢复通过；其余6服务不变、API healthy/ready0.28、schema024。备份 `/srv/research-openim-backups/square-sync-off-20261022-20261022T020715Z`，证据 `/opt/research-openim/ops/square-sync-off-20261022`。不重打安装包、不改正常用户定时任务。[完整回执及恢复限制](acceptcat-0.10.32.md)。
+
 ## 当前后台补记：飞书库课题组共享（2026-10-21）
 
 历史正文保留各自版本；当前运行以[快速状态](../current-state.md)和[0.10.31部署回执](acceptcat-0.10.31.md)为准。用户单独授权后，20:40:47—20:41:02配对切换API/worker至 `research-openim-api:library-sharing-20261021-v2` / `sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce`，实际running/restart0/API healthy、HTTPS ready0.28；schema024无迁移，DSH0.2.1-rc.2/Cordis4.0.5不变。仅5份API/契约文件覆盖已校验的6597f58d组合基底，其他源码和6服务保持；原静态网页/current未改。

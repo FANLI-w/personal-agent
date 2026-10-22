@@ -1440,3 +1440,19 @@ API/worker现为research-openim-api:library-sharing-20261021-v2，sha256:595bed1
 本次仅客户端，后台无需修改，未inspect、重启/部署或迁移；沿已部署595bed13/contract0.28/schema024/DSH0.2.1-rc.2/Cordis4.0.5记录。资料/共享/模型和原飞书网页权限不因迁页改变，没有新增SSH、Key、云权限或飞书成员。注册超时仍未定因，已有账号加入、自助开组、完整成员管理仍未完成。
 
 收尾240份Markdown/10份Skill内容检查与git diff --check通过；文档提交不重打上述安装包或更改最终产品SHA。
+
+## 2026-10-22 — 广场隐藏后的每日GitHub同步补充停用
+
+用户追问“广场之前每天自动获取最新消息的定时任务关了吗”。前批只隐藏客户端，原交付文档明确后台目录运营/定时未改；本批据此核对并补齐停用，未假称之前已关。Git仍干净feat/standalone-library/ee5fbcb，保留PR87及所有原修改，无新产品源码或安装包。检查本机Codex标准automations目录仅有jitter元数据，没有对应automation.toml，不扩大推断为其他云服务调度状态；确认本产品自动更新由worker内GITHUB_CATALOG_SYNC配置控制。
+
+沿原Workbench同实例/同权限正常免密连接，只读核对API/worker镜像仍595bed13、GITHUB_CATALOG_SYNC均1，目录enabled=true/state=ok，11项收录/19候选；最近完成UTC2026-10-21T16:00:09.075Z即22日零点，下次原定UTC22日16:00即23日零点。按隐藏广场的后续要求补关：北京时间10:07:12—10:07:27停止API接入、等待execution/chat排空、停止worker，备份及核验后将/srv/research-openim/compose.env的单个开关和/opt/research-openim/ops/community-47c42ac/images.yaml的API/worker同名配置共三处设为0，沿原完整Compose覆盖链配对重建。无镜像构建、代码替换或迁移。
+
+停写一致备份及独立解包恢复核对95表/7份当时原件的结构/行数/全行哈希、原件/权限哈希一致，integrity/外键/24迁移checksum通过。7份是本批停止时实际原件数，未读取或复制正文到本机/Git。备份/srv/research-openim-backups/square-sync-off-20261022-20261022T020715Z/research.tar.gz，SHA256 a9f3c0ebf92060e8e0046f1122a9583bbec4a9be9567cb4a1d6869c57453ca2a；仍在同ECS，不称异地/整栈恢复。
+
+关闭后有效Compose和两个实际容器均GITHUB_CATALOG_SYNC=0；通过现有目录读取逻辑核对enabled=false/state=disabled/nextCheckAt=null，11项收录/19候选与原始缓存行哈希保持，没有清除历史时间或其他记录。worker关闭开关后直接跳过该同步，API读取只读缓存，不因隐藏客户端继续发GitHub自动请求。源/Feishu连接/资料集合与范围、个人及团队模型凭据/默认值整表哈希保持，外部源仍1个私人。其余环境变量哈希、挂载/命令/重启策略/内存/端口/网络及其他6容器ID/镜像/状态不变，用户提醒和科研调度未停。
+
+API/worker仍research-openim-api:library-sharing-20261021-v2 / sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce，实际running/restart0、API healthy、公网HTTPS ready200/contract0.28，schema024保持。DSH0.2.1-rc.2/Cordis4.0.5不变，Harness仍not_verified，无新真实模型探测或私人资料/账号/安装验收。未新增SSH/Key/云权限，维护终端已关闭。关闭脚本有失败时恢复原配置/配对服务且保留当前数据的处理，实际成功未触发，不称已演练。
+
+服务器证据/受限配置备份在/opt/research-openim/ops/square-sync-off-20261022，本机Git外D:/deepseek-agent/.runtime/square-sync-off-20261022保存前后摘要、脚本、传输包及disabled-proof.png；私有配置只留服务器。传输包4,607字节、SHA256 7865a89b24b34c2fc4bfdaa5b00744978c0d00a4ed5284929d4b28a115365723，展开前checksum/Bash及Python语法核验通过。current-state、同步说明、0.10.32交付和ECS入口补当前关闭事实，历史“每日开启”保留为历史。未来维护须保持开关0，恢复须另行明确操作，不用旧compose.env覆盖新配置。
+
+本批只改运行配置和文档，不重新执行根CI或重打/代安装0.10.32；PR87补此后续事实，不合并main、打标签或公开Release，公开版本沿v0.10.29。注册超时、课题组自助流程未因此修复。

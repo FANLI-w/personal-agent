@@ -22,6 +22,16 @@
 
 安装包已放桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.32.exe**，**87,437,394字节**，SHA256 **e32c2e34f5362252b7b58831858c3d03057a00b7b81aa82c745804274ec7547e**。复制前确认该目标不存在，旧包与正在使用的客户端保持；未代安装。Git外 `D:/deepseek-agent/.runtime/standalone-library-20261022` 保存类型/打包日志、源码备份zip和delivery.json，文件标识不作为功能验收。
 
-本次不需要后台修改或再次部署。后台沿2026-10-21已部署 `research-openim-api:library-sharing-20261021-v2` / sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce，contract0.28/schema024、DSH0.2.1-rc.2/Cordis4.0.5记录，本批未重新inspect或重启。未改飞书应用成员、权限、Key或任何现存库范围。飞书共享仍需主人明确选择、实际同课题组身份，原网页权限独立执行。
+页面迁移本身不需要后台修改，最初交付安装包时未重新inspect或重启。后台沿2026-10-21已部署 `research-openim-api:library-sharing-20261021-v2` / sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce，contract0.28/schema024、DSH0.2.1-rc.2/Cordis4.0.5；用户随后追问调度，已完成下文配置停用及原镜像配对重建。未改飞书应用成员、权限、Key或任何现存库范围。飞书共享仍需主人明确选择、实际同课题组身份，原网页权限独立执行。
 
 代码已推送并创建[PR87](https://github.com/luoyan96/personal-agent/pull/87)，目标主仓库main，依赖未合并PR84/85，已附当前任务，交负责人审阅；未合并main、公开Release、标签或更新源，公开版本沿v0.10.29。用户自行安装体验。注册超时未定因、已有个人账号接受邀请、自助创建课题组和完整成员管理仍未完成。
+
+## 后续补齐：广场每日同步关闭（2026-10-22）
+
+用户追问后核对线上，发现上一批客户端隐藏并未关闭后台每日零点GitHub同步：两容器实际GITHUB_CATALOG_SYNC=1，最后完成2026-10-22 00:00:09.075北京时间、下次原定23日00:00。现已补关，维护 **10:07:12—10:07:27**，只持久修改 `/srv/research-openim/compose.env` 的GITHUB_CATALOG_SYNC为0及 `/opt/research-openim/ops/community-47c42ac/images.yaml` 中API/worker的两个同名值为0，沿原完整Compose覆盖链配对重建服务。镜像仍595bed13，代码和此安装包均未变化；后续维护不要重跑会把该开关写回1的历史目录部署脚本。
+
+运行状态实际enabled=false/state=disabled/nextCheckAt=null，不再安排后台自动同步；11项收录、19个候选和缓存原始整行哈希一致，未删历史。此前下次时间仍保留在数据库历史缓存中，禁用状态对外返回null，worker在开关关闭时直接跳过；没有为了隐藏时间而清除数据。API/worker均running/restart0、API healthy、HTTPS ready200/0.28，schema024不变。除该单开关外的环境变量哈希与全部运行设置一致，其他6服务的容器ID/镜像/状态保持，正常个人提醒和科研调度未修改。
+
+停写备份与独立恢复确认95表/7份当时原件的结构、行数/全行哈希和文件/权限哈希一致；integrity/外键/24迁移checksum通过，无SQL迁移。凭据/默认模型、Feishu连接/源、资料集合与范围保持，1个外部源仍私人。备份 `/srv/research-openim-backups/square-sync-off-20261022-20261022T020715Z/research.tar.gz`，SHA256 **a9f3c0ebf92060e8e0046f1122a9583bbec4a9be9567cb4a1d6869c57453ca2a**，仍在同ECS，未做异地/整栈恢复。服务器证据 `/opt/research-openim/ops/square-sync-off-20261022`，本机Git外 `.runtime/square-sync-off-20261022` 含关闭脚本、前后摘要和可见回执；私有配置备份只在服务器受限目录，不入Git或本机。
+
+如需恢复自动同步，须另外明确操作并保留最新配置，将上述三处值协调恢复1、沿完整Compose链配对重建；不要把旧compose.env整份覆盖新配置。恢复后worker可能立即执行已到期轮次，不能把它当作无副作用的界面开关。本次成功未触发失败恢复流程，不称已演练回退。未新增SSH/Key/云权限、生产账号、真实资料/模型或安装验收；本机Codex标准自动化目录中没有对应automation.toml，不据此声称其他云端自动化都已停用。

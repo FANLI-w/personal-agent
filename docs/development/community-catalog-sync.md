@@ -1,5 +1,9 @@
 # 社区科研能力：后端目录与 GitHub 每日同步
 
+## 当前状态：2026-10-22已暂停自动同步
+
+隐藏广场的客户端批次最初没有修改调度。用户后续追问后，已将线上API和worker以及持久配置中的 `GITHUB_CATALOG_SYNC` 设为0，原镜像配对重建并核对enabled=false/state=disabled/nextCheckAt=null。已收录目录、候选和历史缓存保持，其他用户定时提醒和科研任务没有停用；此后不会由后台自动获取GitHub最新事实。实际配置、备份及恢复边界见[0.10.32后续运维](../deployment/acceptcat-0.10.32.md)。下方首次上线时GITHUB_CATALOG_SYNC=1及每日执行的说明保留为历史与实现机制，不代表当前仍启用。
+
 ## 实现范围
 
 AcceptCat 0.10.3 客户端从登录后的 `GET /api/v1/community-catalog` 读取已收录目录、GitHub 缓存事实与待审阅候选；不再内嵌四项固定目录。共享契约 0.25.0，聊天协议和 schema022 保持。目录存入既有 SQLite `runtime_meta.community_catalog_v1`，无需迁移，API 与 worker 重启后继续使用。首次内容来自 `apps/api/src/community-catalog-seed.ts`，已存在目录不会因重启或代码更新被覆盖。
