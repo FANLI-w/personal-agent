@@ -1456,3 +1456,17 @@ API/worker仍research-openim-api:library-sharing-20261021-v2 / sha256:595bed1364
 服务器证据/受限配置备份在/opt/research-openim/ops/square-sync-off-20261022，本机Git外D:/deepseek-agent/.runtime/square-sync-off-20261022保存前后摘要、脚本、传输包及disabled-proof.png；私有配置只留服务器。传输包4,607字节、SHA256 7865a89b24b34c2fc4bfdaa5b00744978c0d00a4ed5284929d4b28a115365723，展开前checksum/Bash及Python语法核验通过。current-state、同步说明、0.10.32交付和ECS入口补当前关闭事实，历史“每日开启”保留为历史。未来维护须保持开关0，恢复须另行明确操作，不用旧compose.env覆盖新配置。
 
 本批只改运行配置和文档，不重新执行根CI或重打/代安装0.10.32；PR87补此后续事实，不合并main、打标签或公开Release，公开版本沿v0.10.29。注册超时、课题组自助流程未因此修复。
+
+## 2026-10-22 — 本机Windows0.10.33：同账号课题组创建、邀请和接受，后台025待部署
+
+用户问如何创建课题组和邀请后明确要求「那你做好吧」。核对干净feat/standalone-library/c6c2efd、origin指主仓库，fetch后main仍b7f5742。从origin/main新建feat/lab-membership，再快进纳入PR84/85/87未合并依赖；最终产品c46295f58d613b97f8b2a97e37290edb861b22db，不强推或覆盖主线。[交付](deployment/acceptcat-0.10.33.md)、[实现边界](development/lab-membership.md)。
+
+「我的→课题组」提供当前账号创建、按AcceptCat号邀请和本人接受/谢绝、生成/撤销邀请码及已有账号先查看组名再确认加入、真实成员/待接受/邀请码状态、改名、个人/多组切换、移除普通成员与退出。复用新注册邀请码；每账号最多负责一个组，负责人交接/解散暂由维护者处理，未完成发起/审阅职责需先完成/取消。此前旧网页/manage/invites链接实际返回OpenIM SPA，已换为客户端管理入口，不将其当作可用邀请网页。
+
+保持members.lab_id为稳定账号home，新增独立成员授权/当前组与资料共享目标，避免账号加入时搬动聊天/联系人、私人模型或飞书密文。contract0.29新增12接口/5错误，schema025新增5表/1兼容视图、沿原24份校验和，无新依赖/锁文件。session.member.labId表示当前协作上下文；后台执行和聊天回合保存受理时的上下文。入组不自动分享私库/Key/飞书，移除收回任务ACL并结束分工/停止派发、本人共享库转私人，其他共享库递增版本以围住迟到读取，重新加入不恢复旧授权；从原home组移除也停止旧模型兼容，个人Key/默认配置保持。
+
+根pnpm11.21 frozen安装与最终完整CI exit0：58文件749项、2生产CLI/HTTP、B0两次实际HTTP启动和生产无夹具通过。新11项HTTP/SQLite成员检查包括接受者/负责人/Origin/CSRF、邀请码容量并发/新注册、任务邀请/移除/重加、私人密文/会话保持、旧模型撤权及模拟024迁移；20项Feishu合成检查新增跨home主人连接与读取中移除。早期重复导入收集失败、POST空body夹具、任务移除事件枚举500、403断言及旧模型表夹具列数错误均保存原日志，修正后通过，未以放宽限制代替修复。
+
+客户端corepack pnpm10.28 frozen安装，渲染/主进程类型、2service/3auth通过；Husky因目录所有者跳过，不改全局Git信任。最终生产Web/4 SDK资源检查与NSIS --publish never exit0、55运行包装配。首包后保留切组时私人写操作重试键，按产品提交重打；桌面C:/Users/luo/Desktop/AcceptCat_0.10.33.exe，87,433,858字节，SHA256 e3bdde49eeef858469b49528bbd66b123ac9bea8bcb2e14e1ae62df71e1028e3。未代安装，旧包及首包保留；不追加浏览器/真实账号/私人资料/模型、载荷/原生启动或安装后体验验收，由用户自行检查。证据Git外D:/deepseek-agent/.runtime/lab-membership-20261022。
+
+Git外后台候选714,405字节，SHA256 e62de30b06bb560bad31fc3a22e8a2b62a8cfcfc02752ad74b11274e386620c4，270份覆盖文件/103份基底源码换行规范哈希守卫，固定595bed13原镜像，025迁移待停写备份与恢复校验后另行获准配对部署。本批未上传、Linux构建、重新inspect生产、停写/备份线上、迁移或重启；现产仍按0.28/schema024/595及GITHUB_CATALOG_SYNC=0记录，新安装包不能单独使成员接口上线。未合并main、打标签或公开Release/更新源，公开v0.10.29保持；注册超时未定因、飞书直接试点范围保持。PR在本批收尾提交，负责人审阅决定合并。
