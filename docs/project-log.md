@@ -1470,3 +1470,5 @@ API/worker仍research-openim-api:library-sharing-20261021-v2 / sha256:595bed1364
 客户端corepack pnpm10.28 frozen安装，渲染/主进程类型、2service/3auth通过；Husky因目录所有者跳过，不改全局Git信任。最终生产Web/4 SDK资源检查与NSIS --publish never exit0、55运行包装配。首包后保留切组时私人写操作重试键，按产品提交重打；桌面C:/Users/luo/Desktop/AcceptCat_0.10.33.exe，87,433,858字节，SHA256 e3bdde49eeef858469b49528bbd66b123ac9bea8bcb2e14e1ae62df71e1028e3。未代安装，旧包及首包保留；不追加浏览器/真实账号/私人资料/模型、载荷/原生启动或安装后体验验收，由用户自行检查。证据Git外D:/deepseek-agent/.runtime/lab-membership-20261022。
 
 Git外后台候选714,405字节，SHA256 e62de30b06bb560bad31fc3a22e8a2b62a8cfcfc02752ad74b11274e386620c4，270份覆盖文件/103份基底源码换行规范哈希守卫，固定595bed13原镜像，025迁移待停写备份与恢复校验后另行获准配对部署。本批未上传、Linux构建、重新inspect生产、停写/备份线上、迁移或重启；现产仍按0.28/schema024/595及GITHUB_CATALOG_SYNC=0记录，新安装包不能单独使成员接口上线。未合并main、打标签或公开Release/更新源，公开v0.10.29保持；注册超时未定因、飞书直接试点范围保持。PR在本批收尾提交，负责人审阅决定合并。
+
+收尾分支已推送，并使用本机既有GitHub CLI身份创建并附任务的[PR88](https://github.com/luoyan96/personal-agent/pull/88)，目标main、依赖PR84/85/87，待负责人审阅，未合并。再次fetch后main仍b7f5742，产品与桌面包保持原c46295f；后台配套部署待本批单独确认，未新增账号授权或运维操作。
