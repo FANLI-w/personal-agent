@@ -2,7 +2,7 @@ import type {
   ConversationItem as ConversationItemType,
   MessageItem,
 } from "@openim/wasm-client-sdk/lib/types/entity";
-import { Badge, Dropdown } from "antd";
+import { Badge, Dropdown, Modal } from "antd";
 import { PushpinOutlined } from "@ant-design/icons";
 import clsx from "clsx";
 import { t } from "i18next";
@@ -118,10 +118,32 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
     }
   };
 
+  const deleteConversation = () => {
+    if (isCoordinator) {
+      feedbackToast({ msg: "个人助理会话无法删除" });
+      return;
+    }
+    Modal.confirm({
+      title: "删除聊天",
+      content: "将删除该会话及全部消息记录，此操作无法撤销。",
+      okText: "删除",
+      okButtonProps: { danger: true },
+      cancelText: "取消",
+      onOk: async () => {
+        try {
+          await IMSDK.deleteConversationAndDeleteAllMsg(conversation.conversationID);
+          await useConversationStore.getState().getConversationListByReq();
+        } catch (cause) {
+          feedbackToast({ error: cause, msg: "删除会话失败，请重试" });
+        }
+      },
+    });
+  };
+
   const onContextMenuClick = ({ key }: { key: string }) => {
     if (key === "pin") void togglePin();
     else if (key === "mute") void toggleMute();
-    else if (key === "delete") feedbackToast({ msg: "删除功能接入中" });
+    else if (key === "delete") deleteConversation();
   };
 
   return (
