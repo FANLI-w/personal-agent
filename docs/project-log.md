@@ -1502,3 +1502,13 @@ Compose在原47c42ac基础与production、私有images、community/key-preview/f
 相对e3922e7无API/契约/数据库/共享包/依赖锁变化，沿此前749项根CI，不重复完整检查；e3922e7的三项GitHub foundation实际success，不将其扩大为新提交CI。后台仍已部署0.29/schema025、0212513c镜像、DSH0.2.1-rc.2/Cordis4.0.5与GITHUB_CATALOG_SYNC=0，没有本批重启/迁移或新真实模型探测。飞书本人试点、私人配置/资料和注册超时未决保持。
 
 已普通推送源码并创建、附任务[PR89](https://github.com/luoyan96/personal-agent/pull/89)，目标main、包含PR86/88及84/85/87依赖；用户审阅决定主线合并，未合并。v0.10.34 annotated tag对象7a5fdde4ee5639bcf30697cb4648c7859b1857da固定产品e4bdbe6并已推送，公开附件上传处理中。API部分查询/创建出现TLS或EOF，浏览器既有页连接超时，使用既有CLI和当前系统代理的命令级连接处理，未改持久配置或暴露Token；未知创建结果先读回404再重试。Git外D:/deepseek-agent/.runtime/publish-0.10.34-20261022保留日志、附件/校验、delivery和原回执；0.10.33准备与失败保持同级publish-0.10.33-20261022。current-state/路线图先区分本机交付与待公开，最终公开结果后续追加。
+
+## 2026-10-22 — v0.10.34公开为Latest，四附件与公开更新清单核对完成
+
+北京时间 **2026-10-22 16:51:11**，Release420488025 / [v0.10.34](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.34)正式公开为Latest，标签7a5fdde4固定e4bdbe6，没有合并main或重打/代安装。包含同事PR86原提交与本批资料/课题组更新，PR89等待主线审阅。原v0.10.33/c462固定标签与空草稿保持未公开，不覆盖历史；旧公开v0.10.29等继续保留。
+
+创建0.10.34两次TLS/EOF失败，先读回404确认未创建，再用既有GitHub CLI身份、命令级SOCKS连接及curl完成创建。Token只在子进程内存/标准输入中用于官方GitHub TLS请求，没有写入文件、参数或输出。安装器上传成功后小附件一次TLS失败，先列远端并核对已有文件，再按缺失继续，不重复或覆盖安装器。四附件state均uploaded、大小/SHA256逐份与本机一致；未登录公开latest API确认同一v0.10.34/Release和四附件，公开latest.yml与本机340字节完全相同。
+
+附件为AcceptCat_0.10.34.exe（87,433,531字节、SHA256 0fdc3741ec65993925a0345d80408cb8bc9d62e2e284e483eeae25e9d43d7eb8）、blockmap（91,168字节）、latest.yml（340字节）和SHA256SUMS.txt（262字节）。完整摘要/上传回执、published-release.json、public-latest-release.json与public-latest.yml保留Git外D:/deepseek-agent/.runtime/publish-0.10.34-20261022；delivery更新已公开。失败请求及错误说明保留，传输成功不称真实客户端更新或功能验收。
+
+README、product-status、current-state、0.10.34交付、路线图和交接/PR89补当前公开入口。后续文档提交不改变固定安装包源码，不重跑已通过的代码检查或重打包。没有再次后台部署/迁移，0.29/schema025、0212513c镜像、广场同步关闭、私人模型/资料/飞书本人试点及注册超时未决保持；用户继续自行检查安装和实际体验。

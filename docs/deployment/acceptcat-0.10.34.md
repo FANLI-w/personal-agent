@@ -29,3 +29,20 @@
 ## 后台与剩余边界
 
 本批不再次部署、重启或迁移后台，沿已部署 **0.29/schema025**、API/worker镜像 **sha256:0212513c5e9d4109cba892462c4953f9c440e96dc13007178635aca6c58395fb**，DSH0.2.1-rc.2/Cordis4.0.5和广场GITHUB_CATALOG_SYNC=0。先前一致备份/独立恢复与025迁移事实见[0.10.33回执](acceptcat-0.10.33.md)，本次未重新声称执行。私人资料、模型Key/默认值及飞书连接保持；飞书直接OAuth仍本人试点，入组不自动共享。注册超时旧问题未定因，负责人交接/解散仍由维护者处理。
+
+## 后续：公开Release与更新附件已发布
+
+北京时间 **2026-10-22 16:51:11**，Release **420488025** / [v0.10.34](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.34)公开且设为Latest，正常发布而非预发布。tag仍7a5fdde4/e4bdbe6，未合并main或重打安装包。此前创建请求两次TLS/EOF失败，读取确认404后才再创建；四附件逐次核对既有状态、按缺失上传，没有盲目重传或覆盖。安装器上传成功后一个小附件TLS超时，读回已有附件并核对后继续，不重复上传87MB安装器。
+
+GitHub四项附件的state均uploaded，size/digest与本机一致：
+
+| 附件 | 字节 | SHA256 |
+| --- | ---: | --- |
+| AcceptCat_0.10.34.exe | 87,433,531 | 0fdc3741ec65993925a0345d80408cb8bc9d62e2e284e483eeae25e9d43d7eb8 |
+| AcceptCat_0.10.34.exe.blockmap | 91,168 | 267dd42959f08b9b6b4533197f3bd6ca73f5b156a8cb1797b9d7941459ef8e8a |
+| latest.yml | 340 | 38a47593fac72125ad12397f9d49722ef3a6b9333104df21770cfd33234c0efb |
+| SHA256SUMS.txt | 262 | ae0088437daa16889f0c7ae3709f2fe88fe287ba5ce2a4214c80415bff3618c8 |
+
+未登录公开latest API实际返回v0.10.34与同一Release/四附件，公开latest.yml下载与本机340字节逐字节相同；校验清单也与公开附件摘要一致。未启动真实桌面更新、安装或产品验收。更新源仍原公开GitHub Releases配置，无新凭据；SHA和元数据核对只证明交付文件。0.10.33空草稿420459530及既有标签保持，旧公开v0.10.29等继续保留。
+
+本机Git外published-release.json、public-latest-release.json、public-latest.yml、delivery和上传回执保存实际结果。README、版本说明、交接、路线图与PR89同步公开状态；main仍按PR由负责人决定合并。后台保持前批0.29/schema025，不重新部署或扩展飞书授权。
