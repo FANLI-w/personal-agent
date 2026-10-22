@@ -1488,3 +1488,17 @@ API/worker配对启动 **research-openim-api:lab-membership-20261022-v2** / **sh
 Compose在原47c42ac基础与production、私有images、community/key-preview/feishu/harness/bitable/http400/library-sharing链末尾新增lab-membership-20261022-v2/images.yaml；原current、Nginx/静态网页不变。部署成功未触发回退；脚本只在新服务未启动、无新写入时可恢复停写数据库，新服务一旦尝试启动则要求保全数据前向修复。025不能换回024镜像读取，现在不能直接回灌旧快照，后续恢复需单独协调新写入及兼容数据/代码。
 
 服务器回执/逐表文件校验与日志在 **/opt/research-openim/ops/lab-membership-20261022-v2**，首失败在同级lab-membership-20261022；本机Git外 **D:/deepseek-agent/.runtime/lab-membership-20261022/backend-deploy-v2** 保留运维包/脚本、失败说明、部署摘要及deployed-proof.png，delivery.json改为后台已部署。源代码/安装包保持原产品标识，用户自行检查功能与安装体验；未追加浏览器产品、真实账号/私人材料/模型、载荷或原生验收。注册超时仍未定因，飞书直接OAuth仍仅本人试点。current-state、部署文档、ECS入口/路线图及PR88补实际状态；不合并main、打标签或改公开v0.10.29/更新源。
+
+## 2026-10-22 — 用户要求GitHub发布，并选择审阅整合PR86后重打0.10.34
+
+用户要求“github提交我们的更新和安装包”。初始沿干净feat/lab-membership/e3922e7准备0.10.33，确认公开Latest仍v0.10.29，0.10.33安装包/更新清单一致。固定c46295f的annotated tag v0.10.33（f04b86ed9e2ab5933b3534e63073eaa5b2e30737）已推送，草稿Release420459530已创建；安装器两个上传尝试均TLS阶段失败，读回空附件/未公开。随后用户说明同事提交了聊天修改，并明确选择“包含，审阅整合后一起发布”；因此保留旧固定标签和空草稿，另打0.10.34，不重指标签或假称0.10.33已公开。
+
+核对同事FANLI-w的PR86/head dda1cb1304489bd4275ae5dbafb390a36c9dc8e8尚未合并，main仍b7f5742。再次fetch成功后从main新建release/acceptcat-0.10.34，ff纳入PR88/e3922e7，再普通merge PR86，合并提交419af5e。原作者和5个功能提交保留，无整文件覆盖。纳入9文件：头像末两字、Agent/群标记、昵称宽度、右键置顶/免打扰/删除、@成员选择与开发预览。最终产品e4bdbe689ec94b9de5b90ff9dee5e0d4ed5ed96d。
+
+按React最佳实践审阅发现免打扰计算会写回原状态、DEV预览页无条件进入生产路由。修正实际开关/明确标签，按菜单目标值写入使未知结果重试不反向；后台置顶沿版本校验，个人助理固定/不可删除，SDK调用有时限和账号/会话/迟到回执栅栏。删除确认说明只处理OpenIM，不误称后台科研记录已清除；成功移除对应行并退出正在查看的会话，过期确认不触发删除。@弹窗随上下文关闭，成员按依赖缓存，DEV动态加载且生产输出无假预览；MentionList语义与原生按钮保持。新增7项必要动作合成检查，未实施真实删除/设置或账号验收。
+
+最终渲染与Electron类型、18项定向自动检查（7动作/6提及/3auth/2service）通过，生产编译、4固定SDK/完整引用、55运行包装配与NSIS --publish never、更新清单一致性通过；中间检查和最终意图修正后复检均保留。桌面C:/Users/luo/Desktop/AcceptCat_0.10.34.exe，87,433,531字节/SHA256 0fdc3741ec65993925a0345d80408cb8bc9d62e2e284e483eeae25e9d43d7eb8；与构建相同，旧包及用户客户端保持，未代安装。没有追加浏览器产品、真实账号/私人资料/模型、载荷提取或原生启动/安装体验验收，用户自行检查。
+
+相对e3922e7无API/契约/数据库/共享包/依赖锁变化，沿此前749项根CI，不重复完整检查；e3922e7的三项GitHub foundation实际success，不将其扩大为新提交CI。后台仍已部署0.29/schema025、0212513c镜像、DSH0.2.1-rc.2/Cordis4.0.5与GITHUB_CATALOG_SYNC=0，没有本批重启/迁移或新真实模型探测。飞书本人试点、私人配置/资料和注册超时未决保持。
+
+已普通推送源码并创建、附任务[PR89](https://github.com/luoyan96/personal-agent/pull/89)，目标main、包含PR86/88及84/85/87依赖；用户审阅决定主线合并，未合并。v0.10.34 annotated tag对象7a5fdde4ee5639bcf30697cb4648c7859b1857da固定产品e4bdbe6并已推送，公开附件上传处理中。API部分查询/创建出现TLS或EOF，浏览器既有页连接超时，使用既有CLI和当前系统代理的命令级连接处理，未改持久配置或暴露Token；未知创建结果先读回404再重试。Git外D:/deepseek-agent/.runtime/publish-0.10.34-20261022保留日志、附件/校验、delivery和原回执；0.10.33准备与失败保持同级publish-0.10.33-20261022。current-state/路线图先区分本机交付与待公开，最终公开结果后续追加。
