@@ -2,6 +2,8 @@
 
 2026-10-23（北京时间）。用户明确授权“后台可以升级”。本批部署 PR91 的配套 API/worker；没有合并 main、公开 Release、更换静态网页或代安装客户端。
 
+后续北京时间 **2026-10-23 09:24:07**，PR91按负责人明确指令以merge commit **90b7687449fa9f1dc43222b117369839b7f57e41**合入main；本记录以下保留此前后台部署批次事实。安装包仍本机候选，公开仍v0.10.34，没有重复部署。
+
 ## 实际版本
 
 - 产品源码：`09ffb44053dacf32c7626fc75e7ec7fb8b2b25d0`，`feat/peer-local-library` / [PR91](https://github.com/luoyan96/personal-agent/pull/91)，仍未合并。

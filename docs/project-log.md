@@ -1553,3 +1553,14 @@ GitHub连接器创建PR返回403 Resource not accessible by integration，未成
 正式备份 **/srv/research-openim-backups/peer-library-20261023-20261023T004905Z/research.tar.gz**，SHA256 **d305b1449e26f8741b9a473554a29ac5ec580c84a6f8c4a2af70e52d89a44553**，有同机配置副本/校验清单与独立恢复验证，不称异地/整栈灾备。服务器首轮证据/opt/research-openim/ops/peer-library-20261023，最终同级peer-library-20261023-v2；本机Git外D:/deepseek-agent/.runtime/peer-library-20261023保存升级包/脚本、失败说明、脱敏摘要和截图。026新写入后禁止直接换025镜像或回灌旧快照，须保全数据前向修复或单独协调兼容恢复。
 
 更新current-state、实现说明、路线图、交接及[部署记录](deployment/peer-library-20261023.md)，只作文档/PR状态同步，不合并main、不公开Release、不重打或代安装。桌面0.10.35包大小/SHA保持，公开仍v0.10.34；双方需新客户端运行并切同组、本人授权专用目录。未追加浏览器产品、安装载荷/原生启动/安装后体验、真实账号/材料/模型或双机WebRTC联网验收，不把部署成功当成NAT穿透/实际体验通过。注册超时未定因、飞书本人试点边界保持。
+
+
+## 2026-10-23 — 用户明确要求合并PR91，main保留同组本机资料互传及双方既有功能
+
+用户明确“那你倒是合并啊”。核对干净feat/peer-local-library/854230a、origin为主仓库、legacy保持；fetch后main仍e393247，PR91非草稿、无冲突。合并前树/祖先及旧001—025迁移文件核对保持，原PR89/同事PR86和资料/课题组功能均在本次分支祖先中，不强推或整文件覆盖。
+
+GitHub原运行39880985440，两项Linux foundation success，Windows760通过/2失败：agent-files既有真实解析器/合成模型用例FILE_PARSE_TIMEOUT（408与201不符）、community-catalog既有并发租期用例15000ms超时。两测试文件本次未改；本机原时限只复核这两个用例2通过/23跳过，未把跳过项算通过。保留原日志后只重跑原Windows job120178029570，第二次完整检查成功，三项检查全部通过后再合并。没有放宽时限/删断言/改运行代码，也未确认超时波动唯一根因。一次GitHub状态查询TLS握手超时后只读重试成功，不改持久网络或凭据设置。
+
+北京时间 **2026-10-23 09:24:07**，PR91使用merge方法合入main，提交 **90b7687449fa9f1dc43222b117369839b7f57e41**，固定head **854230a39bca9fc136022e2431535cf182246888**。父提交为原main/e393247与PR head，合并树与受核对head完全相同，保留所有原作者与提交；已普通ff同步本地main。原失败、原阈值复核、CI回执与前后祖先/树核对存Git外 **D:/deepseek-agent/.runtime/merge-pr91-20261023**。
+
+current-state、项目日志、路线图、实现/部署说明和新聊天交接补main已合并状态；纯文档按CONTRIBUTING执行check:content与diff检查，合并后自动main CI独立记录，不把尚未结束的运行称为通过。无本批重打或代安装、公开Release、后台重启/迁移/模型探测；桌面0.10.35及固定源码09ffb44/安装包SHA保持，公开Latest仍v0.10.34，线上沿0.30/schema026/2677f693与广场同步关闭。没有追加用户自行负责的产品、真实账号/资料/模型、原生安装或双机WebRTC验收；注册超时未定因、飞书本人试点和NAT直连边界保持。
