@@ -1524,3 +1524,32 @@ README、product-status、current-state、0.10.34交付、路线图和交接/PR8
 合并前3项CI回执、原失败/诊断/默认时限复检及preservation.json存Git外 **D:/deepseek-agent/.runtime/merge-pr89-20261022**，用户资料、凭据、数据库和产物不入Git。current-state、README、0.10.34交付、产品状态、路线图与新聊天交接补主线已合并事实，后续新功能仍从主仓库最新main另开分支。合并后自动main CI与本地文档检查分别记录，未完成的自动任务不算新通过。
 
 本批没有重打或代安装、公开新Release或部署后台：Latest仍v0.10.34，标签e4bdbe6与四附件及桌面包保持；生产仍0.29/schema025、0212513c镜像与GITHUB_CATALOG_SYNC=0，模型配置/私人资料/飞书本人试点保持。注册超时未定因、负责人交接/解散限制继续保留。
+
+
+## 2026-10-23 — 同组 Agent 索取本机资料、0.10.35候选与PR91
+
+负责人同意本机共享目录与Agent请求/直传方案；核对main/e393247干净、origin为luoyan96/personal-agent、legacy保持，fetch后新建feat/peer-local-library。产品09ffb44053dacf32c7626fc75e7ec7fb8b2b25d0，332f124仅修正生产CLI期望schema026；后续fetch发现同事feat/mobile-android-mvp但main未前进，没有纳入其他功能。保留既有PR89双方功能与历史，不强推、不覆盖其他目录。
+
+本机专用目录默认逐次同意，可明确允许同组自动获取。个人助理明确名字/账号索取与资料页入口统一请求；按文件名关键词查询，唯一匹配自动接收、多候选选择，离线保留7天请求。Windows主进程核对真实会话/成员版本/请求，限定目录、文件身份和校验，原件经WebRTC直传后保存/打开；后台只存协调元数据，设备/attempt/成员关系变化阻断旧请求。contract0.30.0新增7接口与聊天可选字段，schema026新增3表，001—025不改；没有新依赖、真实模型调用或对外A2A兼容承诺。首版无TURN/云原件兜底，校园网等直连可失败，双方须运行客户端并切换同组。
+
+最初根CI23项失败为旧迁移数量/回退夹具、stage和版本枚举；保留root-ci.log。精确更新026预期和夹具拆除，旧表/密文/校验和不变断言保持，定向258通过；次轮root-ci-second.log为762项通过后生产CLI旧25预期失败，修正后第三轮完整pnpm run ci全部通过（762项/59文件、2生产CLI/HTTP、B0与生产无夹具）。客户端最终renderer/Electron类型、13定向检查、生产Web/4SDK资源和55运行包NSIS通过。Windows主进程使用兼容Electron22/Node16的独立窄校验，网络接口替身检查真实Cookie身份/切换；未启动原生程序或实际双机WebRTC验收。所有材料、数据库及凭据均为隔离合成，用户实际使用与安装体验由本人检查。
+
+安装包C:/Users/luo/Desktop/AcceptCat_0.10.35.exe，87,409,212字节，SHA256 c575ba661e12d3548a9262f8fa91a630dabe0b7318cac94c90a4c0a89dfebe1c，复制前确认目标不存在，未代安装/覆盖旧包。构建与失败日志、合成原件、delivery.json均在Git外D:/deepseek-agent/.runtime/peer-library-20261023。没有安装包载荷、浏览器产品、真实账号/资料/模型、原生启动或联网穿透验收。
+
+GitHub连接器创建PR返回403 Resource not accessible by integration，未成功创建；改用既有本机GitHub CLI身份，命令级SOCKS连接，先查无同分支PR，再创建并挂接[PR91](https://github.com/luoyan96/personal-agent/pull/91)。已push功能分支，目标main、未合并。README公开下载继续0.10.34；GitHub重新读取Latest确认v0.10.34，没有新公开Release/标签/更新源。后台沿上次记录0.29/schema025，没有本批部署、迁移或新增线上探测。新功能须单独部署配套0.30/026后才能在线使用；保持广场同步关闭、注册超时未定因和飞书本人试点边界。
+
+## 2026-10-23 — 用户单独授权资料互传配套后台升级，0.30/schema026已部署
+
+用户明确“后台可以升级”。核对干净feat/peer-local-library/9f4207d、origin为主仓库，fetch后main仍e393247；PR91开放/未合并，公开Latest重新读取仍v0.10.34。接回既有Edge阿里云Workbench同一ECS/root会话，核对API/worker原0212513c镜像running、API healthy、公网ready0.29，磁盘约7.2GB可用；不读取/下载密钥正文、不新建SSH或扩大飞书授权。
+
+以原research-openim-api:lab-membership-20261022-v2为基础，仅叠加产品09ffb44053dacf32c7626fc75e7ec7fb8b2b25d0的11份运行源码，保留运营种子与其他实际生产差异。107份基线源码守卫、11份叠加和164份规范化编译结果核对通过；Linux无外网隔离容器执行资料互传/成员/飞书资料37项检查，全部通过。无新依赖、真实用户/模型/私人材料调用。
+
+首轮已停止API/排空并停止worker、一致备份与独立恢复/副本026保全通过；但运维copy-api-check探测遗漏新请求接口必填deviceId，契约验证400与预期401不符，脚本在正式迁移前中止并自动恢复旧025服务健康，未回灌数据库。保留首轮包、日志、备份；另建v2运维目录补有效合成设备参数，先在原恢复副本复核ready200/401和103表/7原件保持，再重新一致备份后执行正式迁移。没有改变产品镜像或重复已通过的37项完整检查。
+
+北京时间 **08:49:02—08:49:23**，配对API/worker升级至 **research-openim-api:peer-library-20261023** / **sha256:2677f6936ae5ff05c229a88a8a5c161c0f06570cb77096d57f60349d4304423c**，contract0.30.0/schema026。21秒是最终成功切换窗口，另有首轮停止/恢复旧服务的中断，不称本批总中断仅21秒。正式停写迁移前后旧100表结构/全行哈希、7原件内容/权限及001—025历史校验和保持，新增3协调表后103表，integrity/外键正常；16份既有配置/密钥文件哈希/权限、API/worker环境/挂载等设置与其他6服务保持。个人Key/默认值、飞书连接/源/私库及目录缓存不变，1个飞书库仍owner_private。
+
+新两容器running/restart0、API healthy；公网ready200/contract0.30.0，原接口及有效合成参数的新请求接口未登录401。DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified，无新增真实模型探测。广场实际enabled=false/state=disabled/nextCheckAt=null，11目录/19候选缓存保持，正常科研/提醒配置保留。Compose保留完整原链并在lab-membership-v2后追加peer-library-20261023-v2/images.yaml；原current/Nginx/静态网页保持。
+
+正式备份 **/srv/research-openim-backups/peer-library-20261023-20261023T004905Z/research.tar.gz**，SHA256 **d305b1449e26f8741b9a473554a29ac5ec580c84a6f8c4a2af70e52d89a44553**，有同机配置副本/校验清单与独立恢复验证，不称异地/整栈灾备。服务器首轮证据/opt/research-openim/ops/peer-library-20261023，最终同级peer-library-20261023-v2；本机Git外D:/deepseek-agent/.runtime/peer-library-20261023保存升级包/脚本、失败说明、脱敏摘要和截图。026新写入后禁止直接换025镜像或回灌旧快照，须保全数据前向修复或单独协调兼容恢复。
+
+更新current-state、实现说明、路线图、交接及[部署记录](deployment/peer-library-20261023.md)，只作文档/PR状态同步，不合并main、不公开Release、不重打或代安装。桌面0.10.35包大小/SHA保持，公开仍v0.10.34；双方需新客户端运行并切同组、本人授权专用目录。未追加浏览器产品、安装载荷/原生启动/安装后体验、真实账号/材料/模型或双机WebRTC联网验收，不把部署成功当成NAT穿透/实际体验通过。注册超时未定因、飞书本人试点边界保持。

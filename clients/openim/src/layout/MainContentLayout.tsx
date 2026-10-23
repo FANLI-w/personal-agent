@@ -6,6 +6,8 @@ import { useEffect } from "react";
 
 import { useUserStore } from "@/store";
 
+import { PeerLibraryBridge } from "@/research/PeerLibraryBridge";
+
 import LeftNavBar from "./LeftNavBar";
 import TopSearchBar from "./TopSearchBar";
 import { useGlobalEvent } from "./useGlobalEvents";
@@ -45,6 +47,7 @@ export const MainContentLayout = () => {
   return (
     <Spin className="!max-h-none" spinning={showLockLoading} tip={loadingTip}>
       <Layout className={`h-full ${window.electronAPI ? "personal-agent-desktop" : ""}`}>
+        {researchMode && <PeerLibraryBridge />}
         <TopSearchBar />
         {researchMode && <MobileNavigation />}
         <Layout>

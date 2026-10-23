@@ -1,0 +1,7 @@
+.peer-library-panel { width: 100%; overflow-y: auto; padding: 20px 24px 36px; display: flex; flex-direction: column; gap: 20px; color: #233535;
+ h2 {font-size:24px;font-weight:650;} h3 {font-size:17px;font-weight:600;margin-bottom:10px;} p {color:#697a89;margin:8px 0;overflow-wrap:anywhere;} small {display:block;color:#697a89;line-height:1.6;margin-top:10px;}
+ .peer-library-setting,.peer-library-ask,.peer-library-requests article {border:1px solid #dce6ed;border-radius:16px;padding:18px;background:#fff;}
+ .peer-library-setting .ant-space {display:flex;margin-top:12px;} .peer-library-ask {display:grid;gap:12px;} .peer-library-ask>.ant-btn {justify-self:start;}
+ .peer-library-requests article {margin-top:12px;} .peer-library-file {display:flex;align-items:center;justify-content:space-between;gap:14px;margin:10px 0;padding:10px 0;border-bottom:1px solid #edf1f5;} .peer-library-file span {min-width:0;overflow-wrap:anywhere;}
+}
+@media(max-width:720px){.peer-library-panel{padding:12px; .peer-library-file{align-items:flex-start;flex-direction:column;}}}

@@ -18,6 +18,8 @@ import {
 import { useResearchContactChat } from "./useResearchContactChat";
 import { CreatedAgentChatButton } from "./CreatedAgentChatButton";
 import { PersonalReceiptCard } from "./PersonalReceiptCard";
+import { peerChatRequest } from "./peer-library-runtime";
+import { PeerLibraryChatLink } from "./PeerLibraryPanel";
 import { registerAgentProgress } from "./agent-progress";
 import { groupMentions } from "./group-mentions";
 
@@ -253,7 +255,7 @@ export function useResearchComposer() {
           body: {
             text,
             ...(external ? { externalConsent: true } : { continuous: true }),
-            ...(skillChat.selection ? { skill: skillChat.selection } : {}),
+            ...(skillChat.selection ? { skill: skillChat.selection } : !external && peer?.profile.role === "coordinator" && peerChatRequest(text) ? { peerFileRequest: peerChatRequest(text) } : {}),
           },
         };
   };
@@ -392,6 +394,7 @@ export function useResearchComposer() {
             )}
           </div>
         )}
+        {isDirectAgent && !external && peer?.profile.role === "coordinator" && <PeerLibraryChatLink />}
         {currentTurn && (
           <div className="mx-3">
             <PersonalReceiptCard turn={currentTurn} compact />

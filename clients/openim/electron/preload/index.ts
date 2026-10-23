@@ -150,6 +150,16 @@ const Api: IElectronAPI = {
     ipcRenderer.invoke("open-desktop-report", scope, id),
   revealDesktopReport: (scope, id) =>
     ipcRenderer.invoke("reveal-desktop-report", scope, id),
+  peerLibrary: {
+    folder: (scope) => ipcRenderer.invoke("peer-library-folder", scope),
+    configure: (scope, automatic) => ipcRenderer.invoke("peer-library-configure", scope, automatic),
+    revoke: (scope) => ipcRenderer.invoke("peer-library-revoke", scope),
+    search: (scope, request) => ipcRenderer.invoke("peer-library-search", scope, request),
+    read: (scope, requestId, fileId) => ipcRenderer.invoke("peer-library-read", scope, requestId, fileId),
+    save: (scope, request, file, bytes) => ipcRenderer.invoke("peer-library-save", scope, request, file, bytes),
+    received: (scope) => ipcRenderer.invoke("peer-library-received", scope),
+    open: (scope, id) => ipcRenderer.invoke("peer-library-open", scope, id),
+  },
   pickLocalFolder: () => ipcRenderer.invoke("pick-local-folder"),
   readLocalFolderSelection: (request) =>
     ipcRenderer.invoke("read-local-folder-selection", request),

@@ -1,6 +1,6 @@
 # AcceptCat 新聊天交接 prompt
 
-2026-10-22（北京时间）。协作流程以根目录[CONTRIBUTING.md](../../CONTRIBUTING.md)为准，当前事实以[项目状态](../current-state.md)为准。下方内容可复制到负责人新聊天；外部合作者将本机目录替换为自己的克隆目录，明确本人负责的任务，并按Fork的origin/upstream关系操作。
+2026-10-23（北京时间）。协作流程以根目录[CONTRIBUTING.md](../../CONTRIBUTING.md)为准，当前事实以[项目状态](../current-state.md)为准。下方内容可复制到负责人新聊天；外部合作者将本机目录替换为自己的克隆目录，明确本人负责的任务，并按Fork的origin/upstream关系操作。
 
 ```text
 请接手 AcceptCat 项目，接着处理我随后给出的需求。
@@ -26,8 +26,9 @@
 当前交付事实：
 - main已按本人指令以merge commit合入PR89（2498a486848258086968baf5f310e35746605910），保留同事PR86与资料/课题组功能及原作者记录；当前公开Latest仍v0.10.34，发布标签固定e4bdbe689ec94b9de5b90ff9dee5e0d4ed5ed96d，main后续可有文档提交，开始前仍需fetch实际最新状态。
 - 本机安装包：C:\Users\luo\Desktop\AcceptCat_0.10.34.exe；发布页：https://github.com/luoyan96/personal-agent/releases/tag/v0.10.34 。后续是否仍是最新版须按实际状态确认。
+- 后续候选：feat/peer-local-library的PR91待审阅，产品09ffb44、本机Windows0.10.35已打包，配套contract0.30/schema026已按本人单独授权部署；提供同组本机目录授权、聊天索取、直传与本机原件打开。真实双机与安装体验由本人检查；候选包尚未公开为Latest。详情见docs/development/peer-local-library.md与current-state。
 - 最近改动：整合同事PR86聊天交互、独立资料页面、飞书库打开/复制与明确课题组共享、自助课题组创建/已有账号邀请接受。个人和自建Agent、聊天式规划与资料交互保持。
-- 已部署后台为contract0.29/schema025、DSH0.2.1-rc.2/Cordis4.0.5，镜像0212513c及一致备份/恢复见current-state；本次0.10.34纯客户端整合没有再次部署。广场每日同步已关闭，后续维护保持GITHUB_CATALOG_SYNC=0。
+- 已部署后台为contract0.30/schema026、DSH0.2.1-rc.2/Cordis4.0.5，镜像2677f693；2026-10-23的停写备份/独立恢复与正式迁移保全见docs/deployment/peer-library-20261023.md。旧100表/7原件、私人配置/飞书授权与其他6服务保持，原失败探测记录保留。广场每日同步仍关闭，后续维护保持GITHUB_CATALOG_SYNC=0；026新写入后不能直接回灌旧025快照。
 
 尚未完成及边界：
 - 他人注册新账号超时根因尚未确认，仍待对方设备的具体错误、安装版本和同机连接信息；不能宣布已修复。

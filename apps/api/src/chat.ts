@@ -1,3 +1,4 @@
+import {PeerLibraryService} from './peer-library.js'
 import {hasLabMembership} from './lab-access.js'
 import {skillContext,type SkillCall} from './skills.js'
 import { captureResearchSnapshot, libraryHistoryCurrent } from './research-chat-context.js'
@@ -616,6 +617,14 @@ export class ChatService {
       for(const row of active)if(row!==pending)supersedeTurn(this,String(row.id))
       const message = this.message(id, { senderContactId: this.human().id, origin: 'human', text: input.text, mentions: input.mentions, resources: input.context, actionIds: [], turnId: null })
       const agent=input.agentContactId?this.contact(input.agentContactId):null
+      const peerFileRequest=name==='agentChatMessage'?(b as RequestFor<'agentChatMessage'>['body']).peerFileRequest:undefined
+      if(peerFileRequest){
+        if(external||skill||group.kind!=='personal'||group.ownerMemberId!==this.c.actor.id||agent?.profile.role!=='coordinator'||agent.identity.kind!=='personal_agent'||agent.identity.ownerMemberId!==this.c.actor.id||(b as {fileSelection?:unknown}).fileSelection)fail('FORBIDDEN')
+        const request=new PeerLibraryService(this.db,this.c.actor,this.c.actor.csrfHash,this.config,true).run('createPeerRequest',{params:{},query:{},headers:{'Idempotency-Key':message.id},body:peerFileRequest}) as {data:{id:string;providerName:string}}
+        const turn=this.newTurn(group,message,agent.id,{budget:input.budget!,context:[],conversationVersion:group.version,inputSequence:message.sequence,dailyChat:true,personalAssistant:true})
+        const response=this.message(group.id,{senderContactId:agent.id,origin:'service',text:`已向${request.data.providerName}请求“${peerFileRequest.query}”。等待对方设备上线或本人同意；收到后保存到你的电脑。可在“资料 → 同事资料”查看进度。\n请求 ${request.data.id}`,mentions:[],resources:[],actionIds:[],turnId:turn.id})
+        turn.status='succeeded';turn.failure=null;turn.outputMessageId=response.id;turn.version++;turn.updatedAt=instant();this.saveTurn(turn);message.turnId=turn.id;this.db.prepare('UPDATE chat_messages SET document=? WHERE id=?').run(encode(legacyChatMessage(message)),message.id);return {data:{message:this.projectedMessage(message.id),turn:this.turn(turn.id)}}
+      }
       const purpose=name==='agentChatMessage'&&!skill&&!(b as {fileSelection?:AgentFileSelection}).fileSelection&&group.kind==='personal'&&group.ownerMemberId===this.c.actor.id&&agent?.identity.kind==='personal_agent'&&agent.identity.ownerMemberId===this.c.actor.id&&agent.profile.role==='coordinator'&&isAgentCreationCommand(input.text)?'create_agent' as const:undefined
       // A fresh explicit creation/work imperative after small talk is a new
       // request, not permission inferred from a quoted/older first sentence.

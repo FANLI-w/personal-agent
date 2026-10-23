@@ -85,3 +85,8 @@ Versioned adaptive replies, planning intents, durable public execution and evide
 
 
 B4a精确来源撤回、历史修订、样例授权、配置代次及原key重放见 [B4a权限与联调](../../docs/development/b4a-handoff.md)。规划上下文改为显式taskIds/conclusionRefs；不自动装入历史结论。
+
+
+## PEER1 · 0.30.0
+
+Same-group local material requests use device/session-bound metadata and bounded WebRTC signaling only. No file bytes or local paths are stored by these endpoints. Live membership and captured membership versions precede idempotent replay; renewals/signaling are immediate session operations. Optional agentChatMessage.peerFileRequest is owner-coordinator-only. Schema026 adds three coordination tables without rewriting existing data; see [implementation and limits](../../docs/development/peer-local-library.md).

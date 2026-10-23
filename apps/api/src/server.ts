@@ -1,6 +1,7 @@
 import { ReuseService, reuseCommands } from './reuse.js'
 import {labMembershipCommands,runLabMembership,type LabMembershipCommand} from './lab-membership.js'
 import {teamLabId} from './lab-access.js'
+import {PeerLibraryService} from './peer-library.js'
 import type { ReuseCommand } from './reuse.js'
 import { AiService, aiCommands } from './ai.js'
 import type { AiCommand } from './ai.js'
@@ -207,6 +208,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
         if (route.method !== 'GET') requireCsrf(actor, request.headers['x-csrf-token'])
         if (name === 'session') return routes.session.response.parse({ data: { member: new Collaboration(connection, actor).member(actor.id), csrfToken: csrfToken(connection, token), expiresAt: actor.expiresAt, isLabManager:isLabManager(connection,actor), spaceKind:connection.prepare('SELECT 1 FROM personal_spaces WHERE lab_id=?').get(teamLabId(actor))?'personal':'laboratory' } })
         if((labMembershipCommands as readonly string[]).includes(name))return runLabMembership(connection,actor,name as LabMembershipCommand,parsed.data as RequestFor<LabMembershipCommand>)
+        if(route.stage==='PEER1')return route.response.parse(new PeerLibraryService(connection,actor,actor.csrfHash,config).run(name as keyof typeof import('@research-agent-platform/contracts').peerLibraryRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').peerLibraryRoutes>))
         if (name === 'logout') {
           connection.prepare('UPDATE sessions SET revoked_at=? WHERE token_hash=?').run(new Date().toISOString(), hash(token))
           reply.header('Set-Cookie', cookie('', 0)); return { data: { loggedOut: true } }
