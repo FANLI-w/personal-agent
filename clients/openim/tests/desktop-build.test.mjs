@@ -95,8 +95,9 @@ test('checks the actual archive, not just the staging directory', async t => {
   const clientRequire=createRequire(path.join(actualClient,'package.json'));
   const asar=createRequire(clientRequire.resolve('electron-builder/package.json'))('asar');
   f.put('archive-source/package.json','{}');
+  f.put('archive-source/nested/folder/entry.cjs','module.exports={}');
   const archive=path.join(f.temporary,'app.asar');await asar.createPackage(path.join(f.workspace,'archive-source'),archive);
-  verifyArchiveEntries(archive,['package.json'],asar);
+  verifyArchiveEntries(archive,['package.json','nested/folder/entry.cjs'],asar);
   assert.throws(()=>verifyArchiveEntries(archive,['node_modules/@research-agent-platform/research-skills/dist/import.cjs'],asar));
 });
 

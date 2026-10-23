@@ -112,7 +112,13 @@ export function runtimeEntryFiles(staging) {
 
 export function verifyArchiveEntries(archive, entries, asar) {
   for (const entry of entries) {
-    const info = asar.statFile(archive, entry);
+    let info;
+    try {
+      // asar 3 uses the host path separator internally, including on Windows.
+      info = asar.statFile(archive, path.normalize(entry));
+    } catch (error) {
+      throw Error(`Missing packaged runtime entry: ${entry}`, { cause: error });
+    }
     if (!info || info.size <= 0 || info.link) throw Error(`Missing/invalid packaged runtime entry: ${entry}`);
   }
   console.log(`Verified ${entries.length} required entries in ${archive}`);
