@@ -43,7 +43,7 @@
     "test:auth": "node --test tests/auth-input.test.mjs",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx src",
     "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx --fix --quiet src",
-    "prepare": "husky install"
+    "prepare": "node scripts/prepare-hooks.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.4",

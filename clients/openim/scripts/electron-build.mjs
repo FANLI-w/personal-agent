@@ -269,6 +269,7 @@ if (!dryRun) {
     path.join(repoRoot, "node_modules", "vite", "bin", "vite.js"),
     "build",
   ]);
+  run(process.execPath, [path.join(repoRoot, 'scripts/check-web-build.mjs')]);
 }
 
 if (dryRun) verifyWorkspaceOutputs(repoRoot);

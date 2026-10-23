@@ -76,6 +76,8 @@ corepack pnpm@10.28.0 run build:web
 
 不要用 `install --force` 作为共享包刷新步骤，也不要删除或浮动更新锁文件。正常冻结安装即可切换这两个链接；工具组件不一致时应先保留失败日志，再在独立干净目录使用同一固定提交和冻结锁文件重建。客户端构建环境与Windows安装后行为分开记录，不能据 `--force` 或某个报错单独判定NSIS故障根因。
 
+客户端嵌在主仓库内，`prepare`会跳过上游仅适用于独立Git仓库的Husky安装，不修改主仓库的Git hooks配置；它不会跳过Electron、esbuild或koffi等正常依赖安装步骤。
+
 [Windows desktop package](.github/workflows/desktop.yml)在相关PR和main改动上使用干净Windows checkout，执行上述准备、客户端类型/构建守卫、NSIS和成品/更新清单检查，并保存7天CI产物；不会自动发布Release。根Foundation CI继续覆盖科研后端与共享包，不等同于客户端打包检查。实际安装、原生启动与产品体验按维护者当次安排验证。
 
 客户端改动还需验证实际交互和桌面 / 窄屏布局。现有根 Actions 不覆盖完整客户端构建，在 PR 中附上上述客户端检查的真实结果。构建成功不等于原生安装包、真实 SDK 或模型效果通过。

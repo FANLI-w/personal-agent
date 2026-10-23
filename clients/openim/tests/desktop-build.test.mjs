@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { verifyWorkspaceLinks, verifyWorkspaceOutputs, verifyBuilderToolchain, runtimeEntryFiles, verifyArchiveEntries, runPnpm } from '../scripts/workspace-build.mjs';
 
 function fixture(t) {
@@ -102,4 +103,11 @@ test('checks the actual archive, not just the staging directory', async t => {
 test('rejects shell metacharacters before invoking a package manager', t => {
   const f=fixture(t);
   assert.throws(()=>runPnpm(f.client,['install','--force&echo']),/Unexpected build command argument/);
+});
+
+test('a fresh monorepo install skips standalone Husky without looking for Git inside the client', t => {
+  const f=fixture(t),client=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+  const script=f.put('clients/openim/scripts/prepare-hooks.mjs',readFileSync(path.join(client,'scripts/prepare-hooks.mjs'),'utf8'));
+  const result=spawnSync(process.execPath,[script],{cwd:f.client,encoding:'utf8',env:{...process.env,CI:'',HUSKY:''}});
+  assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/Skip standalone Husky setup/);
 });
