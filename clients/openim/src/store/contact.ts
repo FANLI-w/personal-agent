@@ -138,7 +138,13 @@ export const useContactStore = create<ContactStore>()((set, get) => ({
   getRecvFriendApplicationListByReq: async () => {
     try {
       const { data } = await IMSDK.getFriendApplicationListAsRecipient();
-      set(() => ({ recvFriendApplicationList: data }));
+      set(() => ({
+        recvFriendApplicationList: data,
+        unHandleFriendApplicationCount: data.filter(
+          (application) =>
+            application.handleResult === ApplicationHandleResult.Unprocessed,
+        ).length,
+      }));
     } catch (error) {
       console.error(error);
     }
@@ -180,7 +186,13 @@ export const useContactStore = create<ContactStore>()((set, get) => ({
   getRecvGroupApplicationListByReq: async () => {
     try {
       const { data } = await IMSDK.getGroupApplicationListAsRecipient();
-      set(() => ({ recvGroupApplicationList: data }));
+      set(() => ({
+        recvGroupApplicationList: data,
+        unHandleGroupApplicationCount: data.filter(
+          (application) =>
+            application.handleResult === ApplicationHandleResult.Unprocessed,
+        ).length,
+      }));
     } catch (error) {
       console.error(error);
     }

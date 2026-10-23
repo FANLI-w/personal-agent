@@ -305,7 +305,11 @@ const ChatFooter = () => {
       setHtml("");
       void pump();
     } catch (error) {
-      feedbackToast({ error, msg: "发送失败，输入已保留" });
+      const reason = error instanceof Error ? error.message : "";
+      feedbackToast({
+        error,
+        msg: reason ? `${reason}（输入已保留）` : "发送失败，输入已保留",
+      });
     }
   };
   const retrySubmission = (item: ChatSubmission) => {

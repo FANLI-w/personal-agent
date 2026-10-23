@@ -133,7 +133,12 @@ const SendActionBar = ({
             mentionIntent.current = open ? captureOperation() : undefined;
             setMentionOpen(open);
           }} trigger="click" placement="top" arrow={false}>
-            <button type="button" className={toolbarClass} aria-label="提及成员" title="提及成员"><span className="font-semibold">@</span>{window.electronAPI && <span>提及</span>}</button>
+            <button type="button" className={toolbarClass} aria-label="提及成员" title="提及成员">
+              <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true">
+                <text x="12" y="18" textAnchor="middle" fontSize="24" fontWeight="700" fill="currentColor">@</text>
+              </svg>
+              {window.electronAPI && <span>提及</span>}
+            </button>
           </Popover>
         )}
         <LocalFolderAction sendFile={sendFile} />
