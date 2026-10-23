@@ -2,7 +2,17 @@
 
 更新日期：2026-10-23（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 最新本地候选0.10.35：同组 Agent 索取本机原件，PR91待审阅
+## 最新后台：0.30/schema026已部署，本机0.10.35候选与PR91待审阅
+
+用户单独授权“后台可以升级”后，已于北京时间 **2026-10-23 08:49:02—08:49:23**完成配对API/worker正式迁移切换，镜像 **research-openim-api:peer-library-20261023** / **sha256:2677f6936ae5ff05c229a88a8a5c161c0f06570cb77096d57f60349d4304423c**，contract **0.30.0**、schema **026**。新接口可供已打包的0.10.35客户端使用；[完整部署记录](deployment/peer-library-20261023.md)。以原生产镜像叠加11份已审运行源码，保留运营种子、飞书/模型及既有功能，不整树覆盖。DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified。
+
+Linux离线编译、107份基线源码守卫、11份变更/164份编译校验及37项隔离检查通过。停写排空、一致备份、独立恢复/副本迁移和正式026迁移核对旧100表结构/全行、7份原件与旧25迁移历史保持，新增3表共103表，integrity/外键正常；16份配置/密钥文件哈希与权限、API/worker运行配置及其他6服务保持。个人Key/默认值、飞书连接/私库与目录缓存不变，1个飞书库仍owner_private；广场实际enabled=false/state=disabled/nextCheckAt=null。两服务running/restart0、API healthy，公网ready200/contract0.30.0，新接口有效合成参数未登录401。
+
+首轮运维副本探测漏必填deviceId而收到400，正式迁移前中止并恢复旧服务；原失败包/日志/备份保留。补参数先复核恢复副本，再重新备份并正式升级；上述21秒只指最终切换，不含首次恢复旧服务的短暂停服。正式备份 **/srv/research-openim-backups/peer-library-20261023-20261023T004905Z/research.tar.gz**，SHA256 **d305b1449e26f8741b9a473554a29ac5ec580c84a6f8c4a2af70e52d89a44553**；同ECS备份与恢复验证，不称异地灾备。有效Compose链末尾追加peer-library-20261023-v2/images.yaml，原current/静态网页不变；026新写入后不能直接换025镜像/回灌旧快照。
+
+服务器证据 **/opt/research-openim/ops/peer-library-20261023-v2**，首轮同级peer-library-20261023；本机Git外 **D:/deepseek-agent/.runtime/peer-library-20261023**。本批仅后台升级及状态记录，未合并PR91、重打/代安装或公开发布；GitHub重新读取Latest仍v0.10.34。按用户安排没有追加产品/真实账号/私人材料/模型/原生或双机联网验收，实际直连与体验由用户检查。
+
+## 本机候选0.10.35：同组 Agent 索取本机原件，配套后台已升级
 
 负责人同意在本机保存基础上，通过个人助理向同组同事索取资料，减少平台云端原件存储。核对干净main/e393247与主仓库origin后fetch，从最新main新建 `feat/peer-local-library`；功能与安装包产品源码 **09ffb44053dacf32c7626fc75e7ec7fb8b2b25d0**，后续 **332f12434e8f14d64d20197d097da032b0fc5e22**仅同步生产CLI迁移测试预期。[PR91](https://github.com/luoyan96/personal-agent/pull/91)目标main，已提交未合并；后续同事Android分支未纳入本需求，也未改其目录。原PR89聊天、资料、课题组功能保持。
 
@@ -12,7 +22,7 @@
 
 最终 `pnpm run ci` **762项/59文件**、2项生产CLI/HTTP、B0及生产无夹具检查通过；新增025→026重复迁移核对旧表/原件保持。客户端renderer/Electron类型、**13项**定向检查（8项本机/分块/身份/意图、2 service、3 auth）、生产Web/4 SDK资源、55运行包与NSIS通过。首轮23项旧迁移夹具/版本stage预期失败，次轮762项通过后生产CLI仍预期025；逐处精确同步026，旧行/密文/哈希不变断言保留，第三轮完整CI通过。原失败日志保留Git外 **D:/deepseek-agent/.runtime/peer-library-20261023**。本机文件与HTTP为真实隔离合成数据，Electron网络为替身；依用户安排未追加浏览器产品、安装载荷、原生启动、真实用户/资料/模型或双机WebRTC联网验收，不能宣称实际穿透/使用体验已通过。
 
-桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.35.exe**，**87,409,212字节**，SHA256 **c575ba661e12d3548a9262f8fa91a630dabe0b7318cac94c90a4c0a89dfebe1c**；本机已打包并复制，未代安装，旧包保留。需配套后台升级才能使用本次新功能；本批未部署/迁移/新增生产探测，后台沿上次记录0.29/schema025与0212513c镜像，广场同步关闭不变。GitHub实际核对公开Latest仍v0.10.34，无新公开Release或更新源；PR、安装包、后台、公开发布分别记录。
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.35.exe**，**87,409,212字节**，SHA256 **c575ba661e12d3548a9262f8fa91a630dabe0b7318cac94c90a4c0a89dfebe1c**；本机已打包并复制，未代安装，旧包保留。随后按用户单独授权部署配套0.30/schema026，实际后台状态见本页开头；广场同步仍关闭。GitHub实际核对公开Latest仍v0.10.34，无新公开Release或更新源；PR、安装包、后台、公开发布分别记录。
 
 ## main已按用户指令合并PR89，双方功能与提交记录保留
 
