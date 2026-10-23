@@ -1576,3 +1576,5 @@ current-state、项目日志、路线图、实现/部署说明和新聊天交接
 桌面C:/Users/luo/Desktop/AcceptCat_0.10.36.exe，87,411,073字节，SHA256 16bb950c2741c5b9037576b573b8770875398e2af883ea20bf2437f8c9a9eeca；复制前确认目标不存在、复制后校验，旧包与用户附件保持。Git外D:/deepseek-agent/.runtime/desktop-build-20261023保存初始附件比对、原失败、最终构建/类型/测试/更新核对和delivery.json。更新current-state、路线图、交接与[0.10.36交付记录](deployment/acceptcat-0.10.36.md)；内容检查246份Markdown/10份Skill及diff检查通过，源码通过独立PR审阅，不自动合并。
 
 本批仅本机候选，公开Latest重新读取仍v0.10.34，未公开Release/推版本标签或部署后台；线上沿此前0.30/schema026/2677f693记录，本批未探测。没有代安装、原生/浏览器产品、真实账号/资料/模型或双机验收，安装体验由本人检查。NSIS关闭循环与force导致组件混用的因果仍未验证，不宣布该现场故障已消失。聊天/资料/课题组双方功能、广场同步关闭、注册超时未定因与飞书本人试点边界保持。
+
+随后普通push修复分支，使用既有GitHub CLI创建并挂接[PR93](https://github.com/luoyan96/personal-agent/pull/93)，目标main。首次回读ec8755b为OPEN/MERGEABLE，三项Foundation与新增Windows打包工作流均运行中，未称通过；pr93-initial.json留存Git外。PR未合并，没有将安装包作为源码或公开Release上传。

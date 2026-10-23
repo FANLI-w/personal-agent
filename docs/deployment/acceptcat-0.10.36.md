@@ -44,8 +44,10 @@ Windows/Node24.19.0，本机Git外证据 **D:/deepseek-agent/.runtime/desktop-bu
 | SHA256 | `16bb950c2741c5b9037576b573b8770875398e2af883ea20bf2437f8c9a9eeca` |
 | 源码 | 62d73f61f7da123aac36f747fab13c0bb08a883d，独立修复分支 |
 | 本机证据 | Git外desktop-build-20261023，含原失败/最终复跑、哈希与delivery.json |
-| main | 本批尚未合并，保留PR审阅流程 |
+| main | [PR93](https://github.com/luoyan96/personal-agent/pull/93)已提交/挂接，开放、无冲突，尚未合并 |
 | 公开Release | 重新读取Latest仍[v0.10.34](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.34)，0.10.36未公开发布 |
 | 后台 | 沿已部署0.30/schema026/2677f693记录，本批未操作、重启、迁移或新增探测 |
 
 复制桌面前确认新目标不存在，复制后核对SHA256一致，不覆盖0.10.35或用户附件。安装包/运行证据不进入Git。注册超时未定因、飞书本人试点、广场同步关闭及资料直连/NAT边界沿既有状态。
+
+PR93创建后首次读回head ec8755b，三项Foundation与新Windows打包工作流均IN_PROGRESS，未结束不计通过；`pr93-initial.json`保留回执，后续状态以PR检查和相应head为准。公开安装包未上传，新工作流生成的是CI附件。
