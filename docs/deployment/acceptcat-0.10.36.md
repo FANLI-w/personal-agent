@@ -51,3 +51,9 @@ Windows/Node24.19.0，本机Git外证据 **D:/deepseek-agent/.runtime/desktop-bu
 复制桌面前确认新目标不存在，复制后核对SHA256一致，不覆盖0.10.35或用户附件。安装包/运行证据不进入Git。注册超时未定因、飞书本人试点、广场同步关闭及资料直连/NAT边界沿既有状态。
 
 PR93创建后首次读回head ec8755b，三项Foundation与新Windows打包工作流均IN_PROGRESS，未结束不计通过；`pr93-initial.json`保留回执，后续状态以PR检查和相应head为准。公开安装包未上传，新工作流生成的是CI附件。
+
+## 后续：新Windows打包CI实际通过
+
+head **9402bfd9fa890af0a6c24199258bdc80650bb87d** 的[运行39943780240](https://github.com/luoyan96/personal-agent/actions/runs/39943780240)于北京时间 **2026-10-23 19:09:34**完成，结论success。干净checkout完整准备、双类型及8项构建守卫、4SDK/55运行包/NSIS/4成品入口、更新清单都通过；`windows-desktop-package`附件 **12497187962**成功上传，保留7天，没有创建Release。独立GitHub产物不与桌面包作字节一致声明，也未安装/启动。
+
+`desktop-ci-progress.json`、`github-desktop-ci.log`和`pr93-checks-latest.json`保留实际回执。该次读回两项Linux Foundation success，Windows Foundation仍运行中，不能据Windows打包成功称所有CI已通过；后续结果需对应具体head。
