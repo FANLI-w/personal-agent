@@ -8,6 +8,9 @@
     "node": ">=22.19.0"
   },
   "scripts": {
+    "build:desktop-deps": "corepack pnpm@11.21.0 --filter @research-agent-platform/contracts build && corepack pnpm@11.21.0 --filter @research-agent-platform/research-skills build",
+    "desktop:prepare": "node scripts/desktop-build.mjs prepare",
+    "desktop:win": "node scripts/desktop-build.mjs win",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",

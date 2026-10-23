@@ -16,6 +16,7 @@ import {
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { prepareWorkspaceForBuild, verifyWorkspaceLinks, verifyWorkspaceOutputs, verifyBuilderToolchain, runtimeEntryFiles, verifyArchiveEntries, sharedPackages } from './workspace-build.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const packagePath = path.join(repoRoot, "package.json");
@@ -203,7 +204,7 @@ const createRuntimeManifest = (rootPackage) => {
         `Electron runtime dependency ${packageName} must be declared in package.json`,
       );
     }
-    dependencies[packageName] = version;
+    dependencies[packageName] = JSON.parse(readFileSync(resolvePackageManifestPath(packageName, packagePath), 'utf8')).version;
   }
 
   const manifest = { dependencies };
@@ -259,14 +260,18 @@ const restoreStaleBackup = () => {
 
 restoreStaleBackup();
 const builderCommands = getBuilderCommands();
+verifyWorkspaceLinks(repoRoot);
+verifyBuilderToolchain(repoRoot);
 
 if (!dryRun) {
+  prepareWorkspaceForBuild(repoRoot);
   run(process.execPath, [
     path.join(repoRoot, "node_modules", "vite", "bin", "vite.js"),
     "build",
   ]);
 }
 
+if (dryRun) verifyWorkspaceOutputs(repoRoot);
 const originalPackageText = readFileSync(packagePath, "utf8");
 const rootPackage = JSON.parse(originalPackageText);
 const runtimeManifest = createRuntimeManifest(rootPackage);
@@ -277,7 +282,8 @@ const prepareRuntimeDirectory = () => {
   // as nested dependencies. Never package the development node_modules tree.
   if (
     path.dirname(stagingRoot) !== repoRoot ||
-    path.basename(stagingRoot) !== ".electron-runtime"
+    path.basename(stagingRoot) !== ".electron-runtime" ||
+    (existsSync(stagingRoot) && realpathSync(stagingRoot) !== path.join(realpathSync(repoRoot), '.electron-runtime'))
   )
     throw new Error("Unexpected Electron staging path");
   rmSync(stagingRoot, { recursive: true, force: true });
@@ -312,11 +318,22 @@ const prepareRuntimeDirectory = () => {
     if (copied.has(destination)) return;
     copied.add(destination);
     mkdirSync(path.dirname(destination), { recursive: true });
-    cpSync(path.dirname(sourceManifest), destination, {
-      recursive: true,
-      dereference: true,
-      filter: (entry) => path.basename(entry) !== "node_modules",
-    });
+    if (sharedPackages.some(([packageName]) => packageName === name)) {
+      // link: packages stay live during development. Copy only distributable
+      // files into the standalone app, never the source tree or its symlinks.
+      mkdirSync(destination, { recursive: true });
+      for (const relative of ['package.json', 'dist', 'README.md']) {
+        const source = path.join(path.dirname(sourceManifest), relative);
+        if (relative === 'README.md' && !existsSync(source)) continue;
+        cpSync(source, path.join(destination, relative), { recursive: true, dereference: true });
+      }
+    } else {
+      cpSync(path.dirname(sourceManifest), destination, {
+        recursive: true,
+        dereference: true,
+        filter: (entry) => path.basename(entry) !== "node_modules",
+      });
+    }
     for (const dependency of Object.keys(manifest.dependencies || {}))
       copyPackage(dependency, sourceManifest, destination);
     for (const dependency of Object.keys(manifest.optionalDependencies || {})) {
@@ -352,6 +369,7 @@ if (dryRun) {
 let exitCode = 0;
 try {
   prepareRuntimeDirectory();
+  const requiredEntries = runtimeEntryFiles(stagingRoot);
   const electronVersion = JSON.parse(
     readFileSync(resolvePackageManifestPath("electron", packagePath), "utf8"),
   ).version;
@@ -368,6 +386,10 @@ try {
       path.join(repoRoot, "release", "Base", rootPackage.version),
       ...args,
     ]);
+    if (args.includes('--win') || (process.platform === 'win32' && !args.some(arg => ['--mac', '--linux'].includes(arg)))) {
+      const builderRequire = createRequire(resolvePackageManifestPath('electron-builder', packagePath));
+      verifyArchiveEntries(path.join(repoRoot, 'release', 'Base', rootPackage.version, 'win-unpacked/resources/app.asar'), requiredEntries, builderRequire('asar'));
+    }
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
