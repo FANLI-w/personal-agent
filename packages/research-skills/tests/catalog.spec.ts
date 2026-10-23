@@ -11,7 +11,7 @@ describe('packaged research skills', () => {
     const directories = (await readdir(sourceRoot)).sort()
     const skills = loadResearchSkills()
     expect(skills.map(skill => skill.name)).toEqual(directories)
-    expect(skills).toHaveLength(10)
+    expect(skills).toHaveLength(directories.length)
     for (const skill of skills) {
       const original = await readFile(join(sourceRoot, skill.name, 'SKILL.md'), 'utf8')
       const packaged = await readFile(join(skill.directory, 'SKILL.md'), 'utf8')
