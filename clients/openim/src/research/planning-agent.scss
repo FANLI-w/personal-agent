@@ -57,9 +57,18 @@
     align-items: center;
     gap: 9px;
   }
+  .planning-agent-heading > div {
+    min-width: 0;
+  }
+  .planning-agent-heading nav {
+    flex-shrink: 0;
+  }
   .planning-agent-heading strong {
     font-size: 14px;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .planning-agent-heading > div > .anticon {
     color: #5b9ecb;

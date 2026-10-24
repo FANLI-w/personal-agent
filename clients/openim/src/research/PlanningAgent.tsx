@@ -10,7 +10,7 @@ import {
   StopOutlined,
   UpOutlined,
 } from "@ant-design/icons";
-import type { ResponseFor } from "@research-agent-platform/contracts";
+import { agentStyleInstruction, type ResponseFor } from "@research-agent-platform/contracts";
 import type { TextAreaRef } from "antd/es/input/TextArea";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -49,9 +49,14 @@ import type {
   SendIntent,
 } from "./planner-chat";
 import "./planning-agent.scss";
+import { prepareColleagueAgent, type ColleagueAgent } from "./agentStarterProfiles";
+import { planningAgentStarter } from "./agentStarterProfiles";
+import { useAgentStarterLinks } from "./useAgentStarterLinks";
+import { AgentColleagueSettings } from "./AgentColleagueSettings";
 
 type Props = {
   available: boolean;
+  colleagueAvailable: boolean;
   full: boolean;
   focus: number;
   planId?: string;
@@ -95,6 +100,7 @@ export function PlanningAgent(props: Props) {
 }
 function PlanningAgentSession({
   available,
+  colleagueAvailable,
   full,
   focus,
   planId: adoptPlan,
@@ -123,6 +129,10 @@ function PlanningAgentSession({
   const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [omitted, setOmitted] = useState(0);
+  const [colleague, setColleague] = useState<ColleagueAgent>();
+  const { links, remember } = useAgentStarterLinks(actor.member.id);
+  const remembered = useRef(links[planningAgentStarter.id]);
+  const creationKey = useRef(crypto.randomUUID());
   const input = useRef<TextAreaRef>(null),
     messages = useRef<HTMLDivElement>(null),
     locked = useRef(false);
@@ -130,6 +140,19 @@ function PlanningAgentSession({
   latest.current = history;
   const thread = history.threads.find((t) => t.id === history.active)!;
   const operation = usePersonalOperation(available, `planning-chat:${thread.id}`);
+  const prepareColleague = async (isCurrent: () => boolean, create = true) => {
+    const result = await prepareColleagueAgent({ api: researchApi, actorId: actor.member.id, starter: planningAgentStarter, rememberedId: remembered.current, creationKey: creationKey.current, isCurrent, create });
+    if (result && isCurrent()) {
+      remembered.current = result.agent.id;
+      remember(planningAgentStarter.id, result.agent.id);
+      setColleague(result);
+    }
+    return result;
+  };
+  useEffect(() => {
+    const captured = operation.capture();
+    void prepareColleague(captured.isCurrent, false).catch(() => { /* Sending or opening settings reports current errors. */ });
+  }, []);
   const update = (change: (value: PlannerThread) => PlannerThread) =>
     setHistory((h) => ({
       ...h,
@@ -368,8 +391,7 @@ function PlanningAgentSession({
       }
     }
   };
-  const dispatch = (intent: SendIntent) =>
-    void run(async (isCurrent) => {
+  const submit = async (intent: SendIntent, isCurrent: () => boolean) => {
       let response: ResponseFor<"planRequest">;
       try {
         if (intent.body.labId !== actor.member.labId)
@@ -410,7 +432,8 @@ function PlanningAgentSession({
         requestId: response.data.id,
         handledRequest: undefined,
       }));
-    });
+    };
+  const dispatch = (intent: SendIntent) => void run(isCurrent => submit(intent, isCurrent));
   const confirm = (intent?: CreateIntent) => {
     if (
       !intent &&
@@ -458,6 +481,25 @@ function PlanningAgentSession({
       setFailure("这段对话已较长，请新建对话继续；原有方案仍保留。");
       return;
     }
+    if (agentStyleInstruction(text)) {
+      void run(async isCurrent => {
+        const mate = await prepareColleague(isCurrent);
+        if (!mate || !isCurrent()) return;
+        const receipt = (await researchApi("agentChatMessage", {
+          params: { id: mate.conversationId }, body: { text }, idempotencyKey: crypto.randomUUID(),
+        })).data;
+        if (!isCurrent()) return;
+        if (receipt.turn?.status !== "succeeded" || !receipt.turn.outputMessageId)
+          throw new Error("交流偏好暂未确认，请在助手设置的私人记忆里核对，原话已保留。");
+        const page = await researchApi("chatMessages", { params: { id: mate.conversationId }, query: { afterSequence: receipt.message.sequence, limit: 20 } });
+        if (!isCurrent()) return;
+        const reply = page.data.find(message => message.id === receipt.turn!.outputMessageId && message.origin === "service");
+        if (!reply?.text) throw new Error("偏好保存回执暂未读到，请在私人记忆里核对，原话已保留。");
+        update(t => ({ ...t, draft: t.draft.trim() === text ? "" : t.draft, messages: [...t.messages, { id: receipt.message.id, role: "user", text }, { id: reply.id, role: "service", text: reply.text! }] }));
+        setExpanded(true);
+      });
+      return;
+    }
     if (isPlannerCreateCommand(text)) {
       if (!current || current.status !== "draft" || problems.length || processing) {
         setFailure(processing ? "这轮还在回复，稍等方案出来就能创建。" : problems[0] || "我们还在讨论思路，等有具体步骤后就能创建任务。");
@@ -481,12 +523,16 @@ function PlanningAgentSession({
       setFailure("当前方案还没有核对成功，请先重新读取，避免覆盖未查看的方案。");
       return;
     }
+    if (!colleagueAvailable) {
+      setFailure("后台还未支持这位助手的统一档案。请先升级后台，当前消息、已有方案和任务都保留。");
+      return;
+    }
     const statedDeadline = plannerDeadline(text);
     const deadline = statedDeadline || thread.deadline;
     const deadlineQuestion = statedDeadline
       ? false
       : needsDeadlineClarification(text) || !!thread.deadlineQuestion;
-    try {
+    void run(async isCurrent => {
       const context = planningPrompt(
         retry ? retry.messages : thread.messages,
         text,
@@ -494,11 +540,14 @@ function PlanningAgentSession({
         deadline,
         taskDecompositionSkill,
       );
+      const mate = await prepareColleague(isCurrent);
+      if (!mate || !isCurrent()) return;
       setOmitted(context.omitted);
       const intent: SendIntent = {
         key: crypto.randomUUID(),
         body: {
           labId: actor.member.labId,
+          colleague: { contactId: mate.agent.id, conversationId: mate.conversationId },
           prompt: context.prompt,
           intent: "draft",
           plan: current ? { id: current.id, version: current.version } : null,
@@ -511,17 +560,15 @@ function PlanningAgentSession({
       update((t) => ({
         ...t,
         title: t.messages.some((m) => m.role === "user") ? t.title : text.slice(0, 38),
-        draft: retry ? t.draft : "",
+        draft: retry || t.draft.trim() !== text ? t.draft : "",
         sending: intent,
         deadline,
         deadlineQuestion,
         messages: retry ? t.messages.slice(0, -1) : [...t.messages, { id: crypto.randomUUID(), role: "user", text }],
       }));
       setExpanded(true);
-      dispatch(intent);
-    } catch (e) {
-      setFailure(e instanceof Error ? e.message : "需求未能发送，内容已保留。");
-    }
+      await submit(intent, isCurrent);
+    });
   };
   const reviewLatest = () => {
     update((t) => ({ ...t, creating: undefined }));
@@ -562,10 +609,15 @@ function PlanningAgentSession({
       <header className="planning-agent-heading">
         <div>
           <RobotOutlined />
-          <strong>任务规划 Agent</strong>
+          <strong>{colleague?.agent.displayName || planningAgentStarter.profile.displayName}</strong>
           <span>{inProgress ? "正在回复…" : "聊聊你的研究，一起想下一步"}</span>
         </div>
         <nav>
+          <AgentColleagueSettings
+            contactId={colleague?.agent.id}
+            prepare={async isCurrent => (await prepareColleague(isCurrent))?.agent}
+            onChanged={() => { const captured = operation.capture(); void prepareColleague(captured.isCurrent, false).catch(() => {}); }}
+          />
           <Popover
             trigger="click"
             placement="topRight"
@@ -648,7 +700,7 @@ function PlanningAgentSession({
                 {message.role === "user"
                   ? "我"
                   : message.role === "assistant"
-                  ? "任务规划 Agent"
+                  ? colleague?.agent.displayName || planningAgentStarter.profile.displayName
                   : "系统提示"}
               </span>
               <SafeMessageMarkdown text={index === thread.messages.length - 1 && latestFailure && result ? plannerFailureText(result) : message.text} />
@@ -872,6 +924,7 @@ function PlanningAgentSession({
           message={failure}
         />
       )}
+      {!colleagueAvailable && <p className="planning-agent-note">后台升级后，这里的研究方案助手会沿用联系人档案和私人交流偏好。已有方案与任务仍可查看。</p>}
       {members.error && (
         <p className="planning-agent-note">
           {members.error}

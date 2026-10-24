@@ -532,6 +532,7 @@ export function DesktopWorkbench() {
       {!!actor && (
         <PlanningAgent
           available={supported && availability.supports(23)}
+          colleagueAvailable={availability.supports(31)}
           full={tab === "planning" && params.get("panel") !== "scheduled"}
           focus={planningLaunch}
           onExpandedChange={setPlanningExpanded}

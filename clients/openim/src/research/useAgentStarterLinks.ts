@@ -12,7 +12,7 @@ export function useAgentStarterLinks(actorId: string | undefined) {
   const links = saved && saved.actorId === actorId ? saved.links : persisted;
   const remember = (starterId: string, contactId: string) => {
     if (!actorId) return;
-    const next = { ...links, [starterId]: contactId };
+    const next = { ...links, ...readStarterLinks(actorId), [starterId]: contactId };
     writeStarterLinks(actorId, next);
     setSaved({ actorId, links: next });
   };

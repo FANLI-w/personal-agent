@@ -4,6 +4,7 @@ import {teamLabId} from './lab-access.js'
 import {PeerLibraryService} from './peer-library.js'
 import type { ReuseCommand } from './reuse.js'
 import { AiService, aiCommands } from './ai.js'
+import { planningColleagueReader } from './planning-colleague.js'
 import type { AiCommand } from './ai.js'
 import { reconcile } from './execution-worker.js'
 import Fastify from 'fastify'
@@ -226,7 +227,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
         if(route.stage==='SKILL1'){const result=runSkills(new ChatService(collaboration,config),name as SkillCommand,parsed.data as RequestFor<SkillCommand>);reconcileChat(connection,config);return result}
         if(route.stage==='CHAT1'||route.stage==='IM1'){const result=new ChatService(collaboration,config).run(name as ChatCommand,parsed.data as RequestFor<ChatCommand>);reconcileChat(connection,config);return result}
         if((reuseCommands as readonly string[]).includes(name)){const result=new ReuseService(collaboration).run(name as ReuseCommand,parsed.data as RequestFor<ReuseCommand>);reconcile(connection,config);return result}
-        if((aiCommands as readonly string[]).includes(name))return new AiService(collaboration,labAi.enabled,labAi.model,name==='planRequest'?planningModelRuntime(connection,actor,config):undefined).run(name as AiCommand,parsed.data as RequestFor<AiCommand>)
+        if((aiCommands as readonly string[]).includes(name))return new AiService(collaboration,labAi.enabled,labAi.model,name==='planRequest'?planningModelRuntime(connection,actor,config):undefined,planningColleagueReader(new ChatService(collaboration,config))).run(name as AiCommand,parsed.data as RequestFor<AiCommand>)
         if (!(collaborationCommands as readonly string[]).includes(name)) fail('NOT_IMPLEMENTED')
         const result=collaboration.run(name as CollaborationCommand, parsed.data as RequestFor<CollaborationCommand>)
         reconcile(connection,config)
