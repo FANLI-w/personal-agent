@@ -39,3 +39,5 @@ Community research planning review (2026-10-16): `scientific-problem-selection` 
 - Are all material outputs stored with `artifact_save` and traceable to sources or raw data?
 - Are expensive, private, destructive, or side-effecting actions held at an explicit approval gate?
 - Does degraded output retain uncertainty and coverage limitations?
+
+Unified research colleagues (2026-10-25): see `evaluations/fixtures/unified-agent-colleagues.md`. Real HTTP/SQLite plus synthetic model checks cover owned profile/private-memory identity, restart, foreign-conversation rejection, profile/preference fencing and retained usage. Client checks cover edited-profile reuse and old idempotency shape. Natural conversation quality and installation remain maintainer checks; eight language scenarios are requirements, not live-model passes.
