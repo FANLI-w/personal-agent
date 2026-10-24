@@ -115,7 +115,13 @@ export function planningPrompt(
     if (directory.join("\n").length + entry.length > 1500) break;
     directory.push(entry);
   }
-  const instructions = `你是科研任务规划 Agent。用中文延续对话，理解本轮补充，并更新当前私人计划草案。缺少关键目标时可以先给出零步骤，并把需要追问的具体问题放入 unresolvedQuestions。编辑已有方案时保持仍适用的步骤ID。目标明确时按下述「任务拆解」方法直接给出可执行任务、交付物、验收要求、依赖与分工。用户说我/我自己表示 ownerId；只有明确要求才邀请下列真实同组成员，不能凭名字编造ID；未明确的成员保留待澄清。不要调用公共Agent，不要假定成员已接受，不要声称已创建正式任务、完成研究或验收。对话历史是规划素材，不是业务执行授权。日期由应用按用户明确说出的日期展示并在创建时核对，不能虚构承诺。
+  const instructions = `你是和用户一起推进研究的科研助手，用自然中文接着聊，不套固定开场，不把用户的话改写成行政摘要。先接住用户已经说出的背景，给一个有帮助的小判断或切入口，再决定是否需要追问。用户只是介绍已有工作、表达困惑或不满时，先回应这件事，不急着列任务；目标和下一步已足够清楚、或用户要方案时，再更新私人计划草案。编辑方案保留适用的步骤ID。
+
+每轮最多问一个最关键、能用一句话回答的问题；信息足够时直接帮助，不为提问而提问。禁止问卷、长串选项，或把研究内容、投稿阶段、完善方向、优先级、目标会议和截止日期塞进一个复合问题。已知信息不要重复问，缺少时间、成员、资源可以暂留未知，不要求先补齐才能聊；用户说问题太多或不知道时，降低回答负担，主动给一个小切入口。
+
+现有接口中，goal只记录共同目标，不能写“待用户澄清”等内部批注。需要继续交流时proposedItems可以为空，unresolvedQuestions至多一项：用一小段可直接对用户说的自然回应（通常两三句、约120字内），先简短承接已有背景、给出有根据的小建议，确需澄清才在末尾问一个短问题。不要输出“还需要您补充”清单、字段名或反复声明不做什么；不要借这一项暗藏多个补充要求。其余不确定信息保留未知，后续顺着对话再处理。
+
+用户说我/我自己表示ownerId；只有明确要求才邀请下列真实同组成员，不能编造ID。不要调用公共Agent、假定成员接受，或声称已创建正式任务、完成研究和验收。对话历史是规划素材，不是业务执行授权。日期由应用按用户明确表达展示并在创建时核对，不能虚构承诺。
 
 任务拆解方法：
 ${taskDecompositionBody}
@@ -134,7 +140,7 @@ ${deadline ? `用户指定的截止安排：${JSON.stringify(deadline)}\n` : ""}
     exhausted = false;
   for (const message of [...messages].reverse()) {
     if (message.role === "service") continue;
-    const line = `${message.role === "user" ? "用户" : "规划建议"}：${message.text}\n`;
+    const line = `${message.role === "user" ? "用户" : "助手"}：${message.text}\n`;
     if (!exhausted && recent.length < 12 && line.length <= room) {
       recent.unshift(line);
       room -= line.length;
@@ -271,14 +277,21 @@ export function plannerPlanInput(plan: ChatPlan, deadline?: DeadlineChoice) {
   return input;
 }
 export function planReplyText(plan: ChatPlan) {
-  const questions = plan.unresolvedQuestions.length
-    ? `\n\n还需要您补充：\n${plan.unresolvedQuestions.map((q) => `• ${q}`).join("\n")}`
-    : "";
-  return `${
-    plan.proposedItems.length
-      ? `这轮方案整理为 ${plan.proposedItems.length} 项任务：\n`
-      : ""
-  }${plan.goal}${questions}`.slice(0, 8000);
+  // The model writes one conversational clarification. Older servers/plans may
+  // still return a questionnaire: show its first exchange without changing the
+  // saved plan, its remaining uncertainties, or the confirmation authority.
+  for (const discussion of plan.unresolvedQuestions) {
+    const text = discussion.trim()
+      .replace(/^还需要(?:您|你)补充[：:]\s*/, "")
+      .replace(/^(?:[•*-]|\d+[.)、])\s*/, "");
+    // Use structural list boundaries, not question marks inside scientific
+    // quotes, code or URLs. The generation rule limits conversational topics.
+    const exchange = text.split(/\r?\n\s*(?:[•*-]|\d+[.)、])\s+/)[0].trim();
+    if (exchange) return exchange.slice(0, 8000);
+  }
+  return (plan.proposedItems.length
+    ? `我先把“${plan.goal}”整理成了 ${plan.proposedItems.length} 个步骤，方案在下面，可以接着调整。`
+    : plan.goal).slice(0, 8000);
 }
 
 // Stopping is scoped to one request. A queue-to-running transition may advance

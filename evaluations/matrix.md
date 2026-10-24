@@ -14,7 +14,7 @@ Evaluate artifact behavior rather than prose similarity. Each case must assert t
 | novelty-red-team | differentiable claim | novelty-red-team-close-overlap | closest-work evidence, overlap risk, prohibited unsupported novelty language |
 | experiment-matrix | approved claim plan | experiment-matrix-metric-drift | claim-to-run traceability, locked primary metric, approval gate |
 | iclr-red-team | artifact-backed paper draft | iclr-red-team-unsupported-claim | three review passes, blocker repairs, no acceptance prediction |
-| task-decomposition | task-decomposition-bounded-plan | missing goal, cyclic/missing predecessor, unassigned claim | existing Plan fields, bounded deliverables, valid DAG, separate allocation, no invented execution/completion |
+| task-decomposition | task-decomposition-bounded-plan; planner-conversation-low-burden | prior work without full scope, user fatigue, cyclic/missing predecessor, unassigned claim | conversational acknowledgment, at most one simple necessary question, existing Plan fields, bounded deliverables/DAG, separate allocation and explicit creation |
 | Installed Skill chat routing | skill-continuous-routing | old mixed assistant/Skill route; withdrawn bound evidence | explicit Skill and selected references survive supplements; no implicit delegation/creation; actual reply and source receipt; zero model calls for inconsistent or revoked input |
 | Imported Skill text limits | exact-limit instructions and selected reference | oversized ordinary/linked reference, malformed UTF-8, unchanged legacy revision | one API-compatible character limit; exact file path on failure; no truncation; full selected text in synthetic chat; original ZIP/digests and account isolation preserved |
 
