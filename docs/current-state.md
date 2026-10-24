@@ -2,15 +2,19 @@
 
 更新日期：2026-10-24（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 0.10.37整合进行中：用户已授权合并PR92/PR93并公开为Latest
+## 当前公开Latest为0.10.37：PR92/PR93已整合进main，安装包已公开
 
-用户明确要求同时整合构建优化和同事新PR，合入main并更新公开Release。从fetch后的main/6c73af6新建`release/acceptcat-0.10.37`，分别普通merge固定PR93/3290691与FANLI-w的PR92/18bb748，保留双方原作者与提交；[整合PR94](https://github.com/luoyan96/personal-agent/pull/94)已提交/挂接，尚未合并，未部署后台。
+用户明确要求同时整合构建优化和同事新PR，合入main并更新公开Release。从fetch后的main/6c73af6新建`release/acceptcat-0.10.37`，分别普通merge固定PR93/3290691与FANLI-w的PR92/18bb748，保留双方原作者与提交。[整合PR94](https://github.com/luoyan96/personal-agent/pull/94)于北京时间 **2026-10-24 10:56:12**使用merge commit合入main，提交 **8dba29fb6715269ff3ef0bee5f26867f5ae3d050**，head **d4eb38ef97e036768841a241a18d6a3a2d69fb71**。PR92/PR93于10:56:14自动标记MERGED；main合并树与受审head相同，两head、原聊天和main基线均保持祖先关系。
 
-产品候选 **4c6ea18b5f31370ebac2f1af93e22c1fe5add785**保留全部既有聊天、资料、课题组及本机原件互传，纳入任务拆解Skill与依赖图。审阅修复Node测试被Vite原文导入破坏、循环/失效引用渲染、实例箭头ID及尺寸变化重绘；橙色明确表示待认领，不将分工视为依赖状态。无新依赖/API/数据库迁移，后台新Skill部署未执行。Skill评价场景已补，实际模型效果未代验。
+本版产品 **4c6ea18b5f31370ebac2f1af93e22c1fe5add785**保留全部既有聊天、资料、课题组及本机原件互传，纳入任务拆解Skill与依赖图。审阅修复Node测试被Vite原文导入破坏、循环/失效引用渲染、实例箭头ID及尺寸变化重绘；橙色明确表示待认领，不将分工视为依赖状态。无新依赖/API/数据库迁移，后台新Skill部署未执行。Skill评价场景已补，实际模型效果未代验。
 
-本机36项定向及renderer/Electron双类型检查通过；原Node导入失败已保留。根完整CI和GitHub组合检查正在执行，0.10.37尚未完成打包或公开发布；公开仍沿上批v0.10.34记录。Git外证据 **D:/deepseek-agent/.runtime/release-0.10.37-20261024**。安装、原生启动、真实用户/资料/模型及双机体验仍由负责人检查，NSIS现场循环未复现，不追加这些验收。
+本机根完整CI **762项/59文件**、2项生产CLI/HTTP、B0和生产边界通过，客户端36项定向及renderer/Electron双类型通过。受审d4eb38e的三平台Foundation（运行40055625514）和干净Windows打包（40055625506）四项全部成功后才合并；首轮4c6ea18同样四项成功，未手动重跑通过检查。生产Web/4SDK、55运行包、NSIS/成品4入口、更新清单核对通过；原Node导入失败保留。没有代安装/启动、浏览器产品、真实账号/材料/模型或双机验收，NSIS现场循环未复现。
 
-## 最新本机候选0.10.36：修正Windows构建依赖与顺序，未合并或公开发布
+北京时间 **2026-10-24 10:59:09**，[v0.10.37](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.37) / Release **422478602**公开并设Latest，tag固定main合并提交8dba29f。安装器、blockmap、latest.yml、SHA256SUMS四附件的大小和SHA256与本机一致；未登录public latest返回同一版本，公开更新清单/校验文件逐字节核对通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.37.exe**，**87,410,751字节**，SHA256 **ecc17405bb3bf5e12ee7a28e934668dbce039b05ffbcc6482f3a2ae8d9529225**，旧包均保留。Git外证据 **D:/deepseek-agent/.runtime/release-0.10.37-20261024**，[完整交付](deployment/acceptcat-0.10.37.md)。
+
+本批只有源码整合与公开安装包，没有后台操作或新线上探测，沿已部署记录 **contract0.30/schema026/2677f693**、DSH0.2.1-rc.2/Cordis4.0.5与广场同步关闭。新拆解方法由桌面规划prompt加载，不声称后端Skill已升级。注册超时未定因、飞书本人试点及资料直连/NAT边界保持。后续纯文档不改变固定tag或桌面包；合并后自动main CI单独看回执，不把未结束运行算作新增通过。
+
+## 历史本机候选0.10.36：构建修复已随0.10.37合并并公开
 
 针对同事反馈的旧`file:`快照、缺少`lab-membership.js`/`import.cjs`及安装器问题，从fetch后的main/**6c73af66cd7ba41bbee4c897415984fa8150e377**新建`fix/desktop-build-reproducibility`。本批受打包源码 **62d73f61f7da123aac36f747fab13c0bb08a883d**；保留main中的同事聊天、资料、课题组及PR91功能，不修改业务接口、数据库或Skill内容。[0.10.36交付记录](deployment/acceptcat-0.10.36.md)包含范围、失败记录与限制。
 

@@ -57,3 +57,7 @@ PR93创建后首次读回head ec8755b，三项Foundation与新Windows打包工�
 head **9402bfd9fa890af0a6c24199258bdc80650bb87d** 的[运行39943780240](https://github.com/luoyan96/personal-agent/actions/runs/39943780240)于北京时间 **2026-10-23 19:09:34**完成，结论success。干净checkout完整准备、双类型及8项构建守卫、4SDK/55运行包/NSIS/4成品入口、更新清单都通过；`windows-desktop-package`附件 **12497187962**成功上传，保留7天，没有创建Release。独立GitHub产物不与桌面包作字节一致声明，也未安装/启动。
 
 `desktop-ci-progress.json`、`github-desktop-ci.log`和`pr93-checks-latest.json`保留实际回执。该次读回两项Linux Foundation success，Windows Foundation仍运行中，不能据Windows打包成功称所有CI已通过；后续结果需对应具体head。
+
+## 后续：构建修复已随0.10.37合并并公开
+
+2026-10-24，用户单独要求与PR92一起整合并公开最新版。PR93/3290691保留在PR94的祖先中，组合head d4eb38e四项CI全部成功后，于10:56:12以8dba29f合入main；PR93自动标记MERGED。10:59:09公开[v0.10.37](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.37)并设Latest，安装包/更新附件另行生成核对，详见[0.10.37交付](acceptcat-0.10.37.md)。0.10.36保留为旧本机候选，没有公开为独立Release。原0.10.35附件仍按负责人说明记为同事干净构建成功样本；没有代做安装或NSIS现场复现。

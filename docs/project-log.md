@@ -1594,3 +1594,13 @@ current-state、项目日志、路线图、实现/部署说明和新聊天交接
 按React最佳实践审阅：原PR92的纯planner-chat直接导入Vite别名/原文，现有Node检查实际ERR_MODULE_NOT_FOUND；保留planner-before.log后把原文导入留在UI、按参数传给纯函数，保留既有Plan字段与预算。新增图循环/自引用/失效引用/重复ID可恢复提示，Map处理特殊ID、实例独立marker、几何统一读取/重绘及观察器清理；待认领与依赖状态分开标注。版本0.10.37，打包CI接入规划/图检查；无第三方版本、接口、契约或迁移变化。evaluations补合成情境及实际结构检查边界，不称真实模型方法质量已验证。
 
 产品4c6ea18b5f31370ebac2f1af93e22c1fe5add785，本机36项定向与双类型通过，根完整CI/组合GitHub检查执行中。[PR94](https://github.com/luoyan96/personal-agent/pull/94)已创建并挂接，目标main；尚未合并、完成安装包或公开Release，没有后台操作。证据Git外D:/deepseek-agent/.runtime/release-0.10.37-20261024，后续按实际回执补状态。沿用户安排未追加界面/真实用户/材料/模型/原生安装或双机验收，未把打包与安装现场问题等同。
+
+随后本机完整根CI762项/59文件、2生产CLI/HTTP、B0/生产无夹具全部通过。两共享包冻结准备、客户端安装、生产Web/4SDK/55运行包、NSIS/ASAR4入口与更新清单通过；双类型与36定向通过，不重复完整检查。Skill评价情境补入evaluations，d4eb38e仅补文档，原4c6ea18打包输入保持。组合head d4eb38e的Foundation40055625514三平台及Windows打包40055625506四项success，首轮4c6ea18同样四项成功，无手动重跑已通过检查。合并前再次fetch和核对两原PR head、main基线、清洁工作区、四项回执后才操作。
+
+北京时间 **10:56:12**，PR94以merge commit **8dba29fb6715269ff3ef0bee5f26867f5ae3d050**合入main，父提交6c73af6/d4eb38e，合并树与受审head逐文件相同；PR92/PR93于10:56:14自动标记MERGED，保留原作者、同事PR86和双方历史，本地main普通ff同步。API/契约/研究核心/集成模块相对main基线无改动，没有迁移或后台操作。
+
+本机桌面 **AcceptCat_0.10.37.exe**，87,410,751字节，SHA256 **ecc17405bb3bf5e12ee7a28e934668dbce039b05ffbcc6482f3a2ae8d9529225**，复制后核对，旧包保持。草稿Release422478602按tag读取404后，通过列表/id确认唯一草稿，再上传四附件；未重复创建或覆盖。四项size/digest均与本机一致后，于北京时间 **10:59:09**公开[v0.10.37](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.37)并设Latest，tag8dba29f。未登录公开latest API返回同一Release/版本，公开latest.yml和SHA256SUMS与本机逐字节一致；未启动真实更新或下载安装器验收。旧发布/草稿和更新源配置保持，无新凭据。
+
+current-state、README、产品状态、路线图、交接、旧0.10.36说明及[0.10.37交付](deployment/acceptcat-0.10.37.md)同步实际状态；收尾仅文档，按CONTRIBUTING执行内容与diff检查，不改变tag或重打包。Git外release-0.10.37-20261024保留原Node失败、全部本机检查、GitHub成功回执、合并前后保全及公开下载/哈希记录。后续main/文档自动CI另看回执，不称未完成运行已通过。
+
+本批没有后台部署/迁移/新探测，沿此前0.30/schema026/2677f693、DSH0.2.1-rc.2/Cordis4.0.5和广场同步关闭记录。新方法从桌面prompt加载，不冒称后端Skill升级。未追加原生安装/启动、界面、真实账号/资料/模型或双机联网验收，NSIS现场循环未复现；注册超时未定因、飞书本人试点、负责人交接/解散及NAT直连边界保持。
