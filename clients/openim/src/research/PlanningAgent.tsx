@@ -15,6 +15,7 @@ import type { TextAreaRef } from "antd/es/input/TextArea";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { takeFeishuPlanning } from "./feishu-planning";
+import { DependencyGraph } from "./DependencyGraph";
 import { researchApi, ResearchApiError } from "./api";
 import { useResearchStore } from "./store";
 import { useResearchRead } from "./useResearchRead";
@@ -695,6 +696,14 @@ function PlanningAgentSession({
                     : " · 任务已保存到工作台"}
                 </small>
               </header>
+              <DependencyGraph
+                items={preview.proposedItems.map((step) => ({
+                  id: step.id,
+                  title: step.title,
+                  dependencies: step.dependencies,
+                  pending: step.allocation.kind === "claim",
+                }))}
+              />
               <ol>
                 {preview.proposedItems.map((step, index) => (
                   <li key={step.id}>
