@@ -1,6 +1,12 @@
 # 新 ECS：OpenIM 科研微信（2026-10-06）
 
-## 当前后台：课题组创建与邀请，0.29/schema025（2026-10-22）
+## 当前后台：统一科研同伴档案，0.31/schema026（2026-10-25）
+
+负责人本批授权后，北京时间 **00:24:18—00:24:38**完成API/worker排空、停写备份、独立恢复核对及配对切换。当前 **research-openim-api:unified-colleagues-20261025** / **sha256:de6dce92354c90a7b29ba50f220cbd03d0f8cad8d1e01411cf4e42894d4e9c86**，产品b16cbd6叠加已核验367367ea生产基线，contract0.31.0/schema026，无迁移。77项隔离检查、103表/7原件与20配置输入保全通过；运行设置、其他6服务、运营seed及私人资料范围保持，两服务running/restart0、API healthy、HTTPS ready200/匿名受保护接口401。广场同步关闭，DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified。
+
+运维目录 **/opt/research-openim/ops/unified-colleagues-20261025**，完整Compose链在research-colleague-20261024/images.yaml后追加本目录images.yaml；备份 **/srv/research-openim-backups/unified-colleagues-20261025-20261024T162420Z/research.tar.gz**，SHA256 **8071ed30a1c8d9a8729ca80ab4829355d21783e732631c9f16bf02d8cea95515**。回退旧367367ea前必须先停止新服务并取消活动colleague绑定规划、保留用量，再配对恢复；不回灌旧数据库覆盖后续写入。详见[0.10.43部署及回退记录](acceptcat-0.10.43.md)和[当前状态](../current-state.md)。main合并、公开Release与后台升级分开，本批未公开或合并，未用真实模型/私人材料验收。
+
+## 历史后台：课题组创建与邀请，0.29/schema025（2026-10-22）
 
 用户单独授权后，北京时间 **12:16:24—12:16:44** 配对升级API/worker至 **research-openim-api:lab-membership-20261022-v2** / **sha256:0212513c5e9d4109cba892462c4953f9c440e96dc13007178635aca6c58395fb**，实际running/restart0/API healthy、HTTPS ready0.29.0，schema025。DSH0.2.1-rc.2/Cordis4.0.5不变，未新增真实模型探测。原95表/7原件一致备份、独立恢复、副本025迁移及正式迁移保全通过，新增5表共100表；15份既有配置/密钥、个人默认模型、Feishu来源/私人范围、其他6服务及运行设置保持。GITHUB_CATALOG_SYNC=0，实际disabled/nextCheckAt=null。
 
@@ -14,7 +20,7 @@
 
 ## 历史后台补记：飞书库课题组共享（2026-10-21）
 
-本段保留0.10.31阶段事实；当前运行以上文0.10.33及[快速状态](../current-state.md)为准，[0.10.31部署回执](acceptcat-0.10.31.md)只适用于该历史阶段。用户单独授权后，20:40:47—20:41:02配对切换API/worker至 `research-openim-api:library-sharing-20261021-v2` / `sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce`，实际running/restart0/API healthy、HTTPS ready0.28；schema024无迁移，DSH0.2.1-rc.2/Cordis4.0.5不变。仅5份API/契约文件覆盖已校验的6597f58d组合基底，其他源码和6服务保持；原静态网页/current未改。
+本段保留0.10.31阶段事实；当前运行以本页开头及[快速状态](../current-state.md)为准，[0.10.31部署回执](acceptcat-0.10.31.md)只适用于该历史阶段。用户单独授权后，20:40:47—20:41:02配对切换API/worker至 `research-openim-api:library-sharing-20261021-v2` / `sha256:595bed1364847595db61823ddd9fc7eecd5449095bde0096c5851e6d9dc932ce`，实际running/restart0/API healthy、HTTPS ready0.28；schema024无迁移，DSH0.2.1-rc.2/Cordis4.0.5不变。仅5份API/契约文件覆盖已校验的6597f58d组合基底，其他源码和6服务保持；原静态网页/current未改。
 
 95表/6原件的停写备份和独立恢复全行/文件哈希、integrity/外键/24迁移checksum通过；备份 `/srv/research-openim-backups/library-sharing-20261021-v2-20261021T124050Z`。凭据、默认模型、飞书连接/来源、集合/范围不变，已有1个源仍私人，未替用户开共享。服务器证据 `/opt/research-openim/ops/library-sharing-20261021-v2`，该目录images.yaml须追加在原http400覆盖链之后；完整Compose和回退参数见deploy.sh。回退旧0.27要保持现有024数据库和新写入，不能套用下文历史schema18/更早回退；共享源查询将暂停。未做异地/整栈或真实模型/团队体验验收，无新增SSH/Key/端口/飞书应用权限。
 

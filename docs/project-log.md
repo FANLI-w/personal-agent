@@ -1746,3 +1746,14 @@ contract0.31.0为planRequest增加可选colleague引用，后台核验本人站�
 配套运维包 **D:/deepseek-agent/.runtime/unified-colleague-agents-20261024/unified-colleagues-b16cbd6-20261025-v3.tar.gz**，100,918字节，SHA256 **c489ef27a956a496315e714089d1217a24ac31672186ccb8207895b0757cc4f8**，包含181基线/10叠加、175编译与32方法文件守卫，预期基于367367ea，无迁移。首轮Windows换行守卫失败在归档前停止并保留，v2显式字节写入；初次Bash路径未找到，实际Git Bash语法通过。v3补新旧镜像运营种子源/编译摘要比较，v2原归档保留；本机合成回退只取消活动绑定规划，旧规划/已完成/执行和用量保持。未上传/服务器构建或隔离、备份/切换，没有线上探测；后台仍沿5293eba/367367ea、contract0.30/schema026，安装包中新统一规划需配套后台升级后使用。
 
 更新current-state、roadmap、交接prompt及[0.10.43交付](deployment/acceptcat-0.10.43.md)/[设计](development/unified-agent-colleagues.md)/8个语言评价情境。证据 **D:/deepseek-agent/.runtime/unified-colleague-agents-20261024**。源码未合main、0.10.43未公开，重新读取公开Latest仍v0.10.37/422478602；注册超时未定因、飞书本人试点、广场同步关闭和原件在线/10MiB/无TURN等边界保持。
+
+
+## 2026-10-25 — 按本批授权升级0.10.43配套后台，保持schema026
+
+负责人明确要求“后台开始升级”。核对干净feature/unified-colleague-agents/ef458eb、origin主仓库并fetch，main仍c971d9c，未覆盖本地修改或合并main。Workbench已连接，实际生产仍5293eba/367367ea、contract0.30且健康，可用约9GB。上传前发现v3 prepare.sh旧标签守卫仍指planning-reply；未上传执行该包，v4修正为实际research-colleague-20261024标签并保留原包/回执，归档27文件/10叠加及脚本语法通过。实际v4包100,919字节，SHA256 e960198f73e747c75b730eeface703eb9e5df218e2834fa44f3c6475bf9b7312，上传/tmp后服务端摘要与安全路径复核一致。
+
+基于固定367367ea离线构建候选，181源/方法基线、175编译、32方法文件/11方法与运营seed新旧摘要相同；**77项/4文件**服务器隔离全部通过后执行切换。北京时间 **00:24:18—00:24:38**完成排空、停写一致备份、独立恢复副本103表全行/7原件/迁移checksum/完整性/外键与HTTP检查，再配对启动API/worker。新镜像 **de6dce92354c90a7b29ba50f220cbd03d0f8cad8d1e01411cf4e42894d4e9c86**，产品b16cbd6叠加生产基线，contract **0.31.0**、schema026，无迁移。两服务running/restart0，API healthy、公网ready200/0.31及四个受保护接口匿名401；20配置/密钥输入哈希/权限、默认模型、飞书连接/私人集合范围、目录缓存、运行设置和其他6服务保持。广场同步仍enabled=false/state=disabled/nextCheckAt=null，11收录/19候选不变；DSH/Cordis保持，Harness仍not_verified。
+
+备份 **/srv/research-openim-backups/unified-colleagues-20261025-20261024T162420Z/research.tar.gz**，SHA256 **8071ed30a1c8d9a8729ca80ab4829355d21783e732631c9f16bf02d8cea95515**；运维回执 **/opt/research-openim/ops/unified-colleagues-20261025**。保留旧367367ea镜像；回退前先停止新服务并取消活动colleague绑定规划、提升fence/保留用量，再配对恢复旧链，禁止忽略绑定运行或回灌旧DB覆盖新写入。成功未执行生产回退；未验证异地/整栈灾备，未重放用户请求、调用真实模型/私人资料或代做界面/安装体验。
+
+本机文档脚本首轮因Windows默认GBK读取UTF-8失败，尚未改文件；改为显式UTF-8后通过，原错误留Git外。本机Git外证据 **D:/deepseek-agent/.runtime/unified-colleague-agents-20261024**补存deployment-summary.json及准备/成功截图；桌面0.10.43原包摘要47d9a9d2…保持，未重新打包或安装。PR103/ef458eb的三平台Foundation40110621008和Windows package40110621009四项GitHub检查全success，纯文档后续自动运行另计。更新current-state、roadmap、交接prompt、ECS入口与[0.10.43完整交付](deployment/acceptcat-0.10.43.md)；PR103仍开放，未合main、未公开Release，重新读取Latest仍v0.10.37/422478602。注册超时未定因、飞书本人试点、在线/10MiB/无TURN及本机规划历史边界保持。
