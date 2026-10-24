@@ -2,6 +2,12 @@
 
 更新日期：2026-10-24（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 本机0.10.42：规划聊天自动铺满工作台，绿色按钮收起
+
+负责人反馈底部聊天面板过小、回答难以阅读。从fetch后的main/c971d9c另开fix/planning-chat-expand，产品 **e87ebe2deb78fa10906a3d5fb6312b0a9ef01b64**。发送消息、手动展开或打开本机对话后，底部规划面板改为占满工作台内容区，暂时隐藏任务总览和栏目；绿色白箭头按钮可收起并恢复原任务页。等待回复时手动收起不会被请求回执重新撑开，查看已创建任务时也会退出展开；原研究计划页和历史入口保持。[交付记录](deployment/acceptcat-0.10.42.md)。
+
+客户端类型检查、现有 **28项**规划/依赖检查、根desktop:win冻结准备/NSIS/成品入口及更新清单检查通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.42.exe**，**87,409,277字节**，SHA256 **077070b5152a6d472f6482841cdf77e017509450c2d4c3fa742e4410109c47cf**，复制摘要一致，旧包保留。仅客户端布局/交互及版本变化，无API/数据库/依赖锁变化；没有重复共享根CI或代安装/启动、浏览器界面与真实模型体验验收，实际效果由负责人查看。证据 **D:/deepseek-agent/.runtime/planning-chat-expand-20261024**。尚未合入main或公开Release，Latest读取仍v0.10.37；后台沿已部署5293eba/367367ea、contract0.30/schema026，没有本批部署。
+
 ## PR100已按负责人指令合入main，PR99随之合并
 
 北京时间 **2026-10-24 22:53:29**，[PR100](https://github.com/luoyan96/personal-agent/pull/100)以merge commit **b73edfc3d91480c4031f87fed1c9698f4a452f59**合入main，固定受审head **3d3bb0263b99c5510f665030798243a7d1134c61**；[PR99](https://github.com/luoyan96/personal-agent/pull/99)于22:53:31自动标记MERGED。合并树与受审head相同，旧main/89c987c、PR99、PR97/96、同事PR86/PR92、构建PR93及资料/课题组与原件互传提交均保持祖先关系，未改写作者或历史。
