@@ -1580,3 +1580,9 @@ current-state、项目日志、路线图、实现/部署说明和新聊天交接
 随后普通push修复分支，使用既有GitHub CLI创建并挂接[PR93](https://github.com/luoyan96/personal-agent/pull/93)，目标main。首次回读ec8755b为OPEN/MERGEABLE，三项Foundation与新增Windows打包工作流均运行中，未称通过；pr93-initial.json留存Git外。PR未合并，没有将安装包作为源码或公开Release上传。
 
 后续head9402bfd9fa890af0a6c24199258bdc80650bb87d的Windows打包运行39943780240于北京时间19:09:34实际success：干净checkout冻结准备、双类型/8构建守卫、4SDK/55运行包、NSIS/成品4入口、更新清单均通过，7天CI附件12497187962已上传，与桌面包不作逐字节相同声明。两项Linux Foundation当次已成功，Windows Foundation仍运行中；后续以具体head回执为准，不将部分通过说成全CI完成。一次CLI轮询TLS握手超时，后续只读回读成功，未改变网络/凭据。回执与github-desktop-ci.log保留Git外，末尾仅补交付文档，不重打桌面包或代做安装体验检查。
+
+## 2026-10-24 — 负责人确认附件0.10.35是同事干净构建成功的版本
+
+负责人回复此前澄清问题，明确附件AcceptCat_0.10.35.exe为“干净构建成功的版本”。将哈希c0f9c5743a37c994efb54213ca96bb0409554284e64160ee8bb60f6bb9ab2ebd的附件记录为同事成功构建样本，更新current-state和0.10.36交付记录中“尚待说明”的状态；不将它列为已确认的故障包，也不扩展为本机已验证安装或启动。
+
+核对本地修复分支d1e8e66干净、origin主仓库并fetch，PR93仍开放且未合并。本次仅补事实说明，两个旧0.10.35和桌面0.10.36保持，不重打/代安装、不修改运行代码、不合并/公开发布或部署后台。执行内容与diff检查，不重复代码或安装后体验验收。

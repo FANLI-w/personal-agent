@@ -7,7 +7,7 @@
 - 原客户端两个共享依赖均为`file:../../packages/...`，安装位置为pnpm目录快照；新模块或重建后替换的输出可能未进入已安装目录。原CONTRIBUTING只要求构建contracts，遗漏research-skills及其Electron使用的`dist/import.cjs`。
 - 原Windows构建入口不自动构建这两个共享包，未在成品中阻断缺失的CommonJS入口。原Foundation CI只检查根工程，不构建Windows客户端；它通过不能证明安装包依赖完整。
 - 原环境实际Electron22.3.27、builder/app-builder-lib23.6.0；没有证据证明当前组件混用，也未复现NSIS“无法关闭”循环。`--force`会重新安装/刷新依赖，但不能据此确认该安装器问题的唯一根因。旧暂存目录实际已有import.cjs，也不足以证明旧安装器内容正常。
-- 用户附件0.10.35为87,439,273字节，SHA256 `c0f9c5743a37c994efb54213ca96bb0409554284e64160ee8bb60f6bb9ab2ebd`；原桌面交付为87,409,212字节，SHA256 `c575ba661e12d3548a9262f8fa91a630dabe0b7318cac94c90a4c0a89dfebe1c`。二者不同，附件是成功重建还是故障版本尚待负责人说明。本批未执行或提取旧安装器，保留两文件。
+- 用户附件0.10.35为87,439,273字节，SHA256 `c0f9c5743a37c994efb54213ca96bb0409554284e64160ee8bb60f6bb9ab2ebd`；原桌面交付为87,409,212字节，SHA256 `c575ba661e12d3548a9262f8fa91a630dabe0b7318cac94c90a4c0a89dfebe1c`。负责人于2026-10-24明确附件是同事干净clone后成功构建的版本，按成功构建样本记录，不列为已确认的故障附件。它与原桌面包不同；本机未执行或提取旧安装器，不将负责人说明扩展为本机已验证安装/启动，保留两文件。
 
 pnpm语义参考官方[link说明](https://pnpm.io/10.x/cli/link)和[install/force说明](https://pnpm.io/10.x/cli/install)。本修复依据实际目录和构建路径，不声称所有`file:`内容修改都必然不刷新。
 
