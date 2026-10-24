@@ -614,13 +614,13 @@ function PlanningAgentSession({
         <div className="planning-agent-messages" ref={messages} aria-live="polite">
           {!thread.messages.length && !thread.planId && !thread.requestId && (
             <div className="planning-agent-welcome">
-              <h2>直接说说，您想安排什么？</h2>
+              <h2>从你正在做的研究聊起</h2>
               <p>
-                可以先说一个想法，也可以直接交代目标、人员和时间。我会整理任务方案，再和您一起调整。
+                从你现在最在意的一件事说起就好，方向清楚后再一起安排任务。
               </p>
               <div>
                 {[
-                  "帮我安排这周的文献阅读，周五交付一份对比报告",
+                  "我有一项研究，想聊聊下一步怎么推进",
                   "把一个实验目标拆成可分工、可验收的任务",
                 ].map((s) => (
                   <button
@@ -754,7 +754,7 @@ function PlanningAgentSession({
                 ))}
               </ol>
               {!preview.proposedItems.length && (
-                <p>目标还需要补充。请直接回复上面的具体问题，再整理任务。</p>
+                <p>我们可以先把思路聊清楚，再决定怎样安排。</p>
               )}
               {!!preview.unresolvedQuestions.length && (
                 <details>
@@ -870,7 +870,7 @@ function PlanningAgentSession({
         <Input.TextArea
           ref={input}
           aria-label="与任务规划 Agent 对话"
-          placeholder="告诉我想完成什么，也可以接着说怎么调整…"
+          placeholder="说说你想聊的研究，或者接着刚才的思路…"
           value={thread.draft}
           maxLength={4000}
           autoSize={{ minRows: 1, maxRows: 4 }}
