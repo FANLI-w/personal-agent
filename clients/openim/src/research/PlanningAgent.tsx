@@ -56,6 +56,7 @@ type Props = {
   focus: number;
   planId?: string;
   requestId?: string;
+  onExpandedChange: (expanded: boolean) => void;
   onCreated: () => void;
   onTeam: () => void;
 };
@@ -98,6 +99,7 @@ function PlanningAgentSession({
   focus,
   planId: adoptPlan,
   requestId: adoptRequest,
+  onExpandedChange,
   onCreated,
   onTeam,
   storageKey,
@@ -182,6 +184,10 @@ function PlanningAgentSession({
   useEffect(() => {
     if (full) setExpanded(true);
   }, [full]);
+  useLayoutEffect(() => {
+    onExpandedChange(expanded && !full);
+    return () => onExpandedChange(false);
+  }, [expanded, full, onExpandedChange]);
   useEffect(() => {
     messages.current?.scrollTo({
       top: messages.current.scrollHeight,
@@ -404,7 +410,6 @@ function PlanningAgentSession({
         requestId: response.data.id,
         handledRequest: undefined,
       }));
-      setExpanded(true);
     });
   const confirm = (intent?: CreateIntent) => {
     if (
@@ -597,9 +602,12 @@ function PlanningAgentSession({
           )}
           {!full && (
             <Button
-              type="text"
+              type="primary"
+              className="planning-agent-toggle"
               icon={expanded ? <DownOutlined /> : <UpOutlined />}
               aria-label={expanded ? "收起规划对话" : "展开规划对话"}
+              aria-expanded={expanded}
+              title={expanded ? "收起对话，返回工作台" : "展开对话"}
               onClick={() => setExpanded((v) => !v)}
             />
           )}
@@ -793,12 +801,22 @@ function PlanningAgentSession({
                   <span>
                     已建立 {taskIds.length || preview.proposedItems.length} 项任务
                   </span>
-                  <Button onClick={onTeam}>查看课题组任务</Button>
+                  <Button
+                    onClick={() => {
+                      setExpanded(false);
+                      onTeam();
+                    }}
+                  >
+                    查看课题组任务
+                  </Button>
                   {taskIds.map((id, i) => (
                     <Button
                       key={id}
                       type="link"
-                      onClick={() => navigate(workbenchTaskPath(id, "research"))}
+                      onClick={() => {
+                        setExpanded(false);
+                        navigate(workbenchTaskPath(id, "research"));
+                      }}
                     >
                       任务 {i + 1}
                     </Button>
