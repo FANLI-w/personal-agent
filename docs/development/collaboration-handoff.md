@@ -1,13 +1,13 @@
 # AcceptCat 新聊天交接 prompt
 
-2026-10-23（北京时间）。协作流程以根目录[CONTRIBUTING.md](../../CONTRIBUTING.md)为准，当前事实以[项目状态](../current-state.md)为准。下方内容可复制到负责人新聊天；外部合作者将本机目录替换为自己的克隆目录，明确本人负责的任务，并按Fork的origin/upstream关系操作。
+2026-10-24（北京时间）。协作流程以根目录[CONTRIBUTING.md](../../CONTRIBUTING.md)为准，当前事实以[项目状态](../current-state.md)为准。下方内容可复制到负责人新聊天；外部合作者将本机目录替换为自己的克隆目录，明确本人负责的任务，并按Fork的origin/upstream关系操作。
 
 ```text
 请接手 AcceptCat 项目，接着处理我随后给出的需求。
 
 工作目录：D:\deepseek-agent\research-agent-platform-chat-integration
 主仓库：https://github.com/luoyan96/personal-agent
-共同开发基线：主仓库最新 main，已包含聊天、资料/课题组与0.10.35本机候选的同组资料互传源码；公开Latest仍v0.10.34。
+共同开发基线：主仓库最新 main，已包含聊天、资料/课题组、同组本机资料互传、任务拆解/依赖图与构建修复；公开Latest为v0.10.37。
 
 先读取根目录 AGENTS.md，然后读取 CONTRIBUTING.md、docs/current-state.md、docs/project-log.md 最新记录、README.md、docs/roadmap.md 和 docs/development/collaboration-handoff.md。
 
@@ -24,11 +24,11 @@
 6. 代码合并、安装包制作、公开 Release、后台部署分别记录，不能把其中一项完成说成全部完成。此前同步 main/发布0.10.29的授权已履行，不是以后自动合并或发布的长期授权；按我当前指令推进，不重复询问已明确授权的同一操作。
 
 当前交付事实：
-- main已按本人指令以merge commit合入PR89（2498a486848258086968baf5f310e35746605910），保留同事PR86与资料/课题组功能及原作者记录；当前公开Latest仍v0.10.34，发布标签固定e4bdbe689ec94b9de5b90ff9dee5e0d4ed5ed96d，main后续可有文档提交，开始前仍需fetch实际最新状态。
-- 本机安装包：C:\Users\luo\Desktop\AcceptCat_0.10.34.exe；发布页：https://github.com/luoyan96/personal-agent/releases/tag/v0.10.34 。后续是否仍是最新版须按实际状态确认。
-- 后续候选：PR91已按本人指令以merge commit合入main（90b7687449fa9f1dc43222b117369839b7f57e41），产品09ffb44、本机Windows0.10.35已打包，配套contract0.30/schema026已按本人单独授权部署；提供同组本机目录授权、聊天索取、直传与本机原件打开。真实双机与安装体验由本人检查；候选包尚未公开为Latest。详情见docs/development/peer-local-library.md与current-state。
-- 最新构建候选：PR93（fix/desktop-build-reproducibility）从main/6c73af6另开，0.10.36安装包在桌面，受打包源码62d73f6；统一contracts/research-skills先构建、link依赖与Windows成品守卫，暂未合并/公开发布。构建用根目录corepack pnpm@11.21.0 run desktop:win，手动步骤见CONTRIBUTING，不能只build contracts或用--force刷新快照。独立目录完整打包、双类型及13定向检查通过；head9402bfd的干净GitHub Windows打包CI实际success。未代安装，NSIS关闭循环未复现。详情见docs/deployment/acceptcat-0.10.36.md，接手先核对PR与实际main。
-- 最近改动：整合同事PR86聊天交互、独立资料页面、飞书库打开/复制与明确课题组共享、自助课题组创建/已有账号邀请接受。个人和自建Agent、聊天式规划与资料交互保持。
+- main已按本人指令以merge commit合入PR89、PR91和整合PR94；PR94提交8dba29fb6715269ff3ef0bee5f26867f5ae3d050包含FANLI-w的PR92与PR93，两原PR已自动MERGED，保留同事PR86及双方原作者。公开Latest为v0.10.37，标签固定8dba29f；main后续可有文档提交，开始前仍需fetch实际最新状态。
+- 本机安装包：C:\Users\luo\Desktop\AcceptCat_0.10.37.exe；公开页：https://github.com/luoyan96/personal-agent/releases/tag/v0.10.37 。87,410,751字节，SHA256 ecc17405bb3bf5e12ee7a28e934668dbce039b05ffbcc6482f3a2ae8d9529225；四附件与未登录更新清单已核对。后续是否仍是最新版须按实际状态确认。
+- 同组原件互传：PR91已合main，产品09ffb44的目录授权、聊天索取、WebRTC直传和本机原件打开现已随0.10.37公开；配套contract0.30/schema026此前已按本人单独授权部署，本批未重部署。双方须在线且切同组，每份10MiB，无TURN/云原件兜底；实际双机与安装体验由本人检查。
+- 构建与任务拆解：公开0.10.37产品4c6ea18统一两共享包先构建、link依赖及工具链/成品守卫，并接入任务拆解Skill/依赖图；根desktop:win命令见CONTRIBUTING。762项根CI、36客户端定向、双类型与受审head d4eb38e四项GitHub检查通过。新方法由桌面prompt加载，不声称后端Skill已部署；未代安装或真实模型验收，NSIS关闭循环未复现。详情见docs/deployment/acceptcat-0.10.37.md。
+- 原有聊天交互、独立资料页、飞书库打开/明确共享、自助课题组创建/已有账号邀请接受均保持，任务规划和资料Agent继续聊天交互。负责人确认旧附件0.10.35为同事干净构建成功样本，勿列为已确认坏包。
 - 已部署后台为contract0.30/schema026、DSH0.2.1-rc.2/Cordis4.0.5，镜像2677f693；2026-10-23的停写备份/独立恢复与正式迁移保全见docs/deployment/peer-library-20261023.md。旧100表/7原件、私人配置/飞书授权与其他6服务保持，原失败探测记录保留。广场每日同步仍关闭，后续维护保持GITHUB_CATALOG_SYNC=0；026新写入后不能直接回灌旧025快照。
 
 尚未完成及边界：
