@@ -339,7 +339,7 @@ function PlanningAgentSession({
       problems = planProblems(preview);
       if (thread.deadlineQuestion)
         problems.push(
-          "这轮时间安排还需要明确。请用完整日期说明最终交付时间（如“2026-10-23 交付”），或说“取消截止”。",
+          "交付日期还没确定。可以说一个完整日期（如“2026-11-02 交付”），暂时不定就说“取消截止”。",
         );
     } catch (e) {
       problems = [e instanceof Error ? e.message : "方案暂不可确认"];
@@ -460,7 +460,7 @@ function PlanningAgentSession({
     }
     if (isPlannerCreateCommand(text)) {
       if (!current || current.status !== "draft" || problems.length || processing) {
-        setFailure("请先等当前方案生成并补齐必要信息，再说“确认创建任务”。");
+        setFailure(processing ? "这轮还在回复，稍等方案出来就能创建。" : problems[0] || "我们还在讨论思路，等有具体步骤后就能创建任务。");
         return;
       }
       update((t) => ({
@@ -563,7 +563,7 @@ function PlanningAgentSession({
         <div>
           <RobotOutlined />
           <strong>任务规划 Agent</strong>
-          <span>{inProgress ? "正在整理方案…" : "说说目标，一起把任务安排好"}</span>
+          <span>{inProgress ? "正在回复…" : "聊聊你的研究，一起想下一步"}</span>
         </div>
         <nav>
           <Popover
@@ -614,13 +614,13 @@ function PlanningAgentSession({
         <div className="planning-agent-messages" ref={messages} aria-live="polite">
           {!thread.messages.length && !thread.planId && !thread.requestId && (
             <div className="planning-agent-welcome">
-              <h2>直接说说，您想安排什么？</h2>
+              <h2>从你正在做的研究聊起</h2>
               <p>
-                可以先说一个想法，也可以直接交代目标、人员和时间。我会整理任务方案，再和您一起调整。
+                从你现在最在意的一件事说起就好，方向清楚后再一起安排任务。
               </p>
               <div>
                 {[
-                  "帮我安排这周的文献阅读，周五交付一份对比报告",
+                  "我有一项研究，想聊聊下一步怎么推进",
                   "把一个实验目标拆成可分工、可验收的任务",
                 ].map((s) => (
                   <button
@@ -754,11 +754,11 @@ function PlanningAgentSession({
                 ))}
               </ol>
               {!preview.proposedItems.length && (
-                <p>目标还需要补充。请直接回复上面的具体问题，再整理任务。</p>
+                <p>我们可以先把思路聊清楚，再决定怎样安排。</p>
               )}
               {!!preview.unresolvedQuestions.length && (
                 <details>
-                  <summary>还有 {preview.unresolvedQuestions.length} 项待明确</summary>
+                  <summary>方案中暂未确定的信息</summary>
                   {preview.unresolvedQuestions.map((q, i) => (
                     <p key={i}>{q}</p>
                   ))}
@@ -784,7 +784,10 @@ function PlanningAgentSession({
                 </footer>
               )}
               {!!problems.length && (
-                <p className="planning-agent-note">{problems.join(" ")}</p>
+                <div className="planning-agent-note">
+                  <p>{problems[0]}</p>
+                  {problems.length > 1 && <details><summary>其余 {problems.length - 1} 项待核对内容</summary>{problems.slice(1).map((problem, index) => <p key={index}>{problem}</p>)}</details>}
+                </div>
               )}
               {current.status === "confirmed" && (
                 <div className="planning-created-actions">
@@ -813,7 +816,7 @@ function PlanningAgentSession({
             </article>
           )}
           {current && !preview && !!problems.length && (
-            <Alert type="warning" message={problems.join(" ")} />
+            <Alert type="warning" message={problems[0]} description={problems.length > 1 ? <details><summary>查看其他待核对内容</summary>{problems.slice(1).map((problem, index) => <p key={index}>{problem}</p>)}</details> : undefined} />
           )}
           {thread.sending && !busy && (
             <Alert
@@ -870,7 +873,7 @@ function PlanningAgentSession({
         <Input.TextArea
           ref={input}
           aria-label="与任务规划 Agent 对话"
-          placeholder="告诉我想完成什么，也可以接着说怎么调整…"
+          placeholder="说说你想聊的研究，或者接着刚才的思路…"
           value={thread.draft}
           maxLength={4000}
           autoSize={{ minRows: 1, maxRows: 4 }}

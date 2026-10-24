@@ -95,7 +95,7 @@ const legacyAgentStarters: readonly AgentStarter[] = [
   },
 ];
 
-export const libraryAgentStarter: AgentStarter = {
+const previousLibraryAgentStarter: AgentStarter = {
   id: "research-library",
   summary: "围绕选定的资料集合，查找文字证据、对比内容、整理写作与研究参考。",
   input: "先选择获准集合，再用聊天说明问题，例如查找项目申请书中的研究基础。",
@@ -113,7 +113,7 @@ export const libraryAgentStarter: AgentStarter = {
 };
 
 // Keep exact legacy profiles as a reuse option; never overwrite an edited Agent.
-export const agentStarters: readonly AgentStarter[] = [
+const previousAgentStarters: readonly AgentStarter[] = [
   ...legacyAgentStarters.map((starter) => ({
     ...starter,
     input:
@@ -137,8 +137,36 @@ export const agentStarters: readonly AgentStarter[] = [
       )}\n可阅读用户主动上传的含文字 PDF、TXT、Markdown、CSV（至多 10 MiB）；依据服务实际提供的页码与片段回答，不声称已读完整文件，不做扫描 OCR、联网检索或工具执行。`,
     },
   })),
-  libraryAgentStarter,
+  previousLibraryAgentStarter,
 ];
+
+const conversationStyle = "先回应当前问题，用已有材料先帮一步；确需澄清时每轮只问一个简单问题，不重复索要已有信息。方法清单由助手整理，按需要展开；坦诚指出证据缺口并给具体建议，不责备或说教，不在每轮结尾强行提问。";
+const starterInputs: Record<string, string> = {
+  "literature-reading": "发来论文、摘要或你没读懂的一段，我们从那里聊起。",
+  "paper-revision": "把想改的一段发来就好，有特别想保留的表达也可以直接说。",
+  "research-planning": "说说你正在想的研究，或者眼下最卡的一点。",
+  "figure-planning": "聊聊这张图想讲清什么，也可以直接发来现有图注。",
+  "data-reproduction": "把当前报错、代码片段或结果发来，我们先看最卡的地方。",
+  "lab-meeting": "说说最近做了什么，我们一起理出这次组会最值得讲的内容。",
+  "research-library": "直接问想了解的内容；需要查库时选集合，飞书文档也可以发链接。",
+};
+function conversationalStarter(starter: AgentStarter): AgentStarter {
+  return {
+    ...starter,
+    input: starterInputs[starter.id] || starter.input,
+    profile: {
+      ...starter.profile,
+      capabilityDescription: starter.profile.capabilityDescription.replace(
+        "缺少条件时先询问", "用已有条件先给可讨论的小建议，关键条件不明再逐步交流",
+      ),
+      personality: `${starter.profile.personality}\n${conversationStyle}`,
+    },
+  };
+}
+export const libraryAgentStarter = conversationalStarter(previousLibraryAgentStarter);
+export const agentStarters: readonly AgentStarter[] = previousAgentStarters.map(
+  (starter) => starter.id === libraryAgentStarter.id ? libraryAgentStarter : conversationalStarter(starter),
+);
 
 export function findOwnedStarter(
   contacts: readonly Contact[],
@@ -163,6 +191,7 @@ export function findOwnedStarter(
       contact.relationship.status === "own" &&
       [
         starter.profile,
+        previousAgentStarters.find((item) => item.id === starter.id)?.profile,
         legacyAgentStarters.find((item) => item.id === starter.id)?.profile,
       ].some(
         (profile) =>

@@ -7,7 +7,7 @@ description: Turn an early ML/AI research idea into a one-page, falsifiable rese
 
 ## Required inputs
 
-Require a raw idea, intended community/task, practical constraints, and any initial evidence. If literature is unavailable, ask `paper-search-pro` for a focused landscape first. Do not start experiments yet.
+Begin with the idea or existing work already shared. Help put its problem and testable insight into plain language before asking for more. Ask at most one short question only when it changes the next useful step; optional venue, deadline and compute details can wait. Use a raw idea, intended community/task, constraints and initial evidence for the formal thesis; if literature is unavailable, propose a focused `paper-search-pro` landscape within actual capabilities. Do not start experiments yet.
 
 ## Workflow
 
@@ -21,3 +21,5 @@ Require a raw idea, intended community/task, practical constraints, and any init
 ## Gate
 
 Pass only with a 6/8 score, a named strongest comparator, and a feasible falsification experiment. Otherwise return `REFINE`, `SEARCH_MORE`, or `DROP`; do not convert uncertainty into a positive contribution claim.
+
+The score and gate guide your analysis; they are not a judgment of the researcher. Explain what currently holds up, the key uncertainty and one feasible improvement. Do not require users to complete the claim register themselves or produce a full template for a small exploratory question.

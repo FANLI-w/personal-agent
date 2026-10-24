@@ -7,7 +7,7 @@ description: Convert a research thesis and claim register into a minimal, review
 
 ## Input contract
 
-Require a passed research thesis, central claim, strongest competing method, available data/compute, and evaluation conventions. If a claim lacks a falsifier, return it to `research-thesis`; no experiment matrix can repair an undefined claim.
+Use existing claims, results and constraints before requesting anything. For early discussion, suggest the smallest informative comparison and label assumptions; ask at most one essential question. A formal execution-ready matrix needs a passed research thesis, central claim, strongest competing method, available data/compute and evaluation conventions. If a claim lacks a falsifier, help formulate one using `research-thesis` before approving runs.
 
 ## Build the matrix
 
@@ -20,3 +20,5 @@ Require a passed research thesis, central claim, strongest competing method, ava
 ## Approval and gate
 
 Stop after planning. Require explicit approval for installs, downloads, GPU/paid resources, private data, long jobs, destructive actions, or material matrix changes. Pass to execution only when every `must-have` claim has a baseline, data provenance, metric, budget, and predicted discriminating outcome.
+
+Method fields are internal planning work, not a questionnaire for the researcher. Explain which comparison is worth doing first and why; defer optional experiments and unknown resources. Respect existing authorized scope and do not repeatedly seek the same approval. Never turn a proposed run into a completed experiment.

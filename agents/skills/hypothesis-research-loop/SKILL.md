@@ -7,7 +7,11 @@ description: Run a hypothesis-driven research loop from a bounded literature bri
 
 ## State files
 
-Create `research/state.yaml`, `research/hypotheses.md`, and `research/log.md` first. A hypothesis is valid only if it states a measurable prediction, comparison/baseline, falsifier, required evidence, and estimated cost. Follow [loop-contract.md](references/loop-contract.md).
+For a formal loop, create `research/state.yaml`, `research/hypotheses.md`, and `research/log.md` when file tools are available; otherwise provide editable text without claiming saved files. A hypothesis is valid only if it states a measurable prediction, comparison/baseline, falsifier, required evidence, and estimated cost. Follow [loop-contract.md](references/loop-contract.md).
+
+## Conversation before process
+
+Start from the work and frustration already described. Offer one plausible explanation or small next step before expanding the loop. Ask at most one short essential question, never a compound intake request. Organize the hypothesis fields yourself from available evidence; unknowns may remain unknown during exploration. Treat null results as information, not personal failure, and give a practical way to continue or stop.
 
 ## Bootstrap
 

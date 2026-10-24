@@ -13,6 +13,7 @@ import { ChatWorker, reconcileChat } from '../src/chat-worker.js'
 import { ExecutionWorker } from '../src/execution-worker.js'
 import type { ModelCall } from '../src/execution-worker.js'
 import { chatInputTokenBound } from '../src/chat-model-input.js'
+import { researchConversationPolicy } from '../src/conversation-policy.js'
 
 const cleanup: (() => unknown | Promise<unknown>)[] = []
 afterEach(async () => { for (const fn of cleanup.splice(0).reverse()) await fn() })
@@ -121,6 +122,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     let called=false
     await new ChatWorker(s.db,s.config,async input=>{
       called=true;const bound=chatInputTokenBound(input.system,input.prompt)
+      expect(input.system).toContain(researchConversationPolicy)
       expect(bound+input.maxTokens).toBeLessThanOrEqual(total.maxTokens);expect(input.maxTokens).toBeGreaterThanOrEqual(64)
       expect(input.maxTokens).toBeLessThan(total.maxTokens);expect(input.system.length).toBeLessThan(3000);expect(outputTokens).toBeLessThanOrEqual(input.maxTokens)
       return {text,failure:null,inputTokens:500,outputTokens,elapsedMs:10}

@@ -474,13 +474,9 @@ export function ResearchTeamWorkbench({
                           {deadline.label}
                         </small>
                         <p>
-                          {isFullTask(row.task) &&
-                          status === "ready" &&
-                          row.task.dependencies.length
-                            ? "先核对前置成果与依赖，再开始任务"
-                            : claimable
+                          {claimable
                             ? "同组成员认领并确认范围与时间"
-                            : teamNextStep(row.task)}
+                            : teamNextStep(row.task, actor.member.id)}
                         </p>
                       </div>
                       <div role="cell">

@@ -18,7 +18,7 @@ function DelegateCard({ receipt }: { receipt: Extract<PersonalAssistantReceipt, 
   const status = verified && turn ? ({ queued: "等待 Agent 回复", running: "Agent 正在回复", succeeded: "Agent 已回复", waiting_input: "还需补充信息", unavailable: "回复服务暂不可用", failed: "本次回复失败", interrupted: "本次回复已中断", cancelled: "本次回复已取消" }[turn.status]) : receipt.status === "unavailable" ? "回复服务暂不可用" : "已安排，等待回复";
   return <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
     <p>已将本次需求安排给 <strong>{receipt.displayName}</strong>。</p>
-    <p className="text-xs text-slate-600">{status}。安排不等于工作已经完成。</p>
+    <p className="text-xs text-slate-600">{status}。可以打开对话继续讨论。</p>
     {read.error && <p className="text-xs text-amber-800">当前回复状态未能核对：{read.error}</p>}
     <CreatedAgentChatButton created={receipt} delegated />
     <AssistantWorkTaskButton conversationId={receipt.conversationId} turnId={receipt.turnId} />
@@ -45,7 +45,7 @@ export function PersonalReceiptCard({ turn, compact = false }: { turn: AgentTurn
   useLayoutEffect(() => { setPanel(undefined); setDetails(false); }, [scope.scope]);
   const memory = turn.memoryReceipt, followup = turn.followupReceipt, arrangement = turn.assistantReceipt;
   if (!memory && !followup && !arrangement) return null;
-  const memoryTitle = memory && ({ saved: "偏好已保存", corrected: "偏好已纠正", forgotten: "偏好已移除", candidate: "有一条记忆候选等待你确认", clarify: "请补充偏好信息" }[memory.operation]);
+  const memoryTitle = memory && ({ saved: "偏好已保存", corrected: "偏好已更新", forgotten: "偏好已移除", candidate: "这条偏好要记住吗？", clarify: "确认一下你想记住的内容" }[memory.operation]);
   const title = arrangement ? arrangement.kind === "delegate" ? `已安排给 ${arrangement.displayName}` : "任务建议已保存" : memoryTitle || (followup?.operation === "created" ? "跟进已安排" : "请补充提醒时间");
   const content = <div className="space-y-3 text-sm">
     {memory && <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -65,7 +65,7 @@ export function PersonalReceiptCard({ turn, compact = false }: { turn: AgentTurn
   </div>;
   return <>
     {compact ? <div className="flex min-w-0 items-center justify-between gap-2 text-xs"><span className="truncate text-slate-600">{title}</span><Button type="link" size="small" onClick={() => setDetails(true)}>查看</Button></div> : content}
-    <Modal title="本次个人助理回执" open={details} footer={null} onCancel={() => setDetails(false)} centered styles={{ body: { maxHeight: "calc(100dvh - 180px)", overflowY: "auto" } }}>{content}</Modal>
+    <Modal title="这次的安排" open={details} footer={null} onCancel={() => setDetails(false)} centered styles={{ body: { maxHeight: "calc(100dvh - 180px)", overflowY: "auto" } }}>{content}</Modal>
     <PersonalAssistantPanel open={!!panel} initialTab={panel} onClose={() => setPanel(undefined)} />
   </>;
 }

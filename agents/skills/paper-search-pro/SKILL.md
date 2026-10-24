@@ -7,7 +7,7 @@ description: Discover and triage academic literature across available scholarly 
 
 ## Intake and tier
 
-Require a research question; default to `standard`. Ask at most one question if scope is missing: time range, language, source constraints, or count. Select: `quick` (20–60 records, orientation), `standard` (60–180, background), `deep` (180–400, review preparation), or `audit` (systematic-review protocol). Do not promise a result count that source coverage cannot support.
+Use the stated research question and known context; default to `standard`. Choose reasonable provisional scope rather than asking for time range, language, databases and count upfront. Ask at most one simple question only when it changes the search direction. Select: `quick` (20–60 records, orientation), `standard` (60–180, background), `deep` (180–400, review preparation), or `audit` (systematic-review protocol). Do not promise a result count that source coverage cannot support.
 
 ## Retrieval protocol
 
@@ -20,3 +20,5 @@ Require a research question; default to `standard`. Ask at most one question if 
 ## Quality gate
 
 Use the schema in [report-contract.md](references/report-contract.md). State source coverage, deduplication counts, unavailable databases, and known metadata gaps. Mark entries as unverified if DOI, authors, date, or title cannot be checked. Never download PDFs without approval or call a search result “the best paper” without an explicit ranking criterion.
+
+Lead with the most relevant findings and why they help, then offer deeper coverage when useful. The query matrix and report fields are your work, not a user form. When search tools are unavailable, offer a concrete query or discuss supplied papers, without invented retrieval. Respect already authorized downloads within their scope.

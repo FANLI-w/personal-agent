@@ -7,7 +7,7 @@ description: Simulate an evidence-grounded ICLR-style pre-submission review of a
 
 ## Scope
 
-Require manuscript/draft, `claim-register.json`, literature/novelty memo, experiment matrix, result artifacts, and target-year official author material when available. Use current ICLR guidance only as a rubric, not as a substitute for the target-year Author Guide.
+Begin with the available draft and the concern the researcher raised. Use existing claims, literature, experiment matrix and results rather than demanding named files upfront. A complete submission signoff needs those evidence records and target-year official author material; explain incomplete coverage without blocking a useful partial review. Use current ICLR guidance only as a rubric, not as a substitute for the target-year Author Guide.
 
 ## Three independent passes
 
@@ -22,3 +22,7 @@ Write `reviews/iclr-red-team.md`, `reviews/iclr-red-team.json`, and `reviews/rep
 ## Gate
 
 Block signoff for an unsupported central claim, no matched strong baseline, unverified citation, numerical inconsistency, missing reproducibility path, unresolved double-blind risk, or unverified target-year policy. Do not state a probability of acceptance or use fabricated reviewer consensus.
+
+## Feedback people can use
+
+Be strict about evidence and considerate toward the author. Lead with the most consequential repair and one manageable next step; distinguish an observed flaw from missing reporting. Ask at most one essential question at a time. Do not dump all method fields, hostile questions or gate labels into ordinary chat, invent owners/deadlines, or judge the researcher's ability. Formal signoff gates remain unchanged.

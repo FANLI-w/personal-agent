@@ -15,6 +15,7 @@ import { nextRecurring,scheduledRequest } from '../src/recurring-time.js'
 import { personalWorkRequest } from '../src/personal-assistant.js'
 import { agentCreationBoundary } from '../src/agent-creation.js'
 import { chatInputTokenBound } from '../src/chat-model-input.js'
+import { researchConversationPolicy } from '../src/conversation-policy.js'
 import { backup,restore } from '../src/recovery.js'
 const profile={displayName:'论文修改助手',introduction:'阅读提供的文字。',capabilityDescription:'讨论论文结构与改写。',personality:'直接、简洁。'}
 const modelResult=(text:string,overrides:Partial<ModelResult>={}):ModelResult=>({text,failure:null,inputTokens:100,outputTokens:100,elapsedMs:10,...overrides})
@@ -106,7 +107,7 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
   const ordinary=await s.send(own.conversation.id,'你能帮我修改论文吗？');await s.tick(async input=>{expect(input.system).toContain('natural private conversation');return modelResult('能讨论你提供的论文文字。')});expect((await s.turn(ordinary.turn.id)).assistantReceipt).toBeUndefined()
   const text='给我分析这份论文的结构',key=randomUUID(),sent=await s.send(own.conversation.id,text,0,key)
   let cap=0
-  await s.tick(async input=>{const prompt=JSON.parse(input.prompt);expect(prompt.currentRequest).toBe(text);expect(prompt.localSpecialists.map((v:{id:string})=>v.id)).toEqual([agent.id]);cap=input.maxTokens;return modelResult(JSON.stringify({kind:'delegate',contactId:agent.id,profile:null}))})
+  await s.tick(async input=>{expect(input.system).toContain(researchConversationPolicy);const prompt=JSON.parse(input.prompt);expect(prompt.currentRequest).toBe(text);expect(prompt.localSpecialists.map((v:{id:string})=>v.id)).toEqual([agent.id]);cap=input.maxTokens;return modelResult(JSON.stringify({kind:'delegate',contactId:agent.id,profile:null}))})
   const parent=await s.turn(sent.turn.id),receipt=parent.assistantReceipt;expect(parent.status).toBe('succeeded');expect(receipt).toMatchObject({kind:'delegate',contactId:agent.id,reused:true,status:'queued',budget:{maxTokens:3800,maxSeconds:89}});expect(cap).toBeGreaterThan(64)
   const child=s.db.prepare('SELECT root_id,request_json FROM chat_turns WHERE id=?').get(receipt.turnId)!
   expect(child.root_id).toBe(sent.turn.id);expect(JSON.parse(String(child.request_json))).toMatchObject({personalAssistant:true,delegatedByTurnId:sent.turn.id,budget:{maxTokens:3800,maxSeconds:89}})

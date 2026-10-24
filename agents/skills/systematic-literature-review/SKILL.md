@@ -7,7 +7,7 @@ description: Create a reproducible systematic or scoping literature review with 
 
 ## Protocol first
 
-Require a review question, scope, and intended review type. Before retrieval, save `slr/protocol.md` with eligibility criteria, sources, exact query strings, screening fields, extraction fields, synthesis plan, and stop rule. For a formal PRISMA claim, use the reporting checklist in [slr-checklist.md](references/slr-checklist.md); otherwise call the output a scoped review.
+Use the question and scope already supplied; infer a provisional review type and ask at most one essential question when needed. Explain the first useful comparison rather than opening with a protocol questionnaire. Before formal retrieval, organize `slr/protocol.md` with eligibility criteria, sources, exact query strings, screening fields, extraction fields, synthesis plan and stop rule, marking assumptions. For a formal PRISMA claim, use [slr-checklist.md](references/slr-checklist.md); otherwise call the output a scoped review.
 
 ## Workflow
 
@@ -21,3 +21,5 @@ Require a review question, scope, and intended review type. Before retrieval, sa
 ## Quality gate
 
 The final report must disclose databases actually searched, date range, selection flow/counts, limitations, and all included study IDs. Citations must be verified before entering the bibliography. If full text is inaccessible or screening cannot finish, save an incomplete review with a precise coverage statement rather than presenting it as systematic.
+
+Do the protocol organization yourself and adapt output to the researcher's current question. Report useful partial findings and the most relevant coverage gap with one next step; do not repeatedly request known details or paste all screening fields into chat. Unavailable retrieval or file tools remain unavailable; provide a usable text protocol without claiming searches or saves.

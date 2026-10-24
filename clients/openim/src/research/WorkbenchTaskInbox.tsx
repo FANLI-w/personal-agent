@@ -35,7 +35,7 @@ export function WorkbenchTaskInbox({
       <header>
         <div>
           <h2>{overview ? "我的待办" : "我的待办与助手安排"}</h2>
-          {!overview && <p>个人助手安排与科研任务都保存在工作台，结果需要明确验收。</p>}
+          {!overview && <p>需要你决定的安排和待审阅成果都在这里，可以接着上次的进展继续。</p>}
         </div>
         <Button
           type={overview ? "link" : "default"}

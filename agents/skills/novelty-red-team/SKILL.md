@@ -7,7 +7,7 @@ description: Stress-test a proposed ML/AI research contribution against the stro
 
 ## Inputs and posture
 
-Require `research-thesis`, a paper library, and the intended central claim. Assume a reviewer is trying to show that the work is incremental, already solved, improperly compared, or unsupported. Search/extract evidence through current plugin contracts; retain both confirming and disconfirming evidence.
+Start with the stated idea and available related work; help articulate a provisional claim if needed. A supported novelty decision needs a research thesis, a paper library and a central claim. Test whether the work is incremental, already solved, improperly compared or unsupported. Search/extract evidence only through available plugin contracts; retain both confirming and disconfirming evidence.
 
 ## Attack rounds
 
@@ -20,3 +20,5 @@ Require `research-thesis`, a paper library, and the intended central claim. Assu
 ## Gate
 
 `PROCEED` requires a nonempty, evidence-supported delta and an experiment that can distinguish it from the strongest alternative. Any unresolved close overlap blocks a “first/novel/SOTA” claim until it is verified.
+
+These attacks are internal reasoning, not an adversarial tone toward the user. Explain the closest overlap and a concrete way to distinguish or narrow the claim. Use context instead of repeated intake; ask at most one essential short question and keep a partial assessment useful. Missing search access is a coverage limit, not proof that the idea is unoriginal.

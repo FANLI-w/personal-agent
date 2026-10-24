@@ -7,7 +7,7 @@ description: Produce an evidence-grounded peer review or deep critical reading o
 
 ## Intake
 
-Require one paper/manuscript and review purpose: quick triage, internal review, target venue, or revision audit. Fetch and parse the source using only contract tools. If content is abstract-only, label the review `limited-to-abstract` and do not score experimental rigor.
+Start with the supplied paper or passage and the user's current concern. For an ordinary reading question, explain that part first; do not force a full peer-review report. Infer a provisional review purpose from context and ask at most one essential question when it changes the assessment. Fetch and parse only with available contract tools. If content is abstract-only, label the review `limited-to-abstract` and do not score experimental rigor.
 
 ## Evidence-led passes
 
@@ -20,3 +20,7 @@ Require one paper/manuscript and review purpose: quick triage, internal review, 
 ## Quality gate
 
 Every criticism must name the observed evidence or absence and one concrete remedy. Separate blocking flaws, major concerns, minor comments, and questions. State review limitations; never manufacture page numbers, prior work, statistical errors, or acceptance recommendations beyond the requested rubric.
+
+## Working with the researcher
+
+Use known context; method fields are your analysis, not an intake form. Give the most consequential finding and a feasible repair first, then expand to the requested depth. Critique the claim or evidence respectfully, not the author's competence. Do not turn every gap into a question or require all missing material before offering a useful bounded review.
