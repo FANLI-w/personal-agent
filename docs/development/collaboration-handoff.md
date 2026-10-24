@@ -7,7 +7,7 @@
 
 工作目录：D:\deepseek-agent\research-agent-platform-chat-integration
 主仓库：https://github.com/luoyan96/personal-agent
-共同开发基线：主仓库最新 main，已包含聊天、资料/课题组、同组本机资料互传、任务拆解/依赖图与构建修复；公开Latest为v0.10.37。
+共同开发基线：主仓库最新 main，已包含聊天、资料/课题组、同组本机资料互传、任务拆解/依赖图、构建修复及PR97/96科研助手交流调整；公开Latest为v0.10.37。
 
 先读取根目录 AGENTS.md，然后读取 CONTRIBUTING.md、docs/current-state.md、docs/project-log.md 最新记录、README.md、docs/roadmap.md 和 docs/development/collaboration-handoff.md。
 
@@ -24,8 +24,8 @@
 6. 代码合并、安装包制作、公开 Release、后台部署分别记录，不能把其中一项完成说成全部完成。此前同步 main/发布0.10.29的授权已履行，不是以后自动合并或发布的长期授权；按我当前指令推进，不重复询问已明确授权的同一操作。
 
 当前交付事实：
-- 新增本机0.10.39候选与PR97（含PR96，均未合并）：产品e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6，七个内置助手、十一个canonical方法和任务全流程统一低负担交流，角色化跟进、旧模板复用/用户编辑保持。桌面C:\Users\luo\Desktop\AcceptCat_0.10.39.exe，87,409,143字节，SHA256 70340836adade67025d5572411389b7c17ef54e23cf256e0bfc016b81f19fa24。762项根CI/2生产入口、71客户端、双类型和NSIS/更新清单通过；保留初稿预算失败并在原上限内压缩规则。日常聊天等后台系统规则随后按本人单独授权于2026-10-24 16:23:50上线7fa2e86e；桌面界面/规划与模板仍需使用0.10.39候选。无接口/数据库/锁变化，未代安装/界面/真实模型验收。见docs/deployment/acceptcat-0.10.39.md、docs/deployment/agent-conversation-20261024.md及docs/development/agent-conversation-flow.md。
-- main已按本人指令以merge commit合入PR89、PR91和整合PR94；PR94提交8dba29fb6715269ff3ef0bee5f26867f5ae3d050包含FANLI-w的PR92与PR93，两原PR已自动MERGED，保留同事PR86及双方原作者。公开Latest为v0.10.37，标签固定8dba29f；main后续可有文档提交，开始前仍需fetch实际最新状态。
+- 本机0.10.39候选与PR97（含PR96）已按本人明确指令合入main：2026-10-24 16:48:58 merge commit a08a63a87ea3cf2e561c20197259bf2a60cafa08，PR96随之自动标记MERGED；受审head6d4df11四项GitHub检查成功，合并树相同，双方作者/历史保持。产品e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6，七个内置助手、十一个canonical方法和任务全流程统一低负担交流，角色化跟进、旧模板复用/用户编辑保持。桌面C:\Users\luo\Desktop\AcceptCat_0.10.39.exe，87,409,143字节，SHA256 70340836adade67025d5572411389b7c17ef54e23cf256e0bfc016b81f19fa24。762项根CI/2生产入口、71客户端、双类型和NSIS/更新清单通过；保留初稿预算失败并在原上限内压缩规则。日常聊天等后台系统规则已按本人单独授权于16:23:50上线7fa2e86e；桌面界面/规划与模板仍需使用0.10.39候选，尚未公开Release。无接口/数据库/锁变化，未代安装/界面/真实模型验收。见docs/deployment/acceptcat-0.10.39.md、docs/deployment/agent-conversation-20261024.md及docs/development/agent-conversation-flow.md。
+- main已按本人指令以merge commit合入PR89、PR91、整合PR94及PR97；PR94提交8dba29fb6715269ff3ef0bee5f26867f5ae3d050包含FANLI-w的PR92与PR93，PR97/a08a63a包含PR96，原PR均自动MERGED，保留同事PR86及双方原作者。公开Latest为v0.10.37，标签固定8dba29f；main后续可有文档提交，开始前仍需fetch实际最新状态。
 - 上次公开安装包（桌面仍保留）：C:\Users\luo\Desktop\AcceptCat_0.10.37.exe；公开页：https://github.com/luoyan96/personal-agent/releases/tag/v0.10.37 。87,410,751字节，SHA256 ecc17405bb3bf5e12ee7a28e934668dbce039b05ffbcc6482f3a2ae8d9529225；四附件与未登录更新清单已核对。后续是否仍是最新版须按实际状态确认。
 - 同组原件互传：PR91已合main，产品09ffb44的目录授权、聊天索取、WebRTC直传和本机原件打开现已随0.10.37公开；配套contract0.30/schema026保持，本次后台交流规则升级没有迁移或扩大资料权限。双方须在线且切同组，每份10MiB，无TURN/云原件兜底；实际双机与安装体验由本人检查。
 - 构建与任务拆解：公开0.10.37产品4c6ea18统一两共享包先构建、link依赖及工具链/成品守卫，并接入任务拆解Skill/依赖图；根desktop:win命令见CONTRIBUTING。762项根CI、36客户端定向、双类型与受审head d4eb38e四项GitHub检查通过。桌面prompt加载新方法；后续11个canonical方法已随2026-10-24后台交流规则升级上线，不覆盖已安装私人版本。未代安装或真实模型验收，NSIS关闭循环未复现。详情见docs/deployment/acceptcat-0.10.37.md及docs/deployment/agent-conversation-20261024.md。

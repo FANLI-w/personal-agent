@@ -4,7 +4,7 @@
 
 ## 版本与实际范围
 
-- 产品源码：`e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6`，分支`fix/agent-conversation-flow`、[PR97](https://github.com/luoyan96/personal-agent/pull/97)，包含PR96，两PR仍开放。
+- 产品源码：`e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6`，分支`fix/agent-conversation-flow`、[PR97](https://github.com/luoyan96/personal-agent/pull/97)，包含PR96；部署时两PR开放，随后获明确指令合入main/a08a63a，两PR均MERGED。
 - 新镜像：`research-openim-api:agent-conversation-20261024-v2`，实际ID **`sha256:7fa2e86e6f8847e5341b35077b5cc75971af72a53800955af74722b6952ad376`**。
 - 原镜像：`research-openim-api:peer-library-20261023`，ID `sha256:2677f6936ae5ff05c229a88a8a5c161c0f06570cb77096d57f60349d4304423c`，保留作同schema回退。
 - contract **0.30.0**、schema **026**保持，**未运行迁移**。DSH0.2.1-rc.2/Cordis4.0.5及依赖保持，未升级框架或引入工具权限。
@@ -42,3 +42,5 @@
 服务器证据：`/opt/research-openim/ops/agent-conversation-20261024-v2`，首轮为同级agent-conversation-20261024。本机Git外：`D:/deepseek-agent/.runtime/agent-conversation-deploy-20261024`，含两版包/增量、哈希、准备脚本、GitHub回执、脱敏deployment-summary.json和成功截图。备份及恢复检查位于同ECS，不称异地灾备。
 
 本次没有合并main、重打或代安装客户端、公开Release。公开Latest读取仍v0.10.37，本机0.10.39成品哈希保持。按负责人要求未追加产品界面、真实账号/材料/模型、原生启动或双机体验验收；规则上线不等于真实科研交流质量已验证。
+
+后续独立合并：负责人明确要求合并后，2026-10-24 16:48:58将PR97固定head6d4df11合入main/a08a63a，PR96于16:49:00自动标记MERGED；合并前四项GitHub检查通过，合并树与受审head相同。本次合并没有再次操作后台、数据库或安装包。

@@ -2,17 +2,23 @@
 
 更新日期：2026-10-24（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## PR97已按负责人指令合入main，PR96随之合并
+
+北京时间 **2026-10-24 16:48:58**，[PR97](https://github.com/luoyan96/personal-agent/pull/97)以merge commit **a08a63a87ea3cf2e561c20197259bf2a60cafa08**合入main，固定受审head **6d4df116417c79e3ad64c8139bafe968e4165613**；[PR96](https://github.com/luoyan96/personal-agent/pull/96)于16:49:00自动标记MERGED。合并树与受审head逐文件相同，旧main/fecb98f、PR96及同事PR86/PR92、构建PR93的提交均保持祖先关系，未改写作者或历史。
+
+合并前该head三平台Foundation（运行40078362744）和Windows package（40078362738）四项全部success，无冲突。只执行合并与状态同步，没有重复代码/安装后体验验收，也没有重打包、再次部署后台或公开Release；桌面0.10.39及后台7fa2e86e保持，重新读取公开Latest仍v0.10.37。main合并后自动CI按实际运行另记，不把受审head通过算作新运行已完成。Git外证据 **D:/deepseek-agent/.runtime/merge-pr97-20261024**。
+
 ## 科研助手交流规则后台已部署，桌面候选仍为0.10.39
 
 负责人单独授权后，北京时间 **2026-10-24 16:23:30—16:23:50**完成停写备份、独立恢复副本核对及API/worker切换。后台产品 **e48852e**，镜像 **7fa2e86e6f8847e5341b35077b5cc75971af72a53800955af74722b6952ad376**；contract0.30.0/schema026保持，未迁移。日常聊天、委派、创建、资料/Skill和外部当条请求的共用交流规则及11个canonical方法已上线，不覆盖用户已安装的私人Skill版本。[部署与回退记录](deployment/agent-conversation-20261024.md)。
 
 首轮运维包遗漏当前源码已有的Skill导入边界修复，隔离检查93通过/1失败，切换前停止推进；第二版补齐该文件及共享包哈希，**114项/10文件**全部通过，原失败保留。实际103表/7原件及17个配置/密钥输入的哈希/权限、个人模型默认值、飞书连接/私库范围、目录缓存和其他6服务保持。两服务running/restart0、API healthy，公网ready200/0.30、未登录受保护接口401。广场同步仍`enabled=false/state=disabled/nextCheckAt=null`，DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified，未调用真实模型。
 
-本批只部署已授权后台并记录状态，未合并PR96/97、重打或代安装客户端、公开Release。桌面0.10.39及原哈希保持，公开Latest读取仍v0.10.37。真实交流与安装体验仍由负责人检查；Git外证据 **D:/deepseek-agent/.runtime/agent-conversation-deploy-20261024**，服务器目录及备份见部署记录。
+部署批次只升级已授权后台并记录状态，没有重打或代安装客户端、公开Release；随后另按负责人指令合入PR97/96（见本页开头）。桌面0.10.39及原哈希保持，公开Latest读取仍v0.10.37。真实交流与安装体验仍由负责人检查；Git外证据 **D:/deepseek-agent/.runtime/agent-conversation-deploy-20261024**，服务器目录及备份见部署记录。
 
 ## 本机候选0.10.39：统一各科研助手和任务全流程的低负担交流
 
-负责人要求整体核对任务流程和各Agent设计。从fetch后的main/fecb98f新建`fix/agent-conversation-flow`，普通merge上一批PR96/bfcc8b7保留完整修复，再调整七个内置助手、十一个canonical科研方法与规划→邀请→执行/阻碍→交付→审阅→失败恢复。产品 **e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6**，[PR97](https://github.com/luoyan96/personal-agent/pull/97)已提交/挂接，含PR96且两PR尚未合并，不自动关闭原PR。[逐段范围与生效边界](development/agent-conversation-flow.md)，[24个合成评价情境](../evaluations/fixtures/agent-conversation-flow.md)。
+负责人要求整体核对任务流程和各Agent设计。从fetch后的main/fecb98f新建`fix/agent-conversation-flow`，普通merge上一批PR96/bfcc8b7保留完整修复，再调整七个内置助手、十一个canonical科研方法与规划→邀请→执行/阻碍→交付→审阅→失败恢复。产品 **e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6**，[PR97](https://github.com/luoyan96/personal-agent/pull/97)含PR96，现已按负责人指令合入main/a08a63a，两PR均MERGED。[逐段范围与生效边界](development/agent-conversation-flow.md)，[24个合成评价情境](../evaluations/fixtures/agent-conversation-flow.md)。
 
 共用简洁规则：先使用已知信息帮助，确需时每轮至多一个简单必要问题，不复合追问、不重复索要、不强行结尾提问；方法字段由助手整理，短问题直接回答，完整方案按所需深度展开。严格评价证据并给修法，尊重用户处境。任务下一步按查看者角色区分，旧模板继续复用，不覆盖用户自改档案；保留原权限、材料/记忆隔离、任务确认/版本/幂等/预算/取消和验收机制。
 
