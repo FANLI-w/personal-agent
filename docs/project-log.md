@@ -1688,3 +1688,17 @@ Compose链末尾追加agent-conversation-20261024-v2/images.yaml，旧2677f693�
 运维目录 **/opt/research-openim/ops/planning-reply-20261024**，仅在原Compose链末尾添加本批images.yaml；旧7fa2e86e镜像保留。同schema回退只撤末尾覆盖并恢复配对镜像，保留当前数据库和后续写入，不回灌旧备份或退回025；本次未触发回退。[完整回执](deployment/acceptcat-0.10.40.md)，Git外证据 **D:/deepseek-agent/.runtime/planning-reply-validation-20261024**新增deployment-summary.json和deployment-proof.png。
 
 本批只完成后台部署及文档同步，没有重打或代安装客户端，桌面0.10.40原大小/摘要保持；PR99仍OPEN，未合并main或公开Release，重新读取公开Latest仍v0.10.37/422478602。部署前文档head a541649的Foundation40082175060三平台与Windows package40082175063四项全部success；后续文档head检查按实际回执另记，未重复已通过完整CI/客户端构建或追加界面/真实模型/用户体验验收。注册超时未定因、飞书本人试点和原件在线/10MiB/无TURN等边界保持。
+
+## 2026-10-24 — 科研同伴的判断/接话与私人偏好，交付本机0.10.41
+
+负责人要求参考同事.skill并实际改进。核对干净旧分支/远端并fetch，main仍89c987c，另开feature/research-colleague，再普通merge PR99固定05ebf3a保留0.10.40解析/回滚/原话重试与已有同事聊天、资料及课题组功能，未提前合并主线。审阅Distilly固定0afc45c的人格分析/生成、纠正与writer代码，只借鉴组织方式，正文、例子和实现独立编写，未复制/运行上游项目，来源记录NOTICE/migration。
+
+产品 **5293eba94d2133f8624628084351ad1f06cd7bfe**：七个模板加入场景下的科研判断、合作方式与接话例子；规划/拆解和共用后台规则遇到增加工作量先判断证据价值、卡住先缩小一步、不同意给理由与替代办法。旧0.10.38及0.10.39/40档案可复用，用户自改内容不自动覆盖。本人在自己的本地Agent私聊明确保存交流偏好时，确定性写入private_agent记忆，沿原版本/修订/撤回/幂等与在途结果失效机制，不调用模型、不跨角色/账号或导出公开；容量不足如实未保存，引用/问题/当前抱怨不持久学习。独立规划不绑定联系人偏好，外部Agent/群聊不获修改权限。API字段/contract0.30/schema026、依赖锁不变，无迁移。
+
+根完整CI **772项/60文件**、2生产CLI/HTTP、B0及生产边界通过；新增3项实际HTTP/SQLite/worker合成检查覆盖重启保存、修订/撤回/重放/容量、导出与账号/角色隔离及晚到结果。初轮定向66通过/2失败，均为新增共用规则挤占旧4k/重试预算；压缩后原32项聊天通过。客户端首轮长输入边界失败，压缩重复规划/方法说明后，完整4000字当前消息/方法与原8000上限保持，最终模板/规划/依赖 **32项**及renderer/Electron双类型通过。原失败保留，无抬预算/删断言；全量后仅收尾撤回回执措辞和真人名片占位提示，业务逻辑不变。
+
+根desktop:win按冻结准备/两共享包先构建/客户端安装完成，生产Web/4SDK、55运行包、NSIS/成品4入口及更新清单核对通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.41.exe**，**87,410,682字节**，SHA256 **ae8f3bc1a60a4dac27b439e25de5ee71202f9b8f19b59b579e304093db618b1e**；复制摘要一致，旧包保留，未代安装/启动。既有Ant Design指令警告保留，未追加产品界面、真实账号/私人材料/模型或双机体验验收；新增14语言情境仅为评价要求，不能当作真实同事感已验收。
+
+[PR100](https://github.com/luoyan96/personal-agent/pull/100)已创建/挂接，含PR99，未合并或公开Release。重新fetch main仍89c987c，公开Latest读取仍v0.10.37/422478602。后台仍沿已部署b232296/620bc025、contract0.30/schema026记录；本批没有停服/迁移/新健康探测，共用规则和明确私人偏好保存尚未上线。Git外backend-source-5293eba.tar.gz为39,114字节的审阅源码，SHA256 d77661ada4a650daf63c3f2da664ed86f16e5ec6a09a3fe7821b7e89b2ee9fef，尚未上传/服务器构建/隔离/切换。后台部署按负责人此前约定单独授权。
+
+更新current-state、roadmap、交接prompt及[0.10.41交付](deployment/acceptcat-0.10.41.md)/[设计与边界](development/research-colleague.md)，证据 **D:/deepseek-agent/.runtime/research-colleague-20261024**。远端自动CI按新head实际结果另记，未完成不算通过；注册超时未定因、飞书本人试点、原件在线/10MiB/无TURN及广场同步关闭边界保持。
