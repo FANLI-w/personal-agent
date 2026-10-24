@@ -1,12 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { routes } from "@research-agent-platform/contracts";
 import { agentStarters, libraryAgentStarter, findOwnedStarter } from "../src/research/agentStarterProfiles.ts";
 const previous = JSON.parse(readFileSync(new URL("fixtures/agent-starters-0.10.38.json", import.meta.url), "utf8"));
 const contact = (profile, owner = "owner") => ({
   id: "agent_existing", displayName: profile.displayName,
   identity: { kind: "personal_agent", ownerMemberId: owner },
   profile: { ...profile, role: "specialist" }, relationship: { status: "own" },
+});
+test("all conversational templates fit the existing creation API without adding permissions or fields", () => {
+  for (const starter of agentStarters)
+    assert.equal(routes.createPersonalAgent.request.shape.body.safeParse(starter.profile).success, true, starter.id);
 });
 test("all seven previous templates reuse the same owned Agent without rewriting its profile", () => {
   assert.equal(agentStarters.length, previous.starters.length);
