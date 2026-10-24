@@ -2,6 +2,14 @@
 
 更新日期：2026-10-24（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 本机0.10.40修复连续规划校验与原话重试，后台等待恢复连接
+
+负责人反馈第二轮正常补充背景后出现失败。后台最近记录为INVALID_MODEL_OUTPUT，旧记录未留返回形状，不能还原具体错误字段。代码可复现完整Plan/strict PlanInput混用及“空日程”提示与校验不一致；现将模型研究内容与服务器身份/日期/资料权限分开，保留正式校验，规划写入失败原子回滚并记无正文的有界诊断。界面显示系统故障与“重试这条”，保留原话/草稿，不自动重发、重复上下文或重放创建命令。[0.10.40交付与边界](deployment/acceptcat-0.10.40.md)。
+
+从fetch后的main/89c987c另开fix/planning-reply-validation，产品 **b232296fb10e3484959b628aa47c087d5fbf35e6**，[PR99](https://github.com/luoyan96/personal-agent/pull/99)开放。完整根CI **769项/60文件**及2生产入口/B0/生产边界、13项API定向、28项客户端与双类型、Windows包和更新清单通过。首轮新增夹具带入只读字段的失败保留，修正夹具后通过，未放宽接口。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.40.exe**，**87,408,408字节**，SHA256 **7bfdc1d4f3b248d379dbdaeea2828851a4ba41b47142929646c869c98ebfc8c7**；旧包保留，未代安装或追加真实模型/界面/用户体验验收。
+
+**后台修复尚未上线。** 原Workbench断线，原控制台标签访问超时，已请求负责人重新连接；没有停止线上服务。后台仍沿7fa2e86e记录，无迁移、重部署或本批新健康探测。Git外修复包/备份切换脚本已准备，尚未上传/构建/执行服务器检查，不能因安装0.10.40就称服务器解析已修好。证据 **D:/deepseek-agent/.runtime/planning-reply-validation-20261024**。PR未合并、0.10.40未公开Release；公开Latest沿此前v0.10.37，原其他边界保持。
+
 ## PR97已按负责人指令合入main，PR96随之合并
 
 北京时间 **2026-10-24 16:48:58**，[PR97](https://github.com/luoyan96/personal-agent/pull/97)以merge commit **a08a63a87ea3cf2e561c20197259bf2a60cafa08**合入main，固定受审head **6d4df116417c79e3ad64c8139bafe968e4165613**；[PR96](https://github.com/luoyan96/personal-agent/pull/96)于16:49:00自动标记MERGED。合并树与受审head逐文件相同，旧main/fecb98f、PR96及同事PR86/PR92、构建PR93的提交均保持祖先关系，未改写作者或历史。
