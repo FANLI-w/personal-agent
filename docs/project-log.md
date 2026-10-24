@@ -1616,3 +1616,17 @@ bd01010调整生成提示与canonical Skill：先承接背景、主动给小判�
 桌面AcceptCat_0.10.38.exe，87,408,466字节，SHA256 d83bb700954c563ac7ffd69115ad67b376835769c9abf322674b9f70ac72ff7e；复制前保护已有不同包、复制后核对，旧0.10.35—37保持。Git外D:/deepseek-agent/.runtime/planner-conversation-20261024保留baseline/最终定向、类型、根CI、两轮打包、before-welcome-assets、更新核对、范围保全和delivery.json。[PR96](https://github.com/luoyan96/personal-agent/pull/96)已创建/挂接，未合并/公开，公开Latest连接器重新读取仍v0.10.37；GitHub自动CI按实际head单独记录，不把配置或本机结果算作远端已通过。
 
 更新current-state及[0.10.38交付记录](deployment/acceptcat-0.10.38.md)，收尾按仓库要求检查内容与diff。无API/契约/数据库迁移/依赖锁变化，无后台操作或新线上探测；现有0.30接口结构兼容，新方法随桌面prompt传入。真实模型是否持续做到自然、低负担交流未代验，不把结构/合成测试冒称真实科研对话质量；沿负责人自行检查实际体验的安排。既有注册超时、飞书试点、NAT/在线/文件限额及广场关闭边界不变。
+
+## 2026-10-24 — 整体调整科研助手与任务流程，交付本机0.10.39候选和PR97
+
+负责人要求整体检查任务流程和全部Agent设计，使交流更自然、减少用户负担。核对工作树干净、主仓库origin并fetch，从最新main/fecb98f另开fix/agent-conversation-flow，普通merge PR96/bfcc8b7保留上一批修复和原提交；未沿旧功能分支堆新需求。产品e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6，PR97已提交/挂接并包含PR96，两PR仍开放，未合并main、公开Release或部署。
+
+共用紧凑交流规则覆盖规划、日常聊天、委派、创建、资料/Skill和外部当条请求。七个内置助手开场与交流偏好、十一个canonical方法逐项调整：已有背景接着用，先给有根据的小帮助，确需时每轮最多一个简单问题，不重复/复合追问；方法字段由助手整理，完整方案按所需深度展开，严格评价证据并给可行修法。任务流覆盖邀请、执行/阻碍、交付、审阅和失败恢复；按查看者区分下一步，多个校验事项渐进展示但全部校验保留。旧模板继续复用，不覆盖自改档案，原权限、共享、确认、版本/幂等、预算、取消和验收不变。
+
+初稿提示叠加触发旧4k对话/重试及10k规划预算边界，过渡压缩也曾丢失JSON only协议标识；所有失败留Git外，未提高预算、裁剪用户内容或放宽原断言。最终相关定向恢复通过，完整根CI762项/59文件、2生产CLI/HTTP、B0和生产边界通过（首轮761通过/1失败保留）。最终输入11cd139后仅补客户端模板契约检查，运行源码保持。71客户端定向（7新增）及renderer/Electron双类型通过；24情境作为评价标准，不算真实模型语义通过。
+
+根desktop:win冻结准备、两共享包先构建再客户端安装、Web/4SDK、55运行包、NSIS/ASAR4入口、更新清单/大小/SHA512/blockmap及公开更新源核对通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.39.exe，87,409,143字节，SHA256 70340836adade67025d5572411389b7c17ef54e23cf256e0bfc016b81f19fa24；复制前保护已有不同文件、复制后核对，旧包保持。Git外D:/deepseek-agent/.runtime/agent-conversation-flow-20261024保留全部失败/最终检查、类型、构建、prompt-size、preservation、更新核对和delivery.json。
+
+规划prompt/模板/界面随本机包生效；日常聊天等后台系统规则仅源码已改，本批未部署，不能声称安装包已更新线上全部Agent规则；内置方法包不自动覆盖用户已安装私人版本。contract0.30/schema026、依赖锁和核心业务状态文件保持，无后台重启/迁移/新线上探测，沿此前2677f693及DSH0.2.1-rc.2/Cordis4.0.5记录；连接器重新读取公开Latest仍v0.10.37。注册超时未定因、飞书本人试点、在线/10MiB/无TURN和广场同步关闭等边界保持。
+
+更新current-state、roadmap、交接prompt及[0.10.39交付](deployment/acceptcat-0.10.39.md)，补[逐段检查范围](development/agent-conversation-flow.md)与合成评价情境。按负责人安排没有追加浏览器产品、安装/原生启动、真实账号/材料/模型或双机验收。提醒多轮槽位、已确认任务的对话修改、跨设备规划历史不冒称本批完成；GitHub自动CI以具体head回执另记，收尾文档按内容/diff检查执行。
