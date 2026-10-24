@@ -1676,3 +1676,15 @@ Compose链末尾追加agent-conversation-20261024-v2/images.yaml，旧2677f693�
 更新current-state及[0.10.40交付记录](deployment/acceptcat-0.10.40.md)，代码、安装包、后台和公开状态分别记载。按既有安排不主动追加产品界面、真实账号/材料/模型、安装后或双机验收；原注册超时、飞书试点、原件直连和广场关闭边界保持。恢复后台连接后先核对实际镜像/Compose链，再做候选隔离与备份切换，不重复索取用户已提供的研究背景。
 
 收尾实际读取产品head b232296：Foundation40081514626三平台与Windows package40081514648四项全部success。内容258 Markdown/11 Skill及diff检查通过；后续文档推送触发的新CI另记，不将产品head成功移算给新运行。后台重连问题仍待用户恢复，未因检查通过而跳过部署前隔离或宣称线上完成。
+
+## 2026-10-24 — Workbench恢复后完成连续规划修复的配套后台部署
+
+负责人回复“已连接”后接续既有部署授权，核对新Workbench、生产旧镜像7fa2e86e、Compose链与健康状态；保留此前WebSocket/控制台超时记录。修复包45,404字节、SHA256 `0cb8aaafaaf7e9ce440772cf3b7a9cb20c1387a01a1ca148c12ae7c9939640d1`上传后摘要一致，离线候选仅叠加2个API源文件，127基线/127编译、32个Skill文件/11方法、运营种子及contract/schema守卫通过。候选29项/3文件（输出解析5、个人规划8、执行16）全通过，没有调用真实模型或用私人材料评价模型。
+
+北京时间 **17:41:50—17:42:10**排空配对API/worker，停写备份、独立恢复核对并切换成功，deployment.exit=0。产品 **b232296fb10e3484959b628aa47c087d5fbf35e6**，新镜像 **research-openim-api:planning-reply-20261024 / sha256:620bc0254aef1ea1b5339c7826d360d07119a89b4ae053686d4f9a00d1e47aec**；contract0.30.0/schema026不变，未运行迁移。备份 **/srv/research-openim-backups/planning-reply-20261024-20261024T094152Z/research.tar.gz**，SHA256 **48a60650914fc3268ba1c099a431bbb0887b7a189af0ae8c8d93a1a0ff23d802**，私密备份/配置副本只留服务器。103表全行/结构、7原件内容/权限、迁移历史、integrity/外键及18配置/密钥输入哈希/权限保持；个人模型/默认值、飞书连接/私库范围和目录缓存不变。
+
+恢复副本HTTP ready200/保护接口401，未创建账号或会话；切换后API和worker均running/restart0，API healthy，公网ready200/contract0.30，四受保护路由有效合成参数匿名401，其他6服务/静态站点和运行配置保持。广场实际enabled=false/state=disabled/nextCheckAt=null，GITHUB_CATALOG_SYNC=0，11条目/19候选保持；DSH0.2.1-rc.2/Cordis4.0.5不变，Harness仍not_verified。原失败请求未自动重放，旧方案和原消息保留；原真实返回形状未知，不宣称已还原确切历史字段。
+
+运维目录 **/opt/research-openim/ops/planning-reply-20261024**，仅在原Compose链末尾添加本批images.yaml；旧7fa2e86e镜像保留。同schema回退只撤末尾覆盖并恢复配对镜像，保留当前数据库和后续写入，不回灌旧备份或退回025；本次未触发回退。[完整回执](deployment/acceptcat-0.10.40.md)，Git外证据 **D:/deepseek-agent/.runtime/planning-reply-validation-20261024**新增deployment-summary.json和deployment-proof.png。
+
+本批只完成后台部署及文档同步，没有重打或代安装客户端，桌面0.10.40原大小/摘要保持；PR99仍OPEN，未合并main或公开Release，重新读取公开Latest仍v0.10.37/422478602。部署前文档head a541649的Foundation40082175060三平台与Windows package40082175063四项全部success；后续文档head检查按实际回执另记，未重复已通过完整CI/客户端构建或追加界面/真实模型/用户体验验收。注册超时未定因、飞书本人试点和原件在线/10MiB/无TURN等边界保持。
