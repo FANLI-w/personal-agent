@@ -1564,3 +1564,25 @@ GitHub原运行39880985440，两项Linux foundation success，Windows760通过/2
 北京时间 **2026-10-23 09:24:07**，PR91使用merge方法合入main，提交 **90b7687449fa9f1dc43222b117369839b7f57e41**，固定head **854230a39bca9fc136022e2431535cf182246888**。父提交为原main/e393247与PR head，合并树与受核对head完全相同，保留所有原作者与提交；已普通ff同步本地main。原失败、原阈值复核、CI回执与前后祖先/树核对存Git外 **D:/deepseek-agent/.runtime/merge-pr91-20261023**。
 
 current-state、项目日志、路线图、实现/部署说明和新聊天交接补main已合并状态；纯文档按CONTRIBUTING执行check:content与diff检查，合并后自动main CI独立记录，不把尚未结束的运行称为通过。无本批重打或代安装、公开Release、后台重启/迁移/模型探测；桌面0.10.35及固定源码09ffb44/安装包SHA保持，公开Latest仍v0.10.34，线上沿0.30/schema026/2677f693与广场同步关闭。没有追加用户自行负责的产品、真实账号/资料/模型、原生安装或双机WebRTC验收；注册超时未定因、飞书本人试点和NAT直连边界保持。
+
+## 2026-10-23 — 修正Windows共享包构建流程，交付本机0.10.36候选
+
+用户提供同事对file快照、构建顺序、CJS缺失与NSIS的诊断及另一份0.10.35附件。核对干净main/6c73af66cd7ba41bbee4c897415984fa8150e377、origin主仓库与legacy后fetch，另开fix/desktop-build-reproducibility。确认文档漏build research-skills、客户端file依赖/构建入口缺口；原Foundation不构建Windows客户端。当前工具组件未发现混用、NSIS循环未复现，旧暂存目录已有CJS；附件与原桌面包不同哈希，未代执行/提取或认定附件是坏包。
+
+32c1b29统一根/客户端精确Corepack版本及冻结安装顺序，两包自动构建，改实时link依赖，固定既有Electron22.3.27/builder23.6.0并检查内部组件、运行目录与ASAR入口；对应锁记录精确调整，无第三方版本升级。新增独立Windows打包工作流与构建守卫，CONTRIBUTING补完整命令。干净clone首轮Husky找不到客户端.git失败，525804c按monorepo跳过独立hooks并把4SDK核对接入正式入口；次轮NSIS已生成，但新ASAR守卫用错Windows分隔符误报，62d73f6修正并补真实嵌套路径测试。两个失败目录/日志与次轮候选产物均保留，无force安装、全局缓存删除或改业务代码。
+
+受打包源码62d73f61f7da123aac36f747fab13c0bb08a883d。在独立clean-v2快进修复后复跑完整根desktop:win退出0，4SDK/55运行包/NSIS/成品4入口与更新清单通过；最初该clone无node_modules/共享dist，但最终复跑已有依赖且复用全局缓存，不称一次全新环境成功。最终隔离目录双类型与13项定向检查通过；宿主Node实际CJS加载通过，不能代替Electron22启动。没有改共享包源码/Skill内容或API/迁移，不重复此前762项本地全CI；新GitHub打包工作流尚待运行，不把新增配置称为线上已通过。
+
+桌面C:/Users/luo/Desktop/AcceptCat_0.10.36.exe，87,411,073字节，SHA256 16bb950c2741c5b9037576b573b8770875398e2af883ea20bf2437f8c9a9eeca；复制前确认目标不存在、复制后校验，旧包与用户附件保持。Git外D:/deepseek-agent/.runtime/desktop-build-20261023保存初始附件比对、原失败、最终构建/类型/测试/更新核对和delivery.json。更新current-state、路线图、交接与[0.10.36交付记录](deployment/acceptcat-0.10.36.md)；内容检查246份Markdown/10份Skill及diff检查通过，源码通过独立PR审阅，不自动合并。
+
+本批仅本机候选，公开Latest重新读取仍v0.10.34，未公开Release/推版本标签或部署后台；线上沿此前0.30/schema026/2677f693记录，本批未探测。没有代安装、原生/浏览器产品、真实账号/资料/模型或双机验收，安装体验由本人检查。NSIS关闭循环与force导致组件混用的因果仍未验证，不宣布该现场故障已消失。聊天/资料/课题组双方功能、广场同步关闭、注册超时未定因与飞书本人试点边界保持。
+
+随后普通push修复分支，使用既有GitHub CLI创建并挂接[PR93](https://github.com/luoyan96/personal-agent/pull/93)，目标main。首次回读ec8755b为OPEN/MERGEABLE，三项Foundation与新增Windows打包工作流均运行中，未称通过；pr93-initial.json留存Git外。PR未合并，没有将安装包作为源码或公开Release上传。
+
+后续head9402bfd9fa890af0a6c24199258bdc80650bb87d的Windows打包运行39943780240于北京时间19:09:34实际success：干净checkout冻结准备、双类型/8构建守卫、4SDK/55运行包、NSIS/成品4入口、更新清单均通过，7天CI附件12497187962已上传，与桌面包不作逐字节相同声明。两项Linux Foundation当次已成功，Windows Foundation仍运行中；后续以具体head回执为准，不将部分通过说成全CI完成。一次CLI轮询TLS握手超时，后续只读回读成功，未改变网络/凭据。回执与github-desktop-ci.log保留Git外，末尾仅补交付文档，不重打桌面包或代做安装体验检查。
+
+## 2026-10-24 — 负责人确认附件0.10.35是同事干净构建成功的版本
+
+负责人回复此前澄清问题，明确附件AcceptCat_0.10.35.exe为“干净构建成功的版本”。将哈希c0f9c5743a37c994efb54213ca96bb0409554284e64160ee8bb60f6bb9ab2ebd的附件记录为同事成功构建样本，更新current-state和0.10.36交付记录中“尚待说明”的状态；不将它列为已确认的故障包，也不扩展为本机已验证安装或启动。
+
+核对本地修复分支d1e8e66干净、origin主仓库并fetch，PR93仍开放且未合并。本次仅补事实说明，两个旧0.10.35和桌面0.10.36保持，不重打/代安装、不修改运行代码、不合并/公开发布或部署后台。执行内容与diff检查，不重复代码或安装后体验验收。

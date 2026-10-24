@@ -35,11 +35,11 @@ importers:
         specifier: 3.8.3-patch.15.1
         version: 3.8.3-patch.15.1
       '@research-agent-platform/contracts':
-        specifier: file:../../packages/contracts
-        version: file:../../packages/contracts
+        specifier: link:../../packages/contracts
+        version: link:../../packages/contracts
       '@research-agent-platform/research-skills':
-        specifier: file:../../packages/research-skills
-        version: file:../../packages/research-skills
+        specifier: link:../../packages/research-skills
+        version: link:../../packages/research-skills
       adm-zip:
         specifier: ^0.5.10
         version: 0.5.16
@@ -189,10 +189,10 @@ importers:
         specifier: ^10.4.13
         version: 10.5.2(postcss@8.5.15)
       electron:
-        specifier: ^22.3.27
+        specifier: 22.3.27
         version: 22.3.27
       electron-builder:
-        specifier: ^23.6.0
+        specifier: 23.6.0
         version: 23.6.0
       eslint:
         specifier: ^8.34.0
@@ -1492,12 +1492,6 @@ packages:
   '@remix-run/router@1.23.3':
     resolution: {integrity: sha512-4An71tdz9X8+3sI4Qqqd2LWd9vS39J7sqd9EU4Scw7TJE/qB10Flv/UuqbPVgfQV9XoK8Np6jNquZitnZq5i+Q==}
     engines: {node: '>=14.0.0'}
-
-  '@research-agent-platform/contracts@file:../../packages/contracts':
-    resolution: {directory: ../../packages/contracts, type: directory}
-
-  '@research-agent-platform/research-skills@file:../../packages/research-skills':
-    resolution: {directory: ../../packages/research-skills, type: directory}
 
   '@sindresorhus/is@4.6.0':
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
@@ -6889,14 +6883,6 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
 
   '@remix-run/router@1.23.3': {}
-
-  '@research-agent-platform/contracts@file:../../packages/contracts':
-    dependencies:
-      zod: 4.1.12
-
-  '@research-agent-platform/research-skills@file:../../packages/research-skills':
-    dependencies:
-      yaml: 2.8.3
 
   '@sindresorhus/is@4.6.0': {}
 
