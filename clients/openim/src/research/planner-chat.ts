@@ -280,14 +280,14 @@ export function planReplyText(plan: ChatPlan) {
   // The model writes one conversational clarification. Older servers/plans may
   // still return a questionnaire: show its first exchange without changing the
   // saved plan, its remaining uncertainties, or the confirmation authority.
-  const discussion = plan.unresolvedQuestions.find((q) => q.trim());
-  if (discussion) {
+  for (const discussion of plan.unresolvedQuestions) {
     const text = discussion.trim()
       .replace(/^还需要(?:您|你)补充[：:]\s*/, "")
       .replace(/^(?:[•*-]|\d+[.)、])\s*/, "");
     // Use structural list boundaries, not question marks inside scientific
     // quotes, code or URLs. The generation rule limits conversational topics.
-    return text.split(/\r?\n\s*(?:[•*-]|\d+[.)、])\s+/)[0].trim().slice(0, 8000);
+    const exchange = text.split(/\r?\n\s*(?:[•*-]|\d+[.)、])\s+/)[0].trim();
+    if (exchange) return exchange.slice(0, 8000);
   }
   return (plan.proposedItems.length
     ? `我先把“${plan.goal}”整理成了 ${plan.proposedItems.length} 个步骤，方案在下面，可以接着调整。`

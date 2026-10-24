@@ -156,6 +156,8 @@ test("legacy multi-question plans present one exchange while preserving every sa
   assert.deepEqual(plan, original);
   plan.unresolvedQuestions = ["还需要您补充：\n1. 研究重点是什么？\n2. 何时交付？"];
   assert.equal(planReplyText(plan), "研究重点是什么？");
+  plan.unresolvedQuestions = ["还需要您补充：", "研究重点是什么？"];
+  assert.equal(planReplyText(plan), "研究重点是什么？");
 });
 
 test("scientific quotations, question marks and URLs in one exchange are not sliced into broken text", () => {
