@@ -14,10 +14,13 @@ Evaluate artifact behavior rather than prose similarity. Each case must assert t
 | novelty-red-team | differentiable claim | novelty-red-team-close-overlap | closest-work evidence, overlap risk, prohibited unsupported novelty language |
 | experiment-matrix | approved claim plan | experiment-matrix-metric-drift | claim-to-run traceability, locked primary metric, approval gate |
 | iclr-red-team | artifact-backed paper draft | iclr-red-team-unsupported-claim | three review passes, blocker repairs, no acceptance prediction |
+| task-decomposition | task-decomposition-bounded-plan | missing goal, cyclic/missing predecessor, unassigned claim | existing Plan fields, bounded deliverables, valid DAG, separate allocation, no invented execution/completion |
 | Installed Skill chat routing | skill-continuous-routing | old mixed assistant/Skill route; withdrawn bound evidence | explicit Skill and selected references survive supplements; no implicit delegation/creation; actual reply and source receipt; zero model calls for inconsistent or revoked input |
 | Imported Skill text limits | exact-limit instructions and selected reference | oversized ordinary/linked reference, malformed UTF-8, unchanged legacy revision | one API-compatible character limit; exact file path on failure; no truncation; full selected text in synthetic chat; original ZIP/digests and account isolation preserved |
 
 The installed-Skill routing fixture is an HTTP/SQLite/ChatWorker integration check in `apps/api/tests/skills.spec.ts`, using a synthetic model and canonical SLR text. It verifies invocation, evidence selection and saved output; it does not evaluate live-model research quality or execute the Skill's filesystem/search tools.
+
+Task decomposition has a declared scenario in `evaluations/fixtures/task-decomposition-bounded-plan.md`. The actual local checks in `clients/openim/tests/planner-chat.test.mjs` and `dependency-graph.test.mjs` verify canonical text injection, the existing prompt budget and structural graph boundaries. They do not evaluate a real model's decomposition quality; the method currently enters the desktop planning prompt and is not a new server-side Skill deployment.
 
 Imported text boundaries are checked in `packages/research-skills/tests/import-text-limits.spec.ts`, `clients/openim/tests/skill-linked-reference.test.mjs` and the exact-limit HTTP integration case in `apps/api/tests/skills.spec.ts`. Installation size limits remain distinct from the selected chat input budget; see `docs/development/skill-import-text-limits.md` for unchanged-package and release evidence.
 

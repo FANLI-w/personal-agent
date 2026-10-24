@@ -1586,3 +1586,11 @@ current-state、项目日志、路线图、实现/部署说明和新聊天交接
 负责人回复此前澄清问题，明确附件AcceptCat_0.10.35.exe为“干净构建成功的版本”。将哈希c0f9c5743a37c994efb54213ca96bb0409554284e64160ee8bb60f6bb9ab2ebd的附件记录为同事成功构建样本，更新current-state和0.10.36交付记录中“尚待说明”的状态；不将它列为已确认的故障包，也不扩展为本机已验证安装或启动。
 
 核对本地修复分支d1e8e66干净、origin主仓库并fetch，PR93仍开放且未合并。本次仅补事实说明，两个旧0.10.35和桌面0.10.36保持，不重打/代安装、不修改运行代码、不合并/公开发布或部署后台。执行内容与diff检查，不重复代码或安装后体验验收。
+
+## 2026-10-24 — 用户授权整合任务拆解PR92和构建优化PR93，准备0.10.37公开版
+
+核对干净修复分支3290691、主仓库origin与legacy，fetch后main仍6c73af6；PR92固定18bb748、三平台Foundation已成功，PR93固定3290691的打包/两Linux成功、Windows当次仍运行。用户明确授权一起合入main并更新公开Latest，从最新main另建release/acceptcat-0.10.37，普通merge两head为23f3122/732e6af，保留FANLI-w原作者与全部提交，不修改其他合作者目录或强推共享历史。
+
+按React最佳实践审阅：原PR92的纯planner-chat直接导入Vite别名/原文，现有Node检查实际ERR_MODULE_NOT_FOUND；保留planner-before.log后把原文导入留在UI、按参数传给纯函数，保留既有Plan字段与预算。新增图循环/自引用/失效引用/重复ID可恢复提示，Map处理特殊ID、实例独立marker、几何统一读取/重绘及观察器清理；待认领与依赖状态分开标注。版本0.10.37，打包CI接入规划/图检查；无第三方版本、接口、契约或迁移变化。evaluations补合成情境及实际结构检查边界，不称真实模型方法质量已验证。
+
+产品4c6ea18b5f31370ebac2f1af93e22c1fe5add785，本机36项定向与双类型通过，根完整CI/组合GitHub检查执行中。[PR94](https://github.com/luoyan96/personal-agent/pull/94)已创建并挂接，目标main；尚未合并、完成安装包或公开Release，没有后台操作。证据Git外D:/deepseek-agent/.runtime/release-0.10.37-20261024，后续按实际回执补状态。沿用户安排未追加界面/真实用户/材料/模型/原生安装或双机验收，未把打包与安装现场问题等同。

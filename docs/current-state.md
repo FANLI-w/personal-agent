@@ -2,6 +2,14 @@
 
 更新日期：2026-10-24（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 0.10.37整合进行中：用户已授权合并PR92/PR93并公开为Latest
+
+用户明确要求同时整合构建优化和同事新PR，合入main并更新公开Release。从fetch后的main/6c73af6新建`release/acceptcat-0.10.37`，分别普通merge固定PR93/3290691与FANLI-w的PR92/18bb748，保留双方原作者与提交；[整合PR94](https://github.com/luoyan96/personal-agent/pull/94)已提交/挂接，尚未合并，未部署后台。
+
+产品候选 **4c6ea18b5f31370ebac2f1af93e22c1fe5add785**保留全部既有聊天、资料、课题组及本机原件互传，纳入任务拆解Skill与依赖图。审阅修复Node测试被Vite原文导入破坏、循环/失效引用渲染、实例箭头ID及尺寸变化重绘；橙色明确表示待认领，不将分工视为依赖状态。无新依赖/API/数据库迁移，后台新Skill部署未执行。Skill评价场景已补，实际模型效果未代验。
+
+本机36项定向及renderer/Electron双类型检查通过；原Node导入失败已保留。根完整CI和GitHub组合检查正在执行，0.10.37尚未完成打包或公开发布；公开仍沿上批v0.10.34记录。Git外证据 **D:/deepseek-agent/.runtime/release-0.10.37-20261024**。安装、原生启动、真实用户/资料/模型及双机体验仍由负责人检查，NSIS现场循环未复现，不追加这些验收。
+
 ## 最新本机候选0.10.36：修正Windows构建依赖与顺序，未合并或公开发布
 
 针对同事反馈的旧`file:`快照、缺少`lab-membership.js`/`import.cjs`及安装器问题，从fetch后的main/**6c73af66cd7ba41bbee4c897415984fa8150e377**新建`fix/desktop-build-reproducibility`。本批受打包源码 **62d73f61f7da123aac36f747fab13c0bb08a883d**；保留main中的同事聊天、资料、课题组及PR91功能，不修改业务接口、数据库或Skill内容。[0.10.36交付记录](deployment/acceptcat-0.10.36.md)包含范围、失败记录与限制。
