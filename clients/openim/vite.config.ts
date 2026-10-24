@@ -25,6 +25,7 @@ export default defineConfig(({ command, mode }) => {
     resolve: {
       alias: {
         "@": path.join(__dirname, "src"),
+        "@skills": path.join(__dirname, "../../agents/skills"),
       },
     },
     css: {
@@ -65,6 +66,7 @@ export default defineConfig(({ command, mode }) => {
       host: "127.0.0.1",
       port: 4317,
       strictPort: true,
+      fs: { allow: [path.resolve(__dirname, "../..")] },
       watch: { ignored: ["**/release/**", "**/.electron-runtime/**"] },
       proxy: { "/api": { target: env.VITE_RESEARCH_PROXY || "http://127.0.0.1:3217" } },
     },

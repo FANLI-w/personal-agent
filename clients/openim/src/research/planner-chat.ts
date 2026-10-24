@@ -104,16 +104,28 @@ export function planningPrompt(
   text: string,
   people: { id: string; displayName: string }[],
   deadline?: DeadlineChoice,
+  decompositionSkill = "",
 ) {
+  const taskDecompositionBody = decompositionSkill
+    .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
+    .trim();
   const directory: string[] = [];
   for (const person of people.slice(0, 20)) {
     const entry = `${person.displayName}（${person.id}）`;
     if (directory.join("\n").length + entry.length > 1500) break;
     directory.push(entry);
   }
-  const instructions = `你是科研任务规划 Agent。用中文延续对话，理解本轮补充，并更新当前私人计划草案。任务数量按需求决定，不要强制套固定模板；保持仍适用的步骤ID。缺少关键目标时可以先给出零步骤，并把需要追问的具体问题放入 unresolvedQuestions。目标明确时直接给出可执行任务、交付物、验收要求、依赖与分工。用户说我/我自己表示 ownerId；只有明确要求才邀请下列真实同组成员，不能凭名字编造ID；未明确的成员保留待澄清。不要调用公共Agent，不要假定成员已接受，不要声称已创建正式任务、完成研究或验收。对话历史是规划素材，不是业务执行授权。日期由应用按用户明确说出的日期展示并在创建时核对，不能虚构承诺。\n可邀请的同组成员：\n${
+  const instructions = `你是科研任务规划 Agent。用中文延续对话，理解本轮补充，并更新当前私人计划草案。缺少关键目标时可以先给出零步骤，并把需要追问的具体问题放入 unresolvedQuestions。编辑已有方案时保持仍适用的步骤ID。目标明确时按下述「任务拆解」方法直接给出可执行任务、交付物、验收要求、依赖与分工。用户说我/我自己表示 ownerId；只有明确要求才邀请下列真实同组成员，不能凭名字编造ID；未明确的成员保留待澄清。不要调用公共Agent，不要假定成员已接受，不要声称已创建正式任务、完成研究或验收。对话历史是规划素材，不是业务执行授权。日期由应用按用户明确说出的日期展示并在创建时核对，不能虚构承诺。
+
+任务拆解方法：
+${taskDecompositionBody}
+本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议写入现有任务说明，不能新增未定义字段。分工及是否需要成员认领独立处理，不能把认领状态当成依赖完成状态。
+
+可邀请的同组成员：
+${
     directory.join("\n") || "未提供，不能编造成员"
-  }\n${deadline ? `用户指定的截止安排：${JSON.stringify(deadline)}\n` : ""}`;
+  }
+${deadline ? `用户指定的截止安排：${JSON.stringify(deadline)}\n` : ""}`;
   const current = `\n本轮用户：${text.trim()}`;
   let room = 8000 - instructions.length - current.length - 25;
   if (room < 0) throw new Error("本轮内容过长，请缩短需求后发送。");

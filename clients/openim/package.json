@@ -1,6 +1,6 @@
 {
   "name": "research-wechat-openim",
-  "version": "0.10.35",
+  "version": "0.10.37",
   "main": "dist-electron/main/bootstrap.js",
   "description": "AcceptCat · 科研个人助理与课题组协作",
   "author": "blooming",
@@ -30,18 +30,21 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "typecheck:electron": "tsc -p tsconfig.electron-check.json",
+    "check:workspace": "node scripts/workspace-build.mjs",
+    "test:build": "node --test tests/desktop-build.test.mjs",
     "test:service": "node --test tests/research-service.test.mjs",
     "test:peer-library": "node --test tests/peer-library.test.mjs",
     "test:local-folder": "node --test tests/local-folder.test.mjs",
     "test:desktop-work": "node --test tests/desktop-work.test.mjs tests/desktop-flow.test.mjs",
     "test:updates": "node --test tests/desktop-updates.test.mjs",
     "test:planning": "node --test tests/task-planning.test.mjs",
+    "test:planner-chat": "node --test tests/planner-chat.test.mjs tests/dependency-graph.test.mjs",
     "test:send-recovery": "node --test tests/send-recovery.test.mjs tests/desktop-proxy.test.mjs tests/desktop-transport.test.mjs",
     "test:image-paste": "node --test tests/image-paste.test.mjs",
     "test:auth": "node --test tests/auth-input.test.mjs",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx src",
     "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx --fix --quiet src",
-    "prepare": "husky install"
+    "prepare": "node scripts/prepare-hooks.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.4",
@@ -57,8 +60,8 @@
     "@vitejs/plugin-legacy": "^4.1.0",
     "@vitejs/plugin-react": "^3.1.0",
     "autoprefixer": "^10.4.13",
-    "electron": "^22.3.27",
-    "electron-builder": "^23.6.0",
+    "electron": "22.3.27",
+    "electron-builder": "23.6.0",
     "eslint": "^8.34.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-prettier": "^4.2.1",
@@ -113,8 +116,8 @@
     ]
   },
   "dependencies": {
-    "@research-agent-platform/contracts": "file:../../packages/contracts",
-    "@research-agent-platform/research-skills": "file:../../packages/research-skills",
+    "@research-agent-platform/contracts": "link:../../packages/contracts",
+    "@research-agent-platform/research-skills": "link:../../packages/research-skills",
     "@ant-design/icons": "5.6.1",
     "@ckeditor/ckeditor5-react": "^8.0.0",
     "@livekit/components-react": "2.6.9",

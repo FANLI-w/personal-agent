@@ -1,6 +1,28 @@
 # 新 AI 接手：当前项目状态
 
-更新日期：2026-10-23（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
+更新日期：2026-10-24（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
+
+## 0.10.37整合进行中：用户已授权合并PR92/PR93并公开为Latest
+
+用户明确要求同时整合构建优化和同事新PR，合入main并更新公开Release。从fetch后的main/6c73af6新建`release/acceptcat-0.10.37`，分别普通merge固定PR93/3290691与FANLI-w的PR92/18bb748，保留双方原作者与提交；[整合PR94](https://github.com/luoyan96/personal-agent/pull/94)已提交/挂接，尚未合并，未部署后台。
+
+产品候选 **4c6ea18b5f31370ebac2f1af93e22c1fe5add785**保留全部既有聊天、资料、课题组及本机原件互传，纳入任务拆解Skill与依赖图。审阅修复Node测试被Vite原文导入破坏、循环/失效引用渲染、实例箭头ID及尺寸变化重绘；橙色明确表示待认领，不将分工视为依赖状态。无新依赖/API/数据库迁移，后台新Skill部署未执行。Skill评价场景已补，实际模型效果未代验。
+
+本机36项定向及renderer/Electron双类型检查通过；原Node导入失败已保留。根完整CI和GitHub组合检查正在执行，0.10.37尚未完成打包或公开发布；公开仍沿上批v0.10.34记录。Git外证据 **D:/deepseek-agent/.runtime/release-0.10.37-20261024**。安装、原生启动、真实用户/资料/模型及双机体验仍由负责人检查，NSIS现场循环未复现，不追加这些验收。
+
+## 最新本机候选0.10.36：修正Windows构建依赖与顺序，未合并或公开发布
+
+针对同事反馈的旧`file:`快照、缺少`lab-membership.js`/`import.cjs`及安装器问题，从fetch后的main/**6c73af66cd7ba41bbee4c897415984fa8150e377**新建`fix/desktop-build-reproducibility`。本批受打包源码 **62d73f61f7da123aac36f747fab13c0bb08a883d**；保留main中的同事聊天、资料、课题组及PR91功能，不修改业务接口、数据库或Skill内容。[0.10.36交付记录](deployment/acceptcat-0.10.36.md)包含范围、失败记录与限制。
+
+根目录`corepack pnpm@11.21.0 run desktop:win`自动按根冻结安装 → contracts和research-skills均构建 → 客户端pnpm10.28.0冻结安装 → 校验与打包执行。两个本地依赖改为`link:`，独立运行目录仍复制实际包文件；固定现有Electron22.3.27/builder23.6.0，检查内部组件与成品4个运行入口。文档补齐两包构建；新增Windows打包CI，与原Foundation检查分开，不自动发布。新CI已在干净GitHub Windows checkout实际成功，记录如下。
+
+本机独立checkout最终完整命令、双类型、13项客户端定向检查、4份SDK资源、55个运行包、NSIS及更新清单核对通过。首轮干净目录暴露上游Husky错误寻找客户端`.git`；第二轮实际已生成安装器，但新ASAR守卫使用Windows路径不当而误报。分别修正monorepo hooks和守卫后，在隔离目录复跑完整流程通过，失败目录/日志保留；复用全局下载缓存，不称全新缓存下一次成功。未重复既有762项本地完整CI。
+
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.36.exe**，**87,411,073字节**，SHA256 **16bb950c2741c5b9037576b573b8770875398e2af883ea20bf2437f8c9a9eeca**。旧包和用户附件保持；负责人于 **2026-10-24**明确附件0.10.35是同事干净clone后成功构建的版本，应作为成功构建样本记录。它与原桌面0.10.35哈希不同，不是已确认的故障附件；该说明不扩展为本机已验证安装/启动。本机证据 **D:/deepseek-agent/.runtime/desktop-build-20261023**。NSIS“无法关闭”循环未复现，`--force`造成混用的因果未证实；没有代安装、原生启动或用户体验验收，仅新增构建阶段最小成品入口核对和Node下CommonJS加载检查。
+
+本批已提交并挂接[PR93](https://github.com/luoyan96/personal-agent/pull/93)，目标main，开放且无冲突，尚未合并。首次读回ec8755b时三项Foundation与新Windows打包检查均已开始，未结束不算通过，后续结果以PR回执为准。仅本机候选包，公开Latest重新读取仍 **v0.10.34**。没有后台操作或新线上探测，沿此前部署 **0.30/schema026/2677f693** 与广场同步关闭记录；不能把修复构建称为后台升级或实际安装问题已验证消失。
+
+后续head **9402bfd9fa890af0a6c24199258bdc80650bb87d** 的[Windows打包CI](https://github.com/luoyan96/personal-agent/actions/runs/39943780240)于北京时间 **19:09:34**成功：干净checkout/冻结准备、双类型、8项构建守卫、4SDK/55运行包、NSIS/成品4入口、更新清单及7天CI附件均通过。它是GitHub生成的另一个包，不冒称与桌面包逐字节相同，也不等同安装后验收。两项Linux Foundation已成功，Windows Foundation当次读回仍运行中；原回执与日志留Git外。
 
 ## PR91已按用户指令合入main，资料互传源码与既有双方功能保留
 

@@ -27,6 +27,7 @@
 - main已按本人指令以merge commit合入PR89（2498a486848258086968baf5f310e35746605910），保留同事PR86与资料/课题组功能及原作者记录；当前公开Latest仍v0.10.34，发布标签固定e4bdbe689ec94b9de5b90ff9dee5e0d4ed5ed96d，main后续可有文档提交，开始前仍需fetch实际最新状态。
 - 本机安装包：C:\Users\luo\Desktop\AcceptCat_0.10.34.exe；发布页：https://github.com/luoyan96/personal-agent/releases/tag/v0.10.34 。后续是否仍是最新版须按实际状态确认。
 - 后续候选：PR91已按本人指令以merge commit合入main（90b7687449fa9f1dc43222b117369839b7f57e41），产品09ffb44、本机Windows0.10.35已打包，配套contract0.30/schema026已按本人单独授权部署；提供同组本机目录授权、聊天索取、直传与本机原件打开。真实双机与安装体验由本人检查；候选包尚未公开为Latest。详情见docs/development/peer-local-library.md与current-state。
+- 最新构建候选：PR93（fix/desktop-build-reproducibility）从main/6c73af6另开，0.10.36安装包在桌面，受打包源码62d73f6；统一contracts/research-skills先构建、link依赖与Windows成品守卫，暂未合并/公开发布。构建用根目录corepack pnpm@11.21.0 run desktop:win，手动步骤见CONTRIBUTING，不能只build contracts或用--force刷新快照。独立目录完整打包、双类型及13定向检查通过；head9402bfd的干净GitHub Windows打包CI实际success。未代安装，NSIS关闭循环未复现。详情见docs/deployment/acceptcat-0.10.36.md，接手先核对PR与实际main。
 - 最近改动：整合同事PR86聊天交互、独立资料页面、飞书库打开/复制与明确课题组共享、自助课题组创建/已有账号邀请接受。个人和自建Agent、聊天式规划与资料交互保持。
 - 已部署后台为contract0.30/schema026、DSH0.2.1-rc.2/Cordis4.0.5，镜像2677f693；2026-10-23的停写备份/独立恢复与正式迁移保全见docs/deployment/peer-library-20261023.md。旧100表/7原件、私人配置/飞书授权与其他6服务保持，原失败探测记录保留。广场每日同步仍关闭，后续维护保持GITHUB_CATALOG_SYNC=0；026新写入后不能直接回灌旧025快照。
 

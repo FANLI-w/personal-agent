@@ -49,18 +49,36 @@ git push -u origin feat/your-task
 
 根工程使用 Node.js ≥22.19.0 和 `pnpm@11.21.0`。共享代码 / Skills 改动先执行 `pnpm install --frozen-lockfile`，再执行 `pnpm run ci`。现有 GitHub Actions 在 `main` 推送和 PR 时执行根检查，覆盖构建、类型、契约、合成模型测试和生产入口；真实模型、真实 IM 和线上部署要单独验收。纯文档执行 `pnpm run check:content` 和 `git diff --check` 即可。
 
-正式 OpenIM 客户端在 `clients/openim`，有独立锁文件，使用 `pnpm@10.28.0`。先在根目录构建契约，再进入客户端；不要用根 pnpm 版本重写客户端锁文件。
+正式 OpenIM 客户端在 `clients/openim`，有独立锁文件，使用 `pnpm@10.28.0`；根工程使用 `pnpm@11.21.0`。Windows安装包推荐从根目录执行以下命令，依次完成根依赖安装、两个共享包构建、客户端冻结安装和打包，默认 `--publish never`：
+
+```sh
+corepack pnpm@11.21.0 run desktop:win
+```
+
+只准备环境用 `corepack pnpm@11.21.0 run desktop:prepare`。入口显式选择两个固定pnpm版本；不要从根目录用 `pnpm --dir clients/openim install` 代替切换包管理器，它可能仍使用根pnpm11。
+
+手动开发时按以下顺序执行，**contracts和research-skills都必须在客户端安装前build**。后者会生成Electron使用的 `dist/import.cjs` 和内置Skill资料，不能只构建契约。
 
 ```sh
 # 根目录，pnpm 11.21.0
-pnpm --filter @research-agent-platform/contracts build
+corepack pnpm@11.21.0 install --frozen-lockfile
+corepack pnpm@11.21.0 run build:desktop-deps
 # clients/openim，pnpm 10.28.0
-pnpm install --ignore-workspace --frozen-lockfile
-pnpm run typecheck
-pnpm run test:service
-pnpm run test:auth
-pnpm run build:web
+cd clients/openim
+corepack pnpm@10.28.0 install --ignore-workspace --frozen-lockfile
+corepack pnpm@10.28.0 run typecheck
+corepack pnpm@10.28.0 run test:service
+corepack pnpm@10.28.0 run test:auth
+corepack pnpm@10.28.0 run build:web
 ```
+
+两个本地包使用 `link:` 连接当前仓库产物，避免 `file:` 安装目录保留旧文件清单；链接包的依赖由根工程冻结安装负责。Web和Electron构建入口会先重新构建两个共享包，阻止旧快照/缺失模块，检查固定Electron22.3.27与electron-builder23.6.0内部组件，并将运行依赖复制成独立目录。Windows构建还核对成品app.asar中的启动入口、Skill CommonJS导入及YAML依赖，不把开发链接带到安装包。
+
+不要用 `install --force` 作为共享包刷新步骤，也不要删除或浮动更新锁文件。正常冻结安装即可切换这两个链接；工具组件不一致时应先保留失败日志，再在独立干净目录使用同一固定提交和冻结锁文件重建。客户端构建环境与Windows安装后行为分开记录，不能据 `--force` 或某个报错单独判定NSIS故障根因。
+
+客户端嵌在主仓库内，`prepare`会跳过上游仅适用于独立Git仓库的Husky安装，不修改主仓库的Git hooks配置；它不会跳过Electron、esbuild或koffi等正常依赖安装步骤。
+
+[Windows desktop package](.github/workflows/desktop.yml)在相关PR和main改动上使用干净Windows checkout，执行上述准备、客户端类型/构建守卫、NSIS和成品/更新清单检查，并保存7天CI产物；不会自动发布Release。根Foundation CI继续覆盖科研后端与共享包，不等同于客户端打包检查。实际安装、原生启动与产品体验按维护者当次安排验证。
 
 客户端改动还需验证实际交互和桌面 / 窄屏布局。现有根 Actions 不覆盖完整客户端构建，在 PR 中附上上述客户端检查的真实结果。构建成功不等于原生安装包、真实 SDK 或模型效果通过。
 

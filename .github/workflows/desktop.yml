@@ -1,0 +1,71 @@
+name: Windows desktop package
+
+on:
+  pull_request:
+    paths:
+      - 'clients/openim/**'
+      - 'packages/contracts/**'
+      - 'packages/research-skills/**'
+      - 'agents/skills/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'tsconfig.base.json'
+      - '.github/workflows/desktop.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'clients/openim/**'
+      - 'packages/contracts/**'
+      - 'packages/research-skills/**'
+      - 'agents/skills/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'tsconfig.base.json'
+      - '.github/workflows/desktop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build dependencies before the isolated client install
+        run: corepack pnpm@11.21.0 run desktop:prepare
+      - name: Check client types and build failure guards
+        working-directory: clients/openim
+        run: |
+          corepack pnpm@10.28.0 run typecheck
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          corepack pnpm@10.28.0 run typecheck:electron
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          corepack pnpm@10.28.0 run test:build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          corepack pnpm@10.28.0 run test:planner-chat
+          exit $LASTEXITCODE
+      - name: Build NSIS and verify packaged CommonJS entries
+        working-directory: clients/openim
+        run: corepack pnpm@10.28.0 run build:win
+      - name: Verify installer and updater metadata agree
+        working-directory: clients/openim
+        run: node scripts/check-windows-update.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-desktop-package
+          path: |
+            clients/openim/release/Base/*/AcceptCat_*.exe
+            clients/openim/release/Base/*/AcceptCat_*.exe.blockmap
+            clients/openim/release/Base/*/latest.yml
+          if-no-files-found: error
+          retention-days: 7
