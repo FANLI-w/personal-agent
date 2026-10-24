@@ -35,6 +35,17 @@
   font-size: 13px;
   line-height: 1.4;
   white-space: nowrap;
+
+  strong,
+  small {
+    display: block;
+  }
+  small {
+    color: #657180;
+    font-size: 12px;
+    white-space: normal;
+    max-width: 240px;
+  }
 }
 
 .plan-graph-node.is-pending {

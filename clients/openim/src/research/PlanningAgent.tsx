@@ -16,6 +16,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { takeFeishuPlanning } from "./feishu-planning";
 import { DependencyGraph } from "./DependencyGraph";
+import taskDecompositionSkill from "@skills/task-decomposition/SKILL.md?raw";
 import { researchApi, ResearchApiError } from "./api";
 import { useResearchStore } from "./store";
 import { useResearchRead } from "./useResearchRead";
@@ -491,6 +492,7 @@ function PlanningAgentSession({
         text,
         members.data?.data || [],
         deadline,
+        taskDecompositionSkill,
       );
       setOmitted(context.omitted);
       const intent: SendIntent = {
@@ -701,7 +703,7 @@ function PlanningAgentSession({
                   id: step.id,
                   title: step.title,
                   dependencies: step.dependencies,
-                  pending: step.allocation.kind === "claim",
+                  needsClaim: step.allocation.kind === "claim",
                 }))}
               />
               <ol>

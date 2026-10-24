@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   newPlannerThread,
   plannerCacheKey,
@@ -122,6 +123,18 @@ test("conversation context stays bounded, keeps the latest request intact, and r
   assert(result.prompt.includes("同学乙（member_b）"));
   assert(result.omitted > 0);
   assert(!result.prompt.includes("旧条件0长"));
+});
+
+test("the shipped decomposition method uses existing plan fields and leaves the latest request intact", () => {
+  const skill = readFileSync(new URL("../../../agents/skills/task-decomposition/SKILL.md", import.meta.url), "utf8");
+  const text = "请比较三种合成模型并整理组会报告";
+  const result = planningPrompt([], text, [], undefined, skill);
+  assert(result.prompt.includes("按产出倒推"));
+  assert(result.prompt.includes("依赖无环"));
+  assert(result.prompt.includes("dependencies 字段"));
+  assert(!result.prompt.includes("name: task-decomposition"));
+  assert(result.prompt.endsWith(text));
+  assert(result.prompt.length <= 8000);
 });
 test("only explicit create commands authorize confirmation; questions, quotes and negations cannot", () => {
   for (const v of ["确认创建任务", "确认创建", "就按这个方案创建任务！"])

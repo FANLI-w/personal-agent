@@ -51,6 +51,8 @@ jobs:
           corepack pnpm@10.28.0 run typecheck:electron
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          corepack pnpm@10.28.0 run test:planner-chat
           exit $LASTEXITCODE
       - name: Build NSIS and verify packaged CommonJS entries
         working-directory: clients/openim

@@ -1,10 +1,5 @@
 import { Id, Plan, PlanInput, routes } from "@research-agent-platform/contracts";
 import type { RequestFor, ResponseFor } from "@research-agent-platform/contracts";
-import taskDecompositionSkill from "@skills/task-decomposition/SKILL.md?raw";
-
-const taskDecompositionBody = taskDecompositionSkill
-  .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
-  .trim();
 
 export type ChatPlan = ResponseFor<"getPlan">["data"];
 export type DeadlineChoice = { date: string | null; target: "final" | "all" | number };
@@ -109,7 +104,11 @@ export function planningPrompt(
   text: string,
   people: { id: string; displayName: string }[],
   deadline?: DeadlineChoice,
+  decompositionSkill = "",
 ) {
+  const taskDecompositionBody = decompositionSkill
+    .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
+    .trim();
   const directory: string[] = [];
   for (const person of people.slice(0, 20)) {
     const entry = `${person.displayName}（${person.id}）`;
@@ -120,6 +119,7 @@ export function planningPrompt(
 
 任务拆解方法：
 ${taskDecompositionBody}
+本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议写入现有任务说明，不能新增未定义字段。分工及是否需要成员认领独立处理，不能把认领状态当成依赖完成状态。
 
 可邀请的同组成员：
 ${
