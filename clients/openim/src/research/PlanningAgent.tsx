@@ -563,7 +563,7 @@ function PlanningAgentSession({
         <div>
           <RobotOutlined />
           <strong>任务规划 Agent</strong>
-          <span>{inProgress ? "正在整理方案…" : "说说目标，一起把任务安排好"}</span>
+          <span>{inProgress ? "正在回复…" : "聊聊你的研究，一起想下一步"}</span>
         </div>
         <nav>
           <Popover
@@ -758,7 +758,7 @@ function PlanningAgentSession({
               )}
               {!!preview.unresolvedQuestions.length && (
                 <details>
-                  <summary>还有 {preview.unresolvedQuestions.length} 项待明确</summary>
+                  <summary>方案中暂未确定的信息</summary>
                   {preview.unresolvedQuestions.map((q, i) => (
                     <p key={i}>{q}</p>
                   ))}

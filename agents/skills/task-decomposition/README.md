@@ -1,12 +1,12 @@
 # task-decomposition
 
-将已澄清的科研任务目标拆解为带依赖关系的子任务清单，为每项子任务标注目的、产出、执行建议与前置依赖。本能力只拆解与标注依赖，不指定执行人；分工由现有 `allocation` 机制单独完成。
+将已澄清的科研任务目标拆解为带依赖关系的子任务清单，为每项子任务标注目的、产出、执行建议与前置依赖。本能力只拆解与标注依赖，不指定执行人；分工由现有 `allocation` 机制单独完成。先用自然对话理解现有工作，每轮至多一个必要的简单问题；不把方法字段变成用户必须填写的问卷，方向清楚后再展开方案。
 
 ## 当前状态（前端接入，待真机验证）
 
 - 接入方式：`clients/openim/src/research/planner-chat.ts` 用 Vite `?raw` 把 `SKILL.md` 正文打进前端 bundle，拼进任务规划 prompt 的「任务拆解方法」段落（`planningPrompt`）。
 - 依赖关系可视化：`clients/openim/src/research/DependencyGraph.tsx` 按依赖深度分列 + SVG 画箭头，接在 `PlanningAgent` 拆解结果卡片里。
-- 类型检查通过；实际拆解效果尚未在真机验证（本地 `build:win` 遇 `node_modules` 里 contracts 副本 stale、缺 `lab-membership.js`，与本 skill 无关）。
+- 0.10.37已整合构建修复并公开；0.10.38候选补对话优先和低负担追问。真实模型拆解与交流质量尚未代验，不能用类型/结构检查代替；当前候选状态以`docs/current-state.md`为准。
 
 ## 后续计划
 

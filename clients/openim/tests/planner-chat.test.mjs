@@ -6,6 +6,7 @@ import {
   plannerCacheKey,
   readPlannerHistory,
   planningPrompt,
+  planReplyText,
   plannerDeadline,
   needsDeadlineClarification,
   plannerPlanInput,
@@ -135,6 +136,53 @@ test("the shipped decomposition method uses existing plan fields and leaves the 
   assert(!result.prompt.includes("name: task-decomposition"));
   assert(result.prompt.endsWith(text));
   assert(result.prompt.length <= 8000);
+});
+
+test("a conversational clarification is shown as the reply without an internal goal heading or questionnaire", () => {
+  const plan = makePlan();
+  plan.goal = "继续已有研究（内部草案目标）";
+  plan.proposedItems = [];
+  plan.unresolvedQuestions = ["可以，我们从已有工作继续。先说说这项研究主要想解决什么问题？"];
+  assert.equal(planReplyText(plan), plan.unresolvedQuestions[0]);
+  assert(!planReplyText(plan).includes(plan.goal));
+  assert(!planReplyText(plan).includes("还需要您补充"));
+});
+
+test("legacy multi-question plans present one exchange while preserving every saved uncertainty", () => {
+  const plan = makePlan();
+  plan.unresolvedQuestions = ["研究重点是什么？", "何时交付？", "谁来参与？"];
+  const original = structuredClone(plan);
+  assert.equal(planReplyText(plan), "研究重点是什么？");
+  assert.deepEqual(plan, original);
+  plan.unresolvedQuestions = ["还需要您补充：\n1. 研究重点是什么？\n2. 何时交付？"];
+  assert.equal(planReplyText(plan), "研究重点是什么？");
+});
+
+test("scientific quotations, question marks and URLs in one exchange are not sliced into broken text", () => {
+  const plan = makePlan();
+  plan.unresolvedQuestions = ['我们先看“what if?”的对照思路，参考 https://example.org/paper?view=abstract 。你最想验证哪个解释？'];
+  assert.equal(planReplyText(plan), plan.unresolvedQuestions[0]);
+});
+
+test("a reply with no uncertainty does not invent questions, dates, participants or completed work", () => {
+  const plan = makePlan();
+  const text = planReplyText(plan);
+  assert(text.includes("2 个步骤"));
+  assert(!/[？?]/.test(text));
+  assert(!/已创建|已完成|已接受|截止/.test(text));
+  plan.proposedItems = [];
+  assert.equal(planReplyText(plan), plan.goal);
+});
+
+test("the full shipped method and the latest 4000-character request fit with a large team and prior conversation", () => {
+  const skill = readFileSync(new URL("../../../agents/skills/task-decomposition/SKILL.md", import.meta.url), "utf8");
+  const text = "本轮明确补充" + "文".repeat(3994);
+  const people = Array.from({ length: 20 }, (_, i) => ({ id: `member_${i}`, displayName: "成员" + "长".repeat(75) }));
+  const history = [{ id: "earlier", role: "user", text: "已有一份研究稿，希望沿现有工作继续；暂时没有明确日期。" }];
+  const result = planningPrompt(history, text, people, undefined, skill);
+  assert(result.prompt.endsWith(text));
+  assert(result.prompt.length <= 8000);
+  assert(result.prompt.includes(skill.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "").trim()));
 });
 test("only explicit create commands authorize confirmation; questions, quotes and negations cannot", () => {
   for (const v of ["确认创建任务", "确认创建", "就按这个方案创建任务！"])
