@@ -4,7 +4,7 @@
 
 ## 源码与范围
 
-核对工作树干净、主仓库origin并fetch，从最新main **fecb98f026a85d23a10487c4ff576cb42c8cb76d**新建`fix/agent-conversation-flow`，普通merge PR96/bfcc8b7保留上一批修复。163323e实施全流程调整，11cd139压缩旧规划入口规则以保留预算，e48852e补模板创建契约检查。受打包产品 **e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6**，[PR97](https://github.com/luoyan96/personal-agent/pull/97)已提交/挂接，含PR96；原PR仍开放，不自动关闭、合并或替换主线。
+核对工作树干净、主仓库origin并fetch，从最新main **fecb98f026a85d23a10487c4ff576cb42c8cb76d**新建`fix/agent-conversation-flow`，普通merge PR96/bfcc8b7保留上一批修复。163323e实施全流程调整，11cd139压缩旧规划入口规则以保留预算，e48852e补模板创建契约检查。受打包产品 **e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6**，[PR97](https://github.com/luoyan96/personal-agent/pull/97)包含PR96，随后获明确指令于16:48:58以merge commit **a08a63a87ea3cf2e561c20197259bf2a60cafa08**合入main，PR96随之自动标记MERGED。受审head6d4df11四项GitHub检查成功，合并树与head相同，双方原作者与提交保持。
 
 [逐段检查记录](../development/agent-conversation-flow.md)覆盖规划、创建/邀请、执行与支持、阶段交付、成果审阅、状态和失败恢复，以及个人助理、七个内置助手、十一个canonical方法、资料/Skill、记忆/提醒与外部当条请求。先用已有信息帮忙；确需时每轮至多一个简单必要问题，方法字段由助手整理，用户要求完整内容时充分展开。审阅聚焦证据与具体修法，不评判作者能力。
 
@@ -18,7 +18,7 @@
 | 日常聊天、委派、资料/Skill、助手创建、外部当条请求系统规则 | 交付时仅源码，随后按单独授权于2026-10-24 16:23:50上线7fa2e86e |
 | 十一个canonical方法 | 源文件、构建包与上述后台已更新；不自动覆盖已安装私人Skill的固定版本 |
 | API/数据库 | contract0.30.0/schema026保持，无新字段、路由或迁移 |
-| main/公开Release | PR97和PR96尚未合并；连接器重新读取Latest仍v0.10.37，0.10.39未公开 |
+| main/公开Release | PR97/96已按指令合入main/a08a63a；公开Latest重新读取仍v0.10.37，0.10.39未公开 |
 
 后台随后已按负责人单独授权从2677f693切换7fa2e86e，114项Linux隔离检查、停写备份/独立恢复及健康检查通过，无迁移；详见[后台升级记录](agent-conversation-20261024.md)。DSH0.2.1-rc.2/Cordis4.0.5、广场同步关闭、飞书本人试点、注册超时未定因及同组资料在线/10MiB/无TURN边界保持。完整提醒命令解析、已确认计划对话修改和跨设备规划历史不冒称已变成完整多轮能力。后台升级没有改变本机成品、合并main或公开新Release。
 
