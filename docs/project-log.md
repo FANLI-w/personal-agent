@@ -1718,3 +1718,11 @@ Compose链末尾追加agent-conversation-20261024-v2/images.yaml，旧2677f693�
 运维目录 **/opt/research-openim/ops/research-colleague-20261024**，原Compose链仅追加本批images.yaml；旧620bc025镜像保留。同schema回退只撤末尾覆盖并恢复配对旧镜像，保留当前数据与上线后写入，不回灌旧快照或退回025；本次未触发回退。后台共用规则与明确私人偏好保存现已上线；桌面规划/新模板仍需0.10.41，已安装的私人Skill与用户自改档案不自动覆盖。没有自动重放用户消息或代验真实口吻/科研质量。
 
 更新current-state、roadmap、交接prompt及[0.10.41交付](deployment/acceptcat-0.10.41.md)，Git外 **D:/deepseek-agent/.runtime/research-colleague-20261024**新增backend-package、实际deployment-summary与deployment-proof；源码审阅包和先前等待授权状态保留。本批只部署/记录，没有重打或代安装客户端，桌面0.10.41原大小/摘要保持；PR100含PR99仍未合并，0.10.41未公开Release，重新读取公开Latest仍v0.10.37/422478602。后续纯文档新head检查单独记录，不重复已通过的完整CI或追加用户体验验收；注册超时未定因、飞书本人试点、原件在线/10MiB/无TURN等边界保持。
+
+## 2026-10-24 — 按负责人指令合并PR100，PR99随之合入main
+
+负责人明确要求“合并啊”。核对干净feature/research-colleague、origin主仓库并fetch，main仍89c987ca91f51ade99f2e1a56926cb673b610304；PR100固定head **3d3bb0263b99c5510f665030798243a7d1134c61**，CLEAN/MERGEABLE，三平台Foundation（40096988522）及Windows package（40096988519）四项全部success。用匹配该head的普通merge合并，不squash/rebase/强推。
+
+北京时间 **2026-10-24 22:53:29**，PR100以merge commit **b73edfc3d91480c4031f87fed1c9698f4a452f59**合入main；PR99于22:53:31自动标记MERGED，保留内部合并570e36f及其原head05ebf3a。重新fetch后合并树与受审head相同，两父提交为旧main/89c987c与head3d3bb02；核对PR99、PR97/96、同事PR86/PR92、构建PR93、PR91和PR94的祖先关系，保留双方作者、聊天、资料/课题组及同组原件互传功能，没有冲突覆盖或历史改写。
+
+从合并后main另开docs/research-colleague-merge-status同步current-state、roadmap、交接prompt与0.10.40/41交付状态，纯文档只运行内容与diff检查。合并回执、固定head检查、父提交和树比较证据留在 **D:/deepseek-agent/.runtime/merge-pr100-20261024**。main自动CI另看实际运行，不重复已通过的完整代码检查或追加安装/界面/真实模型验收。本批未重打包、再次部署或公开Release；桌面0.10.41原大小/摘要、已部署产品5293eba/镜像367367ea及contract0.30/schema026保持，公开Latest重新读取仍v0.10.37/422478602。注册超时未定因、飞书本人试点、广场同步关闭和原件在线/10MiB/无TURN等边界保持。
