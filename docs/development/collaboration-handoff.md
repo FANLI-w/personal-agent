@@ -24,13 +24,13 @@
 6. 代码合并、安装包制作、公开 Release、后台部署分别记录，不能把其中一项完成说成全部完成。此前同步 main/发布0.10.29的授权已履行，不是以后自动合并或发布的长期授权；按我当前指令推进，不重复询问已明确授权的同一操作。
 
 当前交付事实：
-- 新增本机0.10.39候选与PR97（含PR96，均未合并）：产品e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6，七个内置助手、十一个canonical方法和任务全流程统一低负担交流，角色化跟进、旧模板复用/用户编辑保持。桌面C:\Users\luo\Desktop\AcceptCat_0.10.39.exe，87,409,143字节，SHA256 70340836adade67025d5572411389b7c17ef54e23cf256e0bfc016b81f19fa24。762项根CI/2生产入口、71客户端、双类型和NSIS/更新清单通过；保留初稿预算失败并在原上限内压缩规则。日常聊天等后台系统规则代码虽已调整，本批未部署，线上仍原2677f693；不能因安装新包就声称全部后台规则已生效。无接口/数据库/锁变化，未代安装/界面/真实模型验收。见docs/deployment/acceptcat-0.10.39.md及docs/development/agent-conversation-flow.md。
+- 新增本机0.10.39候选与PR97（含PR96，均未合并）：产品e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6，七个内置助手、十一个canonical方法和任务全流程统一低负担交流，角色化跟进、旧模板复用/用户编辑保持。桌面C:\Users\luo\Desktop\AcceptCat_0.10.39.exe，87,409,143字节，SHA256 70340836adade67025d5572411389b7c17ef54e23cf256e0bfc016b81f19fa24。762项根CI/2生产入口、71客户端、双类型和NSIS/更新清单通过；保留初稿预算失败并在原上限内压缩规则。日常聊天等后台系统规则随后按本人单独授权于2026-10-24 16:23:50上线7fa2e86e；桌面界面/规划与模板仍需使用0.10.39候选。无接口/数据库/锁变化，未代安装/界面/真实模型验收。见docs/deployment/acceptcat-0.10.39.md、docs/deployment/agent-conversation-20261024.md及docs/development/agent-conversation-flow.md。
 - main已按本人指令以merge commit合入PR89、PR91和整合PR94；PR94提交8dba29fb6715269ff3ef0bee5f26867f5ae3d050包含FANLI-w的PR92与PR93，两原PR已自动MERGED，保留同事PR86及双方原作者。公开Latest为v0.10.37，标签固定8dba29f；main后续可有文档提交，开始前仍需fetch实际最新状态。
 - 上次公开安装包（桌面仍保留）：C:\Users\luo\Desktop\AcceptCat_0.10.37.exe；公开页：https://github.com/luoyan96/personal-agent/releases/tag/v0.10.37 。87,410,751字节，SHA256 ecc17405bb3bf5e12ee7a28e934668dbce039b05ffbcc6482f3a2ae8d9529225；四附件与未登录更新清单已核对。后续是否仍是最新版须按实际状态确认。
-- 同组原件互传：PR91已合main，产品09ffb44的目录授权、聊天索取、WebRTC直传和本机原件打开现已随0.10.37公开；配套contract0.30/schema026此前已按本人单独授权部署，本批未重部署。双方须在线且切同组，每份10MiB，无TURN/云原件兜底；实际双机与安装体验由本人检查。
-- 构建与任务拆解：公开0.10.37产品4c6ea18统一两共享包先构建、link依赖及工具链/成品守卫，并接入任务拆解Skill/依赖图；根desktop:win命令见CONTRIBUTING。762项根CI、36客户端定向、双类型与受审head d4eb38e四项GitHub检查通过。新方法由桌面prompt加载，不声称后端Skill已部署；未代安装或真实模型验收，NSIS关闭循环未复现。详情见docs/deployment/acceptcat-0.10.37.md。
+- 同组原件互传：PR91已合main，产品09ffb44的目录授权、聊天索取、WebRTC直传和本机原件打开现已随0.10.37公开；配套contract0.30/schema026保持，本次后台交流规则升级没有迁移或扩大资料权限。双方须在线且切同组，每份10MiB，无TURN/云原件兜底；实际双机与安装体验由本人检查。
+- 构建与任务拆解：公开0.10.37产品4c6ea18统一两共享包先构建、link依赖及工具链/成品守卫，并接入任务拆解Skill/依赖图；根desktop:win命令见CONTRIBUTING。762项根CI、36客户端定向、双类型与受审head d4eb38e四项GitHub检查通过。桌面prompt加载新方法；后续11个canonical方法已随2026-10-24后台交流规则升级上线，不覆盖已安装私人版本。未代安装或真实模型验收，NSIS关闭循环未复现。详情见docs/deployment/acceptcat-0.10.37.md及docs/deployment/agent-conversation-20261024.md。
 - 原有聊天交互、独立资料页、飞书库打开/明确共享、自助课题组创建/已有账号邀请接受均保持，任务规划和资料Agent继续聊天交互。负责人确认旧附件0.10.35为同事干净构建成功样本，勿列为已确认坏包。
-- 已部署后台为contract0.30/schema026、DSH0.2.1-rc.2/Cordis4.0.5，镜像2677f693；2026-10-23的停写备份/独立恢复与正式迁移保全见docs/deployment/peer-library-20261023.md。旧100表/7原件、私人配置/飞书授权与其他6服务保持，原失败探测记录保留。广场每日同步仍关闭，后续维护保持GITHUB_CATALOG_SYNC=0；026新写入后不能直接回灌旧025快照。
+- 已部署后台为contract0.30/schema026、DSH0.2.1-rc.2/Cordis4.0.5，镜像7fa2e86e6f8847e5341b35077b5cc75971af72a53800955af74722b6952ad376（原2677f693保留作同schema回退）。2026-10-24 16:23:30—16:23:50停写备份/独立恢复及切换，114项Linux隔离检查、103表/7原件及17配置/密钥输入保全、API/worker/公网健康通过，无迁移；首轮运维包漏Skill导入修复的93通过/1失败在切换前修正并保留证据。见docs/deployment/agent-conversation-20261024.md。广场每日同步仍关闭，后续维护保持GITHUB_CATALOG_SYNC=0；回退镜像保留当前数据，不能回灌旧025快照。未用私人资料或真实模型验收交流质量。
 
 尚未完成及边界：
 - 他人注册新账号超时根因尚未确认，仍待对方设备的具体错误、安装版本和同机连接信息；不能宣布已修复。

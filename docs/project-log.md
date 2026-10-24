@@ -1630,3 +1630,21 @@ bd01010调整生成提示与canonical Skill：先承接背景、主动给小判�
 规划prompt/模板/界面随本机包生效；日常聊天等后台系统规则仅源码已改，本批未部署，不能声称安装包已更新线上全部Agent规则；内置方法包不自动覆盖用户已安装私人版本。contract0.30/schema026、依赖锁和核心业务状态文件保持，无后台重启/迁移/新线上探测，沿此前2677f693及DSH0.2.1-rc.2/Cordis4.0.5记录；连接器重新读取公开Latest仍v0.10.37。注册超时未定因、飞书本人试点、在线/10MiB/无TURN和广场同步关闭等边界保持。
 
 更新current-state、roadmap、交接prompt及[0.10.39交付](deployment/acceptcat-0.10.39.md)，补[逐段检查范围](development/agent-conversation-flow.md)与合成评价情境。按负责人安排没有追加浏览器产品、安装/原生启动、真实账号/材料/模型或双机验收。提醒多轮槽位、已确认任务的对话修改、跨设备规划历史不冒称本批完成；GitHub自动CI以具体head回执另记，收尾文档按内容/diff检查执行。
+
+## 2026-10-24 — 按用户单独授权上线科研助手交流规则，后台保持0.30/schema026
+
+负责人表示后台已登录并授权修改。先核对干净分支fix/agent-conversation-flow/a7699b8、主仓库origin并fetch，main仍fecb98f；PR97/96未合并，公开Latest读取仍v0.10.37。读取现有阿里云Workbench终端、生产Compose链及实际镜像2677f693，API/worker正常、其他6服务运行，两服务GITHUB_CATALOG_SYNC=0。原DSH0.2.1-rc.2/Cordis4.0.5保持，不新增访问入口、凭据或权限。部署前PR97/a7699b8三平台Foundation40064919999和Windows package40064919993四项均success。
+
+本次沿实际生产镜像制作离线覆盖镜像，产品仍e48852eda15e8512ef59ce3c9ddae1f8c2e1a6a6，未改仓库运行源码、契约、迁移、依赖或桌面成品。首版22文件只覆盖API与方法，隔离94项中93通过/1失败，精确120,000字符正文修订返回400；当时未停线上。核对实际ESM契约接受上限后，定位旧research-skills导入实现把YAML头算入根文件长度，运维包漏带当前产品已有import.ts修复。保留首版及失败，第二版补齐该文件、共享包基线与编译哈希及20项导入检查；114个基线源码、125个编译文件、32个方法文件与11方法加载核对通过，114项/10文件全部通过，原阈值和断言未放宽。
+
+Workbench文件上传session过期，沿仍有效的原终端传送经哈希核对的增量包；脚本CRLF在语法检查时发现，规范LF后bash -n通过才执行。两项准备错误发生在停服之前，证据保留；未为此新建SSH密钥/端口。源码和检查均就绪后才停API、排空队列、停worker及备份，没有跳过失败直接上线。
+
+北京时间 **16:23:30—16:23:50**（20秒维护窗口）完成停写、备份、独立恢复副本验证及两服务切换。新镜像 **research-openim-api:agent-conversation-20261024-v2 / sha256:7fa2e86e6f8847e5341b35077b5cc75971af72a53800955af74722b6952ad376**；contract0.30.0/schema026保持，**未运行迁移**。备份 **/srv/research-openim-backups/agent-conversation-20261024-v2-20261024T082333Z/research.tar.gz**，SHA256 **ae6cded16e2c6f77af4845bf49b985712841cb8c65c7ac9c9d574100d27d520a**。实际103表/7原件完整性、外键、迁移校验和、schema对象/全表内容/原件哈希及权限在恢复副本与启动前在线目录间一致；17个配置/密钥输入在服务器备份并保持哈希/权限。
+
+日常聊天、个人协作/委派、创建、资料/Skill、失败恢复和外部当条请求的共用交流规则及11个canonical方法已上线；不修改用户自改档案或已安装私人Skill版本。两服务running/restart0、API healthy，公网ready200/0.30.0及四类未登录受保护接口401；副本HTTP检查未创建账号/会话、调用模型或连接外部资料。个人Key/默认模型、飞书连接/命名来源与集合范围、目录缓存保持，1个飞书库仍owner_private。两服务运行配置与其他6服务ID/镜像/状态保持，静态网页/current未切换。广场enabled=false/state=disabled/nextCheckAt=null，11条目录/19条候选保持；Harness仍not_verified。
+
+Compose链末尾追加agent-conversation-20261024-v2/images.yaml，旧2677f693镜像及链保留；相同026可恢复旧镜像并保留当前写入，不能覆盖切换后的新数据或回025。备份/恢复在同ECS，不称异地灾备。服务器证据/首轮失败分别在 **/opt/research-openim/ops/agent-conversation-20261024-v2**及同级无v2目录；本机Git外 **D:/deepseek-agent/.runtime/agent-conversation-deploy-20261024**保存两版包/增量、哈希、脚本、GitHub回执、脱敏summary及成功截图，私人数据与密钥未下载或入Git。
+
+更新current-state、0.10.39交付、流程范围、roadmap、交接prompt与[部署回执](deployment/agent-conversation-20261024.md)。本批只部署及记录，未合并main/PR、重打/代安装客户端或公开新Release；桌面0.10.39原成品保持，公开Latest仍v0.10.37。按既有安排未追加产品界面、真实账号/材料/模型、原生启动或双机体验验收，不把规则上线或合成检查称为真实科研交流质量已通过。注册超时、飞书本人试点和资料直连边界保持。
+
+收尾纯文档内容检查 **256 Markdown/11 Skill**与diff检查通过；生产专用目录种子源码及编译文件的新旧镜像SHA256另行核对相同，保存截图。后续文档推送触发的自动CI按新head单独记录，不把a7699b8的四项成功移算给未完成的新运行。
