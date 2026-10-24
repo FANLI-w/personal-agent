@@ -110,8 +110,8 @@ export function followupCommand(s:ChatService,text:string,message:ChatMessage){
  const value=text.trim()
  if(!/^(?:(?:请)?(?:提醒我|帮我提醒|跟进)|(?:请(?:你)?|帮我)?\s*(?:在\s*)?(?:今天|明天|后天|每天|每个?工作日|每周|每星期|\d{4}(?:年|-)))/.test(value)||/[?？]$/.test(value)||/[，,。;；]\s*(?:但|不过)?\s*(?:不要提醒|只是引用|只是举例)/.test(value))return null
  const settings=memorySettings(s),scheduled=scheduledRequest(value,settings.timeZone),matched=scheduled??(value.includes('提醒')||value.startsWith('跟进')?reminderRequest(value,settings.timeZone):null)
- if(!matched){if(!/提醒|跟进|^每/.test(value))return null;return {receipt:{operation:'clarify' as const,followupId:null,dueAt:null,timeZone:settings.timeZone,question:'请说明具体时点和事项，例如“每天上午九点提醒我交材料”或“每周五下午六点帮我总结本周聊天”；也可以在“定时任务”里设置。'},text:'请补充具体时点和事项；尚未创建定时任务。'}}
- const {due,body}=matched;if(due<=Date.now())return {receipt:{operation:'clarify' as const,followupId:null,dueAt:null,timeZone:settings.timeZone,question:'安排时间必须在未来，请重新说明日期和时点。'},text:'安排时间必须在未来；尚未创建定时任务。'}
+ if(!matched){if(!/提醒|跟进|^每/.test(value))return null;const question=`这次还没识别出完整的安排。可以用一句话写，例如“明天上午九点提醒我交材料”（${settings.timeZone}），也可以在“定时任务”里设置。`;return {receipt:{operation:'clarify' as const,followupId:null,dueAt:null,timeZone:settings.timeZone,question},text:'这次提醒还没设好，原消息保留在对话中。'}}
+ const {due,body}=matched;if(due<=Date.now())return {receipt:{operation:'clarify' as const,followupId:null,dueAt:null,timeZone:settings.timeZone,question:'这个时间已经过去了。换一个未来时间、连同事项重新发送，就能安排。'},text:'这个时间已经过去，提醒还没有创建。'}
  const group=s.conversation(message.conversationId,false),agent=group.members.find(m=>m.status==='joined'&&s.contact(m.contactId).identity.kind==='personal_agent')!
  const recurrence=scheduled?.recurrence??null,execution=scheduled?.execute?{kind:'agent' as const,contactId:agent.contactId,budget:{maxTokens:4000,maxSeconds:90}}:null
  const saved=createFollowup(s,{title:body.slice(0,200),body,dueAt:new Date(due).toISOString(),timeZone:settings.timeZone,quietHours:settings.quietHours,task:null,recurrence,execution},message.conversationId)

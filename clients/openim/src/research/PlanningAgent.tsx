@@ -339,7 +339,7 @@ function PlanningAgentSession({
       problems = planProblems(preview);
       if (thread.deadlineQuestion)
         problems.push(
-          "这轮时间安排还需要明确。请用完整日期说明最终交付时间（如“2026-10-23 交付”），或说“取消截止”。",
+          "交付日期还没确定。可以说一个完整日期（如“2026-11-02 交付”），暂时不定就说“取消截止”。",
         );
     } catch (e) {
       problems = [e instanceof Error ? e.message : "方案暂不可确认"];
@@ -460,7 +460,7 @@ function PlanningAgentSession({
     }
     if (isPlannerCreateCommand(text)) {
       if (!current || current.status !== "draft" || problems.length || processing) {
-        setFailure("请先等当前方案生成并补齐必要信息，再说“确认创建任务”。");
+        setFailure(processing ? "这轮还在回复，稍等方案出来就能创建。" : problems[0] || "我们还在讨论思路，等有具体步骤后就能创建任务。");
         return;
       }
       update((t) => ({
@@ -784,7 +784,10 @@ function PlanningAgentSession({
                 </footer>
               )}
               {!!problems.length && (
-                <p className="planning-agent-note">{problems.join(" ")}</p>
+                <div className="planning-agent-note">
+                  <p>{problems[0]}</p>
+                  {problems.length > 1 && <details><summary>其余 {problems.length - 1} 项待核对内容</summary>{problems.slice(1).map((problem, index) => <p key={index}>{problem}</p>)}</details>}
+                </div>
               )}
               {current.status === "confirmed" && (
                 <div className="planning-created-actions">
@@ -813,7 +816,7 @@ function PlanningAgentSession({
             </article>
           )}
           {current && !preview && !!problems.length && (
-            <Alert type="warning" message={problems.join(" ")} />
+            <Alert type="warning" message={problems[0]} description={problems.length > 1 ? <details><summary>查看其他待核对内容</summary>{problems.slice(1).map((problem, index) => <p key={index}>{problem}</p>)}</details> : undefined} />
           )}
           {thread.sending && !busy && (
             <Alert

@@ -555,9 +555,9 @@ function LibraryChat({
           )}
           {!history.data?.messages.length && !history.loading && !pending && !displayError && !readingFeishu && (
             <div className="library-agent-welcome">
-              <strong>想从资料里找到什么？</strong>
+              <strong>一起看看你的资料</strong>
               <p>
-                说“这是我的论文库”并附飞书多维表格链接，保存后直接按库名、年份、CCF等级或关键词查找。单篇飞书文档也可以直接发来阅读。
+                可以问一个具体问题，也可以先发来一篇飞书文档。查已有资料库时，在“资料范围”里选集合；连接飞书论文库后也能按库名继续查。
               </p>
               <button
                 onClick={() => setDraft("查找项目申请书中关于研究基础的内容，标明出处")}
@@ -635,7 +635,7 @@ function LibraryChat({
         <Input.TextArea
           ref={input}
           aria-label="与资料 Agent 对话"
-          placeholder={pending ? "原消息已保留，完成上方操作后继续对话" : "说“这是我的论文库”并附飞书链接；或直接说“找论文库里今年的 CCF A 论文”…"}
+          placeholder={pending ? "原消息已保留，完成上方操作后继续对话" : "想了解哪部分？直接提问，或发来飞书文档链接…"}
           value={pending ? "" : draft}
           maxLength={8000}
           autoSize={{ minRows: 1, maxRows: 3 }}

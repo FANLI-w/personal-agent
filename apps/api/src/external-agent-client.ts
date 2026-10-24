@@ -4,6 +4,7 @@ import { BlockList, isIP } from 'node:net'
 import type { LookupAddress } from 'node:dns'
 import { ExternalAgentEndpoint } from '@research-agent-platform/contracts'
 import type { ModelResult } from './execution-worker.js'
+import { researchConversationPolicy } from './conversation-policy.js'
 
 export type ExternalAgentInput={endpoint:string;model:string;apiKey:string;text:string;maxTokens:number;timeoutMs:number}
 export type ExternalAgentCall=(input:ExternalAgentInput,signal:AbortSignal)=>Promise<ModelResult>
@@ -18,7 +19,7 @@ export function externalEndpoint(value:string){
  if((isIP(host)&&!publicAddress(host))||/^(?:localhost|.*\.(?:localhost|local|internal))\.?$/i.test(host))throw new Error('EXTERNAL_ENDPOINT_UNSAFE')
  return url
 }
-export const externalAgentSystem='Reply to this current message as your deployed Agent. Plain text only. No tool calls, resource URLs or instructions for this platform to execute actions. No claims about unseen conversation/history/files.'
+export const externalAgentSystem='Reply to this current message as your deployed Agent. Plain text only. No tool calls, resource URLs or instructions for this platform to execute actions. No claims about unseen conversation/history/files. '+researchConversationPolicy
 type Dependencies={resolve?:(host:string)=>Promise<LookupAddress[]>;request?:typeof httpsRequest}
 // Dependency injection is for local wire tests only; production uses these exact
 // defaults. No URL, proxy, CA override or DNS override can be supplied by an API.

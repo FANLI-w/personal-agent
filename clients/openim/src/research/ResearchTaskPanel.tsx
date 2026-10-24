@@ -107,7 +107,7 @@ export function ResearchTaskPanel({
     return (
       <Alert
         type={error ? "error" : "info"}
-        message={error || "读取当前获准任务…"}
+        message={error || "正在打开任务…"}
         action={error ? <Button onClick={refresh}>重新读取</Button> : undefined}
       />
     );
@@ -125,7 +125,7 @@ export function ResearchTaskPanel({
             ? "（待确认）"
             : ""}
         </p>
-        <p>受邀待同意；接受后才形成承接记录并开放获准材料。</p>
+        <p>先看看这项任务是否适合你。接受后即可查看本次获准的材料。</p>
         {failure && <Alert type="error" message={failure} />}
         <Space>
           {value.pendingInvitation &&
@@ -138,8 +138,8 @@ export function ResearchTaskPanel({
                   confirm({
                     title:
                       decision === "accepted"
-                        ? "接受此任务范围与时间？"
-                        : "拒绝任务邀请？",
+                        ? "愿意按这个范围和时间接下任务吗？"
+                        : "这次先不接这项任务？",
                     content: value.pendingInvitation?.scope,
                     okText: decision === "accepted" ? "接受任务" : "拒绝邀请",
                     onOk: () =>
@@ -220,7 +220,7 @@ export function ResearchTaskPanel({
       <p className="whitespace-pre-wrap">验收要求：{task.acceptanceCriteria}</p>
       <div className="research-task-next">
         <strong>下一步</strong>
-        <p>{teamNextStep(task)}</p>
+        <p>{teamNextStep(task, actor?.member.id)}</p>
       </div>
       <p>
         负责人：{name(task.leadId)} · 审阅人：{name(task.reviewerId)}
@@ -291,7 +291,7 @@ export function ResearchTaskPanel({
           />
           <Input.TextArea
             aria-label="承接范围"
-            placeholder="交代需要承接的范围与交付"
+            placeholder="想请对方帮哪一步？可以在任务说明的基础上补充。"
             value={inviteScope}
             onChange={(e) => setInviteScope(e.target.value)}
             maxLength={8000}
@@ -313,7 +313,7 @@ export function ResearchTaskPanel({
               confirm({
                 title: "发送任务邀请？",
                 okText: "发送承接邀请",
-                content: "成员需要自行接受；发出邀请不会计为已承接。",
+                content: "邀请会发给这位成员，由对方决定是否接下任务。",
                 onOk: () =>
                   command(() =>
                     researchApi("invite", {
@@ -380,7 +380,7 @@ export function ResearchTaskPanel({
               )
             }
           >
-            保存阻碍与支持请求
+            记录问题并请求帮助
           </Button>
         </details>
       )}
@@ -418,7 +418,7 @@ export function ResearchTaskPanel({
             )
           }
         >
-          确认开始任务
+          开始这一步
         </Button>
       )}
       {artifacts?.map((artifact) => (
@@ -482,7 +482,7 @@ export function ResearchTaskPanel({
             aria-label="交付摘要"
             rows={3}
             maxLength={8000}
-            placeholder="填写实际交付摘要；附件引用在 AI 候选提交中保留"
+            placeholder="说说这一版做了什么、主要结果和还没解决的问题。"
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
           />
@@ -541,7 +541,7 @@ export function ResearchTaskPanel({
         <div>
           <Input.TextArea
             aria-label="验收意见"
-            placeholder="填写验收意见"
+            placeholder="哪些已达到要求？若需修改，指出最关键的问题和建议。"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={3}

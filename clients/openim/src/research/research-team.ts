@@ -51,16 +51,27 @@ export function teamDeadline(task: TeamTask, now = new Date()) {
   };
 }
 
-export function teamNextStep(task: TeamTask): string {
+export function teamNextStep(task: TeamTask, viewerId?: string): string {
   const status = teamTaskStatus(task);
   if (status === "completed") return "查看当前成果与实际审阅记录";
   if (status === "cancelled") return "已取消，可查看历史记录";
-  if (status === "blocked" && isFullTask(task))
-    return task.blocker?.requestedAction || "说明阻碍，协调所需支持";
-  if (status === "in_review") return "审阅实际交付，给出通过或修改意见";
-  if (status === "changes_requested") return "依据审阅意见修订，再提交成果";
-  if (status === "awaiting_acceptance") return "受邀成员确认任务范围与时间";
-  if (status === "unassigned") return "明确交付要求，邀请或认领负责人";
-  if (status === "ready") return "核对材料与前置成果，开始任务";
-  return "推进当前任务，记录结果或说明阻碍";
+  const full = isFullTask(task) ? task : undefined;
+  const isLead = !!viewerId && full?.leadId === viewerId;
+  const isReviewer = !!viewerId && full?.reviewerId === viewerId;
+  if (status === "blocked" && full) {
+    const support = full.blocker?.requestedAction;
+    if (!viewerId) return support || "说明阻碍，协调所需支持";
+    if (full.blocker?.requestedMemberId === viewerId)
+      return support ? `这一步需要你协助：${support}` : "看看阻碍说明，帮助确认下一步";
+    return support ? `当前需要的支持：${support}` : "当前有阻碍，可以在详情里说明需要的帮助";
+  }
+  if (status === "in_review")
+    return !viewerId || isReviewer ? "审阅实际交付，指出已解决的问题和具体修改建议" : "成果已提交，等待审阅意见；可以先查看这一版内容";
+  if (status === "changes_requested")
+    return !viewerId || isLead ? "先看审阅意见，修订后再提交一版成果" : "已有修改意见，等待承接人修订；可查看具体反馈";
+  if (status === "awaiting_acceptance") return "等待受邀成员确认任务范围与时间";
+  if (status === "unassigned") return "还没有承接人，可以邀请成员或认领这一步";
+  if (status === "ready")
+    return !viewerId || isLead ? "材料和前置成果准备好后，就可以开始这一步" : "承接人尚未开始，可以先查看任务安排";
+  return !viewerId || isLead ? "继续推进这一步；有阶段结果可以提交，卡住时也可以请求帮助" : "正在推进，可以查看阶段成果和需要的支持";
 }

@@ -68,7 +68,7 @@ export function memoryCommand(s:ChatService,text:string,message:ChatMessage){
  if(!explicit&&!correction&&!future&&!inferred)return null
  let content=(explicit?.[1]??correction?.[1]??value).trim(),topic=memoryTopic(content),scope:'general'|'topic'='general'
  const labeled=/^\[([^\]]{1,80})\]\s*[:：]?\s*(.+)$/.exec(content);if(labeled){topic=labeled[1]!;content=labeled[2]!;scope='topic'}
- if(correction&&!topic)return {receipt:{operation:'clarify' as const,memoryId:null,topic:null,status:null,version:0,question:'请说明要纠正的主题，例如：纠正记忆：[饮食] 我喜欢茶。'},text:'请说明要纠正的记忆主题；尚未修改。'}
+ if(correction&&!topic)return {receipt:{operation:'clarify' as const,memoryId:null,topic:null,status:null,version:0,question:'还没确定要改哪条偏好。可以写“纠正记忆：[饮食] 我喜欢茶”，原记录会先保留。'},text:'这次还没改动记忆，先确认要改的那条内容。'}
  if(!content||content.length>1000)return {receipt:{operation:'clarify' as const,memoryId:null,topic:null,status:null,version:0,question:'请把要保存的单条偏好明确写在 1000 字内。'},text:'请把要保存的单条偏好明确写在 1000 字内；尚未保存。'}
  // Unclassified explicit facts are independent records, not one mutable bucket.
  // The suffix keeps different long facts with the same prefix distinct.

@@ -72,6 +72,39 @@ test("an invitation stays unaccepted and an unreviewed result points to human re
     "补充原始数据",
   );
 });
+test("review guidance distinguishes the reviewer, contributor and observers", () => {
+  const value = { planId: "plan", status: "in_review", leadId: "student", reviewerId: "teacher" };
+  const before = structuredClone(value);
+  assert.match(teamNextStep(value, "teacher"), /审阅实际交付/);
+  assert.match(teamNextStep(value, "student"), /等待审阅/);
+  assert.match(teamNextStep(value, "observer"), /等待审阅/);
+  value.status = "changes_requested";
+  assert.match(teamNextStep(value, "student"), /修订后再提交/);
+  assert.match(teamNextStep(value, "teacher"), /等待承接人修订/);
+  value.status = before.status;
+  assert.deepEqual(value, before);
+});
+test("support guidance names the requested help without assigning it to every viewer", () => {
+  const value = { planId: "plan", status: "blocked", leadId: "student", blocker: { requestedAction: "提供合成数据说明", requestedMemberId: "support" } };
+  assert.match(teamNextStep(value, "support"), /^这一步需要你协助/);
+  assert.match(teamNextStep(value, "student"), /^当前需要的支持/);
+  assert.match(teamNextStep(value, "observer"), /^当前需要的支持/);
+  assert.equal(teamNextStep(value), value.blocker.requestedAction);
+});
+test("ready and active tasks do not tell observers to start or submit someone else's work", () => {
+  const value = { planId: "plan", status: "ready", leadId: "student" };
+  assert.match(teamNextStep(value, "student"), /可以开始/);
+  assert.match(teamNextStep(value, "teacher"), /尚未开始/);
+  value.status = "in_progress";
+  assert.match(teamNextStep(value, "student"), /可以提交/);
+  assert.match(teamNextStep(value, "teacher"), /查看阶段成果/);
+});
+test("summary-only and terminal tasks retain their real scope and state", () => {
+  assert.match(teamNextStep({ visibleStatus: "awaiting_acceptance" }, "viewer"), /等待受邀成员/);
+  assert.match(teamNextStep({ visibleStatus: "in_review" }, "viewer"), /等待审阅/);
+  assert.match(teamNextStep({ planId: "plan", status: "completed" }, "viewer"), /实际审阅记录/);
+  assert.match(teamNextStep({ planId: "plan", status: "cancelled" }, "viewer"), /已取消/);
+});
 test("either real commitment may become overdue even when the hard deadline is later", () => {
   const value = task("2026-10-20");
   value.schedule.committed = {

@@ -211,7 +211,7 @@ export function PersonalWorkDetail({
             onClick={() =>
               confirm(
                 "确认这项协作安排？",
-                "将创建任务群并邀请列出的成员；其他成员仍需自行接受。不会自动调用模型或完成任务。",
+                "将建立任务群并邀请上面的成员，对方同意后参与。之后可以在任务里请 Agent 处理。",
                 () =>
                   researchApi("activatePersonalWorkTask", {
                     params: { id: task.id },
@@ -310,9 +310,10 @@ export function PersonalWorkDetail({
             )}
             {allowed("submit") && (
               <section>
-                <h3>提交实际结果</h3>
+                <h3>分享这一版成果</h3>
                 <Input.TextArea
                   aria-label="任务结果"
+                  placeholder="说说做了什么、得到什么结果，还有哪里需要讨论。"
                   rows={3}
                   maxLength={8000}
                   value={result}
@@ -345,7 +346,7 @@ export function PersonalWorkDetail({
                   onClick={() =>
                     confirm(
                       "接受当前结果？",
-                      "确认后此任务才标为已完成，请先核对上方实际结果。",
+                      "这会将上方这一版结果标记为已验收，任务随之完成。",
                       () =>
                         researchApi("reviewPersonalWorkResult", {
                           params: { id: task.id },
@@ -374,7 +375,7 @@ export function PersonalWorkDetail({
                             decision: "request_changes",
                           },
                         }),
-                      "已要求修改，任务未完成。",
+                      "已退回修改，可以在任务聊天里说明具体建议。",
                     )
                   }
                 >

@@ -136,11 +136,11 @@ export function AgentStarters({
               <h4 className="text-sm font-semibold">{starter.profile.displayName}</h4>
               <p className="mt-2 text-sm leading-6 text-slate-700">{starter.summary}</p>
               <p className="mt-3 text-xs leading-5 text-slate-600">
-                <strong>适用输入：</strong>
+                <strong>可以这样开始：</strong>
                 {starter.input}
               </p>
               <p className="mb-4 mt-2 text-xs leading-5 text-slate-600">
-                <strong>能力边界：</strong>
+                <strong>使用说明：</strong>
                 {starter.boundary}
               </p>
               <Button

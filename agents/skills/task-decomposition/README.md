@@ -6,7 +6,7 @@
 
 - 接入方式：`clients/openim/src/research/planner-chat.ts` 用 Vite `?raw` 把 `SKILL.md` 正文打进前端 bundle，拼进任务规划 prompt 的「任务拆解方法」段落（`planningPrompt`）。
 - 依赖关系可视化：`clients/openim/src/research/DependencyGraph.tsx` 按依赖深度分列 + SVG 画箭头，接在 `PlanningAgent` 拆解结果卡片里。
-- 0.10.37已整合构建修复并公开；0.10.38候选补对话优先和低负担追问。真实模型拆解与交流质量尚未代验，不能用类型/结构检查代替；当前候选状态以`docs/current-state.md`为准。
+- 0.10.37已整合构建修复并公开；0.10.38候选补对话优先，0.10.39继续统一各助手和任务流程的低负担交流。真实模型拆解与交流质量尚未代验，不能用类型/结构检查代替；当前候选状态以`docs/current-state.md`为准。
 
 ## 后续计划
 

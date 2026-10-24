@@ -7,7 +7,7 @@ description: Analyze research-result files such as CSV, JSON, TSV, experiment lo
 
 ## Intake and data audit
 
-Require input path, unit of analysis, hypothesis/estimand, primary metric, comparison groups, pairing/repeated-measure structure, and intended decision. Inspect schema, missingness, duplicate IDs, invalid ranges, and transformation needs before analysis. Save `analysis/data-audit.json`.
+Inspect the supplied table or result first and explain what is already visible. Derive the unit of analysis, metric and comparison structure where evidence supports them; do not ask the researcher to fill every analysis field. If a missing design fact changes valid inference, ask one essential question (for example, whether measurements are paired) and withhold only the affected inference. Before formal analysis, establish hypothesis/estimand and intended decision, audit missingness, duplicate IDs, invalid ranges and transformations, and save `analysis/data-audit.json` when tools allow.
 
 ## Analysis protocol
 
@@ -20,3 +20,5 @@ Require input path, unit of analysis, hypothesis/estimand, primary metric, compa
 ## Quality gate
 
 Use [analysis-contract.md](references/analysis-contract.md). Avoid “significant/non-significant” as the sole conclusion; interpret magnitude, uncertainty, and practical relevance. Do not claim causal effects without a causal design and stated assumptions. Do not execute analysis code or install packages without appropriate user approval.
+
+Lead with the finding the data support, then the limitation and one practical next step. Keep raw evidence and uncertainty intact while using plain language. If code execution is unavailable, provide an analysis plan or code for later execution, never invented computed results. Respect already authorized scope without repeating routine approvals.

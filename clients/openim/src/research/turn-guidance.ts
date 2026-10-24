@@ -12,10 +12,10 @@ function modelGuidance(turn: AgentTurn, manager: boolean): Guidance {
     return {
       title: "本次未能调用模型",
       nextStep:
-        "这次请求记录为模型不可用；当前模型配置已可用。请核对剩余预算后决定是否明确重试，系统不会自动重试。",
+        "模型配置现在已可用。这次请求仍保留失败状态，可以查看剩余预算后重试。",
       tone: "warning",
     };
-  const settings = "请在模型设置中检查你的配置，处理后再明确发送。";
+  const settings = "打开“我的 → 模型设置”检查配置，保存后可以回来重试。";
   switch (turn.availability.reason) {
     case "platform_disabled":
       return {
@@ -53,10 +53,10 @@ function modelGuidance(turn: AgentTurn, manager: boolean): Guidance {
 /** Present only the actual turn state; never infer a reply or successful task. */
 export function turnGuidance(turn: AgentTurn, manager = false): Guidance {
   if (turn.memoryReceipt?.operation === "clarify") return {
-    title: "还需补充偏好信息", nextStep: turn.memoryReceipt.question || "请说明要保存、纠正或移除哪条偏好。", tone: "info",
+    title: "确认一下你想记住的内容", nextStep: turn.memoryReceipt.question || "你想记住哪条偏好？", tone: "info",
   };
   if (turn.followupReceipt?.operation === "clarify") return {
-    title: "提醒时间还需明确", nextStep: turn.followupReceipt.question || "请补充事项、日期、时间和时区。", tone: "info",
+    title: "这次提醒还没设好", nextStep: turn.followupReceipt.question || "你希望什么时候提醒？", tone: "info",
   };
   if (turn.failure?.startsWith("EXTERNAL_")) return {
     title: serviceErrorMessage(turn.failure, 0),
@@ -77,14 +77,14 @@ export function turnGuidance(turn: AgentTurn, manager = false): Guidance {
     };
   if (turn.purpose === "create_agent" && turn.status === "waiting_input")
     return {
-      title: "创建 Agent 需要补充信息",
-      nextStep: "请查看助理的问题并补充后发送；本次尚未添加联系人。",
+      title: "再聊清一个细节就能创建",
+      nextStep: "接着回答助理刚才的问题即可，联系人还没有创建。",
       tone: "info",
     };
   if (turn.status === "succeeded" && turn.createdAgent)
     return {
       title: turn.createdAgent.reused ? "已找到你的 Agent" : "Agent 已添加",
-      nextStep: "联系人与私聊已保存，可以打开 Agent 聊天；没有自动发送消息。",
+      nextStep: "可以打开它的对话，从你正在做的研究聊起。",
       tone: "success",
     };
   if (turn.status === "queued")
@@ -96,19 +96,19 @@ export function turnGuidance(turn: AgentTurn, manager = false): Guidance {
   if (turn.status === "running")
     return {
       title: "AI 正在回复",
-      nextStep: "正在处理本次请求；结果尚未返回。",
+      nextStep: "回复会显示在这段对话里。",
       tone: "info",
     };
   if (turn.status === "waiting_input")
     return {
-      title: "AI 需要补充信息",
-      nextStep: "请查看 AI 的问题，在输入框补充后发送。",
+      title: "聊到一个需要确认的地方",
+      nextStep: "可以接着回复刚才的问题，也可以直接调整方向。",
       tone: "info",
     };
   if (turn.status === "succeeded")
     return {
       title: "AI 已回复",
-      nextStep: "请查看回复；其中的协作建议仍需明确确认。",
+      nextStep: "可以接着讨论。涉及任务安排时，确认后才会建立。",
       tone: "success",
     };
   switch (turn.failure) {
@@ -139,21 +139,21 @@ export function turnGuidance(turn: AgentTurn, manager = false): Guidance {
             ? "本次处理耗时超出预算"
             : "本次上下文、回复或耗时超出限制",
         nextStep: turn.remainingBudget
-          ? "本次没有可用回复。请缩短需求、减少所选材料，手动核对下一次请求的材料与预算后再发送；相同内容和预算重试可能再次超限。系统不会自动提高预算。"
-          : "本次没有可用回复，本轮没有可用于重试的剩余预算。可以缩短需求、减少所选材料，核对材料与预算后明确发送新的请求。",
+          ? "内容没能在本次预算内处理完。可以先选最相关的一段材料再发送；原预算不会自动提高。"
+          : "本轮已没有可重试的预算。可以保留当前需求，下次先处理最相关的一段材料。",
         tone: "error",
       };
     }
     case "INVALID_MODEL_OUTPUT":
       return {
-        title: "AI 回复未通过校验",
-        nextStep: "本次没有可用回复。请核对需求后再明确提交；协作建议未被执行。",
+        title: "这次回复格式出了问题",
+        nextStep: "原需求已保留，可以重试这次请求；协作建议没有执行。",
         tone: "error",
       };
     case "MODEL_FAILED":
       return {
-        title: "模型调用失败",
-        nextStep: "本次没有可用回复。请联系实验室负责人检查模型服务，确认后再提交。",
+        title: "这次没能收到模型回复",
+        nextStep: "可以先重试；若仍失败，到“我的 → 模型设置”检查当前服务。",
         tone: "error",
       };
     case "LEASE_EXPIRED_USAGE_UNCERTAIN":
@@ -172,7 +172,7 @@ export function turnGuidance(turn: AgentTurn, manager = false): Guidance {
     case "INPUT_CHANGED":
       return {
         title: "本次请求的材料或资料已变化",
-        nextStep: "请重新选择当前版本的材料，核对 AI 档案和记忆后再提交。",
+        nextStep: "重新读取当前材料后再发送，就能接着讨论。",
         tone: "warning",
       };
   }
@@ -180,7 +180,7 @@ export function turnGuidance(turn: AgentTurn, manager = false): Guidance {
   if (turn.status === "cancelled")
     return {
       title: "AI 请求已取消",
-      nextStep: "本次不会继续生成回复；如仍需要，请明确提交新的请求。",
+      nextStep: "可以修改想法，再接着发送。",
       tone: "warning",
     };
   if (turn.status === "interrupted")
