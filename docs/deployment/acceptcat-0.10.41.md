@@ -1,6 +1,6 @@
 # Windows 0.10.41：科研同伴与私人交流偏好
 
-2026-10-24，北京时间。负责人要求实际改进Agent的同事感。产品 **5293eba94d2133f8624628084351ad1f06cd7bfe**，[PR100](https://github.com/luoyan96/personal-agent/pull/100)开放，未合并；分支feature/research-colleague从fetch后的main/89c987c新建，普通merge PR99/05ebf3a，保留0.10.40连续规划解析/重试与此前同事聊天、资料和课题组功能。
+2026-10-24，北京时间。负责人要求实际改进Agent的同事感。产品 **5293eba94d2133f8624628084351ad1f06cd7bfe**，[PR100](https://github.com/luoyan96/personal-agent/pull/100)已于22:53:29合入main/b73edfc（合并记录见下）；分支feature/research-colleague从fetch后的main/89c987c新建，普通merge PR99/05ebf3a，保留0.10.40连续规划解析/重试与此前同事聊天、资料和课题组功能。
 
 ## 已实现
 
@@ -40,4 +40,10 @@ Git外原审阅包backend-source-5293eba.tar.gz（39,114字节、d77661ad…）�
 
 部署前读取head **5b414a76328c097931fd360d0530a5942519bcf1**：Foundation40095005045两个Linux及Windows package40095005063成功；Windows Foundation首轮771通过/1失败，是既有邀请/执行权限用例超过原15000ms。原用例本机按原时限单独复核1通过/31跳过，只重跑原失败job，21:04:00成功。没有改代码/断言/时限，也不认定唯一超时根因；原失败日志保留。该head四项最终均success，此后纯部署文档的新head检查单独看回执。
 
-本批未合并main、公开Release或重指标签；重新读取公开Latest仍[v0.10.37](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.37)（422478602）。PR远端自动检查按实际head回执记录，进行中不算通过。实际安装/界面/真实账号材料模型及双机体验按负责人要求由本人检查；注册超时未定因、飞书本人试点、广场同步关闭与原件在线/10MiB/无TURN边界保持。
+上述部署批次未合并main、公开Release或重指标签；随后按负责人单独指令合并，见下方记录。重新读取公开Latest仍[v0.10.37](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.37)（422478602）。PR远端自动检查按实际head回执记录，进行中不算通过。实际安装/界面/真实账号材料模型及双机体验按负责人要求由本人检查；注册超时未定因、飞书本人试点、广场同步关闭与原件在线/10MiB/无TURN边界保持。
+
+## 后续main合并（未再次部署或打包）
+
+负责人明确要求合并后，北京时间2026-10-24 22:53:29以merge commit **b73edfc3d91480c4031f87fed1c9698f4a452f59**合入PR100；PR99于22:53:31自动标记MERGED。固定受审head **3d3bb0263b99c5510f665030798243a7d1134c61**的三平台Foundation（40096988522）及Windows package（40096988519）四项全部success。合并树与该head相同，旧main/89c987c、PR99及同事聊天、资料/课题组、原件互传与构建提交保持祖先关系，无冲突、未改写历史。
+
+本合并批次只补状态文档与内容检查，没有重复已通过的代码检查或追加用户体验验收；桌面0.10.41原包及上述后台镜像保持，未公开Release，Latest重新读取仍v0.10.37/422478602。main自动CI按实际运行另记。Git外证据 **D:/deepseek-agent/.runtime/merge-pr100-20261024**。
