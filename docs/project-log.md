@@ -1702,3 +1702,19 @@ Compose链末尾追加agent-conversation-20261024-v2/images.yaml，旧2677f693�
 [PR100](https://github.com/luoyan96/personal-agent/pull/100)已创建/挂接，含PR99，未合并或公开Release。重新fetch main仍89c987c，公开Latest读取仍v0.10.37/422478602。后台仍沿已部署b232296/620bc025、contract0.30/schema026记录；本批没有停服/迁移/新健康探测，共用规则和明确私人偏好保存尚未上线。Git外backend-source-5293eba.tar.gz为39,114字节的审阅源码，SHA256 d77661ada4a650daf63c3f2da664ed86f16e5ec6a09a3fe7821b7e89b2ee9fef，尚未上传/服务器构建/隔离/切换。后台部署按负责人此前约定单独授权。
 
 更新current-state、roadmap、交接prompt及[0.10.41交付](deployment/acceptcat-0.10.41.md)/[设计与边界](development/research-colleague.md)，证据 **D:/deepseek-agent/.runtime/research-colleague-20261024**。远端自动CI按新head实际结果另记，未完成不算通过；注册超时未定因、飞书本人试点、原件在线/10MiB/无TURN及广场同步关闭边界保持。
+
+## 2026-10-24 — 按本批明确授权部署科研同伴规则与私人交流偏好
+
+负责人回复“现在部署”后接续0.10.41配套后台。核对干净feature/research-colleague/5b414a7、origin主仓库并fetch，生产实际仍620bc025且API/worker健康，剩余空间约7.2GiB。准备并上传 **research-colleague-5293eba-20261024.tar.gz**，90,412字节，SHA256 **7afa2e7c9a6b15251bd4c73f75f882a445d7f9760f9e46e6671125c206082b2e**；安全路径、两个bash语法及服务端摘要检查通过。旧审阅包和原检查记录保留，不把审阅源码包与实际运维包混称。
+
+部署前读到head5b414a7的GitHub两个Linux Foundation和Windows package成功，Windows Foundation首轮771通过/1失败：既有邀请/执行权限用例超过原15000ms。保存原失败日志，在本机按原时限单独复核1通过/31跳过，只重跑失败的Windows job；21:04:00成功，与另三项组成最终四项success。没有改代码、断言、提高时限或认定唯一超时根因；服务器候选还覆盖了该用例。Foundation40095005045/Windows package40095005063的原失败与重跑回执均留Git外。
+
+基于原生产镜像离线构建，仅叠加4个API源文件、canonical拆解方法的源/打包副本（共6份）；180份基线源/方法、129份编译和32方法文件/11方法守卫通过。候选 **73项/4文件**全通过：规划输出5、个人规划8、聊天32、个人助理28，覆盖私人偏好重启/修订/撤回/容量/幂等/导出与账号角色隔离、晚到结果以及旧规划和执行授权。不使用生产私密数据运行模型或调用真实模型。
+
+北京时间 **2026-10-24 21:02:48—21:03:08**完成排空、停写备份、独立恢复核对与API/worker切换，deployment.exit=0。产品 **5293eba94d2133f8624628084351ad1f06cd7bfe**，新镜像 **research-openim-api:research-colleague-20261024 / sha256:367367eab2c7990b38b0453bf07d51a6f1cdc22b890732519573146218a99a4c**，contract0.30/schema026保持，未运行迁移。备份 **/srv/research-openim-backups/research-colleague-20261024-20261024T130251Z/research.tar.gz**，SHA256 **7715e5dca2f2fef44e60e355a83907c54ff687cec0bf5985261db04d07bf6df4**，私密备份/配置副本只留服务器。103表全行/结构、7原件内容/权限、迁移历史、integrity/外键和19配置/密钥输入摘要/权限保持；个人模型/默认值、飞书连接/资料源/私库范围与目录缓存不变。
+
+独立恢复库HTTP ready200/受保护接口401，未创建账号/会话或连接外部服务。正式API/worker均running/restart0，API healthy，公网ready200/contract0.30和四受保护路由有效合成参数匿名401；运行配置/挂载/网络和其他6服务保持，未改静态站点。运营目录种子的源及编译文件另外比对新旧镜像SHA256相同。广场实际enabled=false/state=disabled/nextCheckAt=null，GITHUB_CATALOG_SYNC=0，11条目/19候选保持；DSH0.2.1-rc.2/Cordis4.0.5不变，Harness仍not_verified。
+
+运维目录 **/opt/research-openim/ops/research-colleague-20261024**，原Compose链仅追加本批images.yaml；旧620bc025镜像保留。同schema回退只撤末尾覆盖并恢复配对旧镜像，保留当前数据与上线后写入，不回灌旧快照或退回025；本次未触发回退。后台共用规则与明确私人偏好保存现已上线；桌面规划/新模板仍需0.10.41，已安装的私人Skill与用户自改档案不自动覆盖。没有自动重放用户消息或代验真实口吻/科研质量。
+
+更新current-state、roadmap、交接prompt及[0.10.41交付](deployment/acceptcat-0.10.41.md)，Git外 **D:/deepseek-agent/.runtime/research-colleague-20261024**新增backend-package、实际deployment-summary与deployment-proof；源码审阅包和先前等待授权状态保留。本批只部署/记录，没有重打或代安装客户端，桌面0.10.41原大小/摘要保持；PR100含PR99仍未合并，0.10.41未公开Release，重新读取公开Latest仍v0.10.37/422478602。后续纯文档新head检查单独记录，不重复已通过的完整CI或追加用户体验验收；注册超时未定因、飞书本人试点、原件在线/10MiB/无TURN等边界保持。
