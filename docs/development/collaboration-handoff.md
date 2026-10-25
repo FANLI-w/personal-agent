@@ -1,6 +1,6 @@
 # AcceptCat 新聊天交接 prompt
 
-2026-10-25（北京时间）。协作流程以根目录[CONTRIBUTING.md](../../CONTRIBUTING.md)为准，当前事实以[项目状态](../current-state.md)为准。下方内容可复制到负责人新聊天；外部合作者将本机目录替换为自己的克隆目录，明确本人负责的任务，并按Fork的origin/upstream关系操作。
+2026-10-26（北京时间）。协作流程以根目录[CONTRIBUTING.md](../../CONTRIBUTING.md)为准，当前事实以[项目状态](../current-state.md)为准。下方内容可复制到负责人新聊天；外部合作者将本机目录替换为自己的克隆目录，明确本人负责的任务，并按Fork的origin/upstream关系操作。
 
 ```text
 请接手 AcceptCat 项目，接着处理我随后给出的需求。
@@ -24,7 +24,8 @@
 6. 代码合并、安装包制作、公开 Release、后台部署分别记录，不能把其中一项完成说成全部完成。此前同步 main/发布0.10.29的授权已履行，不是以后自动合并或发布的长期授权；按我当前指令推进，不重复询问已明确授权的同一操作。
 
 当前交付事实：
-- 最新本机0.10.49候选：产品5b441ffcf5394c095a26ee0ad195359188e5981d，从最新main另开feat/dafeiyu-app-icon，保留PR108/107/106/105；应用/安装器/窗口/托盘/标题登录关于图标统一大肥鱼，名称/appId/数据保持。双类型、Windows包/更新清单和程序/安装EXE四档图标、ASAR图标署名核对通过，桌面C:/Users/luo/Desktop/AcceptCat_0.10.49.exe。前批PR108 Windows长对话30秒超时已保留、本机原时限7项通过并发起该job重跑，结果另记；未代安装或验证系统图标缓存。无需为本批部署，前批角色后台仍待安排，未合main/公开，最新PR见current-state。
+- 最新本机0.10.50候选：产品690a86983820a807c04fd1a7e02d9549eedfa956，从最新main另开fix/workbench-copy-cleanup，保留PR109/108/107/106/105；去掉截图中的工作台/研究方向/空任务说明、范围说明折叠块、规划介绍及输入区模型设置/快捷键小字，保留发送/停止和实际状态。38项规划回归、双类型、Windows包/更新清单及成品文字/图标/署名核对通过，桌面C:/Users/luo/Desktop/AcceptCat_0.10.50.exe，88155412字节，SHA256 555ddfb2bab93ff1a1acec5064ac8a4961a03b2a942134ba0ddbeb9e6953067b。PR109/1e07441、PR108/a670787四项检查重新读取均success，新PR另记。无需本批后台升级，前批角色仍待安排；未合main/公开或代安装体验，见current-state。
+- 前批本机0.10.49候选：产品5b441ffcf5394c095a26ee0ad195359188e5981d，从最新main另开feat/dafeiyu-app-icon，保留PR108/107/106/105；应用/安装器/窗口/托盘/标题登录关于图标统一大肥鱼，名称/appId/数据保持。双类型、Windows包/更新清单和程序/安装EXE四档图标、ASAR图标署名核对通过，桌面C:/Users/luo/Desktop/AcceptCat_0.10.49.exe。前批PR108 Windows长对话30秒超时已保留、本机原时限7项通过并发起该job重跑，后续成功见上条；未代安装或验证系统图标缓存。无需为本批部署，前批角色后台仍待安排，未合main/公开，最新PR见current-state。
 - 前批本机0.10.48候选：产品e4c411fc2fc4027c42790780b2e80f1e3a6e33f4，从最新main另开fix/chat-return-and-notifications，保留PR107/106/105。消息入口恢复上次聊天、后台保持未读、侧栏/任务栏红点与后台闪烁，聊天辅助小字收进更多菜单。27客户端隔离/9构建守卫/双类型/Windows包与更新清单及成品模块/头像通过；真实安装/提醒效果由负责人检查。桌面C:/Users/luo/Desktop/AcceptCat_0.10.48.exe。本批无需后台，前批角色升级仍待安排；未合main/公开，最新PR与状态见current-state。
 - 前批本机0.10.47候选：产品0ef32388828e6f051f023a03438db86ff2c793b7，独立feat/personal-assistant-avatar从最新main新建并保留PR106/105；私人助理统一大肥鱼头像，原始PNG本地随包，身份匹配、关于署名/完整许可保留。renderer类型、内容、Windows包/更新清单及成品头像/署名字节核对通过，桌面C:/Users/luo/Desktop/AcceptCat_0.10.47.exe。头像无需后台，前批角色API/worker仍待单独升级；未合main/公开或代安装/实际体验，最新PR状态见current-state。
 - 前批本机0.10.46候选（PR106已提交，尚未合并）：产品ccbc411dd76d32f4504cf76c261a78a4a4bdf0a4，feature/agent-role-skills从main/fb2150b建立并保留PR105。十类默认角色改由agents/roles的meta/persona/work/SKILL和manifest组织，未来默认角色注册后自动加载；自建/导入沿同一约定，保留用户自改档案与私人偏好。787项根CI/2生产入口、60客户端/双类型及NSIS/更新清单、44份成品角色原文与2入口通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.46.exe，87,372,525字节，SHA256 b8d2f7b87a4ff6d8b16c2fa4e2d0e315341fd4bdad51abe84ee9d098947585de。配套API/worker需要单独部署；contract0.32/schema026无迁移，仍沿0e78530/7d75165a，没有合main/公开或代做安装/模型/用户体验。新增角色遵循agents/roles/README.md，不再在TS另写默认人设。
