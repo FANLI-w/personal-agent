@@ -23,4 +23,6 @@ renderer/Electron双类型、19项现有资料对话/飞书范围/原件下载�
 - EXE/blockmap/latest.yml与包内更新源通过，未上传Release。
 - Git外证据：D:/deepseek-agent/.runtime/library-copy-cleanup-20261026，包含类型、首轮与最终library-regression、desktop-win、windows-update、asar-inspection、delivery、PR110 Windows原日志及registration-migration-recheck。
 
-本批仅客户端显示和旧测试夹具修改，无API/worker、契约、数据库、角色正文或依赖锁变化，无迁移或本批后台部署需求。前批角色后台仍待单独安排。未合main、公开或部署，线上0e78530/7d75165a、contract0.32/schema026和重新读取的公开Latest v0.10.37/422478602保持。内容/链接和PR回执另记。
+本批仅客户端显示和旧测试夹具修改，无API/worker、契约、数据库、角色正文或依赖锁变化，无迁移或本批后台部署需求。前批角色后台仍待单独安排。未合main、公开或部署，线上0e78530/7d75165a、contract0.32/schema026和重新读取的公开Latest v0.10.37/422478602保持。内容/链接和git diff --check通过。
+
+[PR111](https://github.com/luoyan96/personal-agent/pull/111)已创建并挂接，OPEN/MERGEABLE，目标main；首次headf076d06四项GitHub检查in_progress，未确认通过，github-created.json保留。未合并、发布或部署。
