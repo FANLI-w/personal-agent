@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { PlanInput } from '@research-agent-platform/contracts'
-import { parsePlanningOutput, planningOutputDiagnostic } from '../src/planning-output.js'
+import { parsePlanningOutput, parsePlanningConversation, planningOutputDiagnostic } from '../src/planning-output.js'
 
 const schedule = { suggested: null, hardDeadline: null, committed: null, checkpoint: null, estimatedHumanHours: null }
 const item = { id: 'compare', title: 'Synthetic comparison', goal: 'Compare Metric A', deliverable: 'Comparison', acceptanceCriteria: 'Traceable evidence', allocation: { kind: 'self' }, dependencies: [], schedule, inputArtifactIds: [], budget: null }
@@ -8,6 +8,21 @@ const draft = () => ({ labId: 'lab_synthetic', goal: 'Synthetic continuation', p
 const reply = (plan: unknown) => JSON.stringify({ intent: 'draft', plan })
 
 describe('planning model content and server-owned fields', () => {
+  it('accepts an actual conversational answer without manufacturing an empty plan', () => {
+    expect(parsePlanningConversation(JSON.stringify({answer:'Synthetic evidence judgment; let us compare the existing baseline.',plan:null}),'lab_synthetic')).toEqual({answer:'Synthetic evidence judgment; let us compare the existing baseline.',plan:null})
+    const full={...draft(),ownerId:'other_owner',status:'confirmed',version:99}
+    expect(parsePlanningConversation(JSON.stringify({answer:'Synthetic concrete next step.',plan:full}),'lab_synthetic').plan).toEqual(draft())
+  })
+  it('rejects a bare null draft, empty answer and undefined conversational actions, with prose-free shape diagnostics', () => {
+    for(const raw of [{intent:'draft',plan:null},{answer:'  ',plan:null},{answer:'Synthetic reply',plan:null,execute:true}]){
+      const text=JSON.stringify(raw)
+      try{parsePlanningConversation(text,'lab_synthetic');throw new Error('Expected invalid reply')}catch(error){
+        const diagnostic=planningOutputDiagnostic(text,'parsing',error)
+        expect(diagnostic).toMatchObject({category:'schema',shape:{plan:'null'}})
+        expect(JSON.stringify(diagnostic)).not.toContain('Synthetic reply')
+      }
+    }
+  })
   it('accepts the legacy input and the content-only output without changing task content', () => {
     const full = draft(), { labId: _lab, ...content } = full
     const { schedule: _schedule, inputArtifactIds: _inputs, ...step } = item

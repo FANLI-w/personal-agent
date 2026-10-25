@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.31.0"
+    "version": "0.32.0"
   },
   "paths": {
     "/api/v1/peer-library/devices": {
@@ -61185,7 +61185,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.31.0"
+                          "const": "0.32.0"
                         },
                         "checks": {
                           "type": "object",
@@ -61244,7 +61244,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.31.0",
+                    "contractVersion": "0.32.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -61418,7 +61418,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.31.0"
+                          "const": "0.32.0"
                         },
                         "checks": {
                           "type": "object",
@@ -61477,7 +61477,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.31.0",
+                    "contractVersion": "0.32.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -61629,7 +61629,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.31.0"
+                          "const": "0.32.0"
                         },
                         "checks": {
                           "type": "object",
@@ -61688,7 +61688,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.31.0",
+                    "contractVersion": "0.32.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -93534,7 +93534,7 @@
     "/api/v1/planning-requests": {
       "post": {
         "operationId": "planRequest",
-        "description": "Lab member; optional colleague must be an owned local specialist in its owner direct conversation; bind authorized profile/private memory versions and fence changes; legacy requests remain valid. Private planning binds requester personal default model and configuration fingerprint; only managers without personal settings retain legacy lab compatibility, ordinary members never inherit its key. Recheck dispatch, heartbeat and writeback; historical unbound jobs keep original lab path. Explicit facts need no model; authorized inputs checked; validated draft only, never confirmation.",
+        "description": "Lab member; optional colleague must be an owned local specialist in its owner direct conversation; bind authorized profile/private memory versions and fence changes; legacy requests remain valid. Private planning binds requester personal default model and configuration fingerprint; only managers without personal settings retain legacy lab compatibility, ordinary members never inherit its key. Recheck dispatch, heartbeat and writeback; historical unbound jobs keep original lab path. Explicit facts need no model; authorized inputs checked. Optional conversation mode returns a nonempty message with an optional draft; discussion alone never edits plans. Legacy request/reply shapes unchanged; never confirmation.",
         "x-stage": "B3",
         "x-implemented": true,
         "security": [
@@ -93598,6 +93598,10 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "replyMode": {
+                    "type": "string",
+                    "const": "conversation"
                   },
                   "prompt": {
                     "type": "string",
@@ -93816,6 +93820,11 @@
                                     "model_suggestion",
                                     "service_facts"
                                   ]
+                                },
+                                "message": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 8000
                                 },
                                 "plan": {
                                   "anyOf": [
@@ -96603,6 +96612,11 @@
                                     "model_suggestion",
                                     "service_facts"
                                   ]
+                                },
+                                "message": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 8000
                                 },
                                 "plan": {
                                   "anyOf": [
@@ -102988,6 +103002,11 @@
                                     "model_suggestion",
                                     "service_facts"
                                   ]
+                                },
+                                "message": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 8000
                                 },
                                 "plan": {
                                   "anyOf": [

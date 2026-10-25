@@ -29,6 +29,7 @@ test("legacy planning requests retain their original idempotency shape without a
   const legacy = { labId: "lab_synthetic", prompt: "Discuss the next evidence gap", inputArtifactIds: [], budget: { maxTokens: 100000, maxSeconds: 30 } };
   const parsed = routes.planRequest.request.shape.body.parse(legacy);
   assert.equal(Object.hasOwn(parsed, "colleague"), false);
+  assert.equal(Object.hasOwn(parsed, "replyMode"), false);
   assert.deepEqual(routes.planRequest.request.shape.body.parse({ ...legacy, colleague: { contactId: "agent_one", conversationId: "direct_one" } }).colleague, { contactId: "agent_one", conversationId: "direct_one" });
 });
 test("colleague preparation never replaces a foreign, missing or external remembered identity", async () => {

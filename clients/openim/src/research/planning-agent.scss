@@ -84,19 +84,24 @@
     padding: 0 8px;
   }
   .planning-agent-heading .ant-btn.planning-agent-toggle {
-    min-width: 36px;
-    height: 32px;
-    border-radius: 10px;
-    border-color: #568d70;
-    background: #568d70;
-    color: #fff;
-    font-size: 16px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border-color: #c8dfd1;
+    background: #f4faf6;
+    color: #3e7758;
+    font-size: 12px;
+    box-shadow: none;
+  }
+  .planning-agent-heading .planning-agent-toggle > span {
+    color: inherit;
+    font-size: inherit;
   }
   .planning-agent-heading .ant-btn.planning-agent-toggle:hover,
   .planning-agent-heading .ant-btn.planning-agent-toggle:active {
-    border-color: #467a5f;
-    background: #467a5f;
-    color: #fff;
+    border-color: #568d70;
+    background: #e7f3eb;
+    color: #2d6446;
   }
   .planning-agent-toggle:focus-visible {
     outline: 2px solid #568d70;

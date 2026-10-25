@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const contractVersion = '0.31.0' as const
+export const contractVersion = '0.32.0' as const
 export const Id = z.string().regex(/^[A-Za-z0-9_-]{1,96}$/)
 export const Text = z.string().min(1).max(8000)
 export const Title = z.string().min(1).max(200)
@@ -50,7 +50,7 @@ export const ModelUsage = z.strictObject({ inputTokens: z.number().int().nonnega
 export const ObjectRef = z.strictObject({ id: Id, version: Version })
 export const InputRef = ObjectRef.extend({ sha256: z.string().regex(/^[a-f0-9]{64}$/) })
 export const EntryIntent = z.enum(['draft', 'progress', 'find_work'])
-export const AdaptiveReply = z.strictObject({ replyVersion: z.literal('1.0.0'), intent: EntryIntent, readAt: Instant, origin: z.enum(['model_suggestion', 'service_facts']), plan: Plan.nullable(), tasks: z.array(z.union([Task, TaskSummary])).max(20), truncated: z.boolean(), gaps: z.array(Text).max(30), actions: z.array(z.strictObject({ object: z.enum(['plan','task']), ref: ObjectRef, action: Action })).max(100) })
+export const AdaptiveReply = z.strictObject({ replyVersion: z.literal('1.0.0'), intent: EntryIntent, readAt: Instant, origin: z.enum(['model_suggestion', 'service_facts']), message: Text.optional(), plan: Plan.nullable(), tasks: z.array(z.union([Task, TaskSummary])).max(20), truncated: z.boolean(), gaps: z.array(Text).max(30), actions: z.array(z.strictObject({ object: z.enum(['plan','task']), ref: ObjectRef, action: Action })).max(100) })
 export const EvidenceChecklist = z.strictObject({ title: Title, items: z.array(z.strictObject({ requirement: Text, assessment: z.enum(['supported_by_input','gap']), citations: z.array(z.strictObject({ artifactId: Id, quote: Text })).max(20), gap: Text.nullable() })).min(1).max(50), limitations: z.array(Text).max(20) })
 export const RunRecord = Execution.extend({ methodVersion: Version.optional(), configurationGeneration: Version.optional(), methodTrial: z.boolean().optional(), conclusionRefs: z.array(ObjectRef).max(10).optional(), requestedBy: Id, taskVersion: Version, plan: ObjectRef, permissionVersion: Version, inputs: z.array(InputRef).max(10), budget: Budget, maxAttempts: z.number().int().min(1).max(3), nextAttemptAt: Instant.nullable(), candidate: EvidenceChecklist.nullable(), candidateDeliverableId: Id.nullable(), allowedActions: z.array(z.enum(['cancel','retry','submit_candidate'])).max(3), provider: Title, model: Title, harnessVersion: Title, updatedAt: Instant, usageDetail: ModelUsage.nullable() })
 export const PlanningRequest = z.strictObject({ id: Id, status: z.enum(['queued', 'running', 'draft', 'ready', 'waiting_input', 'interrupted', 'failed', 'cancelled']), planId: Id.nullable(), failure: Text.nullable(), version: Version, reply: AdaptiveReply.nullable(), usage: ModelUsage.nullable(), createdAt: Instant, updatedAt: Instant })

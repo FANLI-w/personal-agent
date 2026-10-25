@@ -86,7 +86,7 @@ export class AiService {
   }
   getPlanning(id:string){
     const row=this.row(id),req=this.planningAccess(row),p=PlanningRequest.parse(JSON.parse(String(row.document)))
-    if(p.reply){if(p.reply.intent==='draft'){p.reply.plan=p.planId?this.c.plan(p.planId):null;p.reply.readAt=instant();p.reply.actions=p.reply.plan?.status==='draft'?[{object:'plan',ref:{id:p.reply.plan.id,version:p.reply.plan.version},action:'confirm'}]:[]}
+    if(p.reply){if(p.reply.intent==='draft'){p.reply.plan=req.replyMode==='conversation'&&p.status==='ready'?null:p.planId?this.c.plan(p.planId):null;p.reply.readAt=instant();p.reply.actions=p.reply.plan?.status==='draft'?[{object:'plan',ref:{id:p.reply.plan.id,version:p.reply.plan.version},action:'confirm'}]:[]}
       else p.reply=this.facts(p.reply.intent,req.taskIds)}
     return p
   }
@@ -144,7 +144,7 @@ export class AiService {
       if(b.plan){const p=this.c.plan(b.plan.id);this.c.checkVersion(p.version,b.plan.version);if(p.status!=='draft')fail('INVALID_STATE')}
       const reuse=new ReuseService(this.c);reuse.selected(b.conclusionRefs??[],b.plan?{kind:'plan',id:b.plan.id}:undefined);
       for(const taskId of b.taskIds??[])reuse.explicit('task',taskId,b.conclusionRefs??[]);
-      const intent=b.intent??'auto';if(['auto','draft'].includes(intent)&&!(this.planningModel?.enabled??this.enabled))fail('MODEL_UNAVAILABLE')
+      const intent=b.intent??'auto';if(b.replyMode==='conversation'&&!['auto','draft'].includes(intent))fail('VALIDATION_ERROR');if(['auto','draft'].includes(intent)&&!(this.planningModel?.enabled??this.enabled))fail('MODEL_UNAVAILABLE')
       const p:Planning={id:randomUUID(),status:['progress','find_work'].includes(intent)?'ready':'queued',planId:b.plan?.id??null,failure:null,version:1,reply:intent==='progress'||intent==='find_work'?this.facts(intent,b.taskIds??[]):null,usage:null,createdAt:instant(),updatedAt:instant()}
       const input:PlanningInput={...b,intent,plan:b.plan??null,taskIds:b.taskIds??[],inputs:this.inputRefs(b.inputArtifactIds)}
       if(b.colleague){

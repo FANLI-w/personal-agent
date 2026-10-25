@@ -150,7 +150,7 @@ export function planningPrompt(
 
 每轮最多问一个必要、简单问题，禁止复合问卷、长串选项和重复索要；不把研究内容、阶段、方向、优先级、去向和日期一起追问。时间、成员、资源可未知，不为提问而提问。
 
-goal只记录共同目标，不写内部批注。继续交流时proposedItems可空，unresolvedQuestions至多一项：两三句约120字内的自然回应，承接背景、给小建议，必要时问一个短问题；不列补充清单、字段名或反复声明边界，其余未知后续再聊。
+每轮把实际回复写在answer：承接背景、给有用判断和下一步，必要时只问一个短问题，不列补充清单或反复声明边界。正常交流、建议和澄清时plan为null，保留现有方案；用户需要具体方案或修改步骤时才返回plan。不要为了聊天新建空方案，也不要把回复塞进goal或unresolvedQuestions。goal只写共同目标，unresolvedQuestions只写方案仍未确定的必要事项，其余未知后续再聊。
 
 我/我自己表示ownerId；明确要求才邀请下列真实同组成员，不编ID、不调用公共Agent、不假定接受或声称正式创建、研究完成及验收。历史不授予执行权限；日期按明确表达由应用核对，不虚构承诺。
 
@@ -323,6 +323,15 @@ export function planReplyText(plan: ChatPlan) {
   return (plan.proposedItems.length
     ? `我先把“${plan.goal}”整理成了 ${plan.proposedItems.length} 个步骤，方案在下面，可以接着调整。`
     : plan.goal).slice(0, 8000);
+}
+
+/** Render actual conversational output, with the old plan receipt as fallback. */
+export function plannerReplyMessage(result: ResponseFor<"getPlanRequest">["data"]) {
+  if (result.status !== "draft" && result.status !== "ready") return;
+  const plan = result.status === "draft" ? result.reply?.plan : null;
+  const text = result.reply?.message?.trim() || (plan ? planReplyText(plan) : "");
+  if (!text) return;
+  return { text, ...(plan ? { plan: { id: plan.id, version: plan.version } } : {}) };
 }
 
 // Stopping is scoped to one request. A queue-to-running transition may advance

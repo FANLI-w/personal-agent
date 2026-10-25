@@ -1,8 +1,8 @@
 import { Alert, Button, Input, Popover, Spin } from "antd";
 import {
   ArrowUpOutlined,
+  ArrowLeftOutlined,
   CheckOutlined,
-  DownOutlined,
   HistoryOutlined,
   ExpandOutlined,
   PlusOutlined,
@@ -33,7 +33,7 @@ import {
   plannerDeadline,
   plannerPlanInput,
   planningPrompt,
-  planReplyText,
+  plannerReplyMessage,
   readPlannerHistory,
   stopPlannerRequest,
   plannerFailureText,
@@ -56,7 +56,7 @@ import { AgentColleagueSettings } from "./AgentColleagueSettings";
 
 type Props = {
   available: boolean;
-  colleagueAvailable: boolean;
+  conversationAvailable: boolean;
   full: boolean;
   focus: number;
   planId?: string;
@@ -100,7 +100,7 @@ export function PlanningAgent(props: Props) {
 }
 function PlanningAgentSession({
   available,
-  colleagueAvailable,
+  conversationAvailable,
   full,
   focus,
   planId: adoptPlan,
@@ -306,19 +306,19 @@ function PlanningAgentSession({
     )
       return;
     const generated = result.status === "draft" ? result.reply?.plan : null;
+    const message = plannerReplyMessage(result);
     if (generated && thread.planId === generated.id) void plan.refresh();
-    if (generated)
+    if (message)
       update((t) => ({
         ...t,
         handledRequest: result.id,
-        planId: generated.id,
+        planId: generated?.id || t.planId,
         messages: [
           ...t.messages,
           {
             id: crypto.randomUUID(),
             role: "assistant",
-            text: planReplyText(generated),
-            plan: { id: generated.id, version: generated.version },
+            ...message,
           },
         ],
       }));
@@ -523,8 +523,8 @@ function PlanningAgentSession({
       setFailure("当前方案还没有核对成功，请先重新读取，避免覆盖未查看的方案。");
       return;
     }
-    if (!colleagueAvailable) {
-      setFailure("后台还未支持这位助手的统一档案。请先升级后台，当前消息、已有方案和任务都保留。");
+    if (!conversationAvailable) {
+      setFailure("后台还未支持这位助手的连续聊天回复。请先升级后台，当前消息、已有方案和任务都保留。");
       return;
     }
     const statedDeadline = plannerDeadline(text);
@@ -548,6 +548,7 @@ function PlanningAgentSession({
         body: {
           labId: actor.member.labId,
           colleague: { contactId: mate.agent.id, conversationId: mate.conversationId },
+          replyMode: "conversation",
           prompt: context.prompt,
           intent: "draft",
           plan: current ? { id: current.id, version: current.version } : null,
@@ -654,14 +655,16 @@ function PlanningAgentSession({
           )}
           {!full && (
             <Button
-              type="primary"
+              type="default"
               className="planning-agent-toggle"
-              icon={expanded ? <DownOutlined /> : <UpOutlined />}
-              aria-label={expanded ? "收起规划对话" : "展开规划对话"}
+              icon={expanded ? <ArrowLeftOutlined /> : <UpOutlined />}
+              aria-label={expanded ? "返回工作台" : "展开规划对话"}
               aria-expanded={expanded}
               title={expanded ? "收起对话，返回工作台" : "展开对话"}
               onClick={() => setExpanded((v) => !v)}
-            />
+            >
+              {expanded ? "返回工作台" : "展开对话"}
+            </Button>
           )}
         </nav>
       </header>
@@ -924,7 +927,7 @@ function PlanningAgentSession({
           message={failure}
         />
       )}
-      {!colleagueAvailable && <p className="planning-agent-note">后台升级后，这里的研究方案助手会沿用联系人档案和私人交流偏好。已有方案与任务仍可查看。</p>}
+      {!conversationAvailable && <p className="planning-agent-note">后台升级后，这位助手可以正常接着聊，再按需要更新方案。已有方案与任务仍可查看。</p>}
       {members.error && (
         <p className="planning-agent-note">
           {members.error}

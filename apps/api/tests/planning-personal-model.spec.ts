@@ -39,6 +39,53 @@ async function setup(){
   return {db,config,call,ok,personal,lab,planBody,planning,detail,worker,restart:async()=>{await app.close();app=createServer(config);url=await app.listen({host:'127.0.0.1',port:0})}}
 }
 describe('owned personal planning with real HTTP and isolated synthetic credentials',{timeout:30000},()=>{
+  it('keeps discussion separate from plan revisions and returns the actual answer after restart, with no task creation',async()=>{
+    const s=await setup();await s.personal()
+    const counts=()=>['plans','tasks','assignments'].map(table=>Number(s.db.prepare('SELECT count(*) n FROM '+table).get()!.n))
+    const before=counts(),body={...s.planBody,replyMode:'conversation'},first=await s.ok('planRequest',body)
+    await s.worker(async input=>{
+      expect(input.system).toContain('Always put your actual reply in answer')
+      return {...output(),text:JSON.stringify({answer:'Synthetic first judgment: strengthen the evidence before adding experiments.',plan:null})}
+    }).tick()
+    await s.restart()
+    expect(await s.detail(first.id)).toMatchObject({status:'ready',planId:null,reply:{message:'Synthetic first judgment: strengthen the evidence before adding experiments.',plan:null,actions:[]},usage:{inputTokens:100,outputTokens:100}})
+    expect(counts()).toEqual(before)
+    expect((await s.call('getPlanRequest',null,{id:first.id},1)).status).toBe(404)
+    const next=await s.ok('planRequest',body)
+    await s.worker(async()=>({...output(),text:JSON.stringify({answer:'Synthetic proposal: compare the strongest baseline first.',plan:{goal:'Synthetic proposal',proposedItems:[],unresolvedQuestions:[]}})})).tick()
+    const draft=await s.detail(next.id),plan=draft.reply.plan
+    expect(draft).toMatchObject({status:'draft',reply:{message:'Synthetic proposal: compare the strongest baseline first.',actions:[{object:'plan',action:'confirm'}]}})
+    const discussion=await s.ok('planRequest',{...body,plan:{id:plan.id,version:plan.version}})
+    await s.worker(async()=>({...output(),text:JSON.stringify({answer:'Synthetic follow-up: the current plan can stay while we compare the alternatives.',plan:null})})).tick()
+    expect(await s.detail(discussion.id)).toMatchObject({status:'ready',planId:plan.id,reply:{plan:null,actions:[]}})
+    expect(await s.ok('getPlan',null,{id:plan.id})).toEqual(plan)
+    expect(counts()).toEqual([before[0]+1,...before.slice(1)])
+  })
+  it('does not turn a missing or blank conversational answer into success and preserves existing drafts and actual usage',async()=>{
+    const s=await setup();await s.personal();const first=await s.planning()
+    await s.worker(async()=>output()).tick();const prior=(await s.detail(first.id)).reply.plan
+    for(const reply of [{intent:'draft',plan:null},{answer:'  ',plan:null}]){
+      const job=await s.ok('planRequest',{...s.planBody,replyMode:'conversation',plan:{id:prior.id,version:prior.version}})
+      await s.worker(async()=>({...output(),text:JSON.stringify(reply)})).tick()
+      expect(await s.detail(job.id)).toMatchObject({status:'failed',failure:'INVALID_MODEL_OUTPUT',usage:{inputTokens:100,outputTokens:100}})
+      expect(await s.ok('getPlan',null,{id:prior.id})).toEqual(prior)
+      const receipt=JSON.parse(String(s.db.prepare('SELECT result_json FROM execution_attempts WHERE job_id=?').get(job.id)!.result_json))
+      expect(receipt).toMatchObject({text:'',planningOutputDiagnostic:{category:'schema',shape:{plan:'null',hasAnswer:false}}})
+    }
+  })
+  it('fences conversational replies when the bound colleague changes, without exposing late content or losing usage',async()=>{
+    const s=await setup();await s.personal()
+    const agent=await s.ok('createPersonalAgent',{displayName:'Synthetic colleague',introduction:'Synthetic',capabilityDescription:'Synthetic research',personality:'Original style'})
+    const conversation=await s.ok('createDirectConversation',{contactId:agent.id})
+    const job=await s.ok('planRequest',{...s.planBody,replyMode:'conversation',colleague:{contactId:agent.id,conversationId:conversation.id}})
+    await s.worker(async()=>{
+      await s.ok('updateContactProfile',{displayName:agent.displayName,introduction:agent.profile.introduction,capabilityDescription:agent.profile.capabilityDescription,personality:'Changed style',expectedVersion:agent.profile.version},{id:agent.id})
+      return {...output(),text:JSON.stringify({answer:'LATE_REPLY_MUST_NOT_APPEAR',plan:null})}
+    }).tick()
+    const response=await s.detail(job.id)
+    expect(response).toMatchObject({status:'cancelled',failure:'AGENT_CONTEXT_CHANGED',reply:null,usage:{inputTokens:100,outputTokens:100}})
+    expect(JSON.stringify(response)).not.toContain('LATE_REPLY_MUST_NOT_APPEAR')
+  })
   const colleague=async(s:Awaited<ReturnType<typeof setup>>,actor=0)=>{
     const agent=await s.ok('createPersonalAgent',{displayName:`Colleague ${actor}`,introduction:'Synthetic research colleague',capabilityDescription:'Discuss evidence and draft tasks',personality:`PERSONA_${actor}: lead with a judgment, then help a small next step`},{},actor)
     const conversation=await s.ok('createDirectConversation',{contactId:agent.id},{},actor)
