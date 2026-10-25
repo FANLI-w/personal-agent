@@ -1807,3 +1807,17 @@ PR104/d8d0718的三平台Foundation40162061752与Windows package40162061691四�
 更新current-state、roadmap、交接prompt、[0.10.45交付](deployment/acceptcat-0.10.45.md)、设计与评价情境。证据Git外 **D:/deepseek-agent/.runtime/planner-single-task-20261025**。本批无API/contract0.32/schema026、后台源码、依赖或锁变更，无迁移，无需再次部署；没有新线上操作/健康探测，沿已部署0e78530/7d75165a和广场同步关闭记录。新方法原文随客户端生效，不声称服务器canonical/私人安装版本已更新。未代安装、浏览器产品、真实模型/私人材料或双机体验，语言情境未实跑。源码未合main、0.10.45未公开，重新读取公开Latest仍v0.10.37；原注册超时/飞书试点/原件在线与10MiB/无TURN及本机规划历史边界保持。
 
 已创建并挂接[PR105](https://github.com/luoyan96/personal-agent/pull/105)，目标main，OPEN/MERGEABLE。GitHub连接器创建返回403 Resource not accessible by integration，改用本机已登录CLI提交相同标题/正文，未修改权限或绕过保护。首次受读head3f2bcf6三平台Foundation40181190900与Windows package40181190860四项运行中，未结束不算通过；后续纯文档head另计。Git外github-created.json及最终回执保存实际状态，未合并/公开。
+
+
+## 2026-10-25 — 开始统一Agent角色文件组织
+
+核对干净fix/planner-single-task/b5b72ca、origin主仓库并fetch，main仍fb2150b；新建feature/agent-role-skills后快进保留PR105，不覆盖/丢弃改动。按负责人要求，以agents/roles的meta/persona/work/SKILL和manifest组织十类默认角色，生成桌面/API共享目录，保留27份精确历史档案的复用/投影与用户自改档案、私人偏好。前端角色查看/编辑/导出及新旧格式导入沿既有API，角色不能扩大权限。配套API/worker有变但无协议/数据库迁移，部署、合并与Release尚未执行。定向48项与客户端11项通过，完整检查和本机Windows候选继续处理中；最终事实另追加。
+
+
+## 2026-10-25 — 统一全部Agent角色文件，交付本机0.10.46
+
+产品 **ccbc411dd76d32f4504cf76c261a78a4a4bdf0a4**，从最新main/fb2150b新建feature/agent-role-skills并保留PR105/b5b72ca。十类默认角色统一为meta.json、persona.md、work.md、SKILL.md和manifest，唯一内容源在agents/roles，桌面/API同版编译使用。默认人设不再散放前端TS；新默认角色注册后自动出现在添加列表，自建/导入角色沿同一角色解释与导出器。设置页可查看/编辑Markdown、分别保存和导出完整角色包，兼容旧JSON。27份历史默认档案仅精确匹配时投影新版，存储记录、用户自改档案、联系人/会话及私人偏好保留；角色不扩大权限、工具、预算或任务数量。采用Distilly固定0afc45c的组织思路，文字和实现独立编写，未复制/运行其生成器或人物素材。
+
+完整根CI **787项/61文件**、2生产CLI/HTTP及B0/生产边界，客户端 **60项**（含2项真实本机HTTP/SQLite单项创建回执）、renderer/Electron双类型通过。冻结顺序两共享包先构建、Windows Web/4SDK/55运行包/NSIS/4启动入口及更新清单通过；成品ASAR另逐字节核对 **44份角色原文与2个角色模块**。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.46.exe**，**87,372,525字节**，SHA256 **b8d2f7b87a4ff6d8b16c2fa4e2d0e315341fd4bdad51abe84ee9d098947585de**，复制摘要一致，旧包保留。首轮定向和中止全量失败、Windows换行及JSON导入失败均保留，缩短默认助理和重复协议后全部重跑通过，不提高预算/时限、截断用户角色或删除原断言；临时合成诊断已移除。证据 **D:/deepseek-agent/.runtime/agent-role-skills-20261025**，更新current-state、交付、设计、角色新增规范、来源/迁移和评价记录。
+
+配套API/worker源码有变化，**需要单独升级后台**才采用新版共同规则、默认角色投影和无绑定规划/证据审阅角色。contract **0.32.0**、schema026、现有接口、依赖锁保持，无数据库迁移；本批未部署、做新线上探测或更新服务器canonical/私人Skill。线上沿已部署0e78530/7d75165a，广场同步沿关闭记录。源码尚未合main、0.10.46未公开，重新读取公开Latest仍 **v0.10.37/422478602**。未代安装、原生启动、浏览器产品、真实模型/私人材料或双机体验；合成模型只证明加载与业务边界，同事交流质量仍由负责人检查。注册超时未定因、飞书本人试点、原件在线/10MiB/无TURN及本机规划历史保持；没有把语言情境当真实模型或用户体验已验收。PR创建回执另追加。
