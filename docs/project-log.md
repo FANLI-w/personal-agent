@@ -1833,3 +1833,12 @@ renderer类型、内容/链接、冻结顺序Windows Web/4SDK/55运行包/NSIS/4
 头像纯客户端，无接口/数据库/锁变化，无需为头像部署。前批角色API/worker仍需单独升级，本批未合main、公开Release或部署；线上0e78530/7d75165a、contract0.32/schema026和Latest v0.10.37保持。[交付](deployment/acceptcat-0.10.47.md)，证据D:/deepseek-agent/.runtime/personal-assistant-avatar-20261025。
 
 [PR107](https://github.com/luoyan96/personal-agent/pull/107)已创建并挂接，OPEN/MERGEABLE，main为目标，保留PR106/105；首次headcddc265四项GitHub检查queued/in_progress，未宣称通过。回执github-created.json保留，未合并、发布或部署。
+
+
+## 2026-10-25：聊天返回、简化操作与未读提醒 / 本机0.10.48
+
+从fetch后的main/fb2150b另开fix/chat-return-and-notifications，普通快进保留PR107/fe79016及PR106/105；产品e4c411fc2fc4027c42790780b2e80f1e3a6e33f4。消息入口恢复本次登录上次聊天，置顶只排序，登出/删除对应会话清除记忆；后台不自动已读，恢复焦点后才读取。SDK未读同步侧栏和Windows任务栏红点，后台增加时闪烁，归零清除；全局免打扰、旧计数/跨账号守卫和受限IPC保持。小字/重复介绍移除，文件报告/协作/索取资料收进更多，列表字号/短日期调整；原授权与回执保留。
+
+27项客户端隔离回归（含模拟Electron通知、焦点、账号、免打扰/置顶与合成文件报告）、9构建守卫、双类型及Windows Web/4SDK/55运行包/NSIS/4入口/更新清单通过。ASAR通知模块/IPC/preload三文件与头像/3份署名核对通过，未重复未变更根CI。桌面C:/Users/luo/Desktop/AcceptCat_0.10.48.exe，87798284字节，SHA256 c55ff31af665002cafa78869efb612f2ad7279fa08de670929370f1bf309c389，复制摘要一致，旧包保留。未代安装/原生运行/浏览器/真实双机收信或任务栏效果/真实模型与私人材料体验。
+
+本批仅客户端与Windows CI，无API、契约、数据库、角色或锁变化，无需为本批部署；前批角色API/worker仍待单独升级。线上0e78530/7d75165a、contract0.32/schema026及公开Latest v0.10.37/422478602保持，未合main、公开或部署。前批PR107/fe79016四项GitHub检查重新读取均success，新PR另记。[交付](deployment/acceptcat-0.10.48.md)，证据D:/deepseek-agent/.runtime/chat-return-notifications-20261025。

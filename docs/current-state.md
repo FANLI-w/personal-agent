@@ -2,6 +2,16 @@
 
 更新日期：2026-10-25（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 本机0.10.48：恢复上次聊天、简化聊天操作和未读提醒
+
+从fetch后的main/fb2150b另开fix/chat-return-and-notifications，普通快进保留PR107/fe79016（含PR106/105），本批产品 **e4c411fc2fc4027c42790780b2e80f1e3a6e33f4**。离开聊天页仍清理实时选中状态，但另记本次登录最后一个聊天，点击“消息”恢复原联系人，置顶只影响列表；登出/删除对应会话清除记忆，SDK列表刷新不抢选择。聊天去掉顶部介绍、重复助手名与底部快捷键小字，文件报告/协作/索取同事资料收进更多菜单；名称/摘要字号和短日期调整。
+
+已读只在当前聊天且窗口可见、有焦点时提交，后台收到的消息保留未读。SDK未读数同步侧栏角标和Windows任务栏红点，后台未读增加时调用flashFrame，窗口焦点沿既有逻辑停止闪烁、未读归零清红点；全局免打扰抑制桌面提醒。计数不靠模型或自行累加，补旧查询/跨账号回写守卫；IPC仅当前主窗口同源主框架可提交合法计数，不传消息正文。[实现和限制](deployment/acceptcat-0.10.48.md)。
+
+本批 **27项客户端隔离回归、9项构建守卫、renderer/Electron双类型**通过；Windows冻结顺序Web/4SDK/55运行包/NSIS/4启动入口、更新清单及ASAR新增通知模块/IPC/preload三文件和原头像/3份署名核对通过。通知回归使用模拟Electron调用，不是实际Windows提醒或双机收信验收；未代安装/原生运行/浏览器产品/真实模型或私人材料体验，也未重复未变更的根全量CI。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.48.exe**，**87,798,284字节**，SHA256 **c55ff31af665002cafa78869efb612f2ad7279fa08de670929370f1bf309c389**，复制摘要一致、旧包保留。证据 **D:/deepseek-agent/.runtime/chat-return-notifications-20261025**；原文件报告合成HTTP回归沿既有测试证据目录，路径记录在client-final2.log。
+
+本批仅客户端与Windows CI，无API/worker、契约、数据库、角色正文或依赖锁变化，不需为本批部署。前批统一角色API/worker仍待单独升级；线上0e78530/7d75165a、contract0.32/schema026保持。未合main、公开Release或部署后台，公开Latest重新读取仍 **v0.10.37/422478602**。前批PR107/fe79016四项GitHub检查重新读取均success，新PR检查另记。
+
 ## 本机0.10.47：私人助理大肥鱼头像，角色配套后台仍待升级
 
 从fetch后的main/fb2150b另开feat/personal-assistant-avatar，普通快进保留PR106/fc6be83（含PR105单任务修复），本批产品 **0ef32388828e6f051f023a03438db86ff2c793b7**。私人助理按personal_agent/coordinator身份或本人已绑定IM映射，统一联系人、会话列表、聊天抬头/历史消息/详情和生成中回复的头像；不按昵称判断，不改写旧SDK数据。采用蓝发鲸鱼娘「大肥鱼」原始PNG，随包本地加载，完整许可/素材边界及关于页署名保留。[来源](../clients/openim/public/third-party/dafeiyu/ORIGIN.md)。
