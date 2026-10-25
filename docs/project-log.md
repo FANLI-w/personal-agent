@@ -1875,3 +1875,13 @@ renderer/Electron双类型、38项现有规划/依赖回归、Windows冻结顺�
 前批PR110/54cc54d三项GitHub检查success、Windows Foundation原registration迁移008幂等用例15000ms超时（786通过/1失败）；保留日志，本机原用例/时限1通过、16未选，未改后端或断言/时限，未重复完整根CI。新PR另计，真实注册超时根因仍未确定。无API/契约/数据库/角色正文/锁变化，无需本批后台升级，前批角色后台仍待安排。未合main、公开或部署；线上0e78530/7d75165a、contract0.32/schema026和Latest v0.10.37保持。[交付](deployment/acceptcat-0.10.51.md)，证据D:/deepseek-agent/.runtime/library-copy-cleanup-20261026。
 
 内容/链接及git diff --check通过。[PR111](https://github.com/luoyan96/personal-agent/pull/111)已创建并挂接，OPEN/MERGEABLE，目标main，保留PR110及之前功能；首次headf076d06四项GitHub检查in_progress，未确认通过，github-created.json保留。未自行合并、发布或部署。
+
+## 2026-10-26：科研同伴团队 / 本机0.10.52
+
+按负责人要求检索并选读GitHub上的Distilly、K-Dense科学技能、Agency Agents、Anthropic PPTX和中国专利交底项目，角色/方法中文正文及接话示例独立设计，不安装或执行上游程序。从main/fb2150b另开feat/research-colleague-team，普通快进保留PR111/8f82e23及PR110至PR105；产品f9122fe580bf88fbfac4eaed1155241b89ecd41c。18类角色/19方法覆盖基础、论文、项目、知识产权和协作；15个专门助手按分工添加，方法按需预览、私人安装、明确绑定选择。默认先帮一步，只问阻塞下一步的一件事；不擅自拆任务、派活、编证据或虚报工具执行。
+
+上一版10份完整默认档案加入历史表共37份，精确匹配只读投影，用户编辑、名字/联系人、私人偏好、已安装版本和任务保持。个人助理491字节、其他不超过原1600字节上限，不提高业务预算/时限。根789项/62文件及2生产入口/B0/生产边界、客户端107项与双类型通过；实际HTTP/SQLite合成模型核对各角色进输入、内置方法私有与绑定/选择、跨账号拒绝。首轮51通过/1失败因固定旧7角色数量，更新为核验旧7模板仍复用；旧VM夹具补接真实角色目录、旧措辞断言换实际权限覆盖，失败保留，没有跳过测试或修改原业务限制。真实模型与交流质量未代验。
+
+Windows冻结构建Web/4SDK/55运行包/NSIS/4入口及更新清单通过；ASAR76角色文件/48方法文件/3生成模块逐字节一致、独立方法chunk、图标/署名和前批12处说明删减保持。桌面C:/Users/luo/Desktop/AcceptCat_0.10.52.exe，88222587字节，SHA256 7484a4b4a1b86718438b4d063748ad070f5b511d81143bbbe3cc456e4ece7e4a，复制摘要一致、旧包保留。未代安装、原生启动、浏览器、私人材料/飞书/双机或绘图/PPT真实导出体验；普通聊天没有因角色新增而获得浏览器/脚本/生图/PPT导出工具。[设计与来源](development/research-colleague-team.md)、[交付](deployment/acceptcat-0.10.52.md)，证据D:/deepseek-agent/.runtime/research-colleague-team-20261026。
+
+共享角色/方法包需配套API/worker单独升级，新建/显式保存的角色及Skill仍沿原接口；contract0.32/schema026、锁与权限保持，无迁移，本批未部署或新线上操作。PR111/8f82e23四项GitHub检查success，新PR另记；未合main或公开，线上0e78530/7d75165a和Latest v0.10.37/422478602保持，注册超时根因仍未确定。
