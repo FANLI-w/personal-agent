@@ -59,7 +59,7 @@ describe('owned personal planning with real HTTP and isolated synthetic credenti
     await s.worker(async()=>({...output(),text:JSON.stringify({answer:'Synthetic follow-up: the current plan can stay while we compare the alternatives.',plan:null})})).tick()
     expect(await s.detail(discussion.id)).toMatchObject({status:'ready',planId:plan.id,reply:{plan:null,actions:[]}})
     expect(await s.ok('getPlan',null,{id:plan.id})).toEqual(plan)
-    expect(counts()).toEqual([before[0]+1,...before.slice(1)])
+    expect(counts()).toEqual([before[0]!+1,...before.slice(1)])
   })
   it('does not turn a missing or blank conversational answer into success and preserves existing drafts and actual usage',async()=>{
     const s=await setup();await s.personal();const first=await s.planning()
