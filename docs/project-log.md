@@ -1865,3 +1865,11 @@ renderer/Electron双类型、38项现有规划/依赖回归、Windows冻结顺�
 重新读取PR109/1e07441及PR108/a670787四项GitHub检查均success，前批Windows超时与重跑证据保留，新PR另记。本批无API/worker、契约、数据库、角色正文或依赖锁变化，无需升级后台；前批统一角色后台仍待单独安排。未合main、公开Release或部署，线上0e78530/7d75165a、contract0.32/schema026保持，公开Latest重新读取仍v0.10.37/422478602。[交付](deployment/acceptcat-0.10.50.md)，证据D:/deepseek-agent/.runtime/workbench-copy-cleanup-20261026。
 
 [PR110](https://github.com/luoyan96/personal-agent/pull/110)已创建并挂接，目标main，OPEN/MERGEABLE；首次head7242876四项GitHub检查in_progress，尚未确认通过，github-created.json保留。未自行合并、发布或部署。
+
+## 2026-10-26：资料页界面精简 / 本机0.10.51
+
+按负责人截图，从fetch后的main/fb2150b另开fix/library-copy-cleanup，普通快进保留PR110/54cc54d及PR109/108/107/106/105；产品d321556504bc54fda7bdf28f0869bc9cf5ffc731。删除资料/资料库介绍、集合抬头说明、飞书共享/查询解释及折叠块、资料助手闲置介绍、输入区说明/模型设置/快捷键小字。集合说明保存在设置中，真实状态/错误、共享范围和打开/复制/集合设置/撤回/发送/停止保持，前批工作台等功能保留。
+
+双类型、19项现有资料对话/飞书范围/原件下载隔离回归、Windows冻结构建Web/4SDK/55运行包/NSIS/4入口和更新清单通过。首轮旧资料对话VM夹具未注入统一角色目录（12项通过/1文件失败），仅补接真实目录后原断言19项通过，失败保留。ASAR确认12处删除说明不在renderer、关键操作/图标/署名保持。桌面C:/Users/luo/Desktop/AcceptCat_0.10.51.exe，88156281字节，SHA256 faf9cda60758bee088911ac3375b1c74c5e0a4a28493e739884627e148a32ba0，复制摘要一致、旧包保留；未代安装/原生启动/浏览器或实际体验验收。
+
+前批PR110/54cc54d三项GitHub检查success、Windows Foundation原registration迁移008幂等用例15000ms超时（786通过/1失败）；保留日志，本机原用例/时限1通过、16未选，未改后端或断言/时限，未重复完整根CI。新PR另计，真实注册超时根因仍未确定。无API/契约/数据库/角色正文/锁变化，无需本批后台升级，前批角色后台仍待安排。未合main、公开或部署；线上0e78530/7d75165a、contract0.32/schema026和Latest v0.10.37保持。[交付](deployment/acceptcat-0.10.51.md)，证据D:/deepseek-agent/.runtime/library-copy-cleanup-20261026。
