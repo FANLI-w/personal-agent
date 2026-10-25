@@ -212,7 +212,7 @@ export class ExecutionWorker {
           if(request.intent!=='auto'&&answer.intent!==request.intent)throw new Error('INVALID_MODEL_OUTPUT')
           if(conversation&&!answer.plan){
             // A normal reply has no plan mutation, new plan version or task action.
-            p.status='ready';p.reply=AdaptiveReply.parse({replyVersion:'1.0.0',intent:'draft',origin:'model_suggestion',readAt:instant(),message:conversation.answer,plan:null,tasks:[],truncated:false,gaps:[],actions:[]})
+            p.status='ready';p.reply=AdaptiveReply.parse({replyVersion:'1.0.0',intent:'draft',origin:'model_suggestion',readAt:instant(),plan:null,tasks:[],truncated:false,gaps:[],actions:[]})
           }else if(answer.intent==='draft'){
             if(!answer.plan)throw new Error('INVALID_MODEL_OUTPUT')
             const before=request.plan?service.c.plan(request.plan.id):null
@@ -228,8 +228,11 @@ export class ExecutionWorker {
             const saved=before?service.c.handlers.editPlan({params:{id:before.id},query:{},headers:{},body:{...input,expectedVersion:before.version}}):service.c.handlers.createPlan({params:{},query:{},headers:{},body:input})
             const plan=(saved as {data:z.infer<typeof import('@research-agent-platform/contracts').Plan>}).data
             reuse.copy('job',p.id,'plan',plan.id)
-            p.planId=plan.id;p.status='draft';p.reply=AdaptiveReply.parse({replyVersion:'1.0.0',intent:'draft',origin:'model_suggestion',readAt:instant(),...(conversation?{message:conversation.answer}:{}),plan,tasks:[],truncated:false,gaps:['AI draft requires explicit review and confirmation; unknown dates and commitments were not inferred.'],actions:[{object:'plan',ref:{id:plan.id,version:plan.version},action:'confirm'}]})
+            p.planId=plan.id;p.status='draft';p.reply=AdaptiveReply.parse({replyVersion:'1.0.0',intent:'draft',origin:'model_suggestion',readAt:instant(),plan,tasks:[],truncated:false,gaps:['AI draft requires explicit review and confirmation; unknown dates and commitments were not inferred.'],actions:[{object:'plan',ref:{id:plan.id,version:plan.version},action:'confirm'}]})
           }else{p.status='ready';p.reply=service.facts(answer.intent,request.taskIds)}
+          // Project the new message field at read time. Keep the persisted reply
+          // compatible with the previous same-schema API during an image rollback.
+          if(conversation)this.db.prepare("UPDATE execution_jobs SET request_json=json_set(request_json,'$.conversationAnswer',?) WHERE id=?").run(conversation.answer,p.id)
           p.usage=usage;service.save(p.id,p)
         }
         if(job.kind==='planning')this.db.exec('RELEASE planning_output')

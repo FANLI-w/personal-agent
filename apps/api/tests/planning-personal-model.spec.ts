@@ -3,7 +3,7 @@ import {mkdtempSync,mkdirSync,rmSync,writeFileSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {afterEach,describe,it,expect} from 'vitest'
-import {routes,type RouteName} from '@research-agent-platform/contracts'
+import {routes,AdaptiveReply,type RouteName} from '@research-agent-platform/contracts'
 import {readConfig} from '../src/config.js'
 import {migrate,openDatabase,seed} from '../src/database.js'
 import {provisionTestAccounts} from '../src/auth.js'
@@ -50,6 +50,11 @@ describe('owned personal planning with real HTTP and isolated synthetic credenti
     await s.restart()
     expect(await s.detail(first.id)).toMatchObject({status:'ready',planId:null,reply:{message:'Synthetic first judgment: strengthen the evidence before adding experiments.',plan:null,actions:[]},usage:{inputTokens:100,outputTokens:100}})
     expect(counts()).toEqual(before)
+    const stored=s.db.prepare('SELECT document,request_json FROM execution_jobs WHERE id=?').get(first.id)!
+    const oldReply=JSON.parse(String(stored.document)).reply
+    expect(Object.hasOwn(oldReply,'message')).toBe(false)
+    expect(()=>AdaptiveReply.omit({message:true}).parse(oldReply)).not.toThrow()
+    expect(JSON.parse(String(stored.request_json)).conversationAnswer).toBe('Synthetic first judgment: strengthen the evidence before adding experiments.')
     expect((await s.call('getPlanRequest',null,{id:first.id},1)).status).toBe(404)
     const next=await s.ok('planRequest',body)
     await s.worker(async()=>({...output(),text:JSON.stringify({answer:'Synthetic proposal: compare the strongest baseline first.',plan:{goal:'Synthetic proposal',proposedItems:[],unresolvedQuestions:[]}})})).tick()
@@ -72,6 +77,13 @@ describe('owned personal planning with real HTTP and isolated synthetic credenti
       const receipt=JSON.parse(String(s.db.prepare('SELECT result_json FROM execution_attempts WHERE job_id=?').get(job.id)!.result_json))
       expect(receipt).toMatchObject({text:'',planningOutputDiagnostic:{category:'schema',shape:{plan:'null',hasAnswer:false}}})
     }
+    const failedSave=await s.ok('planRequest',{...s.planBody,replyMode:'conversation',plan:{id:prior.id,version:prior.version}})
+    s.db.exec(`CREATE TRIGGER synthetic_conversation_write_failure BEFORE UPDATE ON execution_jobs WHEN NEW.id='${failedSave.id}' AND json_extract(NEW.document,'$.status')='ready' BEGIN SELECT RAISE(ABORT,'synthetic_write_failure'); END`)
+    await s.worker(async()=>({...output(),text:JSON.stringify({answer:'PRIVATE_REPLY_MUST_ROLL_BACK',plan:null})})).tick()
+    expect(await s.detail(failedSave.id)).toMatchObject({status:'failed',failure:'PLANNING_SAVE_FAILED',reply:null,usage:{inputTokens:100,outputTokens:100}})
+    expect(await s.ok('getPlan',null,{id:prior.id})).toEqual(prior)
+    const stored=s.db.prepare('SELECT request_json FROM execution_jobs WHERE id=?').get(failedSave.id)!
+    expect(JSON.parse(String(stored.request_json)).conversationAnswer).toBeUndefined()
   })
   it('fences conversational replies when the bound colleague changes, without exposing late content or losing usage',async()=>{
     const s=await setup();await s.personal()

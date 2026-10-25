@@ -87,7 +87,9 @@ export class AiService {
   getPlanning(id:string){
     const row=this.row(id),req=this.planningAccess(row),p=PlanningRequest.parse(JSON.parse(String(row.document)))
     if(p.reply){if(p.reply.intent==='draft'){p.reply.plan=req.replyMode==='conversation'&&p.status==='ready'?null:p.planId?this.c.plan(p.planId):null;p.reply.readAt=instant();p.reply.actions=p.reply.plan?.status==='draft'?[{object:'plan',ref:{id:p.reply.plan.id,version:p.reply.plan.version},action:'confirm'}]:[]}
-      else p.reply=this.facts(p.reply.intent,req.taskIds)}
+      else p.reply=this.facts(p.reply.intent,req.taskIds)
+      if(req.replyMode==='conversation'&&typeof req.conversationAnswer==='string'&&['ready','draft'].includes(p.status))p.reply.message=req.conversationAnswer
+    }
     return p
   }
   projectedRun(id:string){const {r,t}=this.runAccess(id);r.allowedActions=[]
@@ -195,4 +197,4 @@ export class AiService {
   fence(id:string){this.db.prepare('UPDATE execution_jobs SET fence=fence+1,lease_owner=NULL,lease_until=NULL WHERE id=?').run(id)}
 }
 type RunAction=z.infer<typeof import('@research-agent-platform/contracts').Action>
-export type PlanningInput=RequestFor<'planRequest'>['body'] & {intent:'auto'|'draft'|'progress'|'find_work';plan:{id:string;version:number}|null;taskIds:string[];inputs:Run['inputs'];contextTasks?:{id:string;version:number;access:'full'|'summary'}[];modelBinding?:PlanningModelBinding;colleagueBinding?:PlanningColleagueBinding}
+export type PlanningInput=RequestFor<'planRequest'>['body'] & {intent:'auto'|'draft'|'progress'|'find_work';plan:{id:string;version:number}|null;taskIds:string[];inputs:Run['inputs'];contextTasks?:{id:string;version:number;access:'full'|'summary'}[];modelBinding?:PlanningModelBinding;colleagueBinding?:PlanningColleagueBinding;conversationAnswer?:string}
