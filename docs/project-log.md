@@ -1831,3 +1831,5 @@ PR104/d8d0718的三平台Foundation40162061752与Windows package40162061691四�
 renderer类型、内容/链接、冻结顺序Windows Web/4SDK/55运行包/NSIS/4启动入口及更新清单通过；ASAR头像/3份署名文件字节和renderer引用通过。早期上游Markdown相对链接与Windows ASAR探针分隔符修正后通过，记录保留。桌面C:/Users/luo/Desktop/AcceptCat_0.10.47.exe，87793560字节，SHA256 fb69b87b2a0c7376690aec4b2c879219a136fc4ce3be20af756134e076bdb31a，复制摘要一致，旧包保留。未新增低影响重复测试或重跑完整根CI；前批角色787根/60客户端/双类型仍为其受测源码结果，重新读取PR106/fc6be83四项GitHub检查均success。未代安装、原生启动、浏览器、真实模型/私人材料或双机体验。
 
 头像纯客户端，无接口/数据库/锁变化，无需为头像部署。前批角色API/worker仍需单独升级，本批未合main、公开Release或部署；线上0e78530/7d75165a、contract0.32/schema026和Latest v0.10.37保持。[交付](deployment/acceptcat-0.10.47.md)，证据D:/deepseek-agent/.runtime/personal-assistant-avatar-20261025。
+
+[PR107](https://github.com/luoyan96/personal-agent/pull/107)已创建并挂接，OPEN/MERGEABLE，main为目标，保留PR106/105；首次headcddc265四项GitHub检查queued/in_progress，未宣称通过。回执github-created.json保留，未合并、发布或部署。

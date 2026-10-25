@@ -10,6 +10,8 @@
 
 头像仅客户端，无API/worker、角色正文、契约、数据库或锁变化，无需为头像部署后台。十类角色统一Markdown组织、前台编辑及私人档案/偏好继续保留；前批统一角色API/worker仍需单独升级后线上生效。本批未合main、公开Release或部署后台；线上0e78530/7d75165a、contract0.32/schema026保持，公开Latest重新读取仍 **v0.10.37/422478602**。注册超时未定因、飞书本人试点、广场同步关闭、原件在线/10MiB/无TURN保持。
 
+[PR107](https://github.com/luoyan96/personal-agent/pull/107)已创建并挂接，目标main，OPEN/MERGEABLE，保留PR106/105；首次读取headcddc265四项GitHub检查为queued/in_progress，尚未确认通过。前批PR106/fc6be83四项success与本PR区分。未自行合并或公开发布。
+
 ## 本机0.10.46：所有Agent采用统一角色文件，配套后台尚未升级
 
 负责人要求采用Persona + Work + Skill形式重新组织所有现有与未来角色。从fetch后的main/fb2150b新开feature/agent-role-skills，保留PR105/b5b72ca的一项任务修复；产品 **ccbc411dd76d32f4504cf76c261a78a4a4bdf0a4**。十类默认角色统一为meta.json、persona.md、work.md、SKILL.md和manifest，唯一内容源在agents/roles，桌面/API同版编译使用。默认人设不再散放前端TS；新默认角色注册后自动出现在添加列表，自建/导入角色沿同一角色解释与导出器。设置页可查看/编辑Markdown、分别保存和导出完整角色包，兼容旧JSON。27份历史默认档案仅精确匹配时投影新版，存储记录、用户自改档案、联系人/会话及私人偏好保留；角色不扩大权限、工具、预算或任务数量。[设计与来源](development/agent-role-skills.md)，[角色新增约定](../agents/roles/README.md)。
