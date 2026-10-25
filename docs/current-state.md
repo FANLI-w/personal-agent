@@ -12,6 +12,8 @@ renderer/Electron双类型、Windows冻结顺序Web/4SDK/55运行包/NSIS/4启�
 
 本批无API/worker、契约、数据库、角色正文或依赖锁变化，不需后台升级；前批统一角色配套API/worker仍待单独部署。未合main、公开Release或部署，线上0e78530/7d75165a、contract0.32/schema026及公开Latest **v0.10.37/422478602**保持。
 
+[PR109](https://github.com/luoyan96/personal-agent/pull/109)已创建并挂接，main为目标，OPEN/MERGEABLE，保留PR108/107/106/105；首次读取headb3c296a四项GitHub检查均in_progress，尚未确认通过。未自行合并、发布或部署。
+
 ## 本机0.10.48：恢复上次聊天、简化聊天操作和未读提醒
 
 从fetch后的main/fb2150b另开fix/chat-return-and-notifications，普通快进保留PR107/fe79016（含PR106/105），本批产品 **e4c411fc2fc4027c42790780b2e80f1e3a6e33f4**。离开聊天页仍清理实时选中状态，但另记本次登录最后一个聊天，点击“消息”恢复原联系人，置顶只影响列表；登出/删除对应会话清除记忆，SDK列表刷新不抢选择。聊天去掉顶部介绍、重复助手名与底部快捷键小字，文件报告/协作/索取同事资料收进更多菜单；名称/摘要字号和短日期调整。

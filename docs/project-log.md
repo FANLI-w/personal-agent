@@ -1853,3 +1853,5 @@ renderer类型、内容/链接、冻结顺序Windows Web/4SDK/55运行包/NSIS/4
 双类型、内容/链接及Windows冻结顺序Web/4SDK/55运行包/NSIS/4入口/更新清单通过；实际程序/安装EXE四档位图与原ICO逐字节一致，ASAR六份公共图标、renderer图标及3份署名核对通过。图标只读探针初次NUL转义错误保留，修正后通过、包未变。桌面C:/Users/luo/Desktop/AcceptCat_0.10.49.exe，88154141字节，SHA256 5565fe5a58d66673b0426ddcc3c392e42416dbc5cc683282c90d64a25b0596d4，复制摘要一致，旧包保留。未代安装/卸载/原生启动/系统缓存或实际快捷方式任务栏体验，未打Mac/Linux包，未新增镜像测试或重复完整根CI。
 
 前批PR108/a670787三项GitHub检查success，Windows Foundation原长对话用例30000ms超时（786通过/1失败）；保留原日志，本机原条件该文件7项通过，未改测试或时限，已发起该job重跑，attempt2首次读取in_progress，结果未确认。新PR结果另计。仅客户端图标与显示配置，无API/数据库/角色/锁变化、无需为本批升级后台；前批角色后台仍待单独安排。线上0e78530/7d75165a、contract0.32/schema026、Latest v0.10.37保持，未合main/公开/部署。[交付](deployment/acceptcat-0.10.49.md)，证据D:/deepseek-agent/.runtime/dafeiyu-app-icon-20261025。
+
+[PR109](https://github.com/luoyan96/personal-agent/pull/109)已创建并挂接，目标main，OPEN/MERGEABLE；首次headb3c296a四项GitHub检查in_progress，未确认通过，github-created.json保留。未自行合并、发布或部署。
