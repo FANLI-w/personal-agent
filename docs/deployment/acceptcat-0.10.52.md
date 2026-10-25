@@ -31,4 +31,6 @@
 
 共享角色/方法包改变，配套API/worker需单独重建升级才采用新版默认目录、历史投影与共同加载。新建或显式保存的角色/文字Skill继续走原接口。contract0.32/schema026、数据库、依赖锁及权限边界保持，无迁移。本批没有后台部署、备份或新线上探测，线上仍0e78530/7d75165a；此前真实注册超时未确定根因。
 
-PR111/8f82e23四项GitHub检查重新读取success，本批新PR另记。未合main、公开或部署，公开Latest重新读取仍v0.10.37/422478602。内容/链接与PR回执另追加。
+PR111/8f82e23四项GitHub检查重新读取success，本批新PR另记。未合main、公开或部署，公开Latest重新读取仍v0.10.37/422478602。内容/链接和git diff --check通过。
+
+[PR112](https://github.com/luoyan96/personal-agent/pull/112)已创建并挂接，OPEN/MERGEABLE，目标main；首次head5740bf4三项GitHub检查in_progress、Windows Foundation queued，未确认通过，github-created.json保留。未合并、公开或部署。

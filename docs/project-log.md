@@ -1885,3 +1885,5 @@ renderer/Electron双类型、38项现有规划/依赖回归、Windows冻结顺�
 Windows冻结构建Web/4SDK/55运行包/NSIS/4入口及更新清单通过；ASAR76角色文件/48方法文件/3生成模块逐字节一致、独立方法chunk、图标/署名和前批12处说明删减保持。桌面C:/Users/luo/Desktop/AcceptCat_0.10.52.exe，88222587字节，SHA256 7484a4b4a1b86718438b4d063748ad070f5b511d81143bbbe3cc456e4ece7e4a，复制摘要一致、旧包保留。未代安装、原生启动、浏览器、私人材料/飞书/双机或绘图/PPT真实导出体验；普通聊天没有因角色新增而获得浏览器/脚本/生图/PPT导出工具。[设计与来源](development/research-colleague-team.md)、[交付](deployment/acceptcat-0.10.52.md)，证据D:/deepseek-agent/.runtime/research-colleague-team-20261026。
 
 共享角色/方法包需配套API/worker单独升级，新建/显式保存的角色及Skill仍沿原接口；contract0.32/schema026、锁与权限保持，无迁移，本批未部署或新线上操作。PR111/8f82e23四项GitHub检查success，新PR另记；未合main或公开，线上0e78530/7d75165a和Latest v0.10.37/422478602保持，注册超时根因仍未确定。
+
+内容/链接及git diff --check通过。[PR112](https://github.com/luoyan96/personal-agent/pull/112)已创建并挂接，OPEN/MERGEABLE，目标main，保留PR111及此前功能；首次head5740bf4三项GitHub检查in_progress、Windows Foundation queued，未确认通过，github-created.json保留。未合并、公开或部署。
