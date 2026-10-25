@@ -10,7 +10,10 @@ import {
   StopOutlined,
   UpOutlined,
 } from "@ant-design/icons";
-import { agentStyleInstruction, type ResponseFor } from "@research-agent-platform/contracts";
+import {
+  agentStyleInstruction,
+  type ResponseFor,
+} from "@research-agent-platform/contracts";
 import type { TextAreaRef } from "antd/es/input/TextArea";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -32,6 +35,7 @@ import {
   plannerCacheKey,
   plannerDeadline,
   plannerPlanInput,
+  plannerTaskShape,
   planningPrompt,
   plannerReplyMessage,
   readPlannerHistory,
@@ -141,7 +145,15 @@ function PlanningAgentSession({
   const thread = history.threads.find((t) => t.id === history.active)!;
   const operation = usePersonalOperation(available, `planning-chat:${thread.id}`);
   const prepareColleague = async (isCurrent: () => boolean, create = true) => {
-    const result = await prepareColleagueAgent({ api: researchApi, actorId: actor.member.id, starter: planningAgentStarter, rememberedId: remembered.current, creationKey: creationKey.current, isCurrent, create });
+    const result = await prepareColleagueAgent({
+      api: researchApi,
+      actorId: actor.member.id,
+      starter: planningAgentStarter,
+      rememberedId: remembered.current,
+      creationKey: creationKey.current,
+      isCurrent,
+      create,
+    });
     if (result && isCurrent()) {
       remembered.current = result.agent.id;
       remember(planningAgentStarter.id, result.agent.id);
@@ -151,7 +163,9 @@ function PlanningAgentSession({
   };
   useEffect(() => {
     const captured = operation.capture();
-    void prepareColleague(captured.isCurrent, false).catch(() => { /* Sending or opening settings reports current errors. */ });
+    void prepareColleague(captured.isCurrent, false).catch(() => {
+      /* Sending or opening settings reports current errors. */
+    });
   }, []);
   const update = (change: (value: PlannerThread) => PlannerThread) =>
     setHistory((h) => ({
@@ -297,7 +311,10 @@ function PlanningAgentSession({
     !!request.data &&
     ["queued", "running"].includes(request.data.data.status);
   const result = request.data?.data;
-  const latestFailure = !!result && thread.handledRequest === result.id && isPlannerFailureReceipt(thread.messages.at(-1), result);
+  const latestFailure =
+    !!result &&
+    thread.handledRequest === result.id &&
+    isPlannerFailureReceipt(thread.messages.at(-1), result);
   useEffect(() => {
     if (
       !result ||
@@ -357,7 +374,11 @@ function PlanningAgentSession({
     problems: string[] = [];
   if (current) {
     try {
-      preview = plannerPlanInput(current, thread.deadline);
+      preview = plannerPlanInput(
+        current,
+        current.status === "draft" ? thread.deadline : undefined,
+        current.status !== "draft" ? "multiple" : thread.taskShape || "single",
+      );
       problems = planProblems(preview);
       if (thread.deadlineQuestion)
         problems.push(
@@ -392,48 +413,49 @@ function PlanningAgentSession({
     }
   };
   const submit = async (intent: SendIntent, isCurrent: () => boolean) => {
-      let response: ResponseFor<"planRequest">;
-      try {
-        if (intent.body.labId !== actor.member.labId)
-          throw new Error("原消息不属于当前空间，请新建规划对话。");
-        response = await researchApi("planRequest", {
-          body: intent.body,
-          idempotencyKey: intent.key,
-        });
-      } catch (error) {
-        if (
-          isCurrent() &&
-          error instanceof ResearchApiError &&
-          ([400, 403, 404, 409, 422].includes(error.status) ||
-            ["VALIDATION_ERROR", "MODEL_UNAVAILABLE"].includes(error.code))
-        ) {
-          update((t) => ({
-            ...t,
-            sending: undefined,
-            draft:
-              t.draft || t.messages.filter((m) => m.role === "user").at(-1)?.text || "",
-            messages: [
-              ...t.messages,
-              {
-                id: crypto.randomUUID(),
-                role: "service",
-                text: "这条消息未能提交，原文仍在对话中。核对最新方案或调整需求后可以重新发送。",
-              },
-            ],
-          }));
-          void plan.refresh();
-        }
-        throw error;
+    let response: ResponseFor<"planRequest">;
+    try {
+      if (intent.body.labId !== actor.member.labId)
+        throw new Error("原消息不属于当前空间，请新建规划对话。");
+      response = await researchApi("planRequest", {
+        body: intent.body,
+        idempotencyKey: intent.key,
+      });
+    } catch (error) {
+      if (
+        isCurrent() &&
+        error instanceof ResearchApiError &&
+        ([400, 403, 404, 409, 422].includes(error.status) ||
+          ["VALIDATION_ERROR", "MODEL_UNAVAILABLE"].includes(error.code))
+      ) {
+        update((t) => ({
+          ...t,
+          sending: undefined,
+          draft:
+            t.draft || t.messages.filter((m) => m.role === "user").at(-1)?.text || "",
+          messages: [
+            ...t.messages,
+            {
+              id: crypto.randomUUID(),
+              role: "service",
+              text: "这条消息未能提交，原文仍在对话中。核对最新方案或调整需求后可以重新发送。",
+            },
+          ],
+        }));
+        void plan.refresh();
       }
-      if (!isCurrent()) return;
-      update((t) => ({
-        ...t,
-        sending: undefined,
-        requestId: response.data.id,
-        handledRequest: undefined,
-      }));
-    };
-  const dispatch = (intent: SendIntent) => void run(isCurrent => submit(intent, isCurrent));
+      throw error;
+    }
+    if (!isCurrent()) return;
+    update((t) => ({
+      ...t,
+      sending: undefined,
+      requestId: response.data.id,
+      handledRequest: undefined,
+    }));
+  };
+  const dispatch = (intent: SendIntent) =>
+    void run((isCurrent) => submit(intent, isCurrent));
   const confirm = (intent?: CreateIntent) => {
     if (
       !intent &&
@@ -449,6 +471,7 @@ function PlanningAgentSession({
       key: crypto.randomUUID(),
       plan: current!,
       deadline: thread.deadline,
+      taskShape: thread.taskShape || "single",
     };
     if (!intent) update((t) => ({ ...t, creating: chosen }));
     void run(async (isCurrent) => {
@@ -464,7 +487,10 @@ function PlanningAgentSession({
           {
             id: crypto.randomUUID(),
             role: "service",
-            text: `这份计划已建立 ${created.taskIds.length} 项任务。成员邀请等待本人接受，后续交付与验收记录在任务中。`,
+            text:
+              created.taskIds.length === 1
+                ? `已创建任务“${created.plan.proposedItems[0].title}”。执行步骤、交付与验收要求保存在这项任务里。`
+                : `已按确认的方案建立 ${created.taskIds.length} 项任务。后续交付与验收记录在各项任务中。`,
           },
         ],
       }));
@@ -473,7 +499,10 @@ function PlanningAgentSession({
     });
   };
   const send = (retrying = false) => {
-    const retry = retrying && result && canRetryPlannerReply(result) ? plannerRetryInput(thread.messages) : undefined;
+    const retry =
+      retrying && result && canRetryPlannerReply(result)
+        ? plannerRetryInput(thread.messages)
+        : undefined;
     if (retrying && !retry) return;
     const text = retry ? retry.text : thread.draft.trim();
     if (!text || busy || frozen || !available) return;
@@ -482,27 +511,53 @@ function PlanningAgentSession({
       return;
     }
     if (agentStyleInstruction(text)) {
-      void run(async isCurrent => {
+      void run(async (isCurrent) => {
         const mate = await prepareColleague(isCurrent);
         if (!mate || !isCurrent()) return;
-        const receipt = (await researchApi("agentChatMessage", {
-          params: { id: mate.conversationId }, body: { text }, idempotencyKey: crypto.randomUUID(),
-        })).data;
+        const receipt = (
+          await researchApi("agentChatMessage", {
+            params: { id: mate.conversationId },
+            body: { text },
+            idempotencyKey: crypto.randomUUID(),
+          })
+        ).data;
         if (!isCurrent()) return;
         if (receipt.turn?.status !== "succeeded" || !receipt.turn.outputMessageId)
-          throw new Error("交流偏好暂未确认，请在助手设置的私人记忆里核对，原话已保留。");
-        const page = await researchApi("chatMessages", { params: { id: mate.conversationId }, query: { afterSequence: receipt.message.sequence, limit: 20 } });
+          throw new Error(
+            "交流偏好暂未确认，请在助手设置的私人记忆里核对，原话已保留。",
+          );
+        const page = await researchApi("chatMessages", {
+          params: { id: mate.conversationId },
+          query: { afterSequence: receipt.message.sequence, limit: 20 },
+        });
         if (!isCurrent()) return;
-        const reply = page.data.find(message => message.id === receipt.turn!.outputMessageId && message.origin === "service");
-        if (!reply?.text) throw new Error("偏好保存回执暂未读到，请在私人记忆里核对，原话已保留。");
-        update(t => ({ ...t, draft: t.draft.trim() === text ? "" : t.draft, messages: [...t.messages, { id: receipt.message.id, role: "user", text }, { id: reply.id, role: "service", text: reply.text! }] }));
+        const reply = page.data.find(
+          (message) =>
+            message.id === receipt.turn!.outputMessageId &&
+            message.origin === "service",
+        );
+        if (!reply?.text)
+          throw new Error("偏好保存回执暂未读到，请在私人记忆里核对，原话已保留。");
+        update((t) => ({
+          ...t,
+          draft: t.draft.trim() === text ? "" : t.draft,
+          messages: [
+            ...t.messages,
+            { id: receipt.message.id, role: "user", text },
+            { id: reply.id, role: "service", text: reply.text! },
+          ],
+        }));
         setExpanded(true);
       });
       return;
     }
     if (isPlannerCreateCommand(text)) {
       if (!current || current.status !== "draft" || problems.length || processing) {
-        setFailure(processing ? "这轮还在回复，稍等方案出来就能创建。" : problems[0] || "我们还在讨论思路，等有具体步骤后就能创建任务。");
+        setFailure(
+          processing
+            ? "这轮还在回复，稍等方案出来就能创建。"
+            : problems[0] || "我们还在讨论思路，等有具体步骤后就能创建任务。",
+        );
         return;
       }
       update((t) => ({
@@ -524,7 +579,9 @@ function PlanningAgentSession({
       return;
     }
     if (!conversationAvailable) {
-      setFailure("后台还未支持这位助手的连续聊天回复。请先升级后台，当前消息、已有方案和任务都保留。");
+      setFailure(
+        "后台还未支持这位助手的连续聊天回复。请先升级后台，当前消息、已有方案和任务都保留。",
+      );
       return;
     }
     const statedDeadline = plannerDeadline(text);
@@ -532,13 +589,15 @@ function PlanningAgentSession({
     const deadlineQuestion = statedDeadline
       ? false
       : needsDeadlineClarification(text) || !!thread.deadlineQuestion;
-    void run(async isCurrent => {
+    const taskShape = plannerTaskShape(text, thread.taskShape);
+    void run(async (isCurrent) => {
       const context = planningPrompt(
         retry ? retry.messages : thread.messages,
         text,
         members.data?.data || [],
         deadline,
         taskDecompositionSkill,
+        taskShape,
       );
       const mate = await prepareColleague(isCurrent);
       if (!mate || !isCurrent()) return;
@@ -565,7 +624,10 @@ function PlanningAgentSession({
         sending: intent,
         deadline,
         deadlineQuestion,
-        messages: retry ? t.messages.slice(0, -1) : [...t.messages, { id: crypto.randomUUID(), role: "user", text }],
+        taskShape,
+        messages: retry
+          ? t.messages.slice(0, -1)
+          : [...t.messages, { id: crypto.randomUUID(), role: "user", text }],
       }));
       setExpanded(true);
       await submit(intent, isCurrent);
@@ -610,14 +672,19 @@ function PlanningAgentSession({
       <header className="planning-agent-heading">
         <div>
           <RobotOutlined />
-          <strong>{colleague?.agent.displayName || planningAgentStarter.profile.displayName}</strong>
-          <span>{inProgress ? "正在回复…" : "聊聊你的研究，一起想下一步"}</span>
+          <strong>
+            {colleague?.agent.displayName || planningAgentStarter.profile.displayName}
+          </strong>
+          <span>{inProgress ? "正在回复…" : "说说要做的事，一起把任务安排好"}</span>
         </div>
         <nav>
           <AgentColleagueSettings
             contactId={colleague?.agent.id}
-            prepare={async isCurrent => (await prepareColleague(isCurrent))?.agent}
-            onChanged={() => { const captured = operation.capture(); void prepareColleague(captured.isCurrent, false).catch(() => {}); }}
+            prepare={async (isCurrent) => (await prepareColleague(isCurrent))?.agent}
+            onChanged={() => {
+              const captured = operation.capture();
+              void prepareColleague(captured.isCurrent, false).catch(() => {});
+            }}
           />
           <Popover
             trigger="click"
@@ -672,14 +739,12 @@ function PlanningAgentSession({
         <div className="planning-agent-messages" ref={messages} aria-live="polite">
           {!thread.messages.length && !thread.planId && !thread.requestId && (
             <div className="planning-agent-welcome">
-              <h2>从你正在做的研究聊起</h2>
-              <p>
-                从你现在最在意的一件事说起就好，方向清楚后再一起安排任务。
-              </p>
+              <h2>说说你要安排的任务</h2>
+              <p>说一件要做的事，我会整理成一项任务，执行步骤放在任务里。</p>
               <div>
                 {[
-                  "我有一项研究，想聊聊下一步怎么推进",
-                  "把一个实验目标拆成可分工、可验收的任务",
+                  "完善我现有的论文和实验，安排成一项任务",
+                  "准备一份下次组会要讨论的研究报告",
                 ].map((s) => (
                   <button
                     key={s}
@@ -703,13 +768,32 @@ function PlanningAgentSession({
                 {message.role === "user"
                   ? "我"
                   : message.role === "assistant"
-                  ? colleague?.agent.displayName || planningAgentStarter.profile.displayName
+                  ? colleague?.agent.displayName ||
+                    planningAgentStarter.profile.displayName
                   : "系统提示"}
               </span>
-              <SafeMessageMarkdown text={index === thread.messages.length - 1 && latestFailure && result ? plannerFailureText(result) : message.text} />
-              {index === thread.messages.length - 1 && latestFailure && result && !thread.taskIds?.length && canRetryPlannerReply(result) && plannerRetryInput(thread.messages) && (
-                <Button size="small" loading={busy} disabled={frozen || !available} onClick={() => send(true)}>重试这条</Button>
-              )}
+              <SafeMessageMarkdown
+                text={
+                  index === thread.messages.length - 1 && latestFailure && result
+                    ? plannerFailureText(result)
+                    : message.text
+                }
+              />
+              {index === thread.messages.length - 1 &&
+                latestFailure &&
+                result &&
+                !thread.taskIds?.length &&
+                canRetryPlannerReply(result) &&
+                plannerRetryInput(thread.messages) && (
+                  <Button
+                    size="small"
+                    loading={busy}
+                    disabled={frozen || !available}
+                    onClick={() => send(true)}
+                  >
+                    重试这条
+                  </Button>
+                )}
               {message.plan && index < thread.messages.length - 1 && (
                 <small>
                   方案版本 {message.plan.version} · 当前方案以下方实际读取为准
@@ -745,11 +829,34 @@ function PlanningAgentSession({
           {thread.planId && !current && !plan.error && (
             <p role="status">正在读取当前方案…</p>
           )}
+          {current?.status === "draft" && !thread.taskIds?.length && (
+            <div className="planning-task-shape">
+              <span>
+                {thread.taskShape === "multiple"
+                  ? "按多项任务分别安排"
+                  : "按一项任务安排，步骤放在任务里"}
+              </span>
+              <Button
+                type="link"
+                size="small"
+                disabled={busy || frozen || processing}
+                onClick={() => {
+                  update((t) => ({
+                    ...t,
+                    taskShape: t.taskShape === "multiple" ? "single" : "multiple",
+                  }));
+                  setFailure("");
+                }}
+              >
+                {thread.taskShape === "multiple" ? "合为一项任务" : "改为多项任务"}
+              </Button>
+            </div>
+          )}
           {current && preview && !!preview.proposedItems.length && (
             <article className="planning-chat-plan" aria-label="当前任务方案">
               <header>
                 <span>
-                  {current.status === "confirmed" ? "已建立任务的计划" : "当前任务方案"}
+                  {current.status === "confirmed" ? "已建立任务的计划" : "待创建的任务"}
                 </span>
                 <strong>{current.goal}</strong>
                 <small>
@@ -759,14 +866,24 @@ function PlanningAgentSession({
                     : " · 任务已保存到工作台"}
                 </small>
               </header>
-              <DependencyGraph
-                items={preview.proposedItems.map((step) => ({
-                  id: step.id,
-                  title: step.title,
-                  dependencies: step.dependencies,
-                  needsClaim: step.allocation.kind === "claim",
-                }))}
-              />
+              {preview.proposedItems.length > 1 && (
+                <DependencyGraph
+                  items={preview.proposedItems.map((step) => ({
+                    id: step.id,
+                    title: step.title,
+                    dependencies: step.dependencies,
+                    needsClaim: step.allocation.kind === "claim",
+                  }))}
+                />
+              )}
+              {current.status === "draft" &&
+                thread.taskShape !== "multiple" &&
+                current.proposedItems.length > 1 && (
+                  <p className="planning-agent-note">
+                    原草案的 {current.proposedItems.length}{" "}
+                    个步骤会放进同一项任务，内容保留；确认后只创建一项任务。
+                  </p>
+                )}
               <ol>
                 {preview.proposedItems.map((step, index) => (
                   <li key={step.id}>
@@ -786,10 +903,16 @@ function PlanningAgentSession({
                           : "公共 Agent 安排"}
                       </span>
                     </div>
-                    <p>交付：{step.deliverable}</p>
+                    {preview!.proposedItems.length > 1 && (
+                      <p>交付：{step.deliverable}</p>
+                    )}
                     <details className="planning-step-details">
-                      <summary>验收与依赖</summary>
-                      <p>验收：{step.acceptanceCriteria}</p>
+                      <summary>查看任务说明与完成要求</summary>
+                      <SafeMessageMarkdown text={step.goal} />
+                      <p>交付要求：</p>
+                      <SafeMessageMarkdown text={step.deliverable} />
+                      <p>验收标准：</p>
+                      <SafeMessageMarkdown text={step.acceptanceCriteria} />
                       {step.dependencies.length > 0 && (
                         <small>
                           前置：
@@ -840,14 +963,23 @@ function PlanningAgentSession({
                     }
                     onClick={() => confirm()}
                   >
-                    创建这 {preview.proposedItems.length} 项任务
+                    {preview.proposedItems.length === 1
+                      ? "创建这项任务"
+                      : `创建这 ${preview.proposedItems.length} 项任务`}
                   </Button>
                 </footer>
               )}
               {!!problems.length && (
                 <div className="planning-agent-note">
                   <p>{problems[0]}</p>
-                  {problems.length > 1 && <details><summary>其余 {problems.length - 1} 项待核对内容</summary>{problems.slice(1).map((problem, index) => <p key={index}>{problem}</p>)}</details>}
+                  {problems.length > 1 && (
+                    <details>
+                      <summary>其余 {problems.length - 1} 项待核对内容</summary>
+                      {problems.slice(1).map((problem, index) => (
+                        <p key={index}>{problem}</p>
+                      ))}
+                    </details>
+                  )}
                 </div>
               )}
               {current.status === "confirmed" && (
@@ -887,7 +1019,20 @@ function PlanningAgentSession({
             </article>
           )}
           {current && !preview && !!problems.length && (
-            <Alert type="warning" message={problems[0]} description={problems.length > 1 ? <details><summary>查看其他待核对内容</summary>{problems.slice(1).map((problem, index) => <p key={index}>{problem}</p>)}</details> : undefined} />
+            <Alert
+              type="warning"
+              message={problems[0]}
+              description={
+                problems.length > 1 ? (
+                  <details>
+                    <summary>查看其他待核对内容</summary>
+                    {problems.slice(1).map((problem, index) => (
+                      <p key={index}>{problem}</p>
+                    ))}
+                  </details>
+                ) : undefined
+              }
+            />
           )}
           {thread.sending && !busy && (
             <Alert
@@ -927,7 +1072,11 @@ function PlanningAgentSession({
           message={failure}
         />
       )}
-      {!conversationAvailable && <p className="planning-agent-note">后台升级后，这位助手可以正常接着聊，再按需要更新方案。已有方案与任务仍可查看。</p>}
+      {!conversationAvailable && (
+        <p className="planning-agent-note">
+          后台升级后，这位助手可以正常接着聊，再按需要更新方案。已有方案与任务仍可查看。
+        </p>
+      )}
       {members.error && (
         <p className="planning-agent-note">
           {members.error}
@@ -945,7 +1094,7 @@ function PlanningAgentSession({
         <Input.TextArea
           ref={input}
           aria-label="与任务规划 Agent 对话"
-          placeholder="说说你想聊的研究，或者接着刚才的思路…"
+          placeholder="说说你要做的任务，或接着修改任务安排…"
           value={thread.draft}
           maxLength={4000}
           autoSize={{ minRows: 1, maxRows: 4 }}

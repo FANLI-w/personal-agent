@@ -115,6 +115,15 @@
     border-top: 1px solid #f0f3f6;
     scroll-behavior: smooth;
   }
+  .planning-task-shape {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin: 12px 0;
+    color: var(--ac-muted);
+    font-size: 12px;
+  }
   .planning-agent-welcome {
     padding: 18px 0;
     max-width: 760px;

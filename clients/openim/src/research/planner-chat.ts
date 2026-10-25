@@ -1,6 +1,126 @@
 import { Id, Plan, PlanInput, routes } from "@research-agent-platform/contracts";
 import type { RequestFor, ResponseFor } from "@research-agent-platform/contracts";
 
+export type PlannerTaskShape = "single" | "multiple";
+type TaskDraft = ReturnType<typeof PlanInput.parse>;
+
+// A model's step count, quotations and complaints do not authorize more tasks.
+export function plannerTaskShape(
+  text: string,
+  previous: PlannerTaskShape = "single",
+): PlannerTaskShape {
+  const value = text.trim();
+  if (/[“”「」『』"<>?？]/.test(value)) return previous;
+  const start =
+    "^(?:(?:请|帮我|给我|我想|我需要|我|现在|就|还是|把这个|只需要|只要|只)\\s*)*";
+  if (
+    new RegExp(
+      start +
+        "(?:(?:创建|建立|安排|改为|改成|合并(?:成|为)?|合成|合为|整合成)\\s*)?(?:1|一|单)\\s*(?:个|项)?任务",
+    ).test(value) ||
+    new RegExp(
+      start +
+        "(?:不要|别|不)(?:拆(?:分)?|分开|(?:创建|建立|分成)\\s*(?:多|几|若干)[个项]?任务)",
+    ).test(value)
+  )
+    return "single";
+  if (
+    new RegExp(
+      start +
+        "(?:创建|建立|安排|拆成|拆分成|分成|分别创建|分别建立|改为|改成)\\s*(?:[2-9]\\d*|1\\d+|[两二三四五六七八九十百]+|多|几|若干)\\s*(?:个|项)?任务",
+    ).test(value)
+  )
+    return "multiple";
+  return previous;
+}
+
+// Normalize the reviewed draft, not just its label. Preserve all content and
+// refuse changes that would hide invalid dependencies or merge authorizations.
+export function plannerTaskInput(input: TaskDraft, shape: PlannerTaskShape): TaskDraft {
+  if (shape === "multiple" || input.proposedItems.length <= 1) return input;
+  const items = input.proposedItems;
+  if (
+    items.some((item) =>
+      [item.title, item.goal, item.deliverable, item.acceptanceCriteria].some(
+        (value) => !value.trim(),
+      ),
+    )
+  )
+    throw new Error("原步骤缺少任务内容，请先补齐后再创建。");
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const visited = new Set<string>(),
+    visiting = new Set<string>();
+  const visit = (id: string) => {
+    if (!byId.has(id) || visiting.has(id))
+      throw new Error("原步骤有无效或循环依赖，请先调整；不会通过合并隐藏问题。");
+    if (visited.has(id)) return;
+    visiting.add(id);
+    for (const dependency of byId.get(id)!.dependencies) visit(dependency);
+    visiting.delete(id);
+    visited.add(id);
+  };
+  if (byId.size !== items.length) throw new Error("原步骤标识重复，请先调整后再创建。");
+  items.forEach((item) => visit(item.id));
+  const first = items[0],
+    last = items[items.length - 1];
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+  if (
+    items.some(
+      (item) =>
+        item.allocation.kind === "public_agent" ||
+        item.budget !== null ||
+        !same(item.allocation, first.allocation) ||
+        !same(item.inputArtifactIds, first.inputArtifactIds),
+    )
+  )
+    throw new Error(
+      "这份草案含不同分工或执行授权，不能直接合成一项。可以继续说由谁负责这项任务，或明确选择分开创建。",
+    );
+  const blankSchedule = (item: typeof first) =>
+    Object.values(item.schedule).every((value) => value === null);
+  const schedule = items.every((item) => same(item.schedule, first.schedule))
+    ? first.schedule
+    : items.slice(0, -1).every(blankSchedule)
+    ? last.schedule
+    : undefined;
+  if (!schedule)
+    throw new Error(
+      "这份草案有不同的步骤日程。请先说这项任务的整体安排，或明确选择分开创建；原日期都保留着。",
+    );
+  const join = (field: "deliverable" | "acceptanceCriteria") =>
+    items.map((item, i) => `${i + 1}. ${item.title}\n${item[field]}`).join("\n\n");
+  const steps = items
+    .map((item, i) => {
+      const dependencies = item.dependencies.map(
+        (id) => items.findIndex((step) => step.id === id) + 1,
+      );
+      return `${i + 1}. ${item.title}\n${item.goal}${
+        dependencies.length ? `\n前置步骤：${dependencies.join("、")}` : ""
+      }`;
+    })
+    .join("\n\n");
+  const combined = {
+    ...input,
+    proposedItems: [
+      {
+        ...first,
+        title: input.goal.slice(0, 200),
+        goal: `${input.goal}\n\n执行步骤（同一项任务内）：\n\n${steps}`,
+        deliverable: join("deliverable"),
+        acceptanceCriteria: join("acceptanceCriteria"),
+        dependencies: [],
+        schedule,
+      },
+    ],
+  };
+  const parsed = PlanInput.safeParse(combined);
+  if (!parsed.success)
+    throw new Error(
+      "完整步骤合成一项后超出了任务说明容量。原内容没有删减，请继续精简说明后再创建。",
+    );
+  return parsed.data;
+}
+
 export type ChatPlan = ResponseFor<"getPlan">["data"];
 export type DeadlineChoice = { date: string | null; target: "final" | "all" | number };
 export type PlannerMessage = {
@@ -11,7 +131,12 @@ export type PlannerMessage = {
   requestId?: string;
 };
 export type SendIntent = { key: string; body: RequestFor<"planRequest">["body"] };
-export type CreateIntent = { key: string; plan: ChatPlan; deadline?: DeadlineChoice };
+export type CreateIntent = {
+  key: string;
+  plan: ChatPlan;
+  deadline?: DeadlineChoice;
+  taskShape?: PlannerTaskShape;
+};
 export type PlannerThread = {
   id: string;
   title: string;
@@ -24,27 +149,59 @@ export type PlannerThread = {
   creating?: CreateIntent;
   deadline?: DeadlineChoice;
   deadlineQuestion?: boolean;
+  taskShape?: PlannerTaskShape;
   taskIds?: string[];
   updatedAt: string;
 };
 export type PlannerHistory = { active: string; threads: PlannerThread[] };
 type PlanningResult = ResponseFor<"getPlanRequest">["data"];
 export function plannerFailureText(result: Pick<PlanningResult, "status" | "failure">) {
-  if (result.failure === "AGENT_CONTEXT_CHANGED") return "这位助手的档案或私人偏好已更新，这轮旧回复已停止。原话和已有方案保留，可以按新设置继续聊。";
-  if (result.failure === "MODEL_UNAVAILABLE") return "规划模型暂不可用，请在“我的 → 模型设置”选择可用的默认模型。刚才的消息和已有方案都保留了。";
-  if (result.failure === "BUDGET_EXCEEDED") return "这轮规划达到了预算上限，已有方案保留。可以先集中讨论一个小目标。";
-  if (result.failure === "INVALID_MODEL_OUTPUT") return "这轮回复没能正确处理，是系统处理出了问题。刚才的消息和已有方案都还在，可以直接重试这条。";
-  if (result.failure === "PLANNING_SAVE_FAILED") return "这轮结果暂时没能保存，已有方案保持原样。可以直接重试这条。";
-  if (result.status === "cancelled") return "这轮生成已停止，刚才的消息和已有方案保留。";
-  if (result.status === "interrupted") return "这轮回复中断了，刚才的消息和已有方案保留。";
-  if (result.status === "waiting_input") return "这轮还没有完成，刚才的消息和已有方案保留。";
+  if (result.failure === "AGENT_CONTEXT_CHANGED")
+    return "这位助手的档案或私人偏好已更新，这轮旧回复已停止。原话和已有方案保留，可以按新设置继续聊。";
+  if (result.failure === "MODEL_UNAVAILABLE")
+    return "规划模型暂不可用，请在“我的 → 模型设置”选择可用的默认模型。刚才的消息和已有方案都保留了。";
+  if (result.failure === "BUDGET_EXCEEDED")
+    return "这轮规划达到了预算上限，已有方案保留。可以先集中讨论一个小目标。";
+  if (result.failure === "INVALID_MODEL_OUTPUT")
+    return "这轮回复没能正确处理，是系统处理出了问题。刚才的消息和已有方案都还在，可以直接重试这条。";
+  if (result.failure === "PLANNING_SAVE_FAILED")
+    return "这轮结果暂时没能保存，已有方案保持原样。可以直接重试这条。";
+  if (result.status === "cancelled")
+    return "这轮生成已停止，刚才的消息和已有方案保留。";
+  if (result.status === "interrupted")
+    return "这轮回复中断了，刚才的消息和已有方案保留。";
+  if (result.status === "waiting_input")
+    return "这轮还没有完成，刚才的消息和已有方案保留。";
   return "这轮回复暂时未能完成，刚才的消息和已有方案都保留了。";
 }
-export const canRetryPlannerReply = (result: Pick<PlanningResult, "status" | "failure">) =>
-  result.status === "failed" && ["INVALID_MODEL_OUTPUT", "PLANNING_SAVE_FAILED", "MODEL_FAILED", "MODEL_TRANSPORT_FAILED", "HARNESS_START_FAILED", "HARNESS_PROCESS_FAILED", "TIMEOUT", "TIME_BUDGET_EXCEEDED", "RATE_LIMIT", "SERVICE_UNAVAILABLE"].includes(result.failure || "");
-export function isPlannerFailureReceipt(message: PlannerMessage | undefined, result: Pick<PlanningResult, "id" | "status">) {
-  return !!message && message.role === "service" && ["failed", "cancelled", "interrupted", "waiting_input"].includes(result.status) &&
-    (message.requestId ? message.requestId === result.id : /^(?:这次规划|这次生成已停止|规划模型暂不可用)/.test(message.text));
+export const canRetryPlannerReply = (
+  result: Pick<PlanningResult, "status" | "failure">,
+) =>
+  result.status === "failed" &&
+  [
+    "INVALID_MODEL_OUTPUT",
+    "PLANNING_SAVE_FAILED",
+    "MODEL_FAILED",
+    "MODEL_TRANSPORT_FAILED",
+    "HARNESS_START_FAILED",
+    "HARNESS_PROCESS_FAILED",
+    "TIMEOUT",
+    "TIME_BUDGET_EXCEEDED",
+    "RATE_LIMIT",
+    "SERVICE_UNAVAILABLE",
+  ].includes(result.failure || "");
+export function isPlannerFailureReceipt(
+  message: PlannerMessage | undefined,
+  result: Pick<PlanningResult, "id" | "status">,
+) {
+  return (
+    !!message &&
+    message.role === "service" &&
+    ["failed", "cancelled", "interrupted", "waiting_input"].includes(result.status) &&
+    (message.requestId
+      ? message.requestId === result.id
+      : /^(?:这次规划|这次生成已停止|规划模型暂不可用)/.test(message.text))
+  );
 }
 export function plannerRetryInput(messages: PlannerMessage[]) {
   if (messages.at(-1)?.role !== "service") return;
@@ -103,6 +260,7 @@ export function readPlannerHistory(raw: string | null): PlannerHistory | undefin
                 Number.isSafeInteger(m.plan.version))),
         ) &&
         validDeadline(t.deadline) &&
+        (t.taskShape === undefined || ["single", "multiple"].includes(t.taskShape)) &&
         (t.deadlineQuestion === undefined || typeof t.deadlineQuestion === "boolean") &&
         (!t.taskIds ||
           (Array.isArray(t.taskIds) &&
@@ -116,6 +274,8 @@ export function readPlannerHistory(raw: string | null): PlannerHistory | undefin
         (!t.creating ||
           (/^[A-Za-z0-9_-]{16,128}$/.test(t.creating.key) &&
             Plan.safeParse(t.creating.plan).success &&
+            (t.creating.taskShape === undefined ||
+              ["single", "multiple"].includes(t.creating.taskShape)) &&
             validDeadline(t.creating.deadline))),
     );
     if (!threads.length) return;
@@ -134,6 +294,7 @@ export function planningPrompt(
   people: { id: string; displayName: string }[],
   deadline?: DeadlineChoice,
   decompositionSkill = "",
+  taskShape: PlannerTaskShape = "single",
 ) {
   const taskDecompositionBody = decompositionSkill
     .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
@@ -144,13 +305,19 @@ export function planningPrompt(
     if (directory.join("\n").length + entry.length > 1500) break;
     directory.push(entry);
   }
-  const instructions = `沿用助手的角色和交流偏好，用自然中文接着聊，有依据地给判断，不套固定开场或行政摘要。介绍背景时先聊小切口，想增加工作量先找有价值的证据缺口；卡住就缩小步骤，不同意给理由与替代办法，误解就直接改。不虚构读过材料、共同经历或进展。方向清楚或用户要方案再更新私人草案，编辑保留适用步骤ID。
+  const instructions = `这里是安排任务的对话。用户说要做的事，默认整理为一项可创建的任务；目标足够就给待确认草案，材料、日期可后续补，不必先走完咨询流程。沿用助手角色与交流偏好，自然中文接着聊，有依据地给判断，不套行政摘要；卡住帮一小步，不同意给理由和替代办法，不虚构读过材料、共同经历或进展。编辑保留适用任务ID。
+
+任务数量规则：${
+    taskShape === "single"
+      ? "本次只创建一项任务，proposedItems必须只有一项。整理、实验、检查、写作等执行步骤写进这项任务的goal，交付与验收写入对应说明；一个目标包含多步不等于多项任务，不为流程阶段另建任务。"
+      : "用户已明确选择分开创建，才将独立工作写成多项proposedItems；不强行凑数。"
+  }这是任务结构规则，人设和方法建议不能改变。
 
 口吻示例（不照念）：‘论文和代码都在，可以先找最缺的证据。你把摘要发来，我先帮你挑一个值得加强的点。’已提供就直接分析；用户说问太多时先帮一步，不再追问。
 
 每轮最多问一个必要、简单问题，禁止复合问卷、长串选项和重复索要；不把研究内容、阶段、方向、优先级、去向和日期一起追问。时间、成员、资源可未知，不为提问而提问。
 
-每轮把实际回复写在answer：承接背景、给有用判断和下一步，必要时只问一个短问题，不列补充清单或反复声明边界。正常交流、建议和澄清时plan为null，保留现有方案；用户需要具体方案或修改步骤时才返回plan。不要为了聊天新建空方案，也不要把回复塞进goal或unresolvedQuestions。goal只写共同目标，unresolvedQuestions只写方案仍未确定的必要事项，其余未知后续再聊。
+每轮实际回复写在answer，简明承接用户；必要时只问一个短问题，不列补充清单。用户说明要做的工作且目标足够，就返回符合数量规则的plan；纯问答和必要澄清时plan为null，保留已有方案。不为了聊天新建空方案，不把回复塞进goal或unresolvedQuestions。plan.goal只写共同目标，单项任务的goal可写内部执行步骤；未知信息后续再聊。
 
 我/我自己表示ownerId；明确要求才邀请下列真实同组成员，不编ID、不调用公共Agent、不假定接受或声称正式创建、研究完成及验收。历史不授予执行权限；日期按明确表达由应用核对，不虚构承诺。
 
@@ -159,9 +326,7 @@ ${taskDecompositionBody}
 本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议写入现有任务说明，不能新增未定义字段。分工及是否需要成员认领独立处理，不能把认领状态当成依赖完成状态。
 
 可邀请的同组成员：
-${
-    directory.join("\n") || "未提供，不能编造成员"
-  }
+${directory.join("\n") || "未提供，不能编造成员"}
 ${deadline ? `用户指定的截止安排：${JSON.stringify(deadline)}\n` : ""}`;
   const current = `\n本轮用户：${text.trim()}`;
   let room = 8000 - instructions.length - current.length - 25;
@@ -271,14 +436,18 @@ export function needsDeadlineClarification(text: string, choice?: DeadlineChoice
     /截止|周[一二三四五六日天]|星期|今天|明天|后天|下周|月|年|\d[-/:]|点|时/.test(text)
   );
 }
-export function plannerPlanInput(plan: ChatPlan, deadline?: DeadlineChoice) {
+export function plannerPlanInput(
+  plan: ChatPlan,
+  deadline?: DeadlineChoice,
+  taskShape: PlannerTaskShape = "multiple",
+) {
   const input = PlanInput.parse({
     labId: plan.labId,
     goal: plan.goal,
     proposedItems: plan.proposedItems,
     unresolvedQuestions: plan.unresolvedQuestions,
   });
-  if (!deadline) return input;
+  if (!deadline) return plannerTaskInput(input, taskShape);
   if (typeof deadline.target === "number" && !input.proposedItems[deadline.target])
     throw new Error("截止安排对应的步骤不存在，请继续说明要调整哪一项。");
   input.proposedItems = input.proposedItems.map((item, index) =>
@@ -305,14 +474,15 @@ export function plannerPlanInput(plan: ChatPlan, deadline?: DeadlineChoice) {
         }
       : item,
   );
-  return input;
+  return plannerTaskInput(input, taskShape);
 }
 export function planReplyText(plan: ChatPlan) {
   // The model writes one conversational clarification. Older servers/plans may
   // still return a questionnaire: show its first exchange without changing the
   // saved plan, its remaining uncertainties, or the confirmation authority.
   for (const discussion of plan.unresolvedQuestions) {
-    const text = discussion.trim()
+    const text = discussion
+      .trim()
       .replace(/^还需要(?:您|你)补充[：:]\s*/, "")
       .replace(/^(?:[•*-]|\d+[.)、])\s*/, "");
     // Use structural list boundaries, not question marks inside scientific
@@ -320,9 +490,11 @@ export function planReplyText(plan: ChatPlan) {
     const exchange = text.split(/\r?\n\s*(?:[•*-]|\d+[.)、])\s+/)[0].trim();
     if (exchange) return exchange.slice(0, 8000);
   }
-  return (plan.proposedItems.length
-    ? `我先把“${plan.goal}”整理成了 ${plan.proposedItems.length} 个步骤，方案在下面，可以接着调整。`
-    : plan.goal).slice(0, 8000);
+  return (
+    plan.proposedItems.length
+      ? `我先把“${plan.goal}”整理成了 ${plan.proposedItems.length} 个步骤，方案在下面，可以接着调整。`
+      : plan.goal
+  ).slice(0, 8000);
 }
 
 /** Render actual conversational output, with the old plan receipt as fallback. */
@@ -375,7 +547,7 @@ export async function stopPlannerRequest(
 }
 
 // The exact reviewed snapshot is the authorization. A retry can recognize its
-// own acknowledged date edit or confirmation, but cannot confirm unseen edits.
+// own acknowledged draft edit or confirmation, but cannot confirm unseen edits.
 export async function createPlannerTasks(
   call: <K extends "getPlan" | "editPlan" | "confirmPlan" | "planTasks">(
     name: K,
@@ -390,7 +562,19 @@ export async function createPlannerTasks(
   check();
   const current = (await call("getPlan", { params: { id: intent.plan.id } })).data;
   check();
-  const expected = plannerPlanInput(intent.plan, intent.deadline);
+  // Old pending confirmations may already have succeeded. Reconcile them as
+  // originally reviewed, but never resume an unconfirmed multi-task write under
+  // the new one-task default without another review.
+  const legacyMultiple = !intent.taskShape && intent.plan.proposedItems.length > 1;
+  if (legacyMultiple && current.status !== "confirmed")
+    throw new Error(
+      "上次多任务创建尚未确认。请点“读取最新方案”，重新核对为一项任务后再创建；原步骤保留。",
+    );
+  const expected = plannerPlanInput(
+    intent.plan,
+    intent.deadline,
+    legacyMultiple ? "multiple" : intent.taskShape || "single",
+  );
   const fingerprint = (p: ChatPlan | typeof expected) =>
     JSON.stringify(
       PlanInput.parse({
@@ -400,8 +584,8 @@ export async function createPlannerTasks(
         unresolvedQuestions: p.unresolvedQuestions,
       }),
     );
-  const dateEdit = fingerprint(expected) !== fingerprint(intent.plan);
-  const version = intent.plan.version + (dateEdit ? 1 : 0);
+  const draftEdit = fingerprint(expected) !== fingerprint(intent.plan);
+  const version = intent.plan.version + (draftEdit ? 1 : 0);
   if (current.status === "confirmed") {
     if (
       current.version !== version + 1 ||
@@ -421,7 +605,7 @@ export async function createPlannerTasks(
     current.version === intent.plan.version &&
     fingerprint(current) === fingerprint(intent.plan)
   ) {
-    if (dateEdit) {
+    if (draftEdit) {
       draft = (
         await call("editPlan", {
           params: { id: current.id },
@@ -433,7 +617,7 @@ export async function createPlannerTasks(
     }
   } else if (
     !(
-      dateEdit &&
+      draftEdit &&
       current.version === version &&
       fingerprint(current) === fingerprint(expected)
     )
