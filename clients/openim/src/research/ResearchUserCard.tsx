@@ -14,7 +14,7 @@ import { ContactCardShare } from "./ContactCardShare";
 
 export const ResearchUserCard = forwardRef<
   OverlayVisibleHandle,
-  { userID?: string; isSelf?: boolean; contactId?: string }
+  { userID?: string; isSelf?: boolean; contactId?: string; onClose?: () => void }
 >((props, ref) => {
   const { isOverlayOpen, closeOverlay } = useOverlayVisible(ref);
   const contacts = useResearchStore((s) => s.contacts);
@@ -59,6 +59,7 @@ export const ResearchUserCard = forwardRef<
   const close = () => {
     epoch.current++;
     closeOverlay();
+    props.onClose?.();
   };
   const openChat = useResearchContactChat();
   useEffect(() => {

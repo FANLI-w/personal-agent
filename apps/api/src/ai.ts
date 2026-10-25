@@ -8,6 +8,7 @@ import type { Collaboration } from './collaboration.js'
 import { hash } from './auth.js'
 import { fail } from './errors.js'
 import type {PlanningModelRuntime,PlanningModelBinding} from './planning-model.js'
+import type {PlanningColleagueBinding,PlanningColleagueReader} from './planning-colleague.js'
 
 export const aiCommands = ['planRequest','getPlanRequest','cancelPlanning','publicCapabilities','run','getRun','cancelRun','retryRun','submitCandidate'] as const satisfies readonly RouteName[]
 export type AiCommand = typeof aiCommands[number]
@@ -25,8 +26,16 @@ export function canonical(value:unknown):string {
   return JSON.stringify(value)
 }
 export class AiService {
-  constructor(readonly c:Collaboration,readonly enabled:boolean,readonly model:string,readonly planningModel?:PlanningModelRuntime){}
+  constructor(readonly c:Collaboration,readonly enabled:boolean,readonly model:string,readonly planningModel?:PlanningModelRuntime,readonly colleagueReader?:PlanningColleagueReader){}
   get db(){return this.c.db}
+  planningColleague(request:PlanningInput){
+    if(!request.colleagueBinding)return null
+    if(!this.colleagueReader)throw new Error('AGENT_CONTEXT_CHANGED')
+    const context=this.colleagueReader(request.colleagueBinding,request.prompt)
+    if(context.fingerprint!==request.colleagueBinding.fingerprint)throw new Error('AGENT_CONTEXT_CHANGED')
+    const {fingerprint:_fingerprint,...value}=context
+    return value
+  }
   permission(taskId:string){return Number(this.db.prepare('SELECT version FROM task_permissions WHERE task_id=?').get(taskId)!.version)}
   capability(){
     const row=this.db.prepare('SELECT version,enabled,owner_id FROM public_capabilities WHERE lab_id=? AND id=?').get(this.c.labId,capabilityId)
@@ -138,6 +147,11 @@ export class AiService {
       const intent=b.intent??'auto';if(['auto','draft'].includes(intent)&&!(this.planningModel?.enabled??this.enabled))fail('MODEL_UNAVAILABLE')
       const p:Planning={id:randomUUID(),status:['progress','find_work'].includes(intent)?'ready':'queued',planId:b.plan?.id??null,failure:null,version:1,reply:intent==='progress'||intent==='find_work'?this.facts(intent,b.taskIds??[]):null,usage:null,createdAt:instant(),updatedAt:instant()}
       const input:PlanningInput={...b,intent,plan:b.plan??null,taskIds:b.taskIds??[],inputs:this.inputRefs(b.inputArtifactIds)}
+      if(b.colleague){
+        if(!this.colleagueReader)fail('NOT_IMPLEMENTED')
+        const context=this.colleagueReader(b.colleague,b.prompt)
+        input.colleagueBinding={...b.colleague,fingerprint:context.fingerprint}
+      }
       if(this.planningModel){const {source,provider,model,fingerprint}=this.planningModel;input.modelBinding={source,provider,model,fingerprint}}
       this.insert('planning',p,input);reuse.bind('job',p.id,b.conclusionRefs??[]);return {data:p}
     }
@@ -181,4 +195,4 @@ export class AiService {
   fence(id:string){this.db.prepare('UPDATE execution_jobs SET fence=fence+1,lease_owner=NULL,lease_until=NULL WHERE id=?').run(id)}
 }
 type RunAction=z.infer<typeof import('@research-agent-platform/contracts').Action>
-export type PlanningInput=RequestFor<'planRequest'>['body'] & {intent:'auto'|'draft'|'progress'|'find_work';plan:{id:string;version:number}|null;taskIds:string[];inputs:Run['inputs'];contextTasks?:{id:string;version:number;access:'full'|'summary'}[];modelBinding?:PlanningModelBinding}
+export type PlanningInput=RequestFor<'planRequest'>['body'] & {intent:'auto'|'draft'|'progress'|'find_work';plan:{id:string;version:number}|null;taskIds:string[];inputs:Run['inputs'];contextTasks?:{id:string;version:number;access:'full'|'summary'}[];modelBinding?:PlanningModelBinding;colleagueBinding?:PlanningColleagueBinding}

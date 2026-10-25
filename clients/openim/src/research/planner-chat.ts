@@ -30,6 +30,7 @@ export type PlannerThread = {
 export type PlannerHistory = { active: string; threads: PlannerThread[] };
 type PlanningResult = ResponseFor<"getPlanRequest">["data"];
 export function plannerFailureText(result: Pick<PlanningResult, "status" | "failure">) {
+  if (result.failure === "AGENT_CONTEXT_CHANGED") return "这位助手的档案或私人偏好已更新，这轮旧回复已停止。原话和已有方案保留，可以按新设置继续聊。";
   if (result.failure === "MODEL_UNAVAILABLE") return "规划模型暂不可用，请在“我的 → 模型设置”选择可用的默认模型。刚才的消息和已有方案都保留了。";
   if (result.failure === "BUDGET_EXCEEDED") return "这轮规划达到了预算上限，已有方案保留。可以先集中讨论一个小目标。";
   if (result.failure === "INVALID_MODEL_OUTPUT") return "这轮回复没能正确处理，是系统处理出了问题。刚才的消息和已有方案都还在，可以直接重试这条。";
@@ -143,7 +144,7 @@ export function planningPrompt(
     if (directory.join("\n").length + entry.length > 1500) break;
     directory.push(entry);
   }
-  const instructions = `你是并肩推敲研究的同伴，用自然中文接着聊，有依据地给判断，不套固定开场或行政摘要。介绍背景时先聊小切口，想增加工作量先找有价值的证据缺口；卡住就缩小步骤，不同意给理由与替代办法，误解就直接改。不虚构读过材料、共同经历或进展。方向清楚或用户要方案再更新私人草案，编辑保留适用步骤ID。
+  const instructions = `沿用助手的角色和交流偏好，用自然中文接着聊，有依据地给判断，不套固定开场或行政摘要。介绍背景时先聊小切口，想增加工作量先找有价值的证据缺口；卡住就缩小步骤，不同意给理由与替代办法，误解就直接改。不虚构读过材料、共同经历或进展。方向清楚或用户要方案再更新私人草案，编辑保留适用步骤ID。
 
 口吻示例（不照念）：‘论文和代码都在，可以先找最缺的证据。你把摘要发来，我先帮你挑一个值得加强的点。’已提供就直接分析；用户说问太多时先帮一步，不再追问。
 

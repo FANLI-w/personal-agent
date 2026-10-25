@@ -39,6 +39,58 @@ async function setup(){
   return {db,config,call,ok,personal,lab,planBody,planning,detail,worker,restart:async()=>{await app.close();app=createServer(config);url=await app.listen({host:'127.0.0.1',port:0})}}
 }
 describe('owned personal planning with real HTTP and isolated synthetic credentials',{timeout:30000},()=>{
+  const colleague=async(s:Awaited<ReturnType<typeof setup>>,actor=0)=>{
+    const agent=await s.ok('createPersonalAgent',{displayName:`Colleague ${actor}`,introduction:'Synthetic research colleague',capabilityDescription:'Discuss evidence and draft tasks',personality:`PERSONA_${actor}: lead with a judgment, then help a small next step`},{},actor)
+    const conversation=await s.ok('createDirectConversation',{contactId:agent.id},{},actor)
+    return {agent,ref:{contactId:agent.id,conversationId:conversation.id}}
+  }
+  it('uses the same owned colleague profile and authorized private preferences after restart, without sharing another colleague or account',async()=>{
+    const s=await setup();await s.personal();const a=await colleague(s),b=await colleague(s,1)
+    const memory=await s.ok('createChatMemory',{scope:'private_agent',scopeId:a.agent.id,content:'PRIVATE_A_STYLE: first state the most useful evidence gap',source:'synthetic'})
+    await s.ok('createChatMemory',{scope:'private_agent',scopeId:b.agent.id,content:'PRIVATE_B_NEVER_LOAD',source:'synthetic'},{},1)
+    const job=await s.ok('planRequest',{...s.planBody,colleague:a.ref})
+    await s.restart()
+    await s.worker(async input=>{
+      const payload=JSON.parse(input.prompt)
+      expect(payload.colleague.requestedAgent).toMatchObject({id:a.agent.id,profile:{personality:a.agent.profile.personality}})
+      expect(payload.colleague.memories).toEqual(expect.arrayContaining([expect.objectContaining({id:memory.id,content:memory.content})]))
+      expect(input.prompt).not.toContain('PRIVATE_B_NEVER_LOAD');expect(input.system).toContain('colleague profile/authorized preferences')
+      return output()
+    }).tick()
+    expect(await s.detail(job.id)).toMatchObject({status:'draft',usage:{inputTokens:100,outputTokens:100}})
+    expect((await s.call('getPlanRequest',null,{id:job.id},1)).status).toBe(404)
+    expect((await s.call('getPlanRequest',null,{id:job.id})).text).not.toContain('PRIVATE_A_STYLE')
+  })
+  it('rejects foreign colleagues and mismatched private conversations before queuing a model call',async()=>{
+    const s=await setup();await s.personal();const a=await colleague(s),b=await colleague(s,1)
+    for(const ref of [b.ref,{contactId:a.agent.id,conversationId:b.ref.conversationId},{contactId:b.agent.id,conversationId:a.ref.conversationId}])
+      expect((await s.call('planRequest',{...s.planBody,colleague:ref})).status).toBe(404)
+    expect(s.db.prepare('SELECT count(*) n FROM execution_jobs').get()!.n).toBe(0)
+  })
+  it('stops queued planning when the colleague profile changes and uses the edited profile on the next turn',async()=>{
+    const s=await setup();await s.personal();const a=await colleague(s)
+    const job=await s.ok('planRequest',{...s.planBody,colleague:a.ref})
+    const changed=await s.ok('updateContactProfile',{displayName:'My edited colleague',introduction:a.agent.profile.introduction,capabilityDescription:a.agent.profile.capabilityDescription,personality:'EDITED_STYLE: concise and direct',expectedVersion:a.agent.profile.version},{id:a.agent.id})
+    let calls=0;await s.worker(async()=>{calls++;return output()}).tick();expect(calls).toBe(0)
+    expect(await s.detail(job.id)).toMatchObject({status:'cancelled',failure:'AGENT_CONTEXT_CHANGED'})
+    const next=await s.ok('planRequest',{...s.planBody,colleague:a.ref})
+    await s.worker(async input=>{expect(JSON.parse(input.prompt).colleague.requestedAgent.displayName).toBe(changed.displayName);expect(input.prompt).toContain('EDITED_STYLE');return output()}).tick()
+    expect((await s.detail(next.id)).status).toBe('draft')
+  })
+  it('saves an explicit planning-colleague preference through the existing chat command and fences an in-flight reply without losing usage',async()=>{
+    const s=await setup();await s.personal();const a=await colleague(s)
+    const job=await s.ok('planRequest',{...s.planBody,colleague:a.ref})
+    const before=Number(s.db.prepare('SELECT count(*) n FROM plans').get()!.n)
+    await s.worker(async()=>{
+      const receipt=await s.ok('agentChatMessage',{text:'以后和我聊天，先给自己的判断，别每次列清单。'},{id:a.ref.conversationId})
+      expect(receipt.turn).toMatchObject({status:'succeeded',usage:null})
+      return output()
+    }).tick()
+    expect(await s.detail(job.id)).toMatchObject({status:'cancelled',failure:'AGENT_CONTEXT_CHANGED',usage:{inputTokens:100,outputTokens:100}})
+    expect(Number(s.db.prepare('SELECT count(*) n FROM plans').get()!.n)).toBe(before)
+    const memory=s.db.prepare("SELECT content FROM chat_memories WHERE scope='private_agent' AND scope_id=? AND status='active'").get(a.agent.id)
+    expect(String(memory!.content)).toContain('先给自己的判断，别每次列清单')
+  })
   it('continues the same draft from a copied full Plan without trusting model identity, dates or material access',async()=>{
     const s=await setup();await s.personal()
     const step={id:'comparison',title:'Synthetic comparison',goal:'Compare Metric A',deliverable:'Comparison',acceptanceCriteria:'Traceable evidence',allocation:{kind:'self'},dependencies:[],schedule,inputArtifactIds:[],budget:null}

@@ -1,4 +1,12 @@
 .personal-agent-desktop .workspace-workbench {
+  &.is-planning-expanded {
+    > .workspace-heading,
+    > .workspace-toolbar,
+    > .workspace-subnavigation,
+    > .workbench-content {
+      display: none;
+    }
+  }
   .workbench-content {
     display: flex;
     flex: 1;
@@ -26,7 +34,8 @@
     color: var(--ac-text);
   }
   .planning-agent.is-expanded {
-    height: min(430px, 52%);
+    flex: 1;
+    height: auto;
   }
   .planning-agent.is-full {
     flex: 1;
@@ -48,9 +57,18 @@
     align-items: center;
     gap: 9px;
   }
+  .planning-agent-heading > div {
+    min-width: 0;
+  }
+  .planning-agent-heading nav {
+    flex-shrink: 0;
+  }
   .planning-agent-heading strong {
     font-size: 14px;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .planning-agent-heading > div > .anticon {
     color: #5b9ecb;
@@ -64,6 +82,25 @@
     font-size: 12px;
     height: 28px;
     padding: 0 8px;
+  }
+  .planning-agent-heading .ant-btn.planning-agent-toggle {
+    min-width: 36px;
+    height: 32px;
+    border-radius: 10px;
+    border-color: #568d70;
+    background: #568d70;
+    color: #fff;
+    font-size: 16px;
+  }
+  .planning-agent-heading .ant-btn.planning-agent-toggle:hover,
+  .planning-agent-heading .ant-btn.planning-agent-toggle:active {
+    border-color: #467a5f;
+    background: #467a5f;
+    color: #fff;
+  }
+  .planning-agent-toggle:focus-visible {
+    outline: 2px solid #568d70;
+    outline-offset: 3px;
   }
   .planning-agent-messages {
     flex: 1;

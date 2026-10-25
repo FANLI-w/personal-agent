@@ -21,6 +21,7 @@ import { MoreOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
 import ChatDetailsDrawer from "./ChatDetailsDrawer";
 import HistorySearch from "./HistorySearch";
 import { WorkbenchTaskInbox } from "@/research/WorkbenchTaskInbox";
+import { AgentColleagueSettings } from "@/research/AgentColleagueSettings";
 
 const menuList = [
   {
@@ -177,6 +178,9 @@ const ChatHeader = () => {
             >
               关于我
             </Button>
+          )}
+          {researchMode && !isGroupSession && contact?.identity.kind === "personal_agent" && contact.allowedActions.includes("edit_profile") && (
+            <AgentColleagueSettings key={`${actorGeneration}:${contact.id}`} contactId={contact.id} />
           )}
           {menuList.map((menu) => {
             if (window.electronAPI && menu.idx !== 2) return null;
