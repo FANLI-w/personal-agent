@@ -1863,3 +1863,5 @@ renderer类型、内容/链接、冻结顺序Windows Web/4SDK/55运行包/NSIS/4
 renderer/Electron双类型、38项现有规划/依赖回归、Windows冻结顺序Web/4SDK/55运行包/NSIS/4启动入口与更新清单通过。ASAR核对五处删除说明不在renderer、发送入口仍在，六份图标/renderer图标/3份署名原样随包。桌面C:/Users/luo/Desktop/AcceptCat_0.10.50.exe，88155412字节，SHA256 555ddfb2bab93ff1a1acec5064ac8a4961a03b2a942134ba0ddbeb9e6953067b，复制摘要一致、旧包保留。低影响界面删减未新增镜像测试或重复完整根CI，未代安装/原生启动/浏览器或实际用户体验验收。
 
 重新读取PR109/1e07441及PR108/a670787四项GitHub检查均success，前批Windows超时与重跑证据保留，新PR另记。本批无API/worker、契约、数据库、角色正文或依赖锁变化，无需升级后台；前批统一角色后台仍待单独安排。未合main、公开Release或部署，线上0e78530/7d75165a、contract0.32/schema026保持，公开Latest重新读取仍v0.10.37/422478602。[交付](deployment/acceptcat-0.10.50.md)，证据D:/deepseek-agent/.runtime/workbench-copy-cleanup-20261026。
+
+[PR110](https://github.com/luoyan96/personal-agent/pull/110)已创建并挂接，目标main，OPEN/MERGEABLE；首次head7242876四项GitHub检查in_progress，尚未确认通过，github-created.json保留。未自行合并、发布或部署。

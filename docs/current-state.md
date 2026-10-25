@@ -10,6 +10,8 @@ renderer/Electron双类型、**38项现有规划/依赖回归**、冻结顺序Wi
 
 重新读取前批PR109/1e07441和PR108/a670787的四项GitHub检查均success，PR108原Windows超时及重跑过程证据保持。本批新PR另记；无API/worker、契约、数据库、角色正文或依赖锁变化，无需为本批升级后台。前批角色后台仍待单独部署；未合main、公开Release或部署，线上0e78530/7d75165a、contract0.32/schema026保持，公开Latest重新读取仍 **v0.10.37/422478602**。
 
+[PR110](https://github.com/luoyan96/personal-agent/pull/110)已创建并挂接，目标main，OPEN/MERGEABLE，保留PR109/108/107/106/105；首次读取head7242876四项GitHub检查均in_progress，尚未确认通过。未自行合并、发布或部署。
+
 ## 本机0.10.49：应用图标统一为大肥鱼
 
 按负责人要求，从fetch后的main/fb2150b另开feat/dafeiyu-app-icon，普通快进保留PR108/a670787及PR107/106/105，本批产品 **5b441ffcf5394c095a26ee0ad195359188e5981d**。应用/安装器/卸载器/快捷方式、窗口/任务栏与托盘、标题栏/登录/关于/启动页图标统一为同一来源的蓝发鲸鱼娘「大肥鱼」，README同步。固定7661c8b原PNG及16/32/48/256px ICO原样保存，不重绘；非Windows托盘只在显示时适配20px。完整许可/署名及来源保持，AcceptCat名称、appId、数据目录、账号与更新源不变。[来源](../clients/openim/public/third-party/dafeiyu/ORIGIN.md)。

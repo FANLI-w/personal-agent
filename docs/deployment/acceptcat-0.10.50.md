@@ -25,3 +25,5 @@ renderer/Electron双类型、38项现有规划/依赖回归通过；Windows冻�
 ## 合并、部署与公开发布
 
 重新读取PR109/1e07441与PR108/a670787的四项GitHub检查均success，前批Windows超时和重跑记录保留；本批PR检查另计。没有合main、公开Release或后台部署。前批统一角色API/worker仍需单独升级，线上继续0e78530/7d75165a、contract0.32/schema026；公开Latest重新读取仍v0.10.37/422478602。
+
+[PR110](https://github.com/luoyan96/personal-agent/pull/110)已创建并挂接，OPEN/MERGEABLE，目标main；首次读取head7242876四项GitHub检查in_progress，未宣称通过。回执github-created.json保留，未合并、发布或部署。
