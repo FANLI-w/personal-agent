@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/acceptcat-icon.png" width="104" height="104" alt="AcceptCat 的蜷睡橘猫图标" />
+  <img src="docs/assets/acceptcat-icon.png" width="104" height="104" alt="AcceptCat 的大肥鱼图标" />
 </p>
 
 <h1 align="center">AcceptCat</h1>

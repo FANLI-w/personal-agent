@@ -1,4 +1,4 @@
-import { app, Menu, Tray } from "electron";
+import { app, Menu, nativeImage, Tray } from "electron";
 import { t } from "i18next";
 import { hideWindow, showWindow } from "./windowManage";
 import { checkDesktopUpdates } from "./updateManage";
@@ -31,7 +31,9 @@ export const createTray = () => {
       },
     },
   ]);
-  appTray = new Tray(global.pathConfig.trayIcon);
+  appTray = new Tray(process.platform === "win32"
+    ? global.pathConfig.trayIcon
+    : nativeImage.createFromPath(global.pathConfig.trayIcon).resize({ width: 20, height: 20 }));
   appTray.setToolTip(APP_NAME);
   appTray.setIgnoreDoubleClickEvents(true);
   appTray.on("click", showWindow);
