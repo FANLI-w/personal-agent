@@ -8,7 +8,7 @@
 
 完整根CI **781项/60文件**、2生产CLI/HTTP及B0/生产边界，客户端 **52项**（含2项真实本机HTTP/SQLite合成账号）与renderer/Electron双类型、冻结顺序Windows打包/4SDK/55运行包/NSIS/4成品入口及更新清单通过。首轮renderer预览变量收窄失败修正后通过，失败日志保留；测试清理路径增加守卫后只复核2项HTTP用例通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.45.exe**，**87,408,189字节**，SHA256 **a33243130a749450a4b7d4c15ed65701a92efd18c6edcfcbb3fa3cf4b459ecd8**，复制摘要一致，旧包保留，未代安装、浏览器产品或真实模型/材料与双机体验。[完整交付](deployment/acceptcat-0.10.45.md)，证据 **D:/deepseek-agent/.runtime/planner-single-task-20261025**。
 
-**无需本次后台升级。** 仅客户端及打包方法变化，沿用现有planRequest/getPlan/editPlan/confirmPlan/planTasks，API/contract0.32/schema026、依赖锁和后台源码未改，无迁移、没有新线上探测或部署。现网沿已部署0e78530/7d75165a及广场同步关闭记录；服务器canonical方法和已安装私人Skill不自动替换。人设/私人记忆保持可编辑，但不能越过单项创建规则。源码尚未合main、0.10.45未公开，重新读取公开Latest仍 **v0.10.37**。
+**无需本次后台升级。** 仅客户端及打包方法变化，沿用现有planRequest/getPlan/editPlan/confirmPlan/planTasks，API/contract0.32/schema026、依赖锁和后台源码未改，无迁移、没有新线上探测或部署。现网沿已部署0e78530/7d75165a及广场同步关闭记录；服务器canonical方法和已安装私人Skill不自动替换。人设/私人记忆保持可编辑，但不能越过单项创建规则。[PR105](https://github.com/luoyan96/personal-agent/pull/105)已创建并挂接，目标main，开放且无冲突；首次head3f2bcf6四项GitHub检查运行中，未结束不算通过，后续文档head另计。源码尚未合main、0.10.45未公开，重新读取公开Latest仍 **v0.10.37**。
 
 ## PR104已按负责人指令合入main，PR103/PR102随之合并
 

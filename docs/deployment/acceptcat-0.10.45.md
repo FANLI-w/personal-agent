@@ -24,4 +24,4 @@ Git外证据 **D:/deepseek-agent/.runtime/planner-single-task-20261025**包含�
 
 本批仅客户端与打包方法变化；沿用planRequest/getPlan/editPlan/confirmPlan/planTasks，contract **0.32.0**、schema026和后台源码未改，依赖与锁不变，无迁移。当前已部署0e78530/7d75165a后台兼容，无需再次升级；没有本批线上操作、健康探测或回退。新规则随0.10.45客户端和内置方法原文生效，服务器canonical方法及已安装私人Skill不会自动替换。
 
-分支fix/planner-single-task目标main，尚未合并；安装包为本机候选，0.10.45未公开Release，重新读取公开Latest仍 **v0.10.37**。注册超时未定因、飞书本人试点、广场同步关闭、原件在线/10MiB/无TURN与本机规划历史等边界保持。
+分支fix/planner-single-task已创建并挂接[PR105](https://github.com/luoyan96/personal-agent/pull/105)，目标main，开放且无冲突，尚未合并。连接器创建返回403，沿本机已登录GitHub CLI提交同一份PR；未绕过保护。首次head3f2bcf6的三平台Foundation（40181190900）与Windows package（40181190860）四项检查运行中，未结束不算通过，纯文档后续head另计。安装包为本机候选，0.10.45未公开Release，重新读取公开Latest仍 **v0.10.37**。注册超时未定因、飞书本人试点、广场同步关闭、原件在线/10MiB/无TURN与本机规划历史等边界保持。
