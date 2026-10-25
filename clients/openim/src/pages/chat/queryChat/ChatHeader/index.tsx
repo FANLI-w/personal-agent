@@ -7,7 +7,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import group_member from "@/assets/images/chatHeader/group_member.png";
 import launch_group from "@/assets/images/chatHeader/launch_group.png";
 import settings from "@/assets/images/chatHeader/settings.png";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { OverlayVisibleHandle } from "@/hooks/useOverlayVisible";
 import { useConversationStore, useUserStore } from "@/store";
 import { emit } from "@/utils/events";
@@ -129,6 +129,7 @@ const ChatHeader = () => {
         <div className="flex flex-1 items-center overflow-hidden">
           {
             <OIMAvatar
+              userID={currentConversation?.userID}
               src={currentConversation?.faceURL}
               text={currentConversation?.showName}
               isgroup={Boolean(currentConversation?.groupID)}

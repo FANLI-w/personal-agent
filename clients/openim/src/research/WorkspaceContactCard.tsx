@@ -1,7 +1,7 @@
 import { Alert, Button } from "antd";
 import type { Contact } from "@research-agent-platform/contracts";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import { useResearchStore } from "./store";
@@ -120,7 +120,7 @@ export function WorkspaceContactCard({
   return (
     <section className="workspace-namecard" aria-label="联系人名片">
       <header className="workspace-namecard-heading">
-        <OIMAvatar text={c.displayName} size={64} />
+        <OIMAvatar contact={c} text={c.displayName} size={64} />
         <div>
           <h2>{c.displayName}</h2>
           <span className={`workspace-kind ${human ? "human" : "agent"}`}>

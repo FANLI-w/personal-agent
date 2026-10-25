@@ -5,7 +5,7 @@ import { t } from "i18next";
 import { FC, memo, useEffect } from "react";
 import { Virtuoso } from "react-virtuoso";
 
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { useCurrentMemberRole } from "@/hooks/useCurrentMemberRole";
 import useGroupMembers from "@/hooks/useGroupMembers";
 import { useUserStore } from "@/store";
@@ -69,7 +69,7 @@ const MemberItem = memo(({ member }: IMemberItemProps) => {
         className="flex items-center overflow-hidden"
         onClick={() => window.userClick(member.userID, member.groupID)}
       >
-        <OIMAvatar src={member.faceURL} text={member.nickname} />
+        <OIMAvatar userID={member.userID} src={member.faceURL} text={member.nickname} />
         <div className="ml-3 flex items-center">
           <div className="max-w-[120px] truncate">{member.nickname}</div>
           {isOwner && (

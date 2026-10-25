@@ -5,7 +5,7 @@ import { memo, useEffect } from "react";
 
 import invite from "@/assets/images/chatSetting/invite.png";
 import kick from "@/assets/images/chatSetting/kick.png";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import useGroupMembers from "@/hooks/useGroupMembers";
 import { emit } from "@/utils/events";
 
@@ -63,7 +63,7 @@ const GroupMemberRow = ({
             className={styles["member-item"]}
             onClick={() => window.userClick(member.userID, member.groupID)}
           >
-            <OIMAvatar src={member.faceURL} text={member.nickname} size={36} />
+            <OIMAvatar userID={member.userID} src={member.faceURL} text={member.nickname} size={36} />
             <div className="mt-2 min-h-[16px] max-w-full truncate text-xs">
               {member.nickname}
             </div>

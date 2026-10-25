@@ -1,7 +1,7 @@
 import { Alert, Button, Input, Modal, Space, Tag } from "antd";
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { OverlayVisibleHandle, useOverlayVisible } from "@/hooks/useOverlayVisible";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { useUserStore } from "@/store";
 import { researchApi } from "./api";
 import { useResearchStore } from "./store";
@@ -126,7 +126,7 @@ export const ResearchUserCard = forwardRef<
       {contact && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <OIMAvatar text={contact.displayName} size={48} />
+            <OIMAvatar contact={contact} text={contact.displayName} size={48} />
             <div>
               <strong>{contact.displayName}</strong>
               <div>

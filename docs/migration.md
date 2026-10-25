@@ -121,3 +121,5 @@ paper-framework-figure-studio-pro 固定修订仅在 Git 外测试完整包往�
 2026-10-24科研同伴调整沿原personality档案和private_agent记忆/修订/撤回接口：明确本人指令才在本人的本地Agent私人会话保存相处偏好，不改变角色归属、公开档案、共享或工具权限。contract0.30/schema026与依赖锁保持，无迁移、旧数据重写或上游Distilly源码迁入；本机与后台状态分开记。来源与边界见development/research-colleague.md和NOTICE。
 
 2026-10-25角色重组：agents/roles成为默认角色单一来源，旧TypeScript默认档案保留为27份精确匹配JSON供复用/只读投影。用户自改档案、联系人ID和记忆不重写；继续使用既有四字段及导入接口，contract0.32/schema026和依赖锁不变。新增生成的浏览器/API目录及原文随包保留。参见[设计与来源](development/agent-role-skills.md)；API/worker与客户端需分别交付，不将代码合并当部署。
+
+同日私人助理头像采用YunYueSama/codex-deepseek-pet固定7661c8b的独立PNG，完整许可、素材边界及来源随客户端保留；不迁入桌宠代码、人设或用户数据。仅客户端按coordinator身份和本人IM映射显示，旧SDK头像不写回数据库，不按昵称替换真人或自建助手头像。无API、数据库、依赖锁或角色正文变化；[来源](../clients/openim/public/third-party/dafeiyu/ORIGIN.md)。

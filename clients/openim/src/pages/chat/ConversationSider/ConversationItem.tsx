@@ -9,7 +9,7 @@ import { t } from "i18next";
 import { memo, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { useConversationStore } from "@/store";
 import { MessageReceiveOption } from "@openim/wasm-client-sdk";
 import {
@@ -196,6 +196,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
           color={isMuted ? "rgba(0,0,0,0.25)" : undefined}
         >
           <OIMAvatar
+            userID={conversation.userID}
             src={conversation.faceURL}
             isgroup={Boolean(conversation.groupID)}
             text={conversation.showName}
