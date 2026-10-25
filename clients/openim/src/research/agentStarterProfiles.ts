@@ -1,3 +1,4 @@
+import type { researchApi } from "./api";
 import type { Contact, RequestFor } from "@research-agent-platform/contracts";
 
 export type AgentStarter = {
@@ -187,6 +188,8 @@ export const libraryAgentStarter = colleagueStarter(conversationalStarter(previo
 export const agentStarters: readonly AgentStarter[] = conversationalAgentStarters.map(
   (starter) => starter.id === libraryAgentStarter.id ? libraryAgentStarter : colleagueStarter(starter),
 );
+// Workbench planning and contact chat share this same editable colleague.
+export const planningAgentStarter = agentStarters.find(starter => starter.id === "research-planning")!;
 
 export function findOwnedStarter(
   contacts: readonly Contact[],
@@ -224,3 +227,33 @@ export function findOwnedStarter(
       ),
   );
 }
+
+export async function prepareColleagueAgent(options: {
+  api: typeof researchApi;
+  actorId: string;
+  starter: AgentStarter;
+  rememberedId?: string;
+  creationKey: string;
+  isCurrent: () => boolean;
+  create?: boolean;
+}) {
+  const { api, actorId, starter, isCurrent } = options;
+  if (!isCurrent()) return;
+  const owned = await api("chatContacts", { query: { view: "mine", scope: "local", limit: 100 } });
+  if (!isCurrent()) return;
+  let agent = findOwnedStarter(owned.data, starter, actorId, options.rememberedId);
+  if (options.rememberedId && agent?.id !== options.rememberedId)
+    throw new Error("这位助手的身份已变化，请在我的 Agent 核对，原对话仍保留。");
+  if (!agent && options.create === false) return;
+  if (!agent) agent = (await api("createPersonalAgent", { body: starter.profile, idempotencyKey: options.creationKey })).data;
+  if (!isCurrent()) return;
+  if (agent.identity.kind !== "personal_agent" || agent.identity.ownerMemberId !== actorId || agent.agentRuntime || agent.profile.role !== "specialist")
+    throw new Error("请使用你自己的站内助手，原对话与设置仍保留。");
+  const conversation = (await api("createDirectConversation", { body: { contactId: agent.id } })).data;
+  if (!isCurrent()) return;
+  const agentId = agent.id;
+  if (conversation.kind !== "direct" || conversation.ownerMemberId !== actorId || !conversation.members.some(m => m.contactId === agentId && m.status === "joined"))
+    throw new Error("助手与对话不一致，请重新读取。");
+  return { agent, conversationId: conversation.id };
+}
+export type ColleagueAgent = { agent: Contact; conversationId: string };

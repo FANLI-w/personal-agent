@@ -7,6 +7,7 @@ import {
   readPlannerHistory,
   planningPrompt,
   planReplyText,
+  plannerReplyMessage,
   plannerDeadline,
   needsDeadlineClarification,
   plannerPlanInput,
@@ -46,6 +47,20 @@ const makePlan = () => ({
     inputArtifactIds: [],
     budget: null,
   })),
+});
+
+test("a conversational reply with no plan is visible and keeps scientific text intact", () => {
+  const text='We can compare “what if?” with https://example.org/paper?view=abstract .\nThen inspect the evidence.';
+  const result={status:'ready',reply:{message:text,plan:null}};
+  assert.deepEqual(plannerReplyMessage(result),{text});
+  assert.equal(plannerReplyMessage({status:'failed',reply:{message:text,plan:null}}),undefined);
+  assert.equal(plannerReplyMessage({status:'ready',reply:null}),undefined);
+});
+
+test("draft messages use the actual answer, retain the plan version, and remain compatible with old replies", () => {
+  const plan=makePlan();
+  assert.deepEqual(plannerReplyMessage({status:'draft',reply:{message:'Synthetic research judgment.',plan}}),{text:'Synthetic research judgment.',plan:{id:plan.id,version:plan.version}});
+  assert.deepEqual(plannerReplyMessage({status:'draft',reply:{plan}}),{text:planReplyText(plan),plan:{id:plan.id,version:plan.version}});
 });
 test("a failed model reply explains the system failure and offers only a deliberate safe retry", () => {
   const result = { status: "failed", failure: "INVALID_MODEL_OUTPUT" };

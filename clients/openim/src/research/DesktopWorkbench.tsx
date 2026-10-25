@@ -141,6 +141,7 @@ export function DesktopWorkbench() {
       ? "team"
       : "tasks";
   const [planningLaunch, setPlanningLaunch] = useState(0);
+  const [planningExpanded, setPlanningExpanded] = useState(false);
   const [workbenchRevision, setWorkbenchRevision] = useState(0);
   const {
     id: requestedTask,
@@ -260,7 +261,11 @@ export function DesktopWorkbench() {
   };
   if (relocated) return <Navigate to={relocated} replace />;
   return (
-    <div className="social-workspace workspace-workbench">
+    <div
+      className={`social-workspace workspace-workbench ${
+        planningExpanded ? "is-planning-expanded" : ""
+      }`}
+    >
       <header className="workspace-heading">
         <div>
           <h1>工作台</h1>
@@ -527,8 +532,10 @@ export function DesktopWorkbench() {
       {!!actor && (
         <PlanningAgent
           available={supported && availability.supports(23)}
+          conversationAvailable={availability.supports(32)}
           full={tab === "planning" && params.get("panel") !== "scheduled"}
           focus={planningLaunch}
+          onExpandedChange={setPlanningExpanded}
           planId={tab === "planning" ? params.get("plan") || undefined : undefined}
           requestId={
             tab === "planning" ? params.get("planning") || undefined : undefined

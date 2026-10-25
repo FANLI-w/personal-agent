@@ -1,6 +1,28 @@
 # 新 AI 接手：当前项目状态
 
-更新日期：2026-10-24（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
+更新日期：2026-10-25（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
+
+## 本机0.10.44：规划正常回复与可选方案分开，配套后台已上线
+
+负责人反馈正常发言后只见失败提示，右上绿色按钮含义不清。从fetch后的main/c971d9c新建fix/planner-reply-return，普通merge PR103/2539030保留双方功能；产品 **0e78530f6a6a00354474d82ee1df3ec927c0e383**。新规划每轮显示实际answer，普通讨论允许plan=null且不改旧方案，确需步骤才返回草案并等待明确确认；旧请求、幂等形状与本机历史保持。右上改为浅绿细边框的“← 返回工作台”，不再只有绿色方块箭头。[设计与诊断](development/planning-conversation-replies.md)。
+
+完整根CI **781项/60文件**、2生产CLI/HTTP、B0/生产边界，客户端 **38项**与双类型、根Windows包/更新清单通过，失败/中止日志保持。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.44.exe**，**87,405,873字节**，SHA256 **8e620823ee852ebce19f93e7e0060942cd19a8fcf8fd419ff315382baa3ddfd5**；旧包保留，未代安装/浏览器产品/真实模型或私人资料体验。[完整交付](deployment/acceptcat-0.10.44.md)，Git外证据 **D:/deepseek-agent/.runtime/planner-reply-return-20261025**。
+
+**配套后台已按负责人本批授权上线。** 北京时间 **2026-10-25 12:39:24—12:39:44**完成排空、停写一致备份、独立恢复核对与API/worker配对切换；产品0e78530叠加已核验de6dce92基线，新镜像 **7d75165a49a586e8c45b0045b31df172481325a7604fe8fe6a6aaa3a281ebbfa**，contract **0.32.0**、schema026，无迁移。服务器 **82项/4文件**隔离检查、183源/方法基线、6叠加、175编译及32方法文件与运营seed核对通过；103表/7原件、21配置/密钥输入、模型/飞书私库/目录缓存、运行设置及其他6服务保持。两服务running/restart0，API healthy、公网ready200/0.32、受保护接口匿名401，广场同步仍关闭，Harness仍not_verified。未重放用户消息、调用真实模型或代做安装/体验验收。备份、同schema回退及原失败见[完整交付](deployment/acceptcat-0.10.44.md)。PR104/d8d0718四项GitHub检查已全success；后续纯文档运行另计。未合main或公开Release，重新读取Latest仍v0.10.37。桌面0.10.44原包保持。
+
+## 本机0.10.43：规划、资料与普通助手共用同事档案，配套后台已上线
+
+负责人要求所有助手都像同事并能在界面调整。fetch后的main仍c971d9c，另开feature/unified-colleague-agents后普通merge PR102/fbc462a保留展开布局；产品 **b16cbd610b16d6b07aeed2708579d19e2233b05f**。任务规划复用本人研究方案助手联系人，读取同一档案及获准私人偏好；普通聊天、规划和资料页共用“助手设置”，可修改角色与私人记忆，使用实际名称，用户自改档案保持。规划内明确交流指令复用原服务确定性保存并显示真实回执，不额外调用模型。[设计与边界](development/unified-agent-colleagues.md)。
+
+完整根CI **776项/60文件**及2生产CLI/HTTP、B0/生产边界通过；API定向40、客户端 **36项**与renderer/Electron双类型、Windows包/更新清单通过。首轮客户端类型收窄失败及运维包换行失败保留，修正后通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.43.exe**，**87,407,785字节**，SHA256 **47d9a9d2848ac0a1e6d0d210e4dcaf9eca20c8fc1b0d5765230c2ce6e3df7fd1**；旧包保留，未代安装、浏览器产品或真实模型体验验收。[完整交付](deployment/acceptcat-0.10.43.md)，证据 **D:/deepseek-agent/.runtime/unified-colleague-agents-20261024**。
+
+**配套后台已按负责人本批授权上线。** 北京时间 **2026-10-25 00:24:18—00:24:38**完成排空、停写一致备份、独立恢复核对与API/worker切换；产品b16cbd6叠加已校验生产367367ea基线，新镜像 **de6dce92354c90a7b29ba50f220cbd03d0f8cad8d1e01411cf4e42894d4e9c86**，contract **0.31.0**、schema026，无迁移。服务器 **77项/4文件**隔离检查通过，181基线/10叠加、175编译与32方法文件及运营种子摘要核对通过；103表/7原件、20配置/密钥输入、模型/飞书私库/目录缓存、运行设置和其他6服务保持。两服务running/restart0，API healthy、公网ready200、受保护接口匿名401，广场同步仍关闭；DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified。没有调用真实模型、重放用户请求或代做安装/体验验收。备份、运维包与同schema回退边界见[完整交付](deployment/acceptcat-0.10.43.md)。[PR103](https://github.com/luoyan96/personal-agent/pull/103)仍开放，受审head ef458eb四项GitHub检查已全success；源码未合main、0.10.43未公开，重新读取公开Latest仍v0.10.37。桌面原包不变。
+
+## 本机0.10.42：规划聊天自动铺满工作台，绿色按钮收起
+
+负责人反馈底部聊天面板过小、回答难以阅读。从fetch后的main/c971d9c另开fix/planning-chat-expand，产品 **e87ebe2deb78fa10906a3d5fb6312b0a9ef01b64**。发送消息、手动展开或打开本机对话后，底部规划面板改为占满工作台内容区，暂时隐藏任务总览和栏目；绿色白箭头按钮可收起并恢复原任务页。等待回复时手动收起不会被请求回执重新撑开，查看已创建任务时也会退出展开；原研究计划页和历史入口保持。[交付记录](deployment/acceptcat-0.10.42.md)。
+
+客户端类型检查、现有 **28项**规划/依赖检查、根desktop:win冻结准备/NSIS/成品入口及更新清单检查通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.42.exe**，**87,409,277字节**，SHA256 **077070b5152a6d472f6482841cdf77e017509450c2d4c3fa742e4410109c47cf**，复制摘要一致，旧包保留。仅客户端布局/交互及版本变化，无API/数据库/依赖锁变化；没有重复共享根CI或代安装/启动、浏览器界面与真实模型体验验收，实际效果由负责人查看。证据 **D:/deepseek-agent/.runtime/planning-chat-expand-20261024**。尚未合入main或公开Release，Latest读取仍v0.10.37；后台沿已部署5293eba/367367ea、contract0.30/schema026，没有本批部署。
 
 ## PR100已按负责人指令合入main，PR99随之合并
 

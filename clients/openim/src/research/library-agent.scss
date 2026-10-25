@@ -43,7 +43,12 @@
   strong {
     font-size: 14px;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+  > div { min-width: 0; }
+  nav { flex-shrink: 0; }
   > div > .anticon {
     color: #5b9ecb;
     font-size: 18px;

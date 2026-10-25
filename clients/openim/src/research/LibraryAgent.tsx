@@ -35,6 +35,8 @@ import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { ResearchReadSummary } from "./ResearchReadSummary";
 import { ResearchTurnStatus } from "./ResearchTurnStatus";
 import "./library-agent.scss";
+import { AgentColleagueSettings } from "./AgentColleagueSettings";
+import { prepareColleagueAgent } from "./agentStarterProfiles";
 
 const inProgress = (turn?: AgentTurn) =>
   !!turn && ["queued", "running"].includes(turn.status);
@@ -137,6 +139,7 @@ function LibraryChat({
   const [libraryReceipt,setLibraryReceipt]=useState("");
   const input = useRef<TextAreaRef>(null);
   const handledFocus = useRef(0);
+  const creationKey = useRef(crypto.randomUUID());
   useEffect(() => {
     if (focusRequest && handledFocus.current !== focusRequest) {
       setExpanded(true);
@@ -478,7 +481,7 @@ function LibraryChat({
       <header className="library-agent-heading">
         <div>
           <ReadOutlined />
-          <strong>资料 Agent</strong>
+          <strong>{agent?.displayName || libraryAgentStarter.profile.displayName}</strong>
           <span>
             {readingFeishu
               ? "正在读取飞书资料…"
@@ -488,6 +491,23 @@ function LibraryChat({
           </span>
         </div>
         <nav>
+          <AgentColleagueSettings
+            contactId={agent?.id}
+            disabled={busy}
+            prepare={async isCurrent => {
+              const mate = await prepareColleagueAgent({ api: researchApi, actorId, starter: libraryAgentStarter, rememberedId: remembered.current, creationKey: creationKey.current, isCurrent });
+              if (!mate || !isCurrent()) return;
+              remembered.current = mate.agent.id;
+              remember(libraryAgentStarter.id, mate.agent.id);
+              setAgent(mate.agent); setConversationId(mate.conversationId);
+              return mate.agent;
+            }}
+            onChanged={() => {
+              if (!agent) return;
+              const operation = capture();
+              void researchApi("chatContact", { params: { id: agent.id }, signal: operation.signal }).then(response => { if (operation.isCurrent()) setAgent(response.data); }).catch(() => {}).finally(operation.dispose);
+            }}
+          />
           <Popover
             trigger="click"
             placement="topRight"
@@ -568,7 +588,7 @@ function LibraryChat({
           )}
           {history.data?.messages.map((m) => (
             <article className={`library-chat-message role-${m.origin}`} key={m.id}>
-              <span>{m.origin === "human" ? "我" : "资料 Agent"}</span>
+              <span>{m.origin === "human" ? "我" : agent?.displayName || "资料 Agent"}</span>
               {m.text && <SafeMessageMarkdown text={m.text} />}
               {m.files?.map((file) => (
                 <small key={file.messageId}>
