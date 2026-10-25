@@ -675,7 +675,7 @@ function PlanningAgentSession({
           <strong>
             {colleague?.agent.displayName || planningAgentStarter.profile.displayName}
           </strong>
-          <span>{inProgress ? "正在回复…" : "说说要做的事，一起把任务安排好"}</span>
+          {inProgress && <span role="status">正在回复…</span>}
         </div>
         <nav>
           <AgentColleagueSettings
@@ -1108,12 +1108,6 @@ function PlanningAgentSession({
           }}
         />
         <div>
-          <Popover content="使用您的个人默认模型。对话记录保存在本机；方案与任务保存在当前服务。未确认前不会给成员发出任务邀请。">
-            <span>Enter 发送 · Shift+Enter 换行</span>
-          </Popover>
-          <Button type="text" onClick={() => navigate("/me?view=models")}>
-            模型设置
-          </Button>
           <Button
             type="primary"
             shape="circle"

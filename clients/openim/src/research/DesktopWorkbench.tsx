@@ -269,7 +269,6 @@ export function DesktopWorkbench() {
       <header className="workspace-heading">
         <div>
           <h1>工作台</h1>
-          <p>对齐目标、成员分工和实际科研成果</p>
         </div>
         <div className="workspace-heading-actions">
           {tab === "tasks" && (
