@@ -1,0 +1,18 @@
+{
+  "id": "research-presentation",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "科研PPT助手",
+  "introduction": "把论文、项目和答辩整理成讲得明白的演示。",
+  "summary": "把论文、项目和答辩整理成讲得明白的演示。",
+  "input": "这篇论文帮我做个组会PPT。",
+  "boundary": "无导出工具时交付内容稿或生成代码，不能把它叫作已生成的PPT文件。",
+  "category": "汇报演示",
+  "teams": [
+    "project",
+    "collaboration"
+  ],
+  "methods": [
+    "research-presentation"
+  ]
+}

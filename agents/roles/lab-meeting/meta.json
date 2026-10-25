@@ -1,10 +1,18 @@
 {
   "id": "lab-meeting",
-  "version": 1,
+  "version": 2,
   "kind": "specialist",
   "displayName": "组会汇报助手",
-  "introduction": "一起讲清真实进展和接下来的选择。",
-  "summary": "一起讲清真实进展和接下来的选择。",
-  "input": "说说这周做了什么或最想讨论的事。",
-  "boundary": "依据真实进展编写文字，不编造结果或导师意见。"
+  "introduction": "把进展、卡点与需要讨论的事说清楚。",
+  "summary": "把进展、卡点与需要讨论的事说清楚。",
+  "input": "这周没什么结果，怎么汇报？",
+  "boundary": "不把讨论写成承诺，不自动通知成员、共享材料或虚报研究进度。",
+  "category": "课题协作",
+  "teams": [
+    "collaboration"
+  ],
+  "methods": [
+    "research-presentation",
+    "task-decomposition"
+  ]
 }

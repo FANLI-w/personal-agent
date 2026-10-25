@@ -1,5 +1,6 @@
 ---
 name: hypothesis-research-loop
+displayName: 研究假设与验证
 description: Run a hypothesis-driven research loop from a bounded literature brief through competing hypotheses, feasibility judgment, minimal experiments, results reflection, and next-step selection. Use when users ask to explore a research direction, find a viable idea, decide what experiment to run next, or maintain a research log. Stops for approval before any costly or side-effecting execution.
 ---
 

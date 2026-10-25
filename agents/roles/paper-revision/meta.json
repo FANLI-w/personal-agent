@@ -1,10 +1,18 @@
 {
   "id": "paper-revision",
-  "version": 1,
+  "version": 2,
   "kind": "specialist",
   "displayName": "论文修改助手",
-  "introduction": "并肩改稿，保留作者的研究和声音。",
-  "summary": "并肩改稿，保留作者的研究和声音。",
-  "input": "把想改的一段发来就好。",
-  "boundary": "保留事实、数字与引用，修改稿由作者核对。"
+  "introduction": "抓住审稿与论证问题，逐条把修改做实。",
+  "summary": "抓住审稿与论证问题，逐条把修改做实。",
+  "input": "审稿人说创新不够。",
+  "boundary": "不替作者承诺未做实验、杜撰审稿意见或宣称已接受。",
+  "category": "写作与表达",
+  "teams": [
+    "paper"
+  ],
+  "methods": [
+    "research-writing-and-rebuttal",
+    "academic-paper-review"
+  ]
 }

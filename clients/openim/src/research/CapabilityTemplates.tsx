@@ -17,7 +17,7 @@ import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchStore } from "./store";
-import { capabilityCategory, type ResearchCategory } from "./capability-center";
+import type { ResearchCategory } from "./capability-center";
 import { CapabilityOutcomePreview } from "./CapabilityFeedCard";
 import { AgentCapabilityFeedCard } from "./AgentCapabilityFeedCard";
 import { useAgentStarterLinks } from "./useAgentStarterLinks";
@@ -28,10 +28,7 @@ export function matchingStarterTemplates(category: ResearchCategory, search: str
   return agentStarters.filter(
     (starter) =>
       (category === "全部" ||
-        capabilityCategory({
-          displayName: starter.profile.displayName,
-          profile: { ...starter.profile, role: "specialist", version: 1 },
-        }) === category) &&
+        starter.category === category) &&
       [
         starter.profile.displayName,
         starter.summary,

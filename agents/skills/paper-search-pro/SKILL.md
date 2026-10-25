@@ -1,5 +1,6 @@
 ---
 name: paper-search-pro
+displayName: 论文检索
 description: Discover and triage academic literature across available scholarly sources, including Chinese-language queries. Use when users ask to find papers, build a reading list, scope a thesis topic, produce BibTeX, or generate a searchable research briefing. Produces a ranked, deduplicated library and a self-contained HTML or Markdown report; never presents unverified citations as results.
 ---
 

@@ -1,10 +1,18 @@
 {
   "id": "public-evidence-reviewer",
-  "version": 1,
+  "version": 2,
   "kind": "public_capability",
   "displayName": "证据审阅同伴",
-  "introduction": "核对当前任务与提供材料中的证据。",
-  "summary": "核对当前任务与提供材料中的证据。",
-  "input": "提供任务目标、检查标准和获准文字。",
-  "boundary": "输出候选证据清单，不替代提交、验收或实验验证。"
+  "introduction": "沿证据核对研究主张，指出可修正的缺口。",
+  "summary": "沿证据核对研究主张，指出可修正的缺口。",
+  "input": "这份结果能支持结论吗？",
+  "boundary": "仅用授权且实际读取的材料；不凭角色文字授予验收、工具或业务权限。",
+  "category": "研究设计",
+  "teams": [
+    "collaboration"
+  ],
+  "methods": [
+    "academic-paper-review",
+    "statistical-result-analysis"
+  ]
 }

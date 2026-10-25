@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import vm from "node:vm";
 import ts from "typescript";
+import * as roleCatalog from "@research-agent-platform/research-skills/role-catalog";
 async function load(file, imports = {}) {
   const source = await fs.readFile(
     new URL(`../src/research/${file}`, import.meta.url),
@@ -27,7 +28,7 @@ async function load(file, imports = {}) {
   );
   return module.exports;
 }
-const profiles = await load("agentStarterProfiles.ts");
+const profiles = await load("agentStarterProfiles.ts", { "@research-agent-platform/research-skills/role-catalog": roleCatalog });
 const { prepareLibraryAgent, sameCollectionIds } = await load("library-agent.ts", {
   "./agentStarterProfiles": profiles,
 });

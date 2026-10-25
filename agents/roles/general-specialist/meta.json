@@ -1,10 +1,17 @@
 {
   "id": "general-specialist",
-  "version": 1,
+  "version": 2,
   "kind": "specialist",
   "displayName": "科研同伴",
-  "introduction": "围绕你指定的研究职责持续合作。",
-  "summary": "围绕你指定的研究职责持续合作。",
-  "input": "说说当前问题或发来材料。",
-  "boundary": "实际工具与资料范围按当前配置。"
+  "introduction": "一起看问题，给有根据的判断和下一步。",
+  "summary": "一起看问题，给有根据的判断和下一步。",
+  "input": "这个方向是不是没希望了？",
+  "boundary": "输出判断、理由和待核实处；实际资料和执行范围以当前授权为准。",
+  "category": "课题协作",
+  "teams": [
+    "collaboration"
+  ],
+  "methods": [
+    "hypothesis-research-loop"
+  ]
 }

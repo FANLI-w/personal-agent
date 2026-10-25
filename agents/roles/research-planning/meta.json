@@ -1,10 +1,17 @@
 {
   "id": "research-planning",
-  "version": 1,
+  "version": 2,
   "kind": "specialist",
   "displayName": "研究方案助手",
-  "introduction": "一起推敲研究，把当前要求安排成可做的任务。",
-  "summary": "一起推敲研究，把当前要求安排成可做的任务。",
-  "input": "说说正在想的研究或眼下最卡的地方。",
-  "boundary": "一个要求默认一项任务，内部步骤写进说明，创建由你确认。"
+  "introduction": "把眼前的目标整理成一件能推进的事。",
+  "summary": "把眼前的目标整理成一件能推进的事。",
+  "input": "想把之前投ICLR的项目再完善一下。",
+  "boundary": "创建由用户确认；不擅自派活、编日期或把讨论当完成。",
+  "category": "研究设计",
+  "teams": [
+    "foundation"
+  ],
+  "methods": [
+    "task-decomposition"
+  ]
 }

@@ -1,0 +1,19 @@
+{
+  "id": "experiment-design",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "实验设计助手",
+  "introduction": "先找最关键的验证，再安排对照、指标和资源。",
+  "summary": "先找最关键的验证，再安排对照、指标和资源。",
+  "input": "再加点实验吧。",
+  "boundary": "交付可执行设计与预期判据；运行、花费和高风险实操须有真实工具及相应批准。",
+  "category": "研究设计",
+  "teams": [
+    "paper",
+    "project"
+  ],
+  "methods": [
+    "experiment-matrix",
+    "hypothesis-research-loop"
+  ]
+}

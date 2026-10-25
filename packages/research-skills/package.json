@@ -6,7 +6,8 @@
   "exports": {
     ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }, "./import": { "types": "./dist/import.d.ts", "import": "./dist/import.js", "require": "./dist/import.cjs" },
     "./roles": { "types": "./dist/roles.d.ts", "import": "./dist/roles.js" },
-    "./role-catalog": { "types": "./dist/role-catalog.d.ts", "import": "./dist/role-catalog.js" }
+    "./role-catalog": { "types": "./dist/role-catalog.d.ts", "import": "./dist/role-catalog.js" },
+    "./builtin-methods": { "types": "./dist/builtin-methods.d.ts", "import": "./dist/builtin-methods.js" }
   },
   "files": ["dist", "README.md"],
   "scripts": {

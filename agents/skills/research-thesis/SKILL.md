@@ -1,5 +1,6 @@
 ---
 name: research-thesis
+displayName: 长篇论文与学位论文
 description: Turn an early ML/AI research idea into a one-page, falsifiable research thesis and an explicit go/no-go decision. Use when a user has a tentative research direction, wants to choose among ideas, start an ICLR-style project, or needs to state the problem, contribution, strongest related work, and success criteria before spending substantial compute. Do not use to invent novelty, results, or a research claim without evidence.
 ---
 

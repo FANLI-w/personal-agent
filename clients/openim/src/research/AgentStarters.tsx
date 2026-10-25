@@ -1,4 +1,5 @@
-import { Alert, Button, Modal } from "antd";
+import { Alert, Button, Modal, Segmented } from "antd";
+import { roleTeams } from "@research-agent-platform/research-skills/roles";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -35,6 +36,7 @@ export function AgentStarters({
     "agent-starters",
   );
   const [selected, setSelected] = useState<AgentStarter>();
+  const [team, setTeam] = useState("all");
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
   const [savedId, setSavedId] = useState<string>();
@@ -114,12 +116,12 @@ export function AgentStarters({
       className="rounded-xl border border-slate-200 bg-slate-50/60 p-4"
     >
       <h3 className="mb-1 text-sm font-semibold">添加 Agent</h3>
-      <p className="mb-4 text-xs leading-5 text-slate-600">
-        选择一个助手，添加为你自己的联系人。使用你的模型设置，资料与记忆可继续编辑。
-      </p>
+      <Segmented className="my-3 max-w-full overflow-auto" aria-label="助手分工" value={team} disabled={busy}
+        options={[{ value: "all", label: "全部" }, ...roleTeams.map(item => ({ value: item.id, label: item.label }))]}
+        onChange={value => { setTeam(String(value)); setSelected(undefined); }} />
       {error && <Alert className="mb-3" type="warning" message={error} />}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        {agentStarters.map((starter) => {
+        {agentStarters.filter(starter => team === "all" || starter.teams.some(id => id === team)).map((starter) => {
           const existing = findOwnedStarter(
             data?.data || [],
             starter,
@@ -132,17 +134,8 @@ export function AgentStarters({
               className="flex min-w-0 flex-col rounded-lg border border-slate-200 bg-white p-4"
               aria-label={starter.profile.displayName}
             >
-              <span className="mb-2 text-xs font-medium text-[#0089ff]">AI Agent</span>
-              <h4 className="text-sm font-semibold">{starter.profile.displayName}</h4>
+              <h4 className="text-base font-semibold">{starter.profile.displayName}</h4>
               <p className="mt-2 text-sm leading-6 text-slate-700">{starter.summary}</p>
-              <p className="mt-3 text-xs leading-5 text-slate-600">
-                <strong>可以这样开始：</strong>
-                {starter.input}
-              </p>
-              <p className="mb-4 mt-2 text-xs leading-5 text-slate-600">
-                <strong>使用说明：</strong>
-                {starter.boundary}
-              </p>
               <Button
                 className="mt-auto self-start"
                 type={existing ? "default" : "primary"}

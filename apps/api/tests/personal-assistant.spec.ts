@@ -56,7 +56,7 @@ export async function setup(models=true){
 }
 
 describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',{timeout:30000},()=>{
- it('loads the canonical colleague documents for the coordinator and all seven research specialists in actual bounded model input',async()=>{
+ it('loads the canonical colleague documents for the coordinator and every research, project and IP specialist in actual bounded model input',async()=>{
   const s=await setup(),own=await s.own()
   const personal=agentRoles.find(role=>role.id===roleDefaults.coordinator)!
   const first=await s.send(own.conversation.id,'你好，一起看看今天的研究')

@@ -58,6 +58,7 @@ export function verifyWorkspaceOutputs(client) {
   }
   nonempty(path.join(workspace, 'packages/research-skills/dist/import.cjs'));
   nonempty(path.join(workspace, 'packages/research-skills/dist/role-catalog.js'));
+  nonempty(path.join(workspace, 'packages/research-skills/dist/builtin-methods.js'));
   const roleSource = path.join(workspace, 'agents/roles');
   function verifyRoles(directory) {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {

@@ -1,0 +1,18 @@
+{
+  "id": "research-topic",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "研究选题助手",
+  "introduction": "把宽泛兴趣收敛成值得验证、做得动的研究问题。",
+  "summary": "把宽泛兴趣收敛成值得验证、做得动的研究问题。",
+  "input": "想做大模型，但不知道做什么。",
+  "boundary": "交付推荐切口及验证理由；未检索不能断言首创，未实验不能宣布有效。",
+  "category": "研究设计",
+  "teams": [
+    "paper"
+  ],
+  "methods": [
+    "research-topic-selection",
+    "novelty-red-team"
+  ]
+}

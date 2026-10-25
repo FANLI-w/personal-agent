@@ -37,6 +37,7 @@ function fixture(t) {
   put('packages/research-skills/dist/import.js','export const importer=1');
   put('packages/research-skills/dist/import.cjs','module.exports={importer:1}');
   put('packages/research-skills/dist/role-catalog.js','export const agentRoles=[]');
+  put('packages/research-skills/dist/builtin-methods.js','export const builtinMethods=[]');
   put('agents/roles/sample/persona.md','Synthetic colleague');
   put('packages/research-skills/dist/roles/sample/persona.md','Synthetic colleague');
   put('agents/skills/sample/SKILL.md','Synthetic build fixture');
@@ -72,6 +73,9 @@ test('blocks stale role Markdown and missing generated catalog before desktop bu
   f.put('agents/roles/sample/persona.md','Changed colleague');
   assert.throws(()=>verifyWorkspaceOutputs(f.client),/Stale built role/);
   f.put('packages/research-skills/dist/roles/sample/persona.md','Changed colleague');
+  rmSync(path.join(f.workspace,'packages/research-skills/dist/builtin-methods.js'));
+  assert.throws(()=>verifyWorkspaceOutputs(f.client),/builtin-methods/);
+  f.put('packages/research-skills/dist/builtin-methods.js','export const builtinMethods=[]');
   rmSync(path.join(f.workspace,'packages/research-skills/dist/role-catalog.js'));
   assert.throws(()=>verifyWorkspaceOutputs(f.client),/role-catalog/);
 });

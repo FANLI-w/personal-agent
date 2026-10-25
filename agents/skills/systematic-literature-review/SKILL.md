@@ -1,5 +1,6 @@
 ---
 name: systematic-literature-review
+displayName: 系统文献综述
 description: Create a reproducible systematic or scoping literature review with screening records, per-paper evidence extraction, thematic synthesis, and formatted references. Use for requests such as systematic review, SLR, PRISMA-style review, annotated bibliography, or cross-paper method comparison. Do not use for reviewing a single paper; route that task to academic-paper-review.
 ---
 

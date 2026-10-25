@@ -1,5 +1,11 @@
 /** Browser-safe role documents. These are conversational configuration, never authority. */
 export type AgentRoleKind = 'coordinator' | 'specialist' | 'public_capability'
+export const roleCategories = ['文献与阅读', '写作与表达', '研究设计', '图表与可视化', '数据与代码', '课题协作', '项目申报', '汇报演示', '知识产权'] as const
+export const roleTeams = [
+  { id: 'foundation', label: '基础助手' }, { id: 'paper', label: '论文研究' },
+  { id: 'project', label: '项目申报' }, { id: 'ip', label: '知识产权' },
+  { id: 'collaboration', label: '团队协作' },
+] as const
 export interface AgentRoleProfile {
   displayName: string
   introduction: string
@@ -13,6 +19,9 @@ export interface AgentRoleDefinition {
   summary: string
   input: string
   boundary: string
+  category: typeof roleCategories[number]
+  teams: readonly (typeof roleTeams[number]['id'])[]
+  methods: readonly string[]
   profile: AgentRoleProfile
   skill: string
 }

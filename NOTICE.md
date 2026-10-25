@@ -67,6 +67,8 @@ B3 的受限运行组合依赖官方 DeepSeek Harness `@deepseek-ai/dsh-llm` / `
 
 ## 2026-10-25 角色文件组织
 
+2026-10-26科研同伴团队扩展按负责人要求选读Distilly、Agency Agents、K-Dense科学技能、Anthropic PPTX与中国专利交底项目，固定来源和设计取舍见[设计记录](docs/development/research-colleague-team.md)。本批角色、中文方法和示例独立编写，只参考一般组织与工作流思想；未复制上游模板/代码、人物数据或资源，没有安装/执行第三方仓库、引入其工具或收费服务。上游各自许可不因参考而转授给本项目；既有来源许可与大肥鱼署名保持。
+
 按负责人要求采用 Persona + Work + Skill 组织默认与自建角色，参考Distilly固定0afc45c29c360ba7bc8260f1bb0bf34e9155f4fa的组织思路。agents/roles中文内容、编译器、历史档案投影与导入/导出由本项目独立编写，未复制上游正文、代码、人物资料或执行其生成/采集器。来源和范围见[角色设计](docs/development/agent-role-skills.md)，已有来源许可保持。
 
 ## 2026-10-25 私人助理头像

@@ -14,6 +14,8 @@ import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { SkillMaterials, localSkillLocator } from "./SkillMaterials";
 import type { SkillBundleManifest } from "@research-agent-platform/research-skills/import";
 import "./skills.scss";
+import { BuiltinMethodPicker } from "./BuiltinMethodPicker";
+import { contactRoleProfile } from "./agent-role-documents";
 import {
   communitySourceUrl,
   type CommunityResearchEntry,
@@ -230,18 +232,30 @@ export function SkillLibrary({
           <h2>技能库</h2>
           <p>安装和维护助手使用的方法，安装后默认仅自己可用。</p>
         </div>
-        <Button
-          type="primary"
-          disabled={!native || busy}
-          onClick={() => {
-            setInstalling(true);
-            setUpdating(undefined);
-            setDraft(undefined);
-            setChoices([]);
-          }}
-        >
-          安装技能
-        </Button>
+        <div className="skill-actions">
+          <BuiltinMethodPicker
+            key={`${state.generation}:${targetAgent?.id || "all"}`}
+            disabled={busy}
+            profile={targetAgent ? contactRoleProfile(targetAgent) : undefined}
+            onChoose={value => {
+              setFailure("");
+              setDraft(value); setReceipt(undefined); setUpdating(undefined);
+              setCatalog(undefined); setChoices([]); setInstalling(true);
+            }}
+          />
+          <Button
+            type="primary"
+            disabled={!native || busy}
+            onClick={() => {
+              setInstalling(true);
+              setUpdating(undefined);
+              setDraft(undefined);
+              setChoices([]);
+            }}
+          >
+            安装技能
+          </Button>
+        </div>
       </header>
       {!native && (
         <Alert

@@ -1,9 +1,11 @@
 import type { researchApi } from "./api";
 import type { Contact, RequestFor } from "@research-agent-platform/contracts";
 import { agentRoles, legacyRoleProfiles as legacyProfiles } from "@research-agent-platform/research-skills/role-catalog";
+import type { AgentRoleDefinition } from "@research-agent-platform/research-skills/roles";
 
 export type AgentStarter = {
   id: string; summary: string; input: string; boundary: string;
+  category: AgentRoleDefinition["category"]; teams: AgentRoleDefinition["teams"]; methods: readonly string[];
   profile: RequestFor<"createPersonalAgent">["body"];
 };
 // Defaults come exclusively from canonical role Markdown. Historical profiles

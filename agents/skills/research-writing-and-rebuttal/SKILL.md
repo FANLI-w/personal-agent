@@ -1,5 +1,6 @@
 ---
 name: research-writing-and-rebuttal
+displayName: 论文写作与审稿回复
 description: Draft, revise, polish, or respond to reviews for Chinese- or English-language academic manuscripts, including Markdown and LaTeX. Use for paper sections, abstracts, related work, methods/results/discussion, reviewer rebuttals, revision plans, or submission-readiness checks. Preserve formulas, terminology, citations, and measured results; never invent evidence, references, ethics approvals, author roles, or journal requirements.
 ---
 

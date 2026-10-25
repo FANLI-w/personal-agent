@@ -1,5 +1,6 @@
 ---
 name: academic-paper-review
+displayName: 论文证据审阅
 description: Produce an evidence-grounded peer review or deep critical reading of one academic paper, PDF, preprint, or manuscript. Use for requests to review, critique, assess, summarize, prepare conference feedback, or identify revision priorities for a specific paper. Returns venue-aware strengths, weaknesses, numerical checks, reproducibility assessment, and actionable recommendations without inventing missing sections or results.
 ---
 
