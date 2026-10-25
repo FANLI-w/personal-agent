@@ -41,3 +41,5 @@ Community research planning review (2026-10-16): `scientific-problem-selection` 
 - Does degraded output retain uncertainty and coverage limitations?
 
 Unified research colleagues (2026-10-25): see `evaluations/fixtures/unified-agent-colleagues.md`. Real HTTP/SQLite plus synthetic model checks cover owned profile/private-memory identity, restart, foreign-conversation rejection, profile/preference fencing and retained usage. Client checks cover edited-profile reuse and old idempotency shape. Natural conversation quality and installation remain maintainer checks; eight language scenarios are requirements, not live-model passes.
+
+Planning conversation replies (2026-10-25): see `evaluations/fixtures/planning-conversation-replies.md`. Separate the actual answer from optional draft changes. Isolated checks cover no-plan replies, unchanged existing plans, restart, old persisted reply shape, explicit confirmation actions, transactional rollback and colleague fencing; language quality and the return button remain maintainer experience checks.
