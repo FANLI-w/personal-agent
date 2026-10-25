@@ -232,6 +232,7 @@ export class ExecutionWorker {
           }else{p.status='ready';p.reply=service.facts(answer.intent,request.taskIds)}
           // Project the new message field at read time. Keep the persisted reply
           // compatible with the previous same-schema API during an image rollback.
+          outputStage='persistence'
           if(conversation)this.db.prepare("UPDATE execution_jobs SET request_json=json_set(request_json,'$.conversationAnswer',?) WHERE id=?").run(conversation.answer,p.id)
           p.usage=usage;service.save(p.id,p)
         }
