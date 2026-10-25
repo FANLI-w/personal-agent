@@ -1844,3 +1844,12 @@ renderer类型、内容/链接、冻结顺序Windows Web/4SDK/55运行包/NSIS/4
 本批仅客户端与Windows CI，无API、契约、数据库、角色或锁变化，无需为本批部署；前批角色API/worker仍待单独升级。线上0e78530/7d75165a、contract0.32/schema026及公开Latest v0.10.37/422478602保持，未合main、公开或部署。前批PR107/fe79016四项GitHub检查重新读取均success，新PR另记。[交付](deployment/acceptcat-0.10.48.md)，证据D:/deepseek-agent/.runtime/chat-return-notifications-20261025。
 
 [PR108](https://github.com/luoyan96/personal-agent/pull/108)已创建并挂接，main为目标，OPEN/MERGEABLE；首次head38e234a四项GitHub检查in_progress，尚未确认通过，回执github-created.json保留。未自行合并、发布或部署。
+
+
+## 2026-10-25：大肥鱼应用图标 / 本机0.10.49
+
+从fetch后的main/fb2150b另开feat/dafeiyu-app-icon，普通快进保留PR108/a670787及PR107/106/105；产品5b441ffcf5394c095a26ee0ad195359188e5981d。固定来源PNG与16/32/48/256px ICO原样用于应用/安装器/卸载器/快捷方式、窗口/任务栏/托盘及标题栏/登录/关于/启动页，README同步；非Windows托盘只在显示时适配20px，完整自定义许可/署名与历史猫图标记录保留。AcceptCat名称、appId、数据目录、账号、更新源不变。
+
+双类型、内容/链接及Windows冻结顺序Web/4SDK/55运行包/NSIS/4入口/更新清单通过；实际程序/安装EXE四档位图与原ICO逐字节一致，ASAR六份公共图标、renderer图标及3份署名核对通过。图标只读探针初次NUL转义错误保留，修正后通过、包未变。桌面C:/Users/luo/Desktop/AcceptCat_0.10.49.exe，88154141字节，SHA256 5565fe5a58d66673b0426ddcc3c392e42416dbc5cc683282c90d64a25b0596d4，复制摘要一致，旧包保留。未代安装/卸载/原生启动/系统缓存或实际快捷方式任务栏体验，未打Mac/Linux包，未新增镜像测试或重复完整根CI。
+
+前批PR108/a670787三项GitHub检查success，Windows Foundation原长对话用例30000ms超时（786通过/1失败）；保留原日志，本机原条件该文件7项通过，未改测试或时限，已发起该job重跑，attempt2首次读取in_progress，结果未确认。新PR结果另计。仅客户端图标与显示配置，无API/数据库/角色/锁变化、无需为本批升级后台；前批角色后台仍待单独安排。线上0e78530/7d75165a、contract0.32/schema026、Latest v0.10.37保持，未合main/公开/部署。[交付](deployment/acceptcat-0.10.49.md)，证据D:/deepseek-agent/.runtime/dafeiyu-app-icon-20261025。
