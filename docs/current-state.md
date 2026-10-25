@@ -2,6 +2,14 @@
 
 更新日期：2026-10-25（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 本机0.10.45：一个要求默认一项任务，步骤放进任务说明
+
+负责人反馈一个科研要求被拆成七项独立任务。从fetch后的main/fb2150b另开fix/planner-single-task，产品 **a600ec06e5a01b6755c7511cdda7b81ed26dea18**。任务框默认将目标整理为一项待确认任务，材料、日期可后续补；一项/多项由明确用户要求或界面选择决定。模型仍多拆时，单项预览和实际创建使用同一份完整合并草案：内部步骤、交付、验收及依赖次序保留，先按版本editPlan存一项，再confirmPlan只创建一项，丢回执只核对原操作。不同分工/执行授权、日程冲突、坏依赖或容量超限不静默丢内容。已确认旧任务不自动合并/删除，旧未完成多项创建须重新核对。[规则位置与设计](development/planner-single-task.md)。
+
+完整根CI **781项/60文件**、2生产CLI/HTTP及B0/生产边界，客户端 **52项**（含2项真实本机HTTP/SQLite合成账号）与renderer/Electron双类型、冻结顺序Windows打包/4SDK/55运行包/NSIS/4成品入口及更新清单通过。首轮renderer预览变量收窄失败修正后通过，失败日志保留；测试清理路径增加守卫后只复核2项HTTP用例通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.45.exe**，**87,408,189字节**，SHA256 **a33243130a749450a4b7d4c15ed65701a92efd18c6edcfcbb3fa3cf4b459ecd8**，复制摘要一致，旧包保留，未代安装、浏览器产品或真实模型/材料与双机体验。[完整交付](deployment/acceptcat-0.10.45.md)，证据 **D:/deepseek-agent/.runtime/planner-single-task-20261025**。
+
+**无需本次后台升级。** 仅客户端及打包方法变化，沿用现有planRequest/getPlan/editPlan/confirmPlan/planTasks，API/contract0.32/schema026、依赖锁和后台源码未改，无迁移、没有新线上探测或部署。现网沿已部署0e78530/7d75165a及广场同步关闭记录；服务器canonical方法和已安装私人Skill不自动替换。人设/私人记忆保持可编辑，但不能越过单项创建规则。源码尚未合main、0.10.45未公开，重新读取公开Latest仍 **v0.10.37**。
+
 ## PR104已按负责人指令合入main，PR103/PR102随之合并
 
 北京时间 **2026-10-25 16:55:51**，[PR104](https://github.com/luoyan96/personal-agent/pull/104)以merge commit **2736ffcfabcf10c45e1118f4443afe5c29bc606b**合入main，固定受审head **bc29c548a4da84e6a3b5bbeef1d3f59abf56173e**；[PR103](https://github.com/luoyan96/personal-agent/pull/103)与[PR102](https://github.com/luoyan96/personal-agent/pull/102)于16:55:53自动标记MERGED。合并树与受审head完全一致，原main/c971d9c、PR103/2539030、PR102/fbc462a、规划回复产品0e78530及同事PR92/构建PR93等均保持祖先关系，双方作者与历史保留。
