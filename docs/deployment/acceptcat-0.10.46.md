@@ -23,3 +23,5 @@
 新客户端沿现有0.32接口可查看/编辑角色，但旧后台不会自动采用新的默认投影与共同规则，不能将前端展示当成线上模型已经换人设。外部服务的真实人设由远端维护。
 
 来源、文件组织与新增规范见[设计](../development/agent-role-skills.md)、[角色目录](../../agents/roles/README.md)和[评价情境](../../evaluations/fixtures/agent-role-skills.md)。证据 **D:/deepseek-agent/.runtime/agent-role-skills-20261025** 保存root-ci-final、client-final、双类型、desktop-win、windows-update、asar-roles、delivery及原失败记录。注册超时、飞书试点、原件互传和历史边界不因本批改变。
+
+[PR106](https://github.com/luoyan96/personal-agent/pull/106)已创建并挂接，目标main，OPEN/MERGEABLE；首次head6da3514读取GitHub检查尚未出现，后续自动检查另计，不能当作已通过。GitHub连接器创建返回403后沿本机已登录CLI提交，未改权限或绕过保护。尚未合main/公开Release或部署后台。
