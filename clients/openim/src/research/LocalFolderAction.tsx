@@ -13,7 +13,6 @@ import {
 } from "./useAgentChatOperation";
 import type { SelectedFileKind } from "./useScopedFileSender";
 import { activeDesktopWork, runDesktopWork, useDesktopWork } from "./desktop-work";
-import DesktopWorkCard from "./DesktopWorkCard";
 
 const readableError = (error: unknown) => {
   const text =
@@ -464,9 +463,6 @@ export default function LocalFolderAction({
           <Button onClick={() => void choose()}>重新选择文件夹</Button>
         )}
       </Modal>
-      {mapping && research.actor && typeof bridge?.listDesktopReports === "function" &&
-        <DesktopWorkCard key={`${research.generation}:${mapping.researchConversationId}`}
-          scope={{ actorId: research.actor.member.id, conversationId: mapping.researchConversationId }} />}
     </>
   );
 }

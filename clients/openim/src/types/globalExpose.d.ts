@@ -11,6 +11,7 @@ import type {
 export type DataPath = "public" | "emojiData" | "sdkResources" | "logsPath";
 
 export interface IElectronAPI {
+  setMessageUnreadCount: (count: number) => Promise<void>;
   peerLibrary: import('./peerLibrary').PeerLibraryBridge;
   openFeishuLibrary: (url: string) => Promise<void>;
   openFeishuAuthorization: (url: string) => Promise<void>;

@@ -144,17 +144,6 @@ const ChatHeader = () => {
             <div className="truncate text-base font-semibold">
               {contact?.displayName || currentConversation?.showName}
             </div>
-            {!isGroupSession && contact && (
-              <div className="truncate text-xs text-slate-500">
-                {contact.identity.kind === "human"
-                  ? contact.username
-                    ? `@${contact.username}`
-                    : "真人"
-                  : isCoordinator
-                  ? "你的个人助理 · 聊天、文件与协作"
-                  : contact.profile.introduction || "AI 联系人 · 可以直接聊天"}
-              </div>
-            )}
             {isGroupSession && currentUserIsInGroup && (
               <div className="flex items-center text-xs text-[var(--sub-text)]">
                 <img width={20} src={group_member} alt="member" />

@@ -127,7 +127,8 @@ const NavItem = ({
       return;
     }
 
-    navigate(path);
+    const lastChat = useConversationStore.getState().lastConversationID;
+    navigate(path === "/chat" && lastChat ? `/chat/${encodeURIComponent(lastChat)}` : path);
   };
 
   const getBadge = () => {
@@ -141,7 +142,7 @@ const NavItem = ({
   };
 
   return (
-    <Badge size="small" count={getBadge()} dot={dot}>
+    <Badge size="small" count={getBadge()} dot={dot} offset={[-6, 5]} overflowCount={99}>
       <button
         type="button"
         aria-label={title}

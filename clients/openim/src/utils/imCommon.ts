@@ -199,8 +199,14 @@ export const notificationMessageFormat = (msg: MessageItem) => {
   }
 };
 
-export const formatConversionTime = (timestemp: number): string => {
+export const formatConversionTime = (timestemp: number, compact = false): string => {
   if (!timestemp) return "";
+  if (compact) {
+    const date = dayjs(timestemp), now = dayjs();
+    if (date.isSame(now, "day")) return date.format("HH:mm");
+    if (date.isSame(now.subtract(1, "day"), "day")) return "昨天";
+    return date.format(date.isSame(now, "year") ? "M/D" : "YYYY/M/D");
+  }
 
   const fromNowStr = dayjs(timestemp).fromNow();
 

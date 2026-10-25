@@ -170,6 +170,7 @@ const Api: IElectronAPI = {
   getDataPath,
   getVersion: () => process.version,
   getPlatform,
+  setMessageUnreadCount: (count) => ipcRenderer.invoke("set-message-unread-count", count),
   getSystemVersion: process.getSystemVersion,
   subscribe,
   subscribeOnce,

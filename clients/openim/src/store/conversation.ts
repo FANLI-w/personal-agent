@@ -16,6 +16,7 @@ import { useResearchStore } from "@/research/store";
 
 const CONVERSATION_SPLIT_COUNT = 500;
 let selectionSequence = 0;
+let unreadRevision = 0;
 
 export const useConversationStore = create<ConversationStore>()((set, get) => ({
   conversationList: [],
@@ -107,15 +108,21 @@ export const useConversationStore = create<ConversationStore>()((set, get) => ({
         ]);
       }
       if (!isCurrent()) return;
-      set(() => ({ currentConversation: { ...conversation } }));
+      set(() => ({ currentConversation: { ...conversation }, lastConversationID: conversation.conversationID }));
     } finally {
       if (sequence === selectionSequence) set({ selectingConversationID: undefined });
     }
   },
   getUnReadCountByReq: async () => {
+    const generation = useResearchStore.getState().generation;
+    const userID = useUserStore.getState().selfInfo.userID;
+    const revision = unreadRevision;
     try {
       const { data } = await IMSDK.getTotalUnreadMsgCount();
-      set(() => ({ unReadCount: data }));
+      if (generation !== useResearchStore.getState().generation ||
+          userID !== useUserStore.getState().selfInfo.userID) return 0;
+      if (revision !== unreadRevision) return get().unReadCount;
+      get().updateUnReadCount(data);
       return data;
     } catch (error) {
       console.error(error);
@@ -123,6 +130,8 @@ export const useConversationStore = create<ConversationStore>()((set, get) => ({
     }
   },
   updateUnReadCount: (count: number) => {
+    if (!Number.isSafeInteger(count) || count < 0) return;
+    unreadRevision++;
     set(() => ({ unReadCount: count }));
   },
   getCurrentGroupInfoByReq: async (groupID: string, canCommit = () => true) => {
@@ -173,9 +182,11 @@ export const useConversationStore = create<ConversationStore>()((set, get) => ({
   },
   clearConversationStore: () => {
     selectionSequence++;
+    unreadRevision++;
     set(() => ({
       conversationList: [],
       currentConversation: undefined,
+      lastConversationID: undefined,
       selectingConversationID: undefined,
       unReadCount: 0,
       currentGroupInfo: undefined,

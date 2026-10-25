@@ -83,6 +83,8 @@ export async function deleteIMConversation(scope: ConversationActionScope) {
     IMSDK.deleteConversationAndDeleteAllMsg(scope.conversation.conversationID),
   );
   useConversationStore.setState((state) => ({
+    lastConversationID: state.lastConversationID === scope.conversation.conversationID
+      ? undefined : state.lastConversationID,
     conversationList: state.conversationList.filter(
       (item) => item.conversationID !== scope.conversation.conversationID,
     ),
