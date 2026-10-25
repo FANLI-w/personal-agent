@@ -8,7 +8,6 @@ import {
   UpOutlined,
 } from "@ant-design/icons";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import type {
   AgentTurn,
   Contact,
@@ -106,8 +105,7 @@ function LibraryChat({
 }) {
   const { links, remember } = useAgentStarterLinks(actorId),
     remembered = useRef(links[libraryAgentStarter.id]);
-  const capture = useAgentChatOperation(),
-    navigate = useNavigate();
+  const capture = useAgentChatOperation();
   const [agent, setAgent] = useState<Contact>(),
     [bindings, setBindings] = useState<LibraryAgentBindings>();
   const [collections, setCollections] = useState<
@@ -482,13 +480,15 @@ function LibraryChat({
         <div>
           <ReadOutlined />
           <strong>{agent?.displayName || libraryAgentStarter.profile.displayName}</strong>
-          <span>
-            {readingFeishu
-              ? "正在读取飞书资料…"
-              : generating
-              ? "正在结合资料回复…"
-              : "围绕资料，直接聊"}
-          </span>
+          {(readingFeishu || generating || !ready) && (
+            <span role="status">
+              {readingFeishu
+                ? "正在读取飞书资料…"
+                : generating
+                ? "正在结合资料回复…"
+                : "正在读取资料配置…"}
+            </span>
+          )}
         </div>
         <nav>
           <AgentColleagueSettings
@@ -681,21 +681,7 @@ function LibraryChat({
             </Button>
           </div>
         )}
-        <p className="library-chat-note">
-          新资料库默认仅自己，可在集合设置中共享给课题组。查询文字交给当前模型并随本人对话保存；不会自动写回飞书。
-        </p>
         <footer>
-          <span>
-            {!ready
-              ? "正在读取资料配置…"
-              : selected.length
-              ? `已选 ${selected.length} 个集合`
-              : "未选择集合，仅使用聊天内容"}{" "}
-            · Enter 发送 · Shift+Enter 换行
-          </span>
-          <Button type="text" onClick={() => navigate("/me?view=models")}>
-            模型设置
-          </Button>
           {generating ? (
             <Button
               aria-label="停止资料回复"

@@ -21,7 +21,6 @@
       padding-top: 10px;
       padding-bottom: 10px;
       h2 { font-size: 20px; }
-      p { display: none; }
     }
     .research-library-body { padding-bottom: 12px; }
     .library-agent-composer { padding-bottom: 7px; }
@@ -66,7 +65,6 @@
 .library-agent-composer {
   padding: 4px 16px 10px;
   flex-shrink: 0;
-  > .library-chat-note { margin-bottom: 6px; }
   textarea.ant-input {
     border: 0;
     box-shadow: none;
@@ -80,11 +78,6 @@
     align-items: center;
     justify-content: end;
     gap: 12px;
-    > span {
-      margin-right: auto;
-      color: #98a4ae;
-      font-size: 10px;
-    }
   }
   .ant-btn-text {
     font-size: 11px;
