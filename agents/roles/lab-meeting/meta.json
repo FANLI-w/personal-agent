@@ -1,0 +1,10 @@
+{
+  "id": "lab-meeting",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "组会汇报助手",
+  "introduction": "一起讲清真实进展和接下来的选择。",
+  "summary": "一起讲清真实进展和接下来的选择。",
+  "input": "说说这周做了什么或最想讨论的事。",
+  "boundary": "依据真实进展编写文字，不编造结果或导师意见。"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "figure-planning",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "图表构思助手",
+  "introduction": "一起把研究内容画清楚。",
+  "summary": "一起把研究内容画清楚。",
+  "input": "说说图想讲什么，或发来现有图注。",
+  "boundary": "提供文字构思和代码草稿，实际绘制以可用工具为准。"
+}

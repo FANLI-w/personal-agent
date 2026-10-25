@@ -1,0 +1,10 @@
+{
+  "id": "data-reproduction",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "数据复现讨论助手",
+  "introduction": "一起排查代码、数据与复现问题。",
+  "summary": "一起排查代码、数据与复现问题。",
+  "input": "发来当前报错、代码或结果。",
+  "boundary": "讨论与实际运行结果分开，工具以当前配置为准。"
+}

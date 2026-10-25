@@ -45,3 +45,5 @@ Unified research colleagues (2026-10-25): see `evaluations/fixtures/unified-agen
 Planning conversation replies (2026-10-25): see `evaluations/fixtures/planning-conversation-replies.md`. Separate the actual answer from optional draft changes. Isolated checks cover no-plan replies, unchanged existing plans, restart, old persisted reply shape, explicit confirmation actions, transactional rollback and colleague fencing; language quality and the return button remain maintainer experience checks.
 
 One task per research goal (2026-10-25): see `evaluations/fixtures/planner-single-task.md`. Workbench defaults to one task with internal steps; separate tasks require an explicit user choice. Check content-preserving normalization, exact preview/confirmation, lost receipts, unchanged confirmed legacy tasks, explicit grouping and authority/date/graph/size refusals. Natural language quality, installation and UI experience remain maintainer checks.
+
+2026-10-25：[统一角色文件](fixtures/agent-role-skills.md)记录十类角色的科研同事情境与真实体验边界；canonical正文、导出/导入和模型输入用合成回调验证，真实模型人格效果未实跑。

@@ -7,6 +7,7 @@ import { hash } from './auth.js'
 import { fail } from './errors.js'
 import { connectionCommands, ownedSpecialist, externalContact, handleConnection } from './agent-connections.js'
 import { isLabManager } from './invite-management.js'
+import { roleCatalogDigest } from './agent-roles.js'
 
 export const directoryCommands = ['importAgentProfile','exportAgentProfile',...connectionCommands,'chatContact','updateContactProfile','createPersonalAgent','requestContact','contactRequests','decideContactRequest','revokeContact','revokeContactRequest','chatMemories','createChatMemory','reviseChatMemory','revokeChatMemory','chatMemoryHistory'] as const
 export class ContactDirectory {
@@ -84,7 +85,7 @@ export class ContactDirectory {
     // Coordinator recommendations depend on the bounded public roster. A changed
     // candidate profile cannot leave an older matching proposal publishable.
     const roster=agent.profile.role==='coordinator'&&conversation.kind==='personal'?this.db.prepare('SELECT id FROM chat_contacts WHERE lab_id=? ORDER BY id').all(this.actor.labId).flatMap(row=>{try{const c=this.contact(String(row.id));return [{id:c.id,version:c.version,profileVersion:c.profile.version}]}catch{return []}}).slice(0,100):null
-    const fingerprint=hash(canonical({agentId,agentVersion:agent.version,profileVersion:agent.profile.version,roster,relation:conversation.kind==='direct'?{id:relation?.id??null,version:relation?.version??0,status:relation?.status??'own'}:null,memories:memories.map(m=>({id:m.id,version:m.version}))}))
+    const fingerprint=hash(canonical({agentId,agentVersion:agent.version,profileVersion:agent.profile.version,roleCatalogDigest,roster,relation:conversation.kind==='direct'?{id:relation?.id??null,version:relation?.version??0,status:relation?.status??'own'}:null,memories:memories.map(m=>({id:m.id,version:m.version}))}))
     return {agent, memories:memories.map(({allowedActions:_allowed,...memory})=>memory), fingerprint}
   }
   authorize(name:ChatCommand,req:ChatRequest) {

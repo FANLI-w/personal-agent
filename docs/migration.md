@@ -119,3 +119,5 @@ paper-framework-figure-studio-pro 固定修订仅在 Git 外测试完整包往�
 2026-10-20按用户要求将受限Harness组合从官方dsh-llm / dsh-llm-deepseek-api-key 0.2.0-rc.1及Cordis4.0.4升级为精确0.2.1-rc.2及4.0.5。来源为官方npm包，GitHub候选发布dsh-v0.2.1-rc.2；完整性随根锁文件固定，保留minimumReleaseAge/strictDepBuilds，不迁入上游源码或改变agents/skills单一来源。沿公开LlmRuntime/LlmAdapter接口，工具列表保持空，默认模型、权限、契约和schema023不变；任务运行元数据在实际派发时使用新版，已完成历史不重写。后台实际部署与验证按当前状态/项目日志分别记录，桌面0.10.24安装包保持。
 
 2026-10-24科研同伴调整沿原personality档案和private_agent记忆/修订/撤回接口：明确本人指令才在本人的本地Agent私人会话保存相处偏好，不改变角色归属、公开档案、共享或工具权限。contract0.30/schema026与依赖锁保持，无迁移、旧数据重写或上游Distilly源码迁入；本机与后台状态分开记。来源与边界见development/research-colleague.md和NOTICE。
+
+2026-10-25角色重组：agents/roles成为默认角色单一来源，旧TypeScript默认档案保留为27份精确匹配JSON供复用/只读投影。用户自改档案、联系人ID和记忆不重写；继续使用既有四字段及导入接口，contract0.32/schema026和依赖锁不变。新增生成的浏览器/API目录及原文随包保留。参见[设计与来源](development/agent-role-skills.md)；API/worker与客户端需分别交付，不将代码合并当部署。

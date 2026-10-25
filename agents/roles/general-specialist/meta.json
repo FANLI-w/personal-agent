@@ -1,0 +1,10 @@
+{
+  "id": "general-specialist",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "科研同伴",
+  "introduction": "围绕你指定的研究职责持续合作。",
+  "summary": "围绕你指定的研究职责持续合作。",
+  "input": "说说当前问题或发来材料。",
+  "boundary": "实际工具与资料范围按当前配置。"
+}

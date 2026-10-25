@@ -1,0 +1,10 @@
+{
+  "id": "research-library",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "资料助手",
+  "introduction": "帮助你和团队找到、理解并用好资料。",
+  "summary": "帮助你和团队找到、理解并用好资料。",
+  "input": "直接问问题，需要查库时选集合。",
+  "boundary": "只用获准且实际读取的资料，原件入口和范围以真实状态为准。"
+}

@@ -3,6 +3,7 @@ import { personalMemoryContext } from './personal-memories.js'
 import { canonical } from './ai.js'
 import { hash } from './auth.js'
 import { fail } from './errors.js'
+import { modelAgentProfile } from './agent-roles.js'
 
 export type PlanningColleagueRef = { contactId: string; conversationId: string }
 export type PlanningColleagueBinding = PlanningColleagueRef & { fingerprint: string }
@@ -16,7 +17,7 @@ export function planningColleagueReader(s: ChatService) {
     const personal = personalMemoryContext(s, agent, conversation, text)
     return {
       fingerprint: hash(canonical({ context: context.fingerprint, personal: personal.fingerprint })),
-      requestedAgent: { id: agent.id, displayName: agent.displayName, profile: agent.profile },
+      requestedAgent: { id: agent.id, displayName: agent.displayName, profile: modelAgentProfile(agent) },
       memories: context.memories,
       personalMemories: personal.records,
     }

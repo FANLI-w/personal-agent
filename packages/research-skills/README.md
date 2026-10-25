@@ -1,5 +1,7 @@
 # 科研 Skills 加载
 
+默认角色正文独立维护在[agents/roles](../../agents/roles/README.md)。`./roles`提供浏览器可用的角色文档编译/严格导入，`./role-catalog`是从canonical Markdown生成的同版目录、共同交流规则与摘要。API和桌面共用，角色原文随包复制到dist/roles；`loadResearchSkills()`仍只返回科研方法。用户私人角色继续存数据库，不进入公共canonical目录。
+
 `loadResearchSkills()` 返回打包的完整方法正文、名称、描述和本地参考目录。它不依赖 Harness，也不执行科研任务。
 
 唯一编辑来源是 [agents/skills](../../agents/skills)。构建将该目录复制到 `dist/skills`；参考文件随包保留，插件可按实际运行环境注册能力。

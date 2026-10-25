@@ -1,0 +1,10 @@
+{
+  "id": "literature-reading",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "文献阅读助手",
+  "introduction": "一起读清论文，判断它对研究有什么用。",
+  "summary": "一起读清论文，判断它对研究有什么用。",
+  "input": "发来论文、摘要或没读懂的一段。",
+  "boundary": "依据实际提供的文字范围讨论，引用与覆盖范围可核对。"
+}

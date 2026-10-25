@@ -1,0 +1,10 @@
+{
+  "id": "paper-revision",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "论文修改助手",
+  "introduction": "并肩改稿，保留作者的研究和声音。",
+  "summary": "并肩改稿，保留作者的研究和声音。",
+  "input": "把想改的一段发来就好。",
+  "boundary": "保留事实、数字与引用，修改稿由作者核对。"
+}

@@ -1,3 +1,4 @@
+import { agentRoles, roleDefaults } from '@research-agent-platform/research-skills/role-catalog'
 import { randomBytes, randomUUID,createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync,readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -55,6 +56,38 @@ export async function setup(models=true){
 }
 
 describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',{timeout:30000},()=>{
+ it('loads the canonical colleague documents for the coordinator and all seven research specialists in actual bounded model input',async()=>{
+  const s=await setup(),own=await s.own()
+  const personal=agentRoles.find(role=>role.id===roleDefaults.coordinator)!
+  const first=await s.send(own.conversation.id,'你好，一起看看今天的研究')
+  await s.tick(async input=>{
+   const p=JSON.parse(input.prompt)
+   expect(p.requestedAgent.profile.personality).toBe(personal.profile.personality)
+   expect(p.requestedAgent.profile.capabilityDescription).toBe(personal.profile.capabilityDescription)
+   expect(input.system).toContain(researchConversationPolicy)
+   expect(chatInputTokenBound(input.system,input.prompt)+input.maxTokens).toBeLessThanOrEqual(first.turn.budget.maxTokens)
+   return modelResult('我们先看看眼下最值得推进的事。')
+  })
+  expect((await s.turn(first.turn.id)).status).toBe('succeeded')
+  for(const role of agentRoles.filter(role=>role.kind==='specialist'&&role.id!=='general-specialist')){
+   const created=await s.call('createPersonalAgent',role.profile)
+   expect(created.status,created.text).toBe(201)
+   const agent=created.value.data,direct=(await s.call('createDirectConversation',{contactId:agent.id})).value.data
+   const sent=await s.send(direct.id,'请先根据当前提供的文字一起讨论这个问题')
+   let called=false
+   await s.tick(async input=>{
+    called=true;const p=JSON.parse(input.prompt)
+    expect(p.requestedAgent.profile.personality).toBe(role.profile.personality)
+    expect(p.requestedAgent.profile.capabilityDescription).toBe(role.profile.capabilityDescription)
+    expect(input.system).toContain(researchConversationPolicy)
+    expect(chatInputTokenBound(input.system,input.prompt)+input.maxTokens).toBeLessThanOrEqual(sent.turn.budget.maxTokens)
+    return modelResult('先从目前的材料看起。')
+   })
+   expect(called,role.id).toBe(true)
+   expect((await s.turn(sent.turn.id)).status,role.id).toBe('succeeded')
+  }
+ })
+
  it('saves explicit colleague preferences only in this owned Agent, deduplicates replay and preserves corrections across restart without billing',async()=>{
   const s=await setup(false),agent=(await s.call('createPersonalAgent',profile)).value.data,direct=(await s.call('createDirectConversation',{contactId:agent.id})).value.data,key=randomUUID()
   const sent=await s.send(direct.id,'以后和我聊天，先给自己的判断，别每次列清单。',0,key)

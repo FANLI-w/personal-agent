@@ -84,6 +84,8 @@ corepack pnpm@10.28.0 run build:web
 
 修改单个科研方法时，编辑 `agents/skills/<name>/SKILL.md` 及其参考文件，并在 `evaluations/` 补充对应情境。运行数据只提供可公开、可复现的最小示例。涉及文献、统计或实验的结论必须能够核对来源。
 
+新增或修改Agent角色时，按[角色文件约定](agents/roles/README.md)维护meta.json、persona.md、work.md、SKILL.md并注册manifest。共同交流规则也在该目录；前端/API使用research-skills同一构建产物。自建和导入角色沿同一编译与保存路径，保留用户编辑及私人偏好，禁止另写一套前端TypeScript人格。角色改动需运行根ci并补公开合成情境；安装包与后台部署仍分别安排。
+
 ## 变更边界
 
 产品范围与近期任务见[路线图](docs/roadmap.md)。新网页、账号、记忆和调度必须以实际行为验收。需要真实模型或外部服务的测试另行配置，普通代码检查不依赖个人 API key。

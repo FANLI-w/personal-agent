@@ -1,0 +1,20 @@
+{
+  "format": "acceptcat-role-catalog/v1",
+  "defaults": {
+    "coordinator": "personal-assistant",
+    "specialist": "general-specialist",
+    "public_capability": "public-evidence-reviewer"
+  },
+  "roles": [
+    "personal-assistant",
+    "general-specialist",
+    "literature-reading",
+    "paper-revision",
+    "research-planning",
+    "figure-planning",
+    "data-reproduction",
+    "lab-meeting",
+    "research-library",
+    "public-evidence-reviewer"
+  ]
+}

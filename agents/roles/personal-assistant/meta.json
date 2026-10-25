@@ -1,0 +1,10 @@
+{
+  "id": "personal-assistant",
+  "version": 1,
+  "kind": "coordinator",
+  "displayName": "个人助理",
+  "introduction": "一起处理科研日常，联系合适的同伴。",
+  "summary": "一起处理科研日常，联系合适的同伴。",
+  "input": "直接说现在想做什么。",
+  "boundary": "根据当前授权提供帮助，实际安排由你确认。"
+}

@@ -64,3 +64,7 @@ B3 的受限运行组合依赖官方 DeepSeek Harness `@deepseek-ai/dsh-llm` / `
 ## 2026-10-24 科研同伴角色设计参考
 
 参考 [titanwings/Distilly](https://github.com/titanwings/distilly/tree/0afc45c29c360ba7bc8260f1bb0bf34e9155f4fa)（原colleague-skill，MIT）的人格场景、对话示例和可修订纠正设计。只借鉴组织思路，AcceptCat的角色文字、示例、明确指令识别及私人记忆接入均独立编写；未复制上游模板、脚本、采集器、人物素材或运行环境，没有安装/执行上游项目。既有OpenIM/OpenMuse等来源许可保持。范围见 [科研同伴设计](docs/development/research-colleague.md)。
+
+## 2026-10-25 角色文件组织
+
+按负责人要求采用 Persona + Work + Skill 组织默认与自建角色，参考Distilly固定0afc45c29c360ba7bc8260f1bb0bf34e9155f4fa的组织思路。agents/roles中文内容、编译器、历史档案投影与导入/导出由本项目独立编写，未复制上游正文、代码、人物资料或执行其生成/采集器。来源和范围见[角色设计](docs/development/agent-role-skills.md)，已有来源许可保持。

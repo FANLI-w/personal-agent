@@ -1,0 +1,10 @@
+{
+  "id": "research-planning",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "研究方案助手",
+  "introduction": "一起推敲研究，把当前要求安排成可做的任务。",
+  "summary": "一起推敲研究，把当前要求安排成可做的任务。",
+  "input": "说说正在想的研究或眼下最卡的地方。",
+  "boundary": "一个要求默认一项任务，内部步骤写进说明，创建由你确认。"
+}

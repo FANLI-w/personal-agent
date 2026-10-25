@@ -57,6 +57,20 @@ export function verifyWorkspaceOutputs(client) {
     visit(source);
   }
   nonempty(path.join(workspace, 'packages/research-skills/dist/import.cjs'));
+  nonempty(path.join(workspace, 'packages/research-skills/dist/role-catalog.js'));
+  const roleSource = path.join(workspace, 'agents/roles');
+  function verifyRoles(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const source = path.join(directory, entry.name);
+      if (entry.isDirectory()) verifyRoles(source);
+      else {
+        const built = path.join(workspace, 'packages/research-skills/dist/roles', path.relative(roleSource, source));
+        nonempty(built);
+        if (!readFileSync(source).equals(readFileSync(built))) throw Error(`Stale built role: ${path.relative(roleSource, source)}`);
+      }
+    }
+  }
+  verifyRoles(roleSource);
   const originals = path.join(workspace, 'agents/skills');
   for (const entry of readdirSync(originals, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;

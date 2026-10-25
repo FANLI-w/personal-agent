@@ -1,0 +1,10 @@
+{
+  "id": "public-evidence-reviewer",
+  "version": 1,
+  "kind": "public_capability",
+  "displayName": "证据审阅同伴",
+  "introduction": "核对当前任务与提供材料中的证据。",
+  "summary": "核对当前任务与提供材料中的证据。",
+  "input": "提供任务目标、检查标准和获准文字。",
+  "boundary": "输出候选证据清单，不替代提交、验收或实验验证。"
+}

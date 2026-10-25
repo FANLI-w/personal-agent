@@ -1,3 +1,5 @@
+import { agentRoles, roleDefaults } from '@research-agent-platform/research-skills/role-catalog'
+import { researchConversationPolicy } from '../src/conversation-policy.js'
 import {randomBytes,randomUUID} from 'node:crypto'
 import {mkdtempSync,mkdirSync,rmSync,writeFileSync} from 'node:fs'
 import {tmpdir} from 'node:os'
@@ -248,7 +250,7 @@ describe('owned personal planning with real HTTP and isolated synthetic credenti
     const confirmed=await s.ok('confirmPlan',{expectedVersion:1},{id:draft.id}),id=confirmed.taskIds[0]
     const artifact=await s.ok('upload',{taskId:id,expectedVersion:1,filename:'synthetic.txt',mediaType:'text/plain',contentBase64:Buffer.from('Metric A: 12 samples.').toString('base64')})
     const task=(await s.ok('task',null,{id})).task,run=await s.ok('run',{expectedVersion:task.version,capability:{id:'text-evidence-checklist',version:1,visibility:'lab_public'},budget,inputArtifactIds:[artifact.id]},{id})
-    await s.worker(async(input,_signal,credential)=>{expect(input.provider).toBeUndefined();expect(input.model).toBe('deepseek-flash');expect(credential.apiKey).toBe('sk-synthetic-legacy-manager-key');return {text:JSON.stringify({title:'Synthetic checklist',items:[{requirement:'Metric A count',assessment:'supported_by_input',citations:[{artifactId:artifact.id,quote:'Metric A: 12 samples.'}],gap:null}],limitations:['Only supplied text checked.']}),failure:null,inputTokens:100,outputTokens:100,elapsedMs:10}}).tick()
+    await s.worker(async(input,_signal,credential)=>{expect(input.provider).toBeUndefined();expect(input.model).toBe('deepseek-flash');expect(credential.apiKey).toBe('sk-synthetic-legacy-manager-key');const role=agentRoles.find(role=>role.id===roleDefaults.public_capability)!;expect(JSON.parse(input.prompt).requestedAgent.profile).toEqual(role.profile);expect(input.system).toContain(researchConversationPolicy);return {text:JSON.stringify({title:'Synthetic checklist',items:[{requirement:'Metric A count',assessment:'supported_by_input',citations:[{artifactId:artifact.id,quote:'Metric A: 12 samples.'}],gap:null}],limitations:['Only supplied text checked.']}),failure:null,inputTokens:100,outputTokens:100,elapsedMs:10}}).tick()
     expect(await s.ok('getRun',null,{id:run.id})).toMatchObject({status:'succeeded'})
   })
   it('enforces the existing remaining budget before personal model dispatch',async()=>{
