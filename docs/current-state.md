@@ -12,6 +12,8 @@
 
 本批仅客户端与Windows CI，无API/worker、契约、数据库、角色正文或依赖锁变化，不需为本批部署。前批统一角色API/worker仍待单独升级；线上0e78530/7d75165a、contract0.32/schema026保持。未合main、公开Release或部署后台，公开Latest重新读取仍 **v0.10.37/422478602**。前批PR107/fe79016四项GitHub检查重新读取均success，新PR检查另记。
 
+[PR108](https://github.com/luoyan96/personal-agent/pull/108)已创建并挂接，目标main，OPEN/MERGEABLE，保留PR107/106/105；首次读取head38e234a四项GitHub检查均in_progress，尚未确认通过。未自行合并、公开Release或部署。
+
 ## 本机0.10.47：私人助理大肥鱼头像，角色配套后台仍待升级
 
 从fetch后的main/fb2150b另开feat/personal-assistant-avatar，普通快进保留PR106/fc6be83（含PR105单任务修复），本批产品 **0ef32388828e6f051f023a03438db86ff2c793b7**。私人助理按personal_agent/coordinator身份或本人已绑定IM映射，统一联系人、会话列表、聊天抬头/历史消息/详情和生成中回复的头像；不按昵称判断，不改写旧SDK数据。采用蓝发鲸鱼娘「大肥鱼」原始PNG，随包本地加载，完整许可/素材边界及关于页署名保留。[来源](../clients/openim/public/third-party/dafeiyu/ORIGIN.md)。
