@@ -16,4 +16,4 @@ contract0.32.0仅增量增加上述请求字段和可选reply.message；缺省�
 
 ## 交付边界
 
-完整检查与本机安装包以[0.10.44交付](../deployment/acceptcat-0.10.44.md)和[current-state](../current-state.md)为准。后台部署、main合并和公开Release分别处理；配套0.32后台未实际上线前不能声称新回复已在生产生效。真实模型交流、浏览器产品、原生安装与双机体验按负责人安排未代验。[语言情境](../../evaluations/fixtures/planning-conversation-replies.md)是待体验要求，不是模型效果验收结果。
+完整检查与本机安装包以[0.10.44交付](../deployment/acceptcat-0.10.44.md)和[current-state](../current-state.md)为准。配套0.32后台已按负责人本批单独授权于2026-10-25 12:39:44上线7d75165a，无schema026迁移；main合并和公开Release仍未执行。真实模型交流、浏览器产品、原生安装与双机体验按负责人安排未代验。[语言情境](../../evaluations/fixtures/planning-conversation-replies.md)是待体验要求，不是模型效果验收结果。

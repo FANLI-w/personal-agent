@@ -1,6 +1,12 @@
 # 新 ECS：OpenIM 科研微信（2026-10-06）
 
-## 当前后台：统一科研同伴档案，0.31/schema026（2026-10-25）
+## 当前后台：规划真实回复，0.32/schema026（2026-10-25）
+
+负责人本批单独授权后，北京时间 **12:39:24—12:39:44**完成API/worker排空、停写备份、独立恢复核对及配对切换。当前 **research-openim-api:planning-conversation-20261025** / **sha256:7d75165a49a586e8c45b0045b31df172481325a7604fe8fe6a6aaa3a281ebbfa**，产品0e78530叠加已核验de6dce92生产基线，contract0.32.0/schema026，无迁移。82项隔离、103表/7原件、21配置输入保全通过；运行设置、私人资料范围、运营seed及其他6服务保持。两服务running/restart0、API healthy、HTTPS ready200/0.32、匿名受保护接口401，广场同步仍关闭，Harness仍not_verified。
+
+运维目录 **/opt/research-openim/ops/planning-conversation-20261025**，完整Compose链在unified-colleagues-20261025/images.yaml后追加本目录images.yaml。备份 **/srv/research-openim-backups/planning-conversation-20261025-20261025T043926Z/research.tar.gz**，SHA256 **1c5c684f9be78e8feffd235982894742708b71af30bf906a8e079208844da657**。回退旧de6dce92前先停止新服务并取消活动conversation模式规划、提升fence和保留用量，再配对恢复旧链；保留当前schema026及后续写入，不能回灌旧DB。完整失败、回执和恢复边界见[0.10.44记录](acceptcat-0.10.44.md)。本批未合main/公开、未重打或代安装客户端，未用真实模型/私人材料体验验收。
+
+## 历史后台：统一科研同伴档案，0.31/schema026（2026-10-25）
 
 负责人本批授权后，北京时间 **00:24:18—00:24:38**完成API/worker排空、停写备份、独立恢复核对及配对切换。当前 **research-openim-api:unified-colleagues-20261025** / **sha256:de6dce92354c90a7b29ba50f220cbd03d0f8cad8d1e01411cf4e42894d4e9c86**，产品b16cbd6叠加已核验367367ea生产基线，contract0.31.0/schema026，无迁移。77项隔离检查、103表/7原件与20配置输入保全通过；运行设置、其他6服务、运营seed及私人资料范围保持，两服务running/restart0、API healthy、HTTPS ready200/匿名受保护接口401。广场同步关闭，DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified。
 

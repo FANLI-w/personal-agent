@@ -1772,3 +1772,16 @@ contract0.31.0为planRequest增加可选colleague引用，后台核验本人站�
 更新current-state、roadmap、交接prompt与[0.10.44完整交付](deployment/acceptcat-0.10.44.md)/[设计](development/planning-conversation-replies.md)/评价记录。本批未合main、公开Release或部署后台，重新读取Latest仍v0.10.37；注册超时未定因、飞书本人试点、广场关闭和原件互传边界保持。
 
 已创建并挂接[PR104](https://github.com/luoyan96/personal-agent/pull/104)，目标main、开放且无冲突。首次head2424f87四项GitHub检查正在排队/运行，未结束不算通过，后续纯文档运行另计；尚未合并/公开。按负责人既有“后台部署单独处理”约定，在安装包、PR及运维包全部准备完成后请求本批配套升级确认，生产仍0.31/de6dce92。
+
+
+## 2026-10-25 — 按本批授权升级0.10.44配套后台，规划回复协议上线
+
+负责人明确同意“现在升级后台”。核对干净fix/planner-reply-return/d8d0718、origin主仓库并fetch，main仍c971d9c；保留已有提交，没有合并main。Workbench终端连通，实际生产de6dce92/contract0.31健康。文件上传及一次重试均报NoSuchKey、目标不存在；同一94,228字节源码包改由当前终端传入，服务器SHA256 545c0412dc54594486c67b31f7ad4da6a22f1642560a1d5b5a5fc9ffb9f9c0a6与本机一致，23个安全普通文件复核后才执行。
+
+固定de6dce92离线候选构建通过，183基线、6叠加、175编译、32方法文件/11方法和运营seed新旧摘要核对一致，**82项/4文件**服务器隔离全部通过。北京时间 **12:39:24—12:39:44**排空、停写一致备份、独立恢复副本103表全行/7原件/迁移checksum/完整性/外键与HTTP检查后配对切换API/worker。产品 **0e78530f6a6a00354474d82ee1df3ec927c0e383**，新镜像 **7d75165a49a586e8c45b0045b31df172481325a7604fe8fe6a6aaa3a281ebbfa**，contract **0.32.0**、schema026，无迁移，deploy.exit=0/DEPLOY_OK。
+
+两服务running/restart0，API healthy、公网ready200/0.32及四个受保护接口匿名401；21配置/密钥输入哈希/权限、个人默认模型、飞书来源/私人集合范围、目录缓存、运行设置和其他6服务ID/镜像/状态保持。广场同步仍enabled=false/state=disabled/nextCheckAt=null，11收录/19候选不变，1个飞书来源仍owner_private；DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified。没有重放用户消息、调用真实模型/私人材料或追加安装、界面、双机与体验验收。
+
+备份 **/srv/research-openim-backups/planning-conversation-20261025-20261025T043926Z/research.tar.gz**，SHA256 **1c5c684f9be78e8feffd235982894742708b71af30bf906a8e079208844da657**；服务器运维目录 **/opt/research-openim/ops/planning-conversation-20261025**保存原始脱敏JSON/日志/成功标记。回退旧de6dce92前停止新服务、取消活动新模式规划并提升fence、保留用量和当前数据，旧colleague/已完成项保持；禁止回灌旧DB，成功未执行生产回退，未验异地或整栈灾备。本机文件管理下载因Session has expired不可用，复制屏幕虽报成功但剪贴板仍为上一条公开命令，不声称下载/复制原始JSON；终端回执和准备/成功截图存Git外 **D:/deepseek-agent/.runtime/planner-reply-return-20261025**，deployment-observed.json明确按可见事实记录，失败留存。
+
+PR104/d8d0718的三平台Foundation40162061752与Windows package40162061691四项GitHub检查全success；纯文档新head自动检查另计。桌面0.10.44原包87,405,873字节、SHA256 8e620823ee852ebce19f93e7e0060942cd19a8fcf8fd419ff315382baa3ddfd5保持，未重新打包/安装。更新current-state、roadmap、交接prompt、ECS入口、设计与[完整交付](deployment/acceptcat-0.10.44.md)，只执行文档检查；PR104仍开放，未合main或公开Release，重新读取Latest仍v0.10.37/422478602。注册超时未定因、飞书本人试点、在线/10MiB/无TURN及本机规划历史边界保持。
