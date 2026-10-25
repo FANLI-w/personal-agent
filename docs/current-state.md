@@ -8,7 +8,7 @@
 
 完整根CI **781项/60文件**、2生产CLI/HTTP、B0/生产边界，客户端 **38项**与双类型、根Windows包/更新清单通过，失败/中止日志保持。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.44.exe**，**87,405,873字节**，SHA256 **8e620823ee852ebce19f93e7e0060942cd19a8fcf8fd419ff315382baa3ddfd5**；旧包保留，未代安装/浏览器产品/真实模型或私人资料体验。[完整交付](deployment/acceptcat-0.10.44.md)，Git外证据 **D:/deepseek-agent/.runtime/planner-reply-return-20261025**。
 
-**配套0.32后台尚未部署。** contract0.32.0增加可选replyMode/回复message，不默认补字段，schema026无迁移；真实答复存既有请求JSON，在读取时投影，持久reply保留0.31形状以便镜像回退。已准备94,228字节运维包、语法/归档与合成回退检查通过，未上传/服务器检查/切换。新客户端会在旧后台明确提示升级，保留旧消息/方案/任务；现网仍0.31/de6dce92，广场同步关闭。本批未合main、未公开Release，Latest重新读取仍v0.10.37。
+**配套0.32后台尚未部署。** contract0.32.0增加可选replyMode/回复message，不默认补字段，schema026无迁移；真实答复存既有请求JSON，在读取时投影，持久reply保留0.31形状以便镜像回退。已准备94,228字节运维包、语法/归档与合成回退检查通过，未上传/服务器检查/切换。新客户端会在旧后台明确提示升级，保留旧消息/方案/任务；现网仍0.31/de6dce92，广场同步关闭。已创建[PR104](https://github.com/luoyan96/personal-agent/pull/104)，目标main、开放且无冲突；首次读取四项GitHub检查在排队/运行，不算通过。本批未合main、未公开Release，Latest重新读取仍v0.10.37。
 
 ## 本机0.10.43：规划、资料与普通助手共用同事档案，配套后台已上线
 

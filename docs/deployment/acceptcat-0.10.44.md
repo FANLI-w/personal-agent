@@ -27,3 +27,5 @@ contract0.32.0增量增加可选replyMode=conversation与reply.message，不默�
 回退保持当前schema026及上线后数据。持久document.reply保持旧0.31结构，已完成的新回复保存在request_json，旧后台能读取任务记录但不显示新message投影，重新上线0.32可继续读取。回退旧de6dce92前先停止新服务、取消所有活动replyMode=conversation规划并提升fence，保留用量、旧colleague规划、已完成记录与其他执行；不能让旧worker忽略新模式，也不能回灌旧DB覆盖新写入。本机4行合成SQLite演练只取消1个新模式活动项，其他3项和用量保持，未在生产回退。
 
 本批未合main、公开Release或升级后台；重新读取公开Latest仍v0.10.37。注册超时未定因、飞书本人试点、广场同步关闭、原件在线/10MiB/无TURN以及本机规划历史等边界保持。
+
+[PR104](https://github.com/luoyan96/personal-agent/pull/104)已创建并挂接，目标main，开放且无冲突。首次head2424f87的三平台Foundation（40162012421）与Windows package（40162012411）正在排队/运行，未结束不算通过；后续文档head检查另计。本机完整检查已通过，配套后台仍待负责人按单独部署约定确认。

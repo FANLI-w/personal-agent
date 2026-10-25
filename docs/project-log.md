@@ -1770,3 +1770,5 @@ contract0.31.0为planRequest增加可选colleague引用，后台核验本人站�
 桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.44.exe**，**87,405,873字节**，SHA256 **8e620823ee852ebce19f93e7e0060942cd19a8fcf8fd419ff315382baa3ddfd5**，复制摘要一致，旧包保留。未代安装/启动、浏览器产品或真实账号/材料/模型与双机体验；四个语言情境未实跑。Git外证据 **D:/deepseek-agent/.runtime/planner-reply-return-20261025**。运维包 **planning-conversation-0e78530-20261025.tar.gz**，94,228字节，SHA256 **545c0412dc54594486c67b31f7ad4da6a22f1642560a1d5b5a5fc9ffb9f9c0a6**，183基线/6叠加、175编译与32方法文件守卫；本机语法/归档和4行合成SQLite回退检查通过，未上传/服务器构建/隔离/备份/切换。现网仍0.31/de6dce92；回退旧镜像前取消活动新conversation规划、保留旧同伴规划/已完成项与用量，不能回灌旧DB。
 
 更新current-state、roadmap、交接prompt与[0.10.44完整交付](deployment/acceptcat-0.10.44.md)/[设计](development/planning-conversation-replies.md)/评价记录。本批未合main、公开Release或部署后台，重新读取Latest仍v0.10.37；注册超时未定因、飞书本人试点、广场关闭和原件互传边界保持。
+
+已创建并挂接[PR104](https://github.com/luoyan96/personal-agent/pull/104)，目标main、开放且无冲突。首次head2424f87四项GitHub检查正在排队/运行，未结束不算通过，后续纯文档运行另计；尚未合并/公开。按负责人既有“后台部署单独处理”约定，在安装包、PR及运维包全部准备完成后请求本批配套升级确认，生产仍0.31/de6dce92。
