@@ -1823,3 +1823,11 @@ PR104/d8d0718的三平台Foundation40162061752与Windows package40162061691四�
 配套API/worker源码有变化，**需要单独升级后台**才采用新版共同规则、默认角色投影和无绑定规划/证据审阅角色。contract **0.32.0**、schema026、现有接口、依赖锁保持，无数据库迁移；本批未部署、做新线上探测或更新服务器canonical/私人Skill。线上沿已部署0e78530/7d75165a，广场同步沿关闭记录。源码尚未合main、0.10.46未公开，重新读取公开Latest仍 **v0.10.37/422478602**。未代安装、原生启动、浏览器产品、真实模型/私人材料或双机体验；合成模型只证明加载与业务边界，同事交流质量仍由负责人检查。注册超时未定因、飞书本人试点、原件在线/10MiB/无TURN及本机规划历史保持；没有把语言情境当真实模型或用户体验已验收。PR创建回执另追加。
 
 [PR106](https://github.com/luoyan96/personal-agent/pull/106)已创建并挂接，目标main，OPEN/MERGEABLE；首次head6da3514读取GitHub检查尚未出现，后续自动检查另计，不能当作已通过。GitHub连接器创建返回403后沿本机已登录CLI提交，未改权限或绕过保护。尚未合main/公开Release或部署后台。Git外github-created.json及403回执保留。
+
+## 2026-10-25：私人助理大肥鱼头像 / 本机Windows0.10.47
+
+从fetch后的main/fb2150b另开feat/personal-assistant-avatar，快进保留PR106/fc6be83和PR105单任务修复；本批产品0ef32388828e6f051f023a03438db86ff2c793b7。头像按coordinator身份/本人IM映射，统一联系人、会话、消息、详情及生成中回复，固定PNG本地加载，不按昵称替换或改写SDK数据。YunYueSama固定7661c8b原始头像、完整自定义许可/素材边界随包保留，关于页署名，不引入桌宠代码/台词或改角色正文。
+
+renderer类型、内容/链接、冻结顺序Windows Web/4SDK/55运行包/NSIS/4启动入口及更新清单通过；ASAR头像/3份署名文件字节和renderer引用通过。早期上游Markdown相对链接与Windows ASAR探针分隔符修正后通过，记录保留。桌面C:/Users/luo/Desktop/AcceptCat_0.10.47.exe，87793560字节，SHA256 fb69b87b2a0c7376690aec4b2c879219a136fc4ce3be20af756134e076bdb31a，复制摘要一致，旧包保留。未新增低影响重复测试或重跑完整根CI；前批角色787根/60客户端/双类型仍为其受测源码结果，重新读取PR106/fc6be83四项GitHub检查均success。未代安装、原生启动、浏览器、真实模型/私人材料或双机体验。
+
+头像纯客户端，无接口/数据库/锁变化，无需为头像部署。前批角色API/worker仍需单独升级，本批未合main、公开Release或部署；线上0e78530/7d75165a、contract0.32/schema026和Latest v0.10.37保持。[交付](deployment/acceptcat-0.10.47.md)，证据D:/deepseek-agent/.runtime/personal-assistant-avatar-20261025。
