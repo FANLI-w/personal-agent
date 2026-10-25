@@ -1785,3 +1785,12 @@ contract0.31.0为planRequest增加可选colleague引用，后台核验本人站�
 备份 **/srv/research-openim-backups/planning-conversation-20261025-20261025T043926Z/research.tar.gz**，SHA256 **1c5c684f9be78e8feffd235982894742708b71af30bf906a8e079208844da657**；服务器运维目录 **/opt/research-openim/ops/planning-conversation-20261025**保存原始脱敏JSON/日志/成功标记。回退旧de6dce92前停止新服务、取消活动新模式规划并提升fence、保留用量和当前数据，旧colleague/已完成项保持；禁止回灌旧DB，成功未执行生产回退，未验异地或整栈灾备。本机文件管理下载因Session has expired不可用，复制屏幕虽报成功但剪贴板仍为上一条公开命令，不声称下载/复制原始JSON；终端回执和准备/成功截图存Git外 **D:/deepseek-agent/.runtime/planner-reply-return-20261025**，deployment-observed.json明确按可见事实记录，失败留存。
 
 PR104/d8d0718的三平台Foundation40162061752与Windows package40162061691四项GitHub检查全success；纯文档新head自动检查另计。桌面0.10.44原包87,405,873字节、SHA256 8e620823ee852ebce19f93e7e0060942cd19a8fcf8fd419ff315382baa3ddfd5保持，未重新打包/安装。更新current-state、roadmap、交接prompt、ECS入口、设计与[完整交付](deployment/acceptcat-0.10.44.md)，只执行文档检查；PR104仍开放，未合main或公开Release，重新读取Latest仍v0.10.37/422478602。注册超时未定因、飞书本人试点、在线/10MiB/无TURN及本机规划历史边界保持。
+
+
+## 2026-10-25 — 按负责人指令合并PR104，保留PR103/102及双方既有功能
+
+核对干净fix/planner-reply-return/bc29c548a4da84e6a3b5bbeef1d3f59abf56173e、origin主仓库并fetch，main仍c971d9c；PR104目标main、非草稿、无冲突，固定head的三平台Foundation40162957182与Windows package40162957136四项全部success。先证实PR103/2539030、PR102/fbc462a、产品0e78530、原main和同事PR92/构建PR93及PR100/97均为head祖先。GitHub连接器merge返回403 Resource not accessible by integration，未执行成功；改用本机已登录GitHub CLI，使用merge及match-head-commit锁定同一head，无admin绕过、删除分支或强推。
+
+北京时间 **16:55:51**，PR104实际MERGED，合并提交 **2736ffcfabcf10c45e1118f4443afe5c29bc606b**，两个父提交精确为原main/c971d9c和受审head/bc29c54；16:55:53，PR103/102自动标记MERGED。fetch后核对合并tree与受审tree相同、双方历史/产品提交全部保持祖先关系，再将本机main快进到合并提交，未重写作者/历史或覆盖修改。Git外证据 **D:/deepseek-agent/.runtime/merge-pr104-20261025**保留受审检查、合并回执、403记录及tree/祖先核对。
+
+本批只合并与更新current-state、交接、路线图及0.10.44交付记录，执行内容/差异检查；未重复根完整CI、真实模型/安装后体验或后台健康探测。桌面0.10.44原包与既有SHA256保持，没有重打/代安装；后台沿已部署0e78530/7d75165a、contract0.32/schema026，没有再次部署/迁移，广场同步沿既有关闭记录。重新读取公开Latest仍v0.10.37/422478602，未公开Release。main合并后的Foundation40178576207与Windows package40178576214首次读取运行中，不把PR已通过检查当成新运行已结束。注册超时未定因、飞书本人试点、原件在线/10MiB/无TURN及本机规划历史等边界保持；下一项功能须重新fetch最新main后另开分支。

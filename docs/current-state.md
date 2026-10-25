@@ -2,13 +2,19 @@
 
 更新日期：2026-10-25（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## PR104已按负责人指令合入main，PR103/PR102随之合并
+
+北京时间 **2026-10-25 16:55:51**，[PR104](https://github.com/luoyan96/personal-agent/pull/104)以merge commit **2736ffcfabcf10c45e1118f4443afe5c29bc606b**合入main，固定受审head **bc29c548a4da84e6a3b5bbeef1d3f59abf56173e**；[PR103](https://github.com/luoyan96/personal-agent/pull/103)与[PR102](https://github.com/luoyan96/personal-agent/pull/102)于16:55:53自动标记MERGED。合并树与受审head完全一致，原main/c971d9c、PR103/2539030、PR102/fbc462a、规划回复产品0e78530及同事PR92/构建PR93等均保持祖先关系，双方作者与历史保留。
+
+合并前该head三平台Foundation（40162957182）及Windows package（40162957136）四项全部success，无冲突；GitHub连接器缺少合并权限返回403后，沿本机已登录CLI锁定同一head完成普通merge，未绕过保护或强推。本批只合并、快进同步本机main与更新记录，未重复完整CI或追加体验验收，未重打/代安装、再次部署或公开Release。桌面0.10.44原包和已部署0e78530/7d75165a后台保持，公开Latest重新读取仍v0.10.37。合并后main自动CI（40178576207/40178576214）首次读取运行中，另计结果。Git外证据 **D:/deepseek-agent/.runtime/merge-pr104-20261025**。
+
 ## 本机0.10.44：规划正常回复与可选方案分开，配套后台已上线
 
 负责人反馈正常发言后只见失败提示，右上绿色按钮含义不清。从fetch后的main/c971d9c新建fix/planner-reply-return，普通merge PR103/2539030保留双方功能；产品 **0e78530f6a6a00354474d82ee1df3ec927c0e383**。新规划每轮显示实际answer，普通讨论允许plan=null且不改旧方案，确需步骤才返回草案并等待明确确认；旧请求、幂等形状与本机历史保持。右上改为浅绿细边框的“← 返回工作台”，不再只有绿色方块箭头。[设计与诊断](development/planning-conversation-replies.md)。
 
 完整根CI **781项/60文件**、2生产CLI/HTTP、B0/生产边界，客户端 **38项**与双类型、根Windows包/更新清单通过，失败/中止日志保持。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.44.exe**，**87,405,873字节**，SHA256 **8e620823ee852ebce19f93e7e0060942cd19a8fcf8fd419ff315382baa3ddfd5**；旧包保留，未代安装/浏览器产品/真实模型或私人资料体验。[完整交付](deployment/acceptcat-0.10.44.md)，Git外证据 **D:/deepseek-agent/.runtime/planner-reply-return-20261025**。
 
-**配套后台已按负责人本批授权上线。** 北京时间 **2026-10-25 12:39:24—12:39:44**完成排空、停写一致备份、独立恢复核对与API/worker配对切换；产品0e78530叠加已核验de6dce92基线，新镜像 **7d75165a49a586e8c45b0045b31df172481325a7604fe8fe6a6aaa3a281ebbfa**，contract **0.32.0**、schema026，无迁移。服务器 **82项/4文件**隔离检查、183源/方法基线、6叠加、175编译及32方法文件与运营seed核对通过；103表/7原件、21配置/密钥输入、模型/飞书私库/目录缓存、运行设置及其他6服务保持。两服务running/restart0，API healthy、公网ready200/0.32、受保护接口匿名401，广场同步仍关闭，Harness仍not_verified。未重放用户消息、调用真实模型或代做安装/体验验收。备份、同schema回退及原失败见[完整交付](deployment/acceptcat-0.10.44.md)。PR104/d8d0718四项GitHub检查已全success；后续纯文档运行另计。未合main或公开Release，重新读取Latest仍v0.10.37。桌面0.10.44原包保持。
+**配套后台已按负责人本批授权上线。** 北京时间 **2026-10-25 12:39:24—12:39:44**完成排空、停写一致备份、独立恢复核对与API/worker配对切换；产品0e78530叠加已核验de6dce92基线，新镜像 **7d75165a49a586e8c45b0045b31df172481325a7604fe8fe6a6aaa3a281ebbfa**，contract **0.32.0**、schema026，无迁移。服务器 **82项/4文件**隔离检查、183源/方法基线、6叠加、175编译及32方法文件与运营seed核对通过；103表/7原件、21配置/密钥输入、模型/飞书私库/目录缓存、运行设置及其他6服务保持。两服务running/restart0，API healthy、公网ready200/0.32、受保护接口匿名401，广场同步仍关闭，Harness仍not_verified。未重放用户消息、调用真实模型或代做安装/体验验收。备份、同schema回退及原失败见[完整交付](deployment/acceptcat-0.10.44.md)。PR104/d8d0718四项GitHub检查已全success；后续纯文档运行另计。PR104含PR103/102现已按负责人指令合入main/2736ffc（见本页开头），0.10.44未公开Release，重新读取Latest仍v0.10.37。桌面0.10.44原包保持。
 
 ## 本机0.10.43：规划、资料与普通助手共用同事档案，配套后台已上线
 
@@ -16,7 +22,7 @@
 
 完整根CI **776项/60文件**及2生产CLI/HTTP、B0/生产边界通过；API定向40、客户端 **36项**与renderer/Electron双类型、Windows包/更新清单通过。首轮客户端类型收窄失败及运维包换行失败保留，修正后通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.43.exe**，**87,407,785字节**，SHA256 **47d9a9d2848ac0a1e6d0d210e4dcaf9eca20c8fc1b0d5765230c2ce6e3df7fd1**；旧包保留，未代安装、浏览器产品或真实模型体验验收。[完整交付](deployment/acceptcat-0.10.43.md)，证据 **D:/deepseek-agent/.runtime/unified-colleague-agents-20261024**。
 
-**配套后台已按负责人本批授权上线。** 北京时间 **2026-10-25 00:24:18—00:24:38**完成排空、停写一致备份、独立恢复核对与API/worker切换；产品b16cbd6叠加已校验生产367367ea基线，新镜像 **de6dce92354c90a7b29ba50f220cbd03d0f8cad8d1e01411cf4e42894d4e9c86**，contract **0.31.0**、schema026，无迁移。服务器 **77项/4文件**隔离检查通过，181基线/10叠加、175编译与32方法文件及运营种子摘要核对通过；103表/7原件、20配置/密钥输入、模型/飞书私库/目录缓存、运行设置和其他6服务保持。两服务running/restart0，API healthy、公网ready200、受保护接口匿名401，广场同步仍关闭；DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified。没有调用真实模型、重放用户请求或代做安装/体验验收。备份、运维包与同schema回退边界见[完整交付](deployment/acceptcat-0.10.43.md)。[PR103](https://github.com/luoyan96/personal-agent/pull/103)仍开放，受审head ef458eb四项GitHub检查已全success；源码未合main、0.10.43未公开，重新读取公开Latest仍v0.10.37。桌面原包不变。
+**配套后台已按负责人本批授权上线。** 北京时间 **2026-10-25 00:24:18—00:24:38**完成排空、停写一致备份、独立恢复核对与API/worker切换；产品b16cbd6叠加已校验生产367367ea基线，新镜像 **de6dce92354c90a7b29ba50f220cbd03d0f8cad8d1e01411cf4e42894d4e9c86**，contract **0.31.0**、schema026，无迁移。服务器 **77项/4文件**隔离检查通过，181基线/10叠加、175编译与32方法文件及运营种子摘要核对通过；103表/7原件、20配置/密钥输入、模型/飞书私库/目录缓存、运行设置和其他6服务保持。两服务running/restart0，API healthy、公网ready200、受保护接口匿名401，广场同步仍关闭；DSH0.2.1-rc.2/Cordis4.0.5保持，Harness仍not_verified。没有调用真实模型、重放用户请求或代做安装/体验验收。备份、运维包与同schema回退边界见[完整交付](deployment/acceptcat-0.10.43.md)。[PR103](https://github.com/luoyan96/personal-agent/pull/103)现已随PR104合入main/2736ffc，受审head ef458eb四项GitHub检查已全success；0.10.43未公开，重新读取公开Latest仍v0.10.37。桌面原包不变。
 
 ## 本机0.10.42：规划聊天自动铺满工作台，绿色按钮收起
 

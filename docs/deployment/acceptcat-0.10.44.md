@@ -34,6 +34,6 @@ contract0.32.0增量增加可选replyMode=conversation与reply.message，不默�
 
 回退保持当前schema026及上线后数据。持久document.reply保持旧0.31结构，已完成的新回复保存在request_json，旧后台能读取任务记录但不显示新message投影，重新上线0.32可继续读取。回退旧de6dce92前先停止新服务、取消所有活动replyMode=conversation规划并提升fence，保留用量、旧colleague规划、已完成记录与其他执行；不能让旧worker忽略新模式，也不能回灌旧DB覆盖新写入。本机4行合成SQLite演练只取消1个新模式活动项，其他3项和用量保持，未在生产回退。
 
-本批已按单独授权升级后台；没有合main、公开Release、重打或代安装客户端，桌面0.10.44原包和摘要保持；重新读取公开Latest仍v0.10.37。注册超时未定因、飞书本人试点、广场同步关闭、原件在线/10MiB/无TURN以及本机规划历史等边界保持。
+此前部署批次按单独授权升级后台；当时没有合main、公开Release、重打或代安装客户端，桌面0.10.44原包和摘要保持；重新读取公开Latest仍v0.10.37。注册超时未定因、飞书本人试点、广场同步关闭、原件在线/10MiB/无TURN以及本机规划历史等边界保持。
 
-[PR104](https://github.com/luoyan96/personal-agent/pull/104)已创建并挂接，目标main，仍开放且无冲突。受审head **d8d071890098869fc13ef7202b71346cec4c318f**的三平台Foundation（40162061752）与Windows package（40162061691）四项GitHub检查已全success；纯文档后续自动运行另计，不把旧head通过当作新运行通过。此批只有后台升级与状态记录，没有再次执行完整本地CI或追加产品体验验收。
+[PR104](https://github.com/luoyan96/personal-agent/pull/104)已于2026-10-25 16:55:51按负责人指令以merge commit **2736ffcfabcf10c45e1118f4443afe5c29bc606b**合入main；PR103/102于16:55:53自动MERGED，合并树与受审head bc29c54完全一致，双方历史保留。合并前bc29c54三平台Foundation40162957182和Windows package40162957136四项全success；main新运行另计。没有重新打包、部署或公开，原安装器/后台保持。完整回执见current-state及Git外D:/deepseek-agent/.runtime/merge-pr104-20261025。此前部署时受审head **d8d071890098869fc13ef7202b71346cec4c318f**的三平台Foundation（40162061752）与Windows package（40162061691）四项GitHub检查已全success；纯文档后续自动运行另计，不把旧head通过当作新运行通过。此前部署批次仅升级后台并记录状态，没有再次执行完整本地CI或追加产品体验验收。
