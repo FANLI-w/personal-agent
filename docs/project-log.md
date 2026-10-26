@@ -1899,3 +1899,21 @@ Windows冻结构建Web/4SDK/55运行包/NSIS/4入口及更新清单通过；ASAR
 本批Git外证据 **D:/deepseek-agent/.runtime/release-0.10.52-20261026**保存preflight、github-preflight、merge-gh/merge-verified、merged-prs、草稿/上传/公开及公开小文件与摘要核对。前置记录工具两次失败（functions无btoa、命令过长）和gh只读列表不支持databaseId字段均保留说明，精简后完成，未导致重复创建或覆盖。合并667bc34新运行40255102374三平台Foundation现已均success，新Windows打包40255102397也success；PR最终head与合并提交各自四项全通过，初次仍在运行的回执保留。发布文档内容/链接（355份Markdown/19方法）及git diff --check通过。
 
 本轮没有后台部署、备份、重启、迁移或新线上业务探测；线上仍 **0e78530/7d75165a、contract0.32/schema026**。新默认角色/历史投影及共享方法包的配套API/worker仍需单独升级，新建/显式保存角色和文字Skill沿原接口。未代安装、原生启动、浏览器产品、真实模型、私人材料/飞书、双机或绘图/PPT导出体验验收；注册超时未定因，角色/方法不冒称新增执行工具。附件及完整边界见[0.10.52交付](deployment/acceptcat-0.10.52.md)。
+
+## 2026-10-26 科研同伴角色配套后台升级
+
+负责人在合并/公开0.10.52后明确同意“后台可以升级一下，我已经登录了”。核对本机main/0c62e3e干净、远端正确、线上API/worker仍7d75165a/running/restart0、ready200/0.32和约9GB空间后，固定发布提交667bc34叠加生产基线，离线构建8份API源及角色/方法共享包；保留生产运营种子和既有功能。新镜像 **research-openim-api:research-colleagues-20261026 / sha256:acf4b711a791d4110f20b3c63af99456df54c187c875e5a18f8bfe7700b959d2**，contract0.32/schema026保持，无迁移。
+
+本机与服务器固定公开源码归档37,224,249字节、SHA256 de6707bba3efb06b63073960a67d8662e23b702ae5cc47d17fa0e1dc10b55d52一致。文件管理会话过期、上传在选择文件前失败，终端仍连接；37376字节运维v2归档改用终端传入，大小/SHA256 1b708f12c6e23a5cdca93145310e65b46e5eb56419c8ac8d7d587deea683d22e、安全13普通文件及117叠加源/10测试摘要均核对。最初只读探针用了短容器名/旧本机端口，改用实际Compose名及公网健康入口；本地首包漏选README在上传前纠正，原记录保留。
+
+首轮镜像构建完成，后置运维校验因旧保全清单仍有dist/skills旧摘要而失败，未跑测试/切服务。保留first-prepare/build/source-check及旧探针后，只修正摘要映射，使本次生成文件对照0.10.52精确摘要、未动源仍对照原基线，构建前183基线守卫不变，未改产品/测试/预算或时限。随后 **127项/10文件**服务器隔离检查全部通过，network none/无生产数据挂载/合成模型；117叠加源、183编译、76角色/48方法及18角色/37历史档案/19方法目录、运营种子摘要一致，prepare.exit0/PREPARATION_OK才放行。
+
+北京时间 **10:02:14—10:02:36**排空请求、停写API/worker，备份数据库/原件和22配置/密钥输入，独立恢复副本对照schema026迁移checksum、**103表**结构/全行、**7原件**摘要/权限与完整性/外键通过。恢复副本HTTP ready200/0.32、受保护401，未建账号/会话；HTTP后重新核对副本及上线前原库。备份 **/srv/research-openim-backups/research-colleagues-20261026-20261026T020217Z/research.tar.gz**，SHA256 **1ea691d7210b59cf271b2465c6d71c0b0bc06e4ccfbd16fb6be9c1bea25e16ea**，同ECS受限备份，不称异地灾备。
+
+部署exit0/DEPLOY_OK，API/worker同新镜像running/restart0，API healthy、公网ready200/0.32及四个受保护接口匿名401。运行设置、22配置/密钥摘要和权限、账号/模型默认值、角色档案/私人记忆、飞书授权/范围、目录缓存和其他6服务保持；已有1个lab_shared飞书集合切换前后相同，没有自动扩散。18角色和旧默认只读投影/19方法加载在后台生效，自改档案/私人偏好及已安装私人版本保持；不自动安装或授权。广场同步仍关闭、nextCheckAt=null，11收录/19候选保持；DSH0.2.1-rc.2/Cordis4.0.5、Harness not_verified保持。
+
+运维目录/opt/research-openim/ops/research-colleagues-20261026保留完整JSON/日志/备份回执，旧Compose链在planning-conversation-20261025/images.yaml后追加新镜像覆盖，只切API/worker。该版本同协议/schema，预设回退配对停新服务、按原完整链启动旧7d75165a，保留当前数据，不取消任务/不回灌旧DB；本批未触发回退。Git外 **D:/deepseek-agent/.runtime/research-colleague-backend-20261026**有运维包/失败修正、两张截图及按可见终端回执整理的observed JSON；文件管理过期，没有冒称下载原始JSON。使用computer-use技能通过已登录Workbench完成，实际操作均为浏览器终端与本地文件工具。
+
+本批仅配套后台和文档，不重打安装包、不修改公开Release/tag，Latest仍v0.10.52。未追加安装/原生启动/真实账号材料/真实模型/飞书/双机或绘图/PPT实际导出体验验收；数据保全仅比较摘要、不用私人正文评价。注册超时未定因、飞书本人试点和原件互传在线/10MiB/无TURN边界保持。[完整部署与回退说明](deployment/research-colleagues-20261026.md)。
+
+收尾重新读取公开Latest仍v0.10.52/423781483、tag目标667bc34。文档内容/链接检查356份Markdown/19方法及git diff --check通过；首次因工程日志链接到本机Skill路径被内容守卫拒绝，改为纯文字技能名称后通过，失败content.log保留。只提交部署记录和状态文档，没有重跑已通过完整根CI或修改产品源码。

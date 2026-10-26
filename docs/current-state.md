@@ -2,7 +2,15 @@
 
 更新日期：2026-10-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 0.10.52已合main并公开为Latest，后台保持
+## 0.10.52配套角色后台已单独升级
+
+按负责人“后台可以升级一下，我已经登录了”的明确授权，固定发布提交 **667bc34**，在已核对的7d75165a生产基线上离线构建角色/方法配套API/worker，8份API源及共享包叠加，保留其他功能。北京时间 **10:02:14—10:02:36**完成排空、停写备份、独立恢复核对和配对升级；新镜像 **research-openim-api:research-colleagues-20261026** / **sha256:acf4b711a791d4110f20b3c63af99456df54c187c875e5a18f8bfe7700b959d2**，contract **0.32.0/schema026**保持，无迁移。18角色、37旧默认档案的只读投影及19方法共同加载现已进入后台，用户编辑/私人偏好、联系人及私人Skill版本保持。[完整部署回执](deployment/research-colleagues-20261026.md)。
+
+服务器 **127项/10文件**隔离检查全通过，无网络/生产数据挂载、无真实模型调用；117叠加源、183编译、183基线、76角色/48方法逐字核对，运营种子保持。首轮运维探针误用旧dist/skills摘要失败，在测试/切换前保留失败并修正映射，未改产品/测试/预算。备份 **/srv/research-openim-backups/research-colleagues-20261026-20261026T020217Z/research.tar.gz**，SHA256 **1ea691d7210b59cf271b2465c6d71c0b0bc06e4ccfbd16fb6be9c1bea25e16ea**。**103表/7原件**结构、全行/摘要/权限、迁移checksum与完整性及独立恢复HTTP通过；**22配置/密钥输入**、运行配置、账号/角色/私人记忆/模型默认值、飞书范围和其他6服务保持，未输出正文。既有1个lab_shared飞书集合切换前后相同，没有自动共享。
+
+部署exit0/DEPLOY_OK；API/worker同镜像running/restart0，API healthy、公网ready200/0.32及匿名受保护接口401。广场同步仍关闭、nextCheckAt=null，DSH0.2.1-rc.2/Cordis4.0.5及Harness not_verified保持。回退仅配对恢复旧镜像和原Compose链、使用当前数据，不取消任务或回灌旧DB；本批未触发回退。Git外 **D:/deepseek-agent/.runtime/research-colleague-backend-20261026**保留部署包、失败与修正、两张截图及可见回执整理，原始JSON/日志留服务器。文件管理过期后由已连接终端传输并核对，未冒称下载原始服务器JSON。未重新打包/修改公开Release，Latest仍v0.10.52/tag667bc34；未代安装或真实科研体验验收，注册超时仍未定因。
+
+## 0.10.52合main和公开Latest记录（发布当时后台保持，后续升级见上节）
 
 负责人明确要求“合并一下，安装包也传上去”后，重新fetch核对main **fb2150b**、干净功能分支及[PR112](https://github.com/luoyan96/personal-agent/pull/112)最终head **d1f913acc3fc92326eae6d842051172c0e9c6e7a**，四项GitHub检查均success、MERGEABLE。北京时间 **09:37:08**以merge commit **667bc34fea851fea0c929e975f3467474eedcc71**合main；父提交为原main和受审head，合并树与受审树一致，产品f9122fe后仅文档变化。PR105至PR111于09:37:10随之标记MERGED，原始提交、同事聊天和既有功能均保留，本机main普通快进同步。
 

@@ -38,7 +38,7 @@ meta加入category/teams/methods，构建校验分类、分工、方法目录及
 
 代码检查覆盖原文/包内一致性、所有角色实际进入HTTP/SQLite合成模型输入且守预算、方法私人安装/显式绑定选择及他人不能读取、导入导出及旧角色复用。公开对话情境见[评价情境](../../evaluations/fixtures/research-colleague-team.md)。这些检查不证明真实模型交流质量或真实安装体验；实际结果、失败证据、安装包与后台状态另记current-state和project-log。
 
-配套API/worker需升级才读取新角色和默认投影；客户端安装包、main合并、公开Release与部署分别记录，本批不能把前述源码工作当作已上线。
+配套API/worker已在0.10.52合并公开后，按负责人单独授权于2026-10-26 10:02:36升级，读取新角色和默认投影；见[后台部署记录](../deployment/research-colleagues-20261026.md)。客户端安装包、main合并、公开Release与部署分别记录，实际交流和科研质量仍由真实使用评价。
 
 ## 参考来源
 

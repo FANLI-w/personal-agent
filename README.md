@@ -88,7 +88,7 @@ AcceptCat 把这些事情放在同一个工作空间里：用聊天说清需求�
 | **历史公开版本** | 原 v0.10.37、v0.10.34、v0.6.0 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.52 |
 | **产品源码与协作基线** | [v0.10.52 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.52)固定本次发布源码；[main](https://github.com/luoyan96/personal-agent/tree/main)已通过[PR112](https://github.com/luoyan96/personal-agent/pull/112)整合PR105至PR111，保留同事原始提交及既有功能。后续从主仓库最新main新建功能分支，通过PR合并 |
 
-0.10.52客户端已经公开，配套API/worker的新默认角色目录与历史档案投影仍待单独升级；本次没有后台部署。普通聊天未新增生图、脚本或PPTX导出工具，实际能力与限制见发布说明。
+0.10.52客户端已经公开，[配套API/worker](docs/deployment/research-colleagues-20261026.md)已单独升级，统一角色目录和旧默认档案读取生效，保留用户编辑与私人偏好。普通聊天未新增生图、脚本或PPTX导出工具，实际能力与限制见发布说明。
 
 已有试用版的团队：登录后在“我的 → 模型设置”配置自己的模型，从一个真实课题的小任务开始。新团队如希望参与试用，可以在 [Issues](https://github.com/luoyan96/personal-agent/issues) 留下使用场景和试用意向；请不要提交账号密钥、未公开论文或学生的私人材料。
 
