@@ -2002,3 +2002,11 @@ Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**�
 [PR116](https://github.com/luoyan96/personal-agent/pull/116)仍OPEN/未合main，保留PR114和PR113依赖；读取head02a8319时，两个Linux Foundation和Windows打包均success，Windows Foundation仍in_progress，未声称四项完成；后续仅发布文档的head另看实际检查。原80项客户端/双类型/Windows成品证据已核对，未重新构建或重跑根CI。README下载/交接文档更新随功能PR待审，不直接改main。
 
 本批只有Release及文档，**没有后台部署、重启、迁移或新生产探测**；沿用 **b9901ac5/contract0.33/schema027**，注册超时仍未定因，安装/真实科研体验由负责人检查。Git外 **D:/deepseek-agent/.runtime/release-0.10.56-20261026**保留上传/公开/附件/匿名下载/PR检查及校验文件；草稿按tag的REST读取404已改用同一草稿列表定位，没有重复创建。GitHub连接器无二进制上传入口，使用已有登录的gh CLI上传。
+
+## 2026-10-26：PR115任务流转审阅与隔离复现
+
+审阅同事[PR115](https://github.com/luoyan96/personal-agent/pull/115)固定head **8e6e2a6d1a8561535010e8d040b5e8f1dca81951**（base d25781d），末次读取仍OPEN/未合。原coordination **16项通过**、GitHub三平台Foundation均success；独立detached工作目录冻结安装/构建后，用合成HTTP/SQLite补4个情景，**3个行为断言失败、1个观察情景通过**。原测试/CI没有覆盖这两个P1边界：接受上游新版本会把传递依赖的changed影响系统代确认，使中间成果尚未复核时下游旧提交自动回in_review；invitation和claim在等待另一前置时提前绑定已完成前置的v1，之后前置更新v2且全部完成，acknowledge/resume仍409 DEPENDENCY_BLOCKED。
+
+另确认P2流程缺口：请求无full权限成员支持虽返回200，但对方task404、我的任务/阻碍列表不含该项、outbox0，并未形成对方可见的支持请求。宜补最小授权的请求/待办及通知，不能直接授予完整私人任务。设计草案的创建后对话修改、按授权交接前置成果有实际需求；选项应辅助聊天，不把规划恢复为强制多项表单。未据草案自动实现新功能。
+
+证据 **D:/deepseek-agent/.runtime/pr115-review-20261026**保留原16项、4情景/两类分配复现与support-observed、GitHub检查和review-summary；补充测试仅在Git外review checkout。没有改同事产品代码、发GitHub评论、合并、打包/发布或后台/真实用户操作；公开Latest仍0.10.56/423959199，后台仍b9901ac5/contract0.33/schema027。当前分支只维护本次审阅记录。

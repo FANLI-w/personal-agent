@@ -2,6 +2,14 @@
 
 更新日期：2026-10-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## PR115任务流转审阅：需要修正后再合并
+
+审阅同事[PR115](https://github.com/luoyan96/personal-agent/pull/115)固定head **8e6e2a6d1a8561535010e8d040b5e8f1dca81951**（base d25781d），末次读取仍OPEN/未合。原coordination **16项通过**、GitHub三平台Foundation均success；独立detached工作目录冻结安装/构建后，用合成HTTP/SQLite补4个情景，**3个行为断言失败、1个观察情景通过**。原测试/CI没有覆盖这两个P1边界：接受上游新版本会把传递依赖的changed影响系统代确认，使中间成果尚未复核时下游旧提交自动回in_review；invitation和claim在等待另一前置时提前绑定已完成前置的v1，之后前置更新v2且全部完成，acknowledge/resume仍409 DEPENDENCY_BLOCKED。
+
+另确认P2流程缺口：请求无full权限成员支持虽返回200，但对方task404、我的任务/阻碍列表不含该项、outbox0，并未形成对方可见的支持请求。宜补最小授权的请求/待办及通知，不能直接授予完整私人任务。设计草案的创建后对话修改、按授权交接前置成果有实际需求；选项应辅助聊天，不把规划恢复为强制多项表单。未据草案自动实现新功能。
+
+证据 **D:/deepseek-agent/.runtime/pr115-review-20261026**保留原16项、4情景/两类分配复现与support-observed、GitHub检查和review-summary；补充测试仅在Git外review checkout。没有改同事产品代码、发GitHub评论、合并、打包/发布或后台/真实用户操作；公开Latest仍0.10.56/423959199，后台仍b9901ac5/contract0.33/schema027。当前分支只维护本次审阅记录。
+
 ## 0.10.56已先公开为Latest（源码PR116仍待审）
 
 负责人明确要求先上传Release包后，核对原0.10.56源码、桌面/构建包与现有tag/Release均无冲突。北京时间 **2026-10-26 15:35:28**，[v0.10.56](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.56) / Release **423959199**公开、非预发布并设为Latest；tag固定实际构建源码 **f45c278d899e5452a1b56b1d85c0e715411c8833**，没有把待审功能冒称已合main。通讯录统一入口、删除/右键管理、Agent介绍和星标修复随包交付。[安装包直链](https://github.com/luoyan96/personal-agent/releases/download/v0.10.56/AcceptCat_0.10.56.exe)。
