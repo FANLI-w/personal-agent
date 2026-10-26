@@ -1,5 +1,7 @@
 # 开发路线图
 
+2026-10-26：[0.10.58本机候选](deployment/acceptcat-0.10.58.md)移除一项/多项切换，普通工作一项、确需独立分工/交付的大项目可自动建议多项，结合对话修改，保留正式确认。含PR118图片修复；角色v3/任务方法同步源码并保留私人编辑，根812及客户端64项、双类型、冻结NSIS/更新守卫通过。[PR119](https://github.com/luoyan96/personal-agent/pull/119)待审、未合main/未公开；后台未部署，默认角色新包留待单独升级，Latest仍0.10.56。安装与真实语言效果由负责人检查。
+
 2026-10-26：[0.10.57本机候选](deployment/acceptcat-0.10.57.md)完善聊天图片复制、原图另存及本机提取文字，文字菜单区分选区/整条消息，修正图片预览误触通用文字菜单。61项客户端、双类型、冻结NSIS及本地更新守卫通过，安装体验由负责人检查。[PR118](https://github.com/luoyan96/personal-agent/pull/118)待审、未合main、未公开Release；无需后台升级，Latest仍0.10.56。
 
 2026-10-26：负责人授权[PR117](https://github.com/luoyan96/personal-agent/pull/117)整合main，包含PR113至PR116的删除、通讯录/星标与同事任务改动及安全恢复/支持通知修正；本条随合并生效，合并前以GitHub实际状态为准。后台已单独于16:31部署7720ec9b/产品04e184f/contract0.33/schema027，97项隔离、104表/8原件及24配置输入保全通过，无迁移。公开Latest0.10.56/tag f45c278继续对应原包，本轮仅代码合并及交接，不重新发布、部署或代用户体验。下方未合等描述保留为历史批次，见[current-state](current-state.md)与[后台回执](deployment/task-flow-safe-recovery-20261026.md)。

@@ -2,11 +2,13 @@
 
 更新日期：2026-10-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 任务粒度自动安排（0.10.58候选准备中）
+## 任务粒度自动安排（0.10.58本机候选完成，PR119待审）
 
 从fetch后的main **c3f7d0f**另开 **fix/planner-automatic-task-shape**，普通merge保留待审PR118/8172b66图片操作，未合main。去掉规划的一项/多项提示和切换按钮，普通目标默认一项，确需独立分工、分别交付/跟踪的大项目可建议多项；不因难、动作或对象多就拆。用户通过对话调整，实际数量随完整草案及明确创建确认，不靠改本机标记。保留旧预览数量，新一轮从用户消息而非旧按钮读取偏好；创建重试快照、幂等和已确认任务保持。同步canonical任务安排方法和规划角色v3，新增一份精确旧默认档案映射，保留用户编辑。[设计](development/planner-automatic-task-shape.md)。
 
-定向45项、扩展客户端 **64项/7文件**通过，含本机HTTP/SQLite的一项与三项真实合成任务及丢回执恢复。首次新增两项断言漏计明确截止的editPlan，按实际日程写入修正测试后通过，原失败日志保留。根冻结安装及完整CI **812项/64文件**、类型、契约、2项生产CLI/HTTP、B0及Web生产边界通过，renderer/Electron双类型通过。后续Windows构建尚未完成，成品和PR状态完成后追加。本批没有后台/API/契约/数据库变化，旧服务器角色尚未升级；新客户端提示可使用既有API，未自动部署、合main或公开Release。公开Latest仍0.10.56，旧0.10.57候选保留；不代真实模型、安装和产品UI验收。Git外 **D:/deepseek-agent/.runtime/planner-auto-shape-20261026**保存证据。
+最终产品/打包源码 **d6ab6cd39a037cad6111330755a1aea23aa81e8a**，[PR119](https://github.com/luoyan96/personal-agent/pull/119)待审、未合main。根冻结CI **812项/64文件**、类型、契约、2项生产CLI/HTTP、B0及Web边界通过；客户端 **64项/7文件**、renderer/Electron双类型通过，含本机HTTP/SQLite的一项与三项合成任务、日期和回执恢复。最后客户端去除上一轮隐藏数量锁后，64项及renderer类型复查通过，共享源码未变，不重复根CI。
+
+冻结Windows最终构建、NSIS、既有4项成品入口及本地更新清单检查通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.58.exe**，**88,215,492字节**，SHA256 **b093c4aa975722f2c57b8c548f418a76db7d04eba91da5c1e20cb1954faceeb3**，旧0.10.57保留。首轮两项测试漏计明确日期的editPlan，修正测试后通过，原43/2日志保留；d090810首包因前端后续修正被最终包取代，未放桌面/安装/发布，首包留Git外。没有后台/API/契约/数据库结构变化，服务器仍为7720ec9b / contract0.33/schema027及原角色包；新客户端提示可使用既有API，默认角色v3/精确迁移尚未部署服务器。本批未合main或公开Release，Latest仍v0.10.56，未代真实模型、安装及产品UI验收。Git外 **D:/deepseek-agent/.runtime/planner-auto-shape-20261026**保存证据。[交付回执](deployment/acceptcat-0.10.58.md)。
 
 ## 图片右键操作修复（本机候选0.10.57已完成，PR118待审）
 
