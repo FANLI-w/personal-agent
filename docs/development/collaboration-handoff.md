@@ -7,7 +7,7 @@
 
 工作目录：D:\deepseek-agent\research-agent-platform-chat-integration
 主仓库：https://github.com/luoyan96/personal-agent
-共同开发基线：主仓库最新 main，已包含此前聊天/资料/课题组和PR112整合的PR105至PR111：单任务规划、Markdown角色组织、聊天返回/通知、大肥鱼头像/图标、工作台/资料页精简，以及18角色/19方法科研同伴团队。main已合并667bc34；公开Latest现为v0.10.56，tag固定实际构建源码f45c278（PR116仍待审，未合main，按要求先发布安装包）；main可继续有后续文档提交，操作前重新fetch核对。
+共同开发基线：主仓库最新 main。PR117本批获负责人授权整合PR113至PR116依赖，包括联系人/自建Agent删除、智能体/真人两页与右键管理、星标修复、统一通讯录入口，以及同事PR115任务修复和安全恢复/支持通知修正；本段随PR117合入main生效，合并前以GitHub实际状态为准。此前聊天/资料/课题组、单任务规划、Markdown角色、聊天返回/通知、大肥鱼头像/图标、页面精简及18角色/19方法保持。公开Latest为v0.10.56，tag固定实际构建源码f45c278；后台已单独升级为7720ec9b/产品04e184f/contract0.33/schema027，无新迁移。main、发布标签和后台部署不必同一提交，操作前重新fetch核对。
 
 先读取根目录 AGENTS.md，然后读取 CONTRIBUTING.md、docs/current-state.md、docs/project-log.md 最新记录、README.md、docs/roadmap.md 和 docs/development/collaboration-handoff.md。
 

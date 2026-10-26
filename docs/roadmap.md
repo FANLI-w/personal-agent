@@ -1,5 +1,7 @@
 # 开发路线图
 
+2026-10-26：负责人授权[PR117](https://github.com/luoyan96/personal-agent/pull/117)整合main，包含PR113至PR116的删除、通讯录/星标与同事任务改动及安全恢复/支持通知修正；本条随合并生效，合并前以GitHub实际状态为准。后台已单独于16:31部署7720ec9b/产品04e184f/contract0.33/schema027，97项隔离、104表/8原件及24配置输入保全通过，无迁移。公开Latest0.10.56/tag f45c278继续对应原包，本轮仅代码合并及交接，不重新发布、部署或代用户体验。下方未合等描述保留为历史批次，见[current-state](current-state.md)与[后台回执](deployment/task-flow-safe-recovery-20261026.md)。
+
 2026-10-26：按负责人要求先上传，[v0.10.56](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.56)于15:35:28公开为Latest，tag固定f45c278实际构建源码；四附件摘要和未登录更新清单核对通过。[PR116](https://github.com/luoyan96/personal-agent/pull/116)仍待审，未合main，后台b9901ac5/contract0.33/schema027未变。本批只发布与文档，未重新打包或代安装体验，见[回执](deployment/acceptcat-0.10.56.md)。
 
 2026-10-26：[0.10.56统一通讯录](deployment/acceptcat-0.10.56.md)移除我的Agent重复栏目和通讯录我的/课题组切换，智能体/联系人分别一个合并列表，技能库/本人技能与资料管理迁入通讯录，旧链接保持目标。80项客户端、双类型、冻结NSIS/更新通过；从main/d25781d新开分支并保留PR114依赖，[PR116](https://github.com/luoyan96/personal-agent/pull/116)待审、未合main/未公开，无需后台升级，实际安装由负责人检查。

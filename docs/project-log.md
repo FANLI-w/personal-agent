@@ -2029,3 +2029,9 @@ Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**�
 备份 **/srv/research-openim-backups/task-flow-safe-recovery-20261026-20261026T083108Z/research.tar.gz**，SHA256 **220cf0dfc76ee8dac76afd16048467bcaa01d0edb8ad40b7e681b304bf29129a**；在同一ECS，未做异地/整栈恢复。运维目录 **/opt/research-openim/ops/task-flow-safe-recovery-20261026**，完整Compose链在contact-agent-removal-20261026/images.yaml后追加本目录images.yaml。两镜像均支持0.33/schema027，必要时停写后成对退回b9901ac5并保留当前数据，不回灌旧备份、不退到0.32/schema026；本次成功未执行回退。
 
 根完整ci **812项/64文件**及生产边界通过；GitHub已核对文档head **871108a**四项均success，新部署文档提交的检查状态另看实际结果。失败的终端分段传输、登录过期和.sh的CRLF预检拒绝均保留；完整文件上传及各源码摘要校验后，只修正两份运维脚本换行并核对规范化摘要，bash预检通过后才启动构建/部署。Git外 **D:/deepseek-agent/.runtime/task-flow-safe-recovery-20261026**保存包、原失败、本机/服务器检查、原始截图及回执。回执从Workbench编辑器复制，Windows剪贴板CRLF还原LF后与服务器 **4760字节 / SHA256 f362d40ce72d0de3991fce83799748783db45faa4908ad84c04249dcbfcf7cde** 完全匹配，规范JSON摘要也一致；没有下载或提交运行数据库/私人材料/密钥。
+
+## 2026-10-26：PR117整合main批次（随合并生效）
+
+负责人在后台已升级后明确要求合并，当前工作目录干净；fetch后的主仓库main仍d25781d，PR117头d22f778可合并。重新读取PR113/e0e911b、PR114/769c883、PR115/8e6e2a6、PR116/26bce00，head均与已整合版本一致。普通merge保留同事提交和各批功能，不另行合并旧PR、整文件覆盖或强推。任务产品04e184f与已部署/受测代码相同；本批只更新交接/合并记录，执行内容及差异检查，等待实际PR head的GitHub检查成功，再带固定head合并。此记录在PR117进入main后生效，实际merge SHA/时间以GitHub回执为准；Git外pr117-merge-20261026保存检查、祖先关系、执行和main同步回执。
+
+沿用根812项、服务器97项和既有客户端/安装包受测证据，不无故重跑或追加真人验收。公开0.10.56/tag f45c278和16:31已部署7720ec9b/产品04e184f/contract0.33/schema027保持；本轮没有安装包/Release、后台重启/迁移或真实模型/材料/IM送达检查。下一个功能重新fetch最新main并另开分支。合并后当前事实以current-state新节和PR状态为准，旧未合记录保留其当时含义。

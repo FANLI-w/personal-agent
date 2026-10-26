@@ -1,5 +1,7 @@
 # 2026-10-26任务流转修复与后台升级
 
+PR117本批获负责人授权合入main；代码整合结果以[PR合并回执](https://github.com/luoyan96/personal-agent/pull/117)和[当前状态](../current-state.md)为准。本文件下方“待审”等表述记录16:31部署当时状态；合并不再次部署、迁移或发布安装包。
+
 ## 实际部署完成
 
 负责人重新登录并明确续办后，**2026-10-26 16:31:05—16:31:27（北京时间）**完成排空、停写备份、独立恢复校验和API/worker配对切换。当前 **research-openim-api:task-flow-safe-recovery-20261026** / **sha256:7720ec9b8f8c533c52352471eccc13a85731b2c257cb6d5f8bf349cae4abb850**，产品 **04e184f26123920fafa5c8f962fe100477525a63** 增量叠加已核验b9901ac5基线；契约 **0.33.0**、数据库 **027**保持，**没有迁移**。现有0.10.56客户端可用，本批没有重打/公开安装包、Release或合main，[PR117](https://github.com/luoyan96/personal-agent/pull/117)仍待审。
