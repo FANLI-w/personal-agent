@@ -473,7 +473,9 @@ export class Collaboration {
       if (body.decision === 'accepted') {
         const schedule={...offer.schedule,committed:body.committed??offer.schedule.committed};this.validateSchedule(schedule,true)
         assignment.commitment = { scope: offer.scope, schedule, acceptedAt: now() }
-        task.leadId = this.actor.id; task.status = 'ready'; task.schedule = assignment.commitment.schedule; this.grant(task.id, this.actor.id, 'full')
+        task.leadId = this.actor.id; task.schedule = assignment.commitment.schedule; this.grant(task.id, this.actor.id, 'full')
+        try { this.coordination.dependenciesReady(task, true); task.status = 'ready' }
+        catch (e) { if (!(e instanceof Error && e.message === 'DEPENDENCY_BLOCKED')) throw e; task.status = 'blocked'; task.blocker = { reason: '等待前置任务完成', requestedMemberId: null, requestedAction: '前置任务完成后自动恢复', resumeStatus: 'ready' } }
         new ReuseService(this).copy('plan',task.planId,'task',task.id)
         for(const row of this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId')=?").all(task.id,this.actor.id)) {const old=Assignment.parse(JSON.parse(String(row.document)));old.status='transferred';old.version++;this.saveAssignment(old)}
       } else { if(body.committed) fail('VALIDATION_ERROR');task.status = 'unassigned'; this.db.prepare("DELETE FROM task_access WHERE task_id=? AND member_id=? AND access='summary'").run(task.id, this.actor.id) }
@@ -490,7 +492,10 @@ export class Collaboration {
       const schedule={...summary.schedule,committed:body.committed??null};this.validateSchedule(schedule,true)
       const assignment = this.createAssignment(task, 'claim', this.actor.id, summary.deliverable, schedule)
       task.schedule=schedule
-      task.leadId = this.actor.id; task.status = 'ready'; task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'claimed')
+      task.leadId = this.actor.id
+      try { this.coordination.dependenciesReady(task, true); task.status = 'ready' }
+      catch (e) { if (!(e instanceof Error && e.message === 'DEPENDENCY_BLOCKED')) throw e; task.status = 'blocked'; task.blocker = { reason: '等待前置任务完成', requestedMemberId: null, requestedAction: '前置任务完成后自动恢复', resumeStatus: 'ready' } }
+      task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'claimed')
       return { data: assignment }
     },
     start: ({ params, body }) => {
@@ -526,6 +531,7 @@ export class Collaboration {
       this.db.prepare('UPDATE deliverables SET version=?,document=? WHERE id=?').run(delivery.version, encode(delivery), delivery.id)
       task.status = body.decision === 'accepted' ? 'completed' : 'changes_requested'; task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'reviewed')
       if(body.decision==='changes_requested') this.coordination.impact(task,'review_returned')
+      else this.coordination.resolveDownstream(task)
       return { data: delivery }
     },
   }
