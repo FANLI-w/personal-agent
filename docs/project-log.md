@@ -2076,3 +2076,9 @@ Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**�
 桌面C:/Users/luo/Desktop/AcceptCat_0.10.59.exe，88,221,597字节，SHA256 9bcba06540bb11256e3c097a53515e725856cbe066a6599519f240cd31c304c5，摘要与构建目录一致，旧0.10.57/58保留。未运行安装器、产品UI、真实模型或私人材料验收。Git外group-agent-mentions-20261026保存构建、元数据、摘要、全部检查及首轮失败日志。
 
 contract0.34/schema027，无数据库迁移。后台固定产品提交源码归档和部署/回滚方案准备完成（镜像未在服务器构建）；没有实际备份、隔离试运行、部署、重启或配置变更。本批群聊修复需要配套后台后生效，当前线上仍7720ec9b/04e184f/contract0.33/schema027。公开Latest仍0.10.56，未公开0.10.59或上传Release资产。后续合main、公开发布与后台部署分别由负责人决定。
+
+## 2026-10-26：配套后台升级获授权，修复Windows CI夹具
+
+负责人明确同意现在升级0.10.59配套后台。只读核对线上API/worker仍为7720ec9b，原compose链包含task-flow-safe-recovery，其他服务未动。运维包acceptcat-group-agent-db11a6d-ops.tar.gz为固定产品db11a6d，129份overlay、191份编译结果摘要和8份隔离测试；191207字节，SHA256 7c2130d0b7b2d2cb3660fab444c1a9d87e2aaf6f8b55b4e169a423d88a7c27fc。首次Workbench文件上传NoSuchKey，未启动构建/停写/部署；刷新并恢复既有免密连接后重新上传成功，完整包及137份源码/测试哈希、LF和bash语法前置校验通过，已开始无网络隔离构建，生产尚未切换。
+
+核对PR120/baf2e07三项foundation为success，package失败：服务状态IPC测试夹具漏登记PR118新增chatImageActionsManage，导致5项Unexpected import；产品实现无变化。补齐该夹具，并将本批35项群聊/待发/传输检查接入Windows CI。定向5项与整组88项/13文件通过，保留ci-package-failure.log。仅测试/工作流变化，不改变db11a6d产品或现有0.10.59安装包，不重复已通过的根完整CI或额外安装验收。后续部署结果另记。

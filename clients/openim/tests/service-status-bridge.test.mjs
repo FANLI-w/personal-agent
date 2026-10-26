@@ -59,6 +59,7 @@ async function fixture() {
     ["localFolderManage", ["registerLocalFolderBridge"]],
     ["peerLibraryManage", ["registerPeerLibraryBridge"]],
     ["imageClipboardManage", ["registerImageClipboardBridge"]],
+    ["chatImageActionsManage", ["registerChatImageActionsBridge"]],
     ["desktopWorkManage", ["registerDesktopWorkBridge"]],
     ["updateManage", ["registerDesktopUpdateBridge"]],
     ["messageNotificationManage", ["registerMessageNotificationBridge"]],
