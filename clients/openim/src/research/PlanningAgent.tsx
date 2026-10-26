@@ -58,6 +58,34 @@ import { planningAgentStarter } from "./agentStarterProfiles";
 import { useAgentStarterLinks } from "./useAgentStarterLinks";
 import { AgentColleagueSettings } from "./AgentColleagueSettings";
 
+const SINGLE_TASK_STEP_MARKER = "执行步骤（同一项任务内）：";
+
+type ParsedSingleStep = {
+  title: string;
+  detail: string;
+};
+
+function parseSingleTaskSteps(goal: string): {
+  goal: string;
+  steps: ParsedSingleStep[];
+} {
+  const markerIndex = goal.indexOf(SINGLE_TASK_STEP_MARKER);
+  if (markerIndex === -1) return { goal, steps: [] };
+  const head = goal.slice(0, markerIndex).trim();
+  const body = goal.slice(markerIndex + SINGLE_TASK_STEP_MARKER.length).trim();
+  const steps = body
+    .split(/\n(?=\d+\.\s)/)
+    .map((block) => {
+      const lines = block.trim().split("\n");
+      const first = lines[0]?.replace(/^\d+\.\s*/, "").trim();
+      if (!first) return null;
+      const detail = lines.slice(1).join("\n").trim();
+      return { title: first, detail };
+    })
+    .filter((s): s is ParsedSingleStep => s !== null);
+  return { goal: head, steps };
+}
+
 type Props = {
   available: boolean;
   conversationAvailable: boolean;
@@ -884,59 +912,104 @@ function PlanningAgentSession({
                     个步骤会放进同一项任务，内容保留；确认后只创建一项任务。
                   </p>
                 )}
-              <ol>
-                {preview.proposedItems.map((step, index) => (
-                  <li key={step.id}>
-                    <div>
-                      <b>{index + 1}</b>
-                      <strong>{step.title}</strong>
-                      <span>
-                        {step.allocation.kind === "self"
-                          ? "我来负责"
-                          : step.allocation.kind === "invitation"
-                          ? `邀请 ${
-                              people[step.allocation.memberId] ||
-                              step.allocation.memberId
-                            }`
-                          : step.allocation.kind === "claim"
-                          ? "课题组成员认领"
-                          : "公共 Agent 安排"}
-                      </span>
-                    </div>
-                    {preview!.proposedItems.length > 1 && (
-                      <p>交付：{step.deliverable}</p>
-                    )}
-                    <details className="planning-step-details">
-                      <summary>查看任务说明与完成要求</summary>
-                      <SafeMessageMarkdown text={step.goal} />
-                      <p>交付要求：</p>
-                      <SafeMessageMarkdown text={step.deliverable} />
-                      <p>验收标准：</p>
-                      <SafeMessageMarkdown text={step.acceptanceCriteria} />
-                      {step.dependencies.length > 0 && (
+              {preview.proposedItems.length === 1 &&
+              parseSingleTaskSteps(preview.proposedItems[0].goal).steps.length >
+                0 ? (
+                (() => {
+                  const step = preview.proposedItems[0];
+                  const parsed = parseSingleTaskSteps(step.goal);
+                  return (
+                    <div className="planning-single-task-steps">
+                      {parsed.goal && (
+                        <p className="planning-single-task-goal">{parsed.goal}</p>
+                      )}
+                      <ol className="planning-single-step-list">
+                        {parsed.steps.map((s, i) => (
+                          <li key={i}>
+                            <b>{i + 1}</b>
+                            <div>
+                              <strong>{s.title}</strong>
+                              {s.detail && (
+                                <SafeMessageMarkdown text={s.detail} />
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                      <details className="planning-step-details">
+                        <summary>查看交付与验收要求</summary>
+                        <p>交付要求：</p>
+                        <SafeMessageMarkdown text={step.deliverable} />
+                        <p>验收标准：</p>
+                        <SafeMessageMarkdown text={step.acceptanceCriteria} />
+                      </details>
+                      {step.schedule.hardDeadline && (
                         <small>
-                          前置：
-                          {step.dependencies
-                            .map(
-                              (id) =>
-                                preview!.proposedItems.find((s) => s.id === id)
-                                  ?.title || "待核对步骤",
-                            )
-                            .join("、")}
+                          截止：{planDate(step.schedule.hardDeadline)} ·{" "}
+                          {step.schedule.hardDeadline.value.kind === "date"
+                            ? step.schedule.hardDeadline.value.timezone
+                            : "北京时间"}
                         </small>
                       )}
-                    </details>
-                    {step.schedule.hardDeadline && (
-                      <small>
-                        截止：{planDate(step.schedule.hardDeadline)} ·{" "}
-                        {step.schedule.hardDeadline.value.kind === "date"
-                          ? step.schedule.hardDeadline.value.timezone
-                          : "北京时间"}
-                      </small>
-                    )}
-                  </li>
-                ))}
-              </ol>
+                    </div>
+                  );
+                })()
+              ) : (
+                <ol>
+                  {preview.proposedItems.map((step, index) => (
+                    <li key={step.id}>
+                      <div>
+                        <b>{index + 1}</b>
+                        <strong>{step.title}</strong>
+                        <span>
+                          {step.allocation.kind === "self"
+                            ? "我来负责"
+                            : step.allocation.kind === "invitation"
+                            ? `邀请 ${
+                                people[step.allocation.memberId] ||
+                                step.allocation.memberId
+                              }`
+                            : step.allocation.kind === "claim"
+                            ? "课题组成员认领"
+                            : "公共 Agent 安排"}
+                        </span>
+                      </div>
+                      {preview!.proposedItems.length > 1 && (
+                        <p>交付：{step.deliverable}</p>
+                      )}
+                      <details className="planning-step-details">
+                        <summary>查看任务说明与完成要求</summary>
+                        <SafeMessageMarkdown text={step.goal} />
+                        <p>交付要求：</p>
+                        <SafeMessageMarkdown text={step.deliverable} />
+                        <p>验收标准：</p>
+                        <SafeMessageMarkdown text={step.acceptanceCriteria} />
+                        {step.dependencies.length > 0 && (
+                          <small>
+                            前置：
+                            {step.dependencies
+                              .map(
+                                (id) =>
+                                  preview!.proposedItems.find(
+                                    (s) => s.id === id,
+                                  )?.title || "待核对步骤",
+                              )
+                              .join("、")}
+                          </small>
+                        )}
+                      </details>
+                      {step.schedule.hardDeadline && (
+                        <small>
+                          截止：{planDate(step.schedule.hardDeadline)} ·{" "}
+                          {step.schedule.hardDeadline.value.kind === "date"
+                            ? step.schedule.hardDeadline.value.timezone
+                            : "北京时间"}
+                        </small>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
               {!preview.proposedItems.length && (
                 <p>我们可以先把思路聊清楚，再决定怎样安排。</p>
               )}

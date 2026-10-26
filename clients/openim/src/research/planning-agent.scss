@@ -280,6 +280,38 @@
   .planning-chat-plan summary {
     cursor: pointer;
   }
+  .planning-single-task-goal {
+    margin: 13px 18px 0;
+    color: #54697a;
+    font-size: 12px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .planning-single-step-list {
+    border-top: 1px solid #edf1f5;
+  }
+  .planning-single-step-list li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .planning-single-step-list li > b {
+    flex: none;
+    padding-top: 2px;
+  }
+  .planning-single-step-list li > div {
+    display: block;
+    flex: 1;
+    min-width: 0;
+  }
+  .planning-single-step-list li > div strong {
+    display: block;
+    margin-bottom: 3px;
+  }
+  .planning-single-step-list li > div > p {
+    margin: 2px 0;
+  }
   .planning-chat-plan footer {
     display: flex;
     flex-wrap: wrap;
