@@ -117,6 +117,7 @@ export function SkillLibrary({
     (c) =>
       c.identity.kind === "personal_agent" &&
       c.identity.ownerMemberId === state.actor?.member.id &&
+        c.allowedActions.includes('edit_profile') &&
       !c.agentRuntime,
   );
   const people = state.contacts
@@ -224,7 +225,7 @@ export function SkillLibrary({
     <section className="skill-library" aria-label="技能库">
       {onBack && (
         <Button className="skill-library-back" onClick={onBack}>
-          返回我的 Agent
+          返回智能体
         </Button>
       )}
       <header className="skill-library-header">

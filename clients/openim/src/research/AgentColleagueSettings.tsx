@@ -18,7 +18,7 @@ export function AgentColleagueSettings({ contactId, prepare, onChanged, disabled
   const [selected, setSelected] = useState(contactId);
   const [busy, setBusy] = useState(false), [failure, setFailure] = useState("");
   return <>
-    <Button type="text" icon={<SettingOutlined />} loading={busy} disabled={disabled || busy} aria-label="助手设置" title="角色、交流方式与私人记忆" onClick={() => {
+    <Button type="text" icon={<SettingOutlined />} loading={busy} disabled={disabled || busy} aria-label="查看助手资料" title="介绍、能力、性格与设置" onClick={() => {
       const operation = capture();
       setBusy(true); setFailure("");
       void (async () => {
@@ -34,7 +34,7 @@ export function AgentColleagueSettings({ contactId, prepare, onChanged, disabled
           operation.dispose();
         }
       })();
-    }}>助手设置</Button>
+    }}>助手资料</Button>
     {failure && <Alert type="warning" message={failure} closable onClose={() => setFailure("")} />}
     <ResearchUserCard contactId={selected} ref={card} onClose={onChanged} />
   </>;

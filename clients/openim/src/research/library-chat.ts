@@ -135,7 +135,7 @@ export async function sendLibraryMessage(options: {
       !c.agentRuntime,
   );
   if (!agent)
-    throw new Error("资料 Agent 已不可用，请核对我的 Agent 配置。原消息尚未确认。");
+    throw new Error("资料 Agent 已不可用，请核对通讯录中的智能体配置。原消息尚未确认。");
   const conversation = (
     await api("chatConversation", { params: { id: intent.conversationId! }, signal })
   ).data;

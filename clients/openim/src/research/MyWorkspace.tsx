@@ -3,13 +3,12 @@ import {
   ApiOutlined,
   BookOutlined,
   CloudDownloadOutlined,
-  RobotOutlined,
   SettingOutlined,
   TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { useLayoutEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { APP_NAME } from "@/config/brand";
 import OIMAvatar from "@/components/OIMAvatar";
 import { useUserStore } from "@/store";
@@ -17,7 +16,7 @@ import { AboutContent } from "@/layout/LeftNavBar/About";
 import { PersonalSettingsContent } from "@/layout/LeftNavBar/PersonalSettings";
 import { DesktopVersionPanel } from "@/layout/LeftNavBar/DesktopVersionPanel";
 import { useDesktopUpdates } from "@/layout/LeftNavBar/useDesktopUpdates";
-import { MyAgentsWorkspace } from "./MyAgentsWorkspace";
+import { relocatedMyWorkspace } from "./workspace-navigation";
 import { WorkbenchCapabilities } from "./CapabilitySquare";
 import { ModelSettings } from "./ModelSettings";
 import { PersonalMemoryPanel } from "./PersonalMemoryPanel";
@@ -29,7 +28,6 @@ import "./my-workspace.scss";
 
 const sections = [
   { value: "profile", label: "个人资料", icon: UserOutlined },
-  { value: "agents", label: "我的 Agent", icon: RobotOutlined },
   { value: "labs", label: "课题组", icon: TeamOutlined },
   { value: "capabilities", label: "课题组能力", icon: TeamOutlined },
   { value: "models", label: "模型设置", icon: ApiOutlined },
@@ -41,10 +39,8 @@ const sections = [
 export function MyWorkspace() {
   const [params, setParams] = useSearchParams();
   const requested = params.get("view");
-  const view =
-    requested === "skills"
-      ? "agents"
-      : sections.some((s) => s.value === requested)
+  const relocated = relocatedMyWorkspace(params);
+  const view = sections.some((s) => s.value === requested)
       ? requested!
       : "profile";
   const generation = useResearchStore((s) => s.generation);
@@ -76,12 +72,13 @@ export function MyWorkspace() {
       },
     });
   };
+  if (relocated) return <Navigate to={relocated} replace />;
   return (
     <main className="social-workspace my-workspace">
       <header className="workspace-heading">
         <div>
           <h1>我的</h1>
-          <p>管理个人资料、科研助手与使用偏好。</p>
+          <p>管理个人资料与使用偏好。</p>
         </div>
       </header>
       <div className="my-workspace-body">
@@ -117,9 +114,7 @@ export function MyWorkspace() {
           aria-label="我的内容"
         >
           {failure && <Alert type="warning" message={failure} />}
-          {view === "agents" ? (
-            <MyAgentsWorkspace />
-          ) : view === "labs" ? (
+          {view === "labs" ? (
             <LabWorkspace />
           ) : view === "capabilities" ? (
             <WorkbenchCapabilities view="lab" />
