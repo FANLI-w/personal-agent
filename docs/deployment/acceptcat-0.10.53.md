@@ -26,14 +26,18 @@
 
 Git外D:/deepseek-agent/.runtime/contact-agent-removal-20261026保留root-install、共享包准备、首轮/诊断/最终9项API、旧迁移修复、三次完整ci、客户端123项、双类型、desktop-win、windows-update、delivery和notes；构建产物及运行证据不入Git。
 
-## 后台兼容与升级边界
+## 制作时后台兼容与升级边界（后续实际升级见末节）
 
 contract0.33.0新增POST /api/v1/chat/agents/{id}/delete，schema027新增deleted_personal_agents。既有Contact/Conversation、消息持久结构和allowedActions枚举保持；老客户端不会收到陌生删除枚举。旧迁移及校验和不修改。
 
-当前线上仍research-openim-api:research-colleagues-20261026 / acf4b711，contract0.32/schema026，本批未连接生产Workbench或运行服务操作。旧后台没有自建Agent删除接口，必须另行升级API/worker和显式迁移027，安装新版客户端本身不会完成该升级。公开Latest复核仍v0.10.52/423781483，未改tag、Release或README公开下载入口。
+制作当时线上仍research-openim-api:research-colleagues-20261026 / acf4b711，contract0.32/schema026，本批未连接生产Workbench或运行服务操作。旧后台没有自建Agent删除接口，必须另行升级API/worker和显式迁移027，安装新版客户端本身不会完成该升级。公开Latest复核仍v0.10.52/423781483，未改tag、Release或README公开下载入口。
 
 升级时须重新核对当时生产镜像/Compose链、排空并备份，独立恢复验证原有表/行/原件/配置与迁移checksum保持，验证027只增加空删除表，然后配对切API/worker。不能用当前main全部覆盖此前生产叠加基线及运营配置。实际执行前仍需负责人单独授权。
 
 一旦产生删除记录，直接回退旧镜像会忽略逻辑删除，可能使旧Agent重新可用；采用保留027约束的修复版本。禁止回灌旧数据库覆盖后续消息、任务和其他业务。此处是升级/恢复要求，未冒称已经在生产执行。注册超时根因仍未定，飞书仅本人试点，安装或入组不共享授权和私人资料。
 
 GitHub连接器创建PR返回403 Resource not accessible by integration，改用本机已登录gh CLI成功创建PR113，未扩大权限或绕过审批。文档初次diff检查仅发现日志EOF多一空行，保留证据并修正；358份Markdown/19方法内容检查通过。
+
+## 后续本批单独授权的后台升级
+
+负责人回复“现在升级后台”后，2026-10-26 12:01:00—12:01:26部署固定e947fb26配套镜像b9901ac5，contract0.33/schema027。184项服务器隔离（177+补充7）及迁移演练、停写备份/独立恢复、103原表/7原件/23配置保全及健康通过；新删除POST格式完整匿名401。未合PR113或公开v0.10.53，未重打包或代真实删除。[部署/失败保留/恢复限制](contact-agent-removal-20261026.md)。旧镜像严格要求026，027后即使空删除表也应保留新约束前滚，禁止回灌旧库。

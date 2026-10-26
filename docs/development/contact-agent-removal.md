@@ -15,7 +15,7 @@
 
 新增 `POST /api/v1/chat/agents/{id}/delete`，`expectedVersion`是确认的档案版本，返回稳定`id/deletedAt`回执。contract **0.33.0**。既有Contact/Conversation和持久消息结构、allowedActions枚举保持；已删除投影使用既有disabled/capability_unavailable及空动作，旧客户端不接收陌生枚举。
 
-schema **027**新增`deleted_personal_agents`表，保留FK，不改已有表和迁移checksum、不批量删除旧数据。API/worker和迁移需要单独部署；0.32后台尚无新删除接口，不能用客户端包或源码提交冒称已上线。旧版后台回退会忽略新删除状态；一旦发生删除，不应直接退回旧镜像使已删除Agent重新可用，应采用保留027删除约束的修复版本。禁止回灌旧数据库覆盖后续消息或任务。
+schema **027**新增`deleted_personal_agents`表，保留FK，不改已有表和迁移checksum、不批量删除旧数据。API/worker和迁移单独部署；本批经负责人另行授权已于2026-10-26 12:01:26上线contract0.33/schema027，详见[部署回执](../deployment/contact-agent-removal-20261026.md)。旧0.32镜像严格要求026，不能直接使用027数据库；即使删除表为空也应保留027约束前滚修复，不删除迁移状态来绕过检查或复活旧Agent。禁止回灌旧数据库覆盖后续消息或任务。
 
 前端三处共用同一确认与调用逻辑，按档案/关系分别使用正确版本，保留同一确认的幂等key。页面/账号改变前阻止发送，响应迟到不刷新另一账号；服务拒绝时不乐观隐藏，删除确认后列表刷新失败与删除失败分别提示。通讯录原文数据与聊天发送状态沿用现有读取和权限，删除后重新加载会话只读状态。
 
