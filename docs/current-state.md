@@ -2,7 +2,17 @@
 
 更新日期：2026-10-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 0.10.56本机候选：统一通讯录与智能体管理
+## 0.10.56已先公开为Latest（源码PR116仍待审）
+
+负责人明确要求先上传Release包后，核对原0.10.56源码、桌面/构建包与现有tag/Release均无冲突。北京时间 **2026-10-26 15:35:28**，[v0.10.56](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.56) / Release **423959199**公开、非预发布并设为Latest；tag固定实际构建源码 **f45c278d899e5452a1b56b1d85c0e715411c8833**，没有把待审功能冒称已合main。通讯录统一入口、删除/右键管理、Agent介绍和星标修复随包交付。[安装包直链](https://github.com/luoyan96/personal-agent/releases/download/v0.10.56/AcceptCat_0.10.56.exe)。
+
+先建唯一草稿并上传 **EXE/blockmap/latest.yml/SHA256SUMS.txt** 四附件，逐一核对GitHubuploaded、字节与SHA256 digest后公开。EXE **88,227,913字节**，SHA256 **454fb4a9728445af9f288f6f26a2704caf255c928a2582b3ddb7af1a6b26ff9f**；未登录公开latest API、tag源码和两份小清单逐字节核对通过。没有重复上传、覆盖旧Release/旧包或下载运行安装器追加验收。[完整回执](deployment/acceptcat-0.10.56.md)。
+
+[PR116](https://github.com/luoyan96/personal-agent/pull/116)仍OPEN/未合main，保留PR114和PR113依赖；读取head02a8319时，两个Linux Foundation和Windows打包均success，Windows Foundation仍in_progress，未声称四项完成；后续仅发布文档的head另看实际检查。原80项客户端/双类型/Windows成品证据已核对，未重新构建或重跑根CI。README下载/交接文档更新随功能PR待审，不直接改main。
+
+本批只有Release及文档，**没有后台部署、重启、迁移或新生产探测**；沿用 **b9901ac5/contract0.33/schema027**，注册超时仍未定因，安装/真实科研体验由负责人检查。Git外 **D:/deepseek-agent/.runtime/release-0.10.56-20261026**保留上传/公开/附件/匿名下载/PR检查及校验文件；草稿按tag的REST读取404已改用同一草稿列表定位，没有重复创建。GitHub连接器无二进制上传入口，使用已有登录的gh CLI上传。
+
+## 0.10.56制作与本机验证（已公开，见上节）
 
 按负责人要求，从fetch后的main **d25781d**另开 **feat/unified-contact-directory**，普通merge待审PR114/769c883作为依赖，保留PR113删除、0.10.55星标修复及同事功能。产品 **f45c278d899e5452a1b56b1d85c0e715411c8833**：移除“我的 → 我的 Agent”重复栏目；通讯录保留智能体/联系人两页，去掉我的/课题组切换，原两个授权来源合并为同一列表。技能库和本人站内Agent的技能/资料绑定移到通讯录，模型设置等个人栏目保持；旧Agent/Skill/目录链接跳转并保留目标。[设计](development/unified-contact-directory.md)。
 

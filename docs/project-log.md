@@ -1992,3 +1992,13 @@ Git外证据 **D:/deepseek-agent/.runtime/contact-stars-status-20261026**保留�
 桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.56.exe**，**88,227,913字节**，SHA256 **454fb4a9728445af9f288f6f26a2704caf255c928a2582b3ddb7af1a6b26ff9f**，源包/桌面副本摘要一致，旧包保留。[交付](deployment/acceptcat-0.10.56.md)。API/契约/数据库/共享角色方法/锁与PR114无差异，无需升级后台，仍 **b9901ac5/contract0.33/schema027**。[PR116](https://github.com/luoyan96/personal-agent/pull/116)已创建待审，OPEN/MERGEABLE，GitHub自动检查尚未确认完成，未合main或公开Release；Latest重新读取仍 **v0.10.52/423781483**。
 
 Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**保留80项、双类型、构建/更新/交付摘要与编辑预检说明。首次预检对类型字符串次数假定为1、实际3处，写入前退出，修正后检查首次通过；只读路径误查未改文件。未代安装、原生启动、浏览器产品、真实账号/材料/模型或新增手工载荷验收；没有后台操作/新生产探测，注册超时仍未定因。
+
+## 2026-10-26：0.10.56先公开Release，源码PR116保持待审
+
+负责人明确要求先上传Release包后，核对原0.10.56源码、桌面/构建包与现有tag/Release均无冲突。北京时间 **2026-10-26 15:35:28**，[v0.10.56](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.56) / Release **423959199**公开、非预发布并设为Latest；tag固定实际构建源码 **f45c278d899e5452a1b56b1d85c0e715411c8833**，没有把待审功能冒称已合main。通讯录统一入口、删除/右键管理、Agent介绍和星标修复随包交付。[安装包直链](https://github.com/luoyan96/personal-agent/releases/download/v0.10.56/AcceptCat_0.10.56.exe)。
+
+先建唯一草稿并上传 **EXE/blockmap/latest.yml/SHA256SUMS.txt** 四附件，逐一核对GitHubuploaded、字节与SHA256 digest后公开。EXE **88,227,913字节**，SHA256 **454fb4a9728445af9f288f6f26a2704caf255c928a2582b3ddb7af1a6b26ff9f**；未登录公开latest API、tag源码和两份小清单逐字节核对通过。没有重复上传、覆盖旧Release/旧包或下载运行安装器追加验收。[完整回执](deployment/acceptcat-0.10.56.md)。
+
+[PR116](https://github.com/luoyan96/personal-agent/pull/116)仍OPEN/未合main，保留PR114和PR113依赖；读取head02a8319时，两个Linux Foundation和Windows打包均success，Windows Foundation仍in_progress，未声称四项完成；后续仅发布文档的head另看实际检查。原80项客户端/双类型/Windows成品证据已核对，未重新构建或重跑根CI。README下载/交接文档更新随功能PR待审，不直接改main。
+
+本批只有Release及文档，**没有后台部署、重启、迁移或新生产探测**；沿用 **b9901ac5/contract0.33/schema027**，注册超时仍未定因，安装/真实科研体验由负责人检查。Git外 **D:/deepseek-agent/.runtime/release-0.10.56-20261026**保留上传/公开/附件/匿名下载/PR检查及校验文件；草稿按tag的REST读取404已改用同一草稿列表定位，没有重复创建。GitHub连接器无二进制上传入口，使用已有登录的gh CLI上传。

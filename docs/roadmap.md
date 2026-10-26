@@ -1,5 +1,7 @@
 # 开发路线图
 
+2026-10-26：按负责人要求先上传，[v0.10.56](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.56)于15:35:28公开为Latest，tag固定f45c278实际构建源码；四附件摘要和未登录更新清单核对通过。[PR116](https://github.com/luoyan96/personal-agent/pull/116)仍待审，未合main，后台b9901ac5/contract0.33/schema027未变。本批只发布与文档，未重新打包或代安装体验，见[回执](deployment/acceptcat-0.10.56.md)。
+
 2026-10-26：[0.10.56统一通讯录](deployment/acceptcat-0.10.56.md)移除我的Agent重复栏目和通讯录我的/课题组切换，智能体/联系人分别一个合并列表，技能库/本人技能与资料管理迁入通讯录，旧链接保持目标。80项客户端、双类型、冻结NSIS/更新通过；从main/d25781d新开分支并保留PR114依赖，[PR116](https://github.com/luoyan96/personal-agent/pull/116)待审、未合main/未公开，无需后台升级，实际安装由负责人检查。
 
 2026-10-26：[0.10.55星标修复](deployment/acceptcat-0.10.55.md)修正只读服务状态误用连接管理权限导致的星标读取错误，当前应用页面可读状态、配置权限保持；新增主进程/preload/renderer串联回归，42项客户端、双类型、冻结NSIS和更新守卫通过。安装包已放桌面，同一PR114待审，未合main/未公开，无需后台升级；实际安装体验由负责人检查。

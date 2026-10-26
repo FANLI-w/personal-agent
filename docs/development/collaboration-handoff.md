@@ -7,7 +7,7 @@
 
 工作目录：D:\deepseek-agent\research-agent-platform-chat-integration
 主仓库：https://github.com/luoyan96/personal-agent
-共同开发基线：主仓库最新 main，已包含此前聊天/资料/课题组和PR112整合的PR105至PR111：单任务规划、Markdown角色组织、聊天返回/通知、大肥鱼头像/图标、工作台/资料页精简，以及18角色/19方法科研同伴团队。本轮合并667bc34，公开Latest为v0.10.52，tag固定该合并；main可继续有后续文档提交，操作前重新fetch核对。
+共同开发基线：主仓库最新 main，已包含此前聊天/资料/课题组和PR112整合的PR105至PR111：单任务规划、Markdown角色组织、聊天返回/通知、大肥鱼头像/图标、工作台/资料页精简，以及18角色/19方法科研同伴团队。main已合并667bc34；公开Latest现为v0.10.56，tag固定实际构建源码f45c278（PR116仍待审，未合main，按要求先发布安装包）；main可继续有后续文档提交，操作前重新fetch核对。
 
 先读取根目录 AGENTS.md，然后读取 CONTRIBUTING.md、docs/current-state.md、docs/project-log.md 最新记录、README.md、docs/roadmap.md 和 docs/development/collaboration-handoff.md。
 
@@ -62,4 +62,4 @@
 
 - 0.10.55修正0.10.54星标读取被桌面IPC拦截的回归，产品4e87b349，在原PR114内继续待审；main仍d25781d，未合main/未公开。主窗口当前应用页只读状态，配置仍限本机连接页；42项/7文件、双类型、冻结NSIS与更新守卫通过，原3通过/2失败复现保留。桌面C:/Users/luo/Desktop/AcceptCat_0.10.55.exe，88,221,426字节，SHA256 88575553d299146f0bcd7df2cc0bef61fe8526c602167872733a259bd8069678。无需后台升级，保持b9901ac5/contract0.33/schema027；Latest仍0.10.52，安装体验由负责人检查。见docs/deployment/acceptcat-0.10.55.md，Git外contact-stars-status-20261026。
 
-- 0.10.56统一通讯录候选（PR116待审/未合main）：main/d25781d另开feat/unified-contact-directory，普通merge PR114/769c883，产品f45c278d899e5452a1b56b1d85c0e715411c8833。移除我的Agent重复栏目和我的/课题组切换，分别合并智能体/真人列表，技能和资料绑定在通讯录；模型设置等栏目保持，旧链接跳转保留目标。80项/12文件、双类型、冻结NSIS与更新守卫通过；桌面C:/Users/luo/Desktop/AcceptCat_0.10.56.exe，88,227,913字节，SHA256 454fb4a9728445af9f288f6f26a2704caf255c928a2582b3ddb7af1a6b26ff9f。后台仍b9901ac5/contract0.33/schema027，无需升级，Latest仍0.10.52，未合main/公开/代安装体验。详见docs/deployment/acceptcat-0.10.56.md及docs/development/unified-contact-directory.md，Git外unified-contact-directory-20261026。
+- 0.10.56统一通讯录已公开Latest（PR116仍待审/未合main）：main/d25781d另开feat/unified-contact-directory，普通merge PR114/769c883，产品f45c278d899e5452a1b56b1d85c0e715411c8833。移除我的Agent重复栏目和我的/课题组切换，分别合并智能体/真人列表，技能和资料绑定在通讯录；模型设置等栏目保持，旧链接跳转保留目标。80项/12文件、双类型、冻结NSIS与更新守卫通过；桌面C:/Users/luo/Desktop/AcceptCat_0.10.56.exe，88,227,913字节，SHA256 454fb4a9728445af9f288f6f26a2704caf255c928a2582b3ddb7af1a6b26ff9f。后台仍b9901ac5/contract0.33/schema027，无需升级。按随后单独上传指令于15:35:28公开v0.10.56/423959199为Latest，tag固定f45c278，四附件与匿名清单核对通过；源码未合main，未代安装体验。详见docs/deployment/acceptcat-0.10.56.md及docs/development/unified-contact-directory.md，Git外unified-contact-directory-20261026。
