@@ -224,7 +224,7 @@ export const ResearchUserCard = forwardRef<
             </div>
           ) : (
             <>
-              {contact.identity.kind !== "human" ? <AgentRoleDocuments contact={contact} /> : <dl>
+              <dl>
                 {(
                   [
                     ["introduction", "介绍"],
@@ -233,13 +233,14 @@ export const ResearchUserCard = forwardRef<
                   ] as const
                 ).map(([key, label]) => (
                   <div key={key} className="my-3">
-                    <dt className="text-xs text-slate-500">{label}</dt>
-                    <dd className="whitespace-pre-wrap">
+                    <dt className="text-sm font-medium text-slate-600">{label}</dt>
+                    <dd className="whitespace-pre-wrap text-sm leading-7">
                       {contact.profile[key] || "尚未填写"}
                     </dd>
                   </div>
                 ))}
-              </dl>}
+              </dl>
+              {contact.identity.kind !== "human" && <details className="my-4"><summary className="cursor-pointer py-2 text-sm">角色文件</summary><AgentRoleDocuments contact={contact} /></details>}
               <Space wrap>
                 {contact.allowedActions.includes("chat") && (
                   <Button

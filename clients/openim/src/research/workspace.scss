@@ -612,3 +612,27 @@
 
 .workspace-group-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .workspace-subnavigation { padding: 2px 30px 16px; }
+
+// Separate people and Agent directories keep the same list/detail layout.
+.directory-page-tabs {
+  display: flex;
+  padding: 0 16px;
+  gap: 8px;
+  border-bottom: 1px solid #e4e8e5;
+  button {
+    flex: 1;
+    padding: 12px 8px;
+    font-size: 16px;
+    font-weight: 550;
+    color: #666f69;
+    border-bottom: 3px solid transparent;
+    &[aria-pressed="true"] { color: #38775b; border-bottom-color: #548d70; }
+    &:focus-visible { outline: 2px solid #548d70; outline-offset: -3px; }
+  }
+}
+.directory-star { margin-left: 9px; color: #bf8d28; font-size: 16px; }
+.desktop-contacts-content .workspace-person-row {
+  strong { font-size: 15px; }
+  p { font-size: 13px; }
+  &:focus-visible { outline: 2px solid #548d70; outline-offset: -2px; }
+}

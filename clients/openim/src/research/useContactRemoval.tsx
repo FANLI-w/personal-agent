@@ -1,5 +1,5 @@
 import { Button, Modal } from 'antd';
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { Contact } from '@research-agent-platform/contracts';
 import { feedbackToast } from '@/utils/common';
 import { researchApi } from './api';
@@ -11,6 +11,8 @@ export function useContactRemoval(contact?: Contact, active = true, onRemoved?: 
   const actorId = useResearchStore(s => s.actor?.member.id);
   const operation = usePersonalOperation(active, `remove-contact:${contact?.id ?? ''}`);
   const inFlight = useRef(false);
+  const dialog = useRef<ReturnType<typeof Modal.confirm>>();
+  useLayoutEffect(() => () => { dialog.current?.destroy(); dialog.current = undefined; }, [operation.scope]);
   const [busy, setBusy] = useState(false);
   const action = contactRemoval(contact, actorId);
   const confirm = () => {
@@ -18,7 +20,7 @@ export function useContactRemoval(contact?: Contact, active = true, onRemoved?: 
     const reviewed = { ...action }, ticket = operation.capture(), key = crypto.randomUUID();
     let closed = false;
     const isCurrent = () => !closed && ticket.isCurrent();
-    Modal.confirm({
+    dialog.current = Modal.confirm({
       title: `${reviewed.label}「${reviewed.displayName}」？`,
       content: reviewed.kind === 'agent'
         ? '将从 Agent 和联系人列表移除，停止后续回复与此 Agent 的定时工作，清除其外部服务密钥。历史聊天只读保留，已有任务、资料和成果保留。删除后可重新创建。'
