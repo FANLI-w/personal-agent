@@ -50,7 +50,7 @@ PR111/8f82e23四项GitHub检查重新读取success，本批新PR另记。未合m
 | latest.yml | 340 | c9c80680a8a8718fda88019c4f084aaf83ae6c77d9982bfc52403725e4982e0d |
 | SHA256SUMS.txt | 262 | 2c53c71434df8882699dcfa12bdfc69bb947b6ff0ed44abf4e99b0e181bc71f5 |
 
-未登录公开latest API返回同一v0.10.52/Release；公开tag精确指向667bc34，下载公开latest.yml与SHA256SUMS逐字节相同。没有下载或运行88MB安装器追加体验验收，原公开Release、旧包及其他草稿均保留。合并667bc34的[新Foundation运行](https://github.com/luoyan96/personal-agent/actions/runs/40255102374)两项Ubuntu success、Windows仍in_progress；[新Windows打包](https://github.com/luoyan96/personal-agent/actions/runs/40255102397)success，尚未确认新运行全成功，PR最终四项success单独成立。发布文档内容/链接及git diff --check通过。
+未登录公开latest API返回同一v0.10.52/Release；公开tag精确指向667bc34，下载公开latest.yml与SHA256SUMS逐字节相同。没有下载或运行88MB安装器追加体验验收，原公开Release、旧包及其他草稿均保留。合并667bc34的[新Foundation运行](https://github.com/luoyan96/personal-agent/actions/runs/40255102374)三项现均success；[新Windows打包](https://github.com/luoyan96/personal-agent/actions/runs/40255102397)也success，合并提交与PR最终head各自四项检查全通过。发布文档内容/链接及git diff --check通过。
 
 Git外 **D:/deepseek-agent/.runtime/release-0.10.52-20261026**保存合并前状态/PR检查、前后树与父提交、8个PR合并回执、草稿/上传/公开和公开下载核对、原安装包摘要与SHA256SUMS。本批前置回执脚本曾遇functions无btoa及Windows命令过长，改为精简字段后保存；一次gh只读列表请求了不支持的databaseId字段，改用支持字段，均发生在相应操作前，未导致重复创建或覆盖，原错误说明保留。
 

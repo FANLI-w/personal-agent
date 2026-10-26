@@ -8,7 +8,7 @@
 
 北京时间 **09:39:41**，[v0.10.52](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.52) / Release **423781483**公开、非预发布并设为Latest，tag固定 **667bc34**；后续文档不移动tag。[安装包下载](https://github.com/luoyan96/personal-agent/releases/download/v0.10.52/AcceptCat_0.10.52.exe)，**88,222,587字节**，SHA256 **7484a4b4a1b86718438b4d063748ad070f5b511d81143bbbe3cc456e4ece7e4a**。先建唯一草稿，上传EXE、blockmap、latest.yml、SHA256SUMS.txt，四附件uploaded/大小/digest均与本机一致，再公开。未登录公开latest API已返回同一Release，tag提交正确，公开latest.yml和SHA256SUMS逐字节核对一致；旧Release、旧包及其他草稿保持。
 
-本批复核此前789根/107客户端及Windows成品记录，未重复已通过全量检查或重新打包。合并667bc34新运行另计：两项Ubuntu Foundation和Windows打包已success，Windows Foundation仍in_progress，尚未确认全成功；PR最终四项均success。文档内容/链接及git diff --check通过。仅合并、上传和文档；**没有后台部署、重启、备份、迁移或新线上业务探测**。线上仍 **0e78530/7d75165a、contract0.32/schema026**，角色/方法配套API/worker仍待单独升级；他人注册超时未定因。未代安装、原生启动、浏览器产品、真实模型/私人材料/双机或绘图/PPT导出体验。完整附件、检查和边界见[交付](deployment/acceptcat-0.10.52.md)；本批Git外证据 **D:/deepseek-agent/.runtime/release-0.10.52-20261026**。
+本批复核此前789根/107客户端及Windows成品记录，未重复已通过全量检查或重新打包。合并667bc34的新三平台Foundation与Windows打包现已四项全部success；PR最终四项也均success，两次运行分开记录。文档内容/链接及git diff --check通过。仅合并、上传和文档；**没有后台部署、重启、备份、迁移或新线上业务探测**。线上仍 **0e78530/7d75165a、contract0.32/schema026**，角色/方法配套API/worker仍待单独升级；他人注册超时未定因。未代安装、原生启动、浏览器产品、真实模型/私人材料/双机或绘图/PPT导出体验。完整附件、检查和边界见[交付](deployment/acceptcat-0.10.52.md)；本批Git外证据 **D:/deepseek-agent/.runtime/release-0.10.52-20261026**。
 
 ## 0.10.52制作记录：科研同伴团队18角色、19方法（已按上节发布）
 
