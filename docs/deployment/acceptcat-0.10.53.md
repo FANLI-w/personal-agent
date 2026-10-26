@@ -1,6 +1,6 @@
 # AcceptCat 0.10.53 本机候选交付
 
-2026-10-26（北京时间）。负责人要求补齐删除联系人和Agent的方式。本批源于main/d25781d，功能分支feat/contact-agent-removal；产品固定e947fb26c42a94d5401974e11428ecbe5200245e，c7351c1仅把新客户端边界测试接入Windows CI。后续交付文档不改变安装包产品源码。PR待创建，main合并/公开Release/后台升级分别处理。
+2026-10-26（北京时间）。负责人要求补齐删除联系人和Agent的方式。本批源于main/d25781d，功能分支feat/contact-agent-removal；产品固定e947fb26c42a94d5401974e11428ecbe5200245e，c7351c1仅把新客户端边界测试接入Windows CI。后续交付文档不改变安装包产品源码。[PR113](https://github.com/luoyan96/personal-agent/pull/113)已创建并附到当前任务，状态open、目标main、未合并；main合并/公开Release/后台升级分别处理。GitHub自动检查仍运行，不能把本机通过写作远程全部完成。
 
 ## 用户行为
 
@@ -35,3 +35,5 @@ contract0.33.0新增POST /api/v1/chat/agents/{id}/delete，schema027新增delete
 升级时须重新核对当时生产镜像/Compose链、排空并备份，独立恢复验证原有表/行/原件/配置与迁移checksum保持，验证027只增加空删除表，然后配对切API/worker。不能用当前main全部覆盖此前生产叠加基线及运营配置。实际执行前仍需负责人单独授权。
 
 一旦产生删除记录，直接回退旧镜像会忽略逻辑删除，可能使旧Agent重新可用；采用保留027约束的修复版本。禁止回灌旧数据库覆盖后续消息、任务和其他业务。此处是升级/恢复要求，未冒称已经在生产执行。注册超时根因仍未定，飞书仅本人试点，安装或入组不共享授权和私人资料。
+
+GitHub连接器创建PR返回403 Resource not accessible by integration，改用本机已登录gh CLI成功创建PR113，未扩大权限或绕过审批。文档初次diff检查仅发现日志EOF多一空行，保留证据并修正；358份Markdown/19方法内容检查通过。

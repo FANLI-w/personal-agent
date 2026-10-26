@@ -8,7 +8,7 @@
 
 新增deletePersonalAgent接口，contract **0.33.0/schema027**；只加deleted_personal_agents表，旧迁移checksum及消息/Contact结构保持。最终根ci **799项/63文件、2项生产CLI/HTTP、B0与生产边界**通过；**123项客户端/17文件**及renderer/Electron类型通过，Windows冻结构建、NSIS和既有4启动入口/更新清单守卫通过。客户端6项新边界已接入Windows CI。初稿迁移漏登记、规划用例fence假定、旧迁移夹具/contract计数及生产入口schema26断言失败已修正，失败和最终证据保留，没有跳过检查、提高预算或改时限。
 
-桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.53.exe**，**88,222,763字节**，SHA256 **ba6ceb2ecd4fd427a20880548deb88f11d8ed781786f6bcfa8ca37db67224a9e**，复制摘要一致、旧包保留。[交付记录](deployment/acceptcat-0.10.53.md)。本批尚未合并main、未公开Release、未部署后台；公开Latest重新核对仍 **v0.10.52/423781483**，当前线上仍 **acf4b711/contract0.32/schema026**（上批实际部署见下节）。新自建Agent删除需单独升级API/worker及迁移027；一旦有删除数据，不能直接退旧镜像忽略删除状态，应保留027约束修复，不回灌旧库覆盖后续消息/任务。未代安装/原生启动/界面、真实账号删除、真实模型或私人资料体验，也未追加手工安装包载荷验收。Git外证据 **D:/deepseek-agent/.runtime/contact-agent-removal-20261026**。他人注册超时仍未定因，飞书试点及资料权限边界保持。
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.53.exe**，**88,222,763字节**，SHA256 **ba6ceb2ecd4fd427a20880548deb88f11d8ed781786f6bcfa8ca37db67224a9e**，复制摘要一致、旧包保留。[交付记录](deployment/acceptcat-0.10.53.md)。[PR113](https://github.com/luoyan96/personal-agent/pull/113)已提交待审、GitHub自动检查仍运行；本批未合并main、未公开Release、未部署后台；公开Latest重新核对仍 **v0.10.52/423781483**，当前线上仍 **acf4b711/contract0.32/schema026**（上批实际部署见下节）。新自建Agent删除需单独升级API/worker及迁移027；一旦有删除数据，不能直接退旧镜像忽略删除状态，应保留027约束修复，不回灌旧库覆盖后续消息/任务。未代安装/原生启动/界面、真实账号删除、真实模型或私人资料体验，也未追加手工安装包载荷验收。Git外证据 **D:/deepseek-agent/.runtime/contact-agent-removal-20261026**。他人注册超时仍未定因，飞书试点及资料权限边界保持。
 
 ## 0.10.52配套角色后台已单独升级
 

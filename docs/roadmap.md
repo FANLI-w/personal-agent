@@ -1,6 +1,6 @@
 # 开发路线图
 
-2026-10-26：[联系人和自建Agent删除](development/contact-agent-removal.md)完成本机[0.10.53候选](deployment/acceptcat-0.10.53.md)：三处明确入口，所有者/版本/幂等、历史只读/任务资料保全、在途/定时停止、外部密钥清除和私人Skill解绑。799根/123客户端及NSIS/更新守卫通过，安装与真实删除由负责人检查。contract0.33/schema027需另行部署API/worker；尚未合main、公开或部署，线上仍0.32/026，Latest0.10.52。
+2026-10-26：[联系人和自建Agent删除](development/contact-agent-removal.md)完成本机[0.10.53候选](deployment/acceptcat-0.10.53.md)：三处明确入口，所有者/版本/幂等、历史只读/任务资料保全、在途/定时停止、外部密钥清除和私人Skill解绑。799根/123客户端及NSIS/更新守卫通过，安装与真实删除由负责人检查。contract0.33/schema027需另行部署API/worker；[PR113](https://github.com/luoyan96/personal-agent/pull/113)已提交待审，尚未合main、公开或部署，线上仍0.32/026，Latest0.10.52。
 
 2026-10-26：[0.10.52配套角色后台](deployment/research-colleagues-20261026.md)按单独授权于10:02:36上线acf4b711，18角色/37旧默认档案只读投影与19方法同源加载生效，保留用户编辑及私人偏好。127项服务器隔离、源码/成品摘要、停写备份/独立恢复、103表/7原件/22配置输入及健康通过，contract0.32/schema026无迁移。公开安装包仍0.10.52；真实交流与科研效果由负责人体验，未新增普通聊天生图/PPT执行工具。
 
