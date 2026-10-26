@@ -1,6 +1,6 @@
 # AcceptCat 0.10.59 群聊修复候选
 
-2026-10-26。当前批次在fix/group-agent-mentions-and-visibility，从fetch后的main/c3f7d0f新建，普通merge保留PR119及其PR118图片操作依赖，未改main。
+2026-10-26。产品及打包源码 **db11a6d7429db1f5a2060b2fd4293eac61719a61**，[PR120](https://github.com/luoyan96/personal-agent/pull/120)待审。当前批次在fix/group-agent-mentions-and-visibility，从fetch后的main/c3f7d0f新建，普通merge保留PR119及其PR118图片操作依赖，未改main。
 
 同时@多个已入群本地助手、按助手显示群内公开状态；当前群名单含没有加入自己通讯录的同事助手。私有请求详情不共享，已有材料ACL保持。新普通请求预算为每助手16000tokens/90秒，总额最多5份并均分；历史/显式请求与重试预算保持。详见[设计与边界](../development/group-agent-mentions-and-visibility.md)。
 
@@ -14,8 +14,10 @@
 
 ## 检查与交付进度
 
-定向API/契约10项通过；客户端提及、状态、待发恢复和传输35项/5文件通过，renderer/Electron双类型通过。根冻结完整CI（819项/64文件、共享类型与contract0.34、2项生产CLI/HTTP、B0及Web边界）通过，安装包尚在准备，未代安装器、真实模型、产品UI、私人材料或额外原生验收。
+定向API/契约10项通过；客户端提及、状态、待发恢复和传输35项/5文件通过，renderer/Electron双类型通过。根冻结完整CI（819项/64文件、共享类型与contract0.34、2项生产CLI/HTTP、B0及Web边界）通过，根desktop:win冻结Windows构建、NSIS、既有4项成品入口及更新元数据检查通过（publish never），未代安装器、真实模型、产品UI、私人材料或额外原生验收。
 
 首轮新增测试遗漏同实验室旧群仍需主人单独接受Agent邀请、SQL误用origin物理列、CHAT1端点数量误计，修正合成夹具和断言后通过；首轮renderer响应联合类型未显式声明可选turns，调整类型后通过。首轮完整CI仅Web契约版本断言仍为0.33而失败（818通过/1失败），同步到0.34后重新完整CI通过。原失败日志保留在Git外 **D:/deepseek-agent/.runtime/group-agent-mentions-20261026**，不能当作通过证据。
 
-公开Latest已核对仍v0.10.56；v0.10.59不存在。本批尚未公开Release、上传安装包或合main。完成后补记实际产品提交、包摘要和PR。
+公开Latest已核对仍v0.10.56；v0.10.59不存在。本批尚未公开Release、上传安装包或合main。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.59.exe**，**88,221,597字节**，SHA256 **9bcba06540bb11256e3c097a53515e725856cbe066a6599519f240cd31c304c5**，与构建目录一致，旧0.10.57/58保留。没有实际安装或自动更新公开。PR120待审，不能把本机包当作Release。
+
+后台源码包Git外backend-source-db11a6d.tar.gz，固定产品提交，同目录backend-manifest.json保存SHA256、原镜像和未部署状态。归档仅Git追踪内容，不含运行数据库、密钥、用户材料和构建目录。尚未在服务器构建此镜像，不能声称隔离升级或切换已完成。
