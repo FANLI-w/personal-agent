@@ -48,6 +48,8 @@
 
 - 新本机候选0.10.53与配套后台：main/d25781d另开feat/contact-agent-removal，产品e947fb26，PR113待审、bf97137四项GitHub检查success，未合main/未公开。名片/详情/聊天右键明确删除联系人或自建专门Agent，系统个人助理保留；历史/任务/资料保全，停止在途/定时，只解绑私人Skill并清外部密钥。799根/123客户端、双类型、Windows冻结NSIS/更新守卫通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.53.exe，88,222,763字节，SHA256 ba6ceb2ecd4fd427a20880548deb88f11d8ed781786f6bcfa8ca37db67224a9e。负责人本批另行批准后台后，2026-10-26 12:01:00—12:01:26升级b9901ac5、contract0.33/schema027；184项隔离（首轮177+补充7）、迁移演练、555基线/15叠加/187编译及备份/恢复保全103原表/7原件/23配置和健康通过。原辅助文件漏带/汇总数量与LF摘要失败停写前修正、证据保留。027后旧026镜像不能直接使用，即使空删除表也前滚保留约束，不回灌旧库；未触发回退，留存运维守卫已收紧。其他6服务、飞书1个lab_shared集合及广场关闭保持。未代真实删除/安装/体验或额外载荷验收。Latest仍0.10.52。见docs/deployment/acceptcat-0.10.53.md、docs/deployment/contact-agent-removal-20261026.md及docs/development/contact-agent-removal.md，Git外证据contact-agent-removal-20261026与contact-agent-backend-20261026；原始后台JSON留服务器，本机observed为可见整理。
 
+- 最新本机候选0.10.54：main/d25781d另开feat/contact-directory-pages，普通merge待审PR113/e0e911b作为删除依赖，产品81a3838675c82f6838c140e97ff177fda30c4e4b，未合main/未公开。通讯录分智能体/联系人两页，添加查找分类，右键发消息/资料/星标/按权限删除，星标按服务+账号仅本机保存；任务/资料入口为助手资料，介绍/能力/性格直接展示。96项客户端/10文件、双类型及Windows冻结NSIS/更新守卫通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.54.exe，88,226,822字节，SHA256 d84dfee1ed8d1992ce5bcf6ec26aa3d8bc89a103b6cb51b32d9fafca2a6ae106，旧包保留。后台没有改动，仍b9901ac5/contract0.33/schema027，无需再升级；上一批799根检查不冒称本批重跑。未代安装/右键视觉/真实删除或额外载荷验收。见docs/deployment/acceptcat-0.10.54.md及docs/development/contact-directory-pages.md；Git外证据contact-directory-pages-20261026。PR待创建，公开Latest仍0.10.52。
+
 尚未完成及边界：
 - 他人注册新账号超时根因尚未确认，仍待对方设备的具体错误、安装版本和同机连接信息；不能宣布已修复。
 - 课题组已支持同账号创建、已有账号邀请接受、邀请码确认加入、成员查看/普通成员移除退出与多组切换；每人最多负责一组，负责人交接/解散仍需维护者处理，未完成任务发起/审阅职责须先完成或取消。好友/群聊不自动授予课题组权限。

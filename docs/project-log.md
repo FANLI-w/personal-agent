@@ -1961,3 +1961,14 @@ schema027已经生效；旧0.32镜像严格要求schema026，即使删除表为�
 服务器 **/opt/research-openim/ops/contact-agent-removal-20261026**保留原始manifest/日志/JSON/迁移核对、失败修正及备份回执。Git外 **D:/deepseek-agent/.runtime/contact-agent-backend-20261026**保留准备包、源码/摘要、失败说明和三张完成截图，deployment-observed.json是按可见终端整理的回执，不冒称下载原始服务器JSON。空白中间preparation截图也保留，不作为通过证明。computer-use技能用于浏览器Workbench，未用Windows原生终端自动化。
 
 本批只部署配套后台并维护文档，未合PR113或发布v0.10.53，公开Latest仍v0.10.52。PR113的bf97137四项GitHub检查已success，后续仅交付文档变化的检查须看实际head。未代安装/界面/真实联系人或Agent删除、真实模型/私人材料/飞书或双机验收。他人注册超时仍未定因。
+
+
+## 2026-10-26：智能体/真人独立通讯录和本机0.10.54
+
+按负责人截图要求，从fetch后的main **d25781d**另开 **feat/contact-directory-pages**，普通merge待审PR113/e0e911b作为已有删除依赖，保留历史，未合主仓库main。产品 **81a3838675c82f6838c140e97ff177fda30c4e4b**：通讯录拆成智能体和联系人两个页面，以实际identity分类，我的/课题组范围及添加查找也分别显示；右键或Shift+F10可发消息、查看资料、星标与按原权限删除。系统个人助理保留；未添加关系不能靠右键私聊。星标按当前服务/账号存在本机，只影响当前页标记和排序，不等于聊天置顶或跨设备同步。
+
+任务/资料助手入口改为“助手资料”，Agent资料直接显示介绍、能力、性格，角色文件折叠保留。分类分页会跳过另一类别的空页，搜索仍逐页走服务端；共享名片按实际身份跳页，账号/页面切换关闭旧删除确认，存储失败不会假称星标成功。[设计](development/contact-directory-pages.md)。**96项客户端/10文件**（87定向+9名片）、renderer/Electron类型、冻结NSIS及既有4启动/更新清单守卫通过；新增8项分类/分页/星标边界接入Windows CI。
+
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.54.exe**，**88,226,822字节**，SHA256 **d84dfee1ed8d1992ce5bcf6ec26aa3d8bc89a103b6cb51b32d9fafca2a6ae106**，复制摘要一致，旧包保留。[交付](deployment/acceptcat-0.10.54.md)。本批仅客户端/工作流/文档，API/契约/数据库/角色方法与PR113逐字diff为空；沿用已部署 **b9901ac5/contract0.33/schema027**，无需新后台升级，没有生产服务操作。上一批799项根CI不是本批重跑。PR待创建，未合main/未公开，Latest仍0.10.52；现有PR113仍待审。
+
+Git外证据 **D:/deepseek-agent/.runtime/contact-directory-pages-20261026**保留96项检查、双类型、构建/更新和交付摘要。首次本地编辑命令工作目录错用根相对路径，在读文件时失败、无写入；纠正后最终类型/测试通过。未代安装、原生启动、右键/窄屏视觉、浏览器产品、真实账号删除、真实模型/私人材料或手工载荷验收。注册超时仍未定因，飞书试点/共享边界保持。
