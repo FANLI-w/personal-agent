@@ -30,7 +30,7 @@ export const agentCreationSystem=`Generate a compact chatting Agent profile from
 export function applyAgentCreation(s:ChatService,turnId:string,generated:z.infer<typeof GeneratedProfile>,localOnly=false):CreatedAgentReceipt {
   const profile=ContactProfileInput.parse({...generated,capabilityDescription:generated.capabilityDescription.endsWith(agentCreationBoundary)?generated.capabilityDescription:`${generated.capabilityDescription}\n${agentCreationBoundary}`})
   const existing=s.db.prepare(`SELECT c.id FROM chat_contacts c JOIN chat_contact_profiles p ON p.contact_id=c.id
-    WHERE c.lab_id=? AND c.owner_id=? AND c.kind='personal_agent' AND p.role='specialist'
+    WHERE c.lab_id=? AND c.owner_id=? AND c.kind='personal_agent' AND p.role='specialist' AND c.id NOT IN (SELECT contact_id FROM deleted_personal_agents)
     AND p.display_name=? AND p.introduction=? AND p.capability_description=? AND p.personality=? ${localOnly?'AND NOT EXISTS(SELECT 1 FROM agent_connections external WHERE external.contact_id=c.id AND external.configured=1)':''} ORDER BY c.id LIMIT 1`).get(s.c.actor.labId,s.c.actor.id,profile.displayName,profile.introduction,profile.capabilityDescription,profile.personality)
   const request=(body:unknown,key:string):ChatRequest=>({params:{},query:{},body,headers:{'Idempotency-Key':`creation_${turnId}_${key}`}})
   const agent=existing?s.contact(String(existing.id)):(s.run('createPersonalAgent',request(profile,'profile')) as {data:Contact}).data

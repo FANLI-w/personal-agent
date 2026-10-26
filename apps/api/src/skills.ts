@@ -1,4 +1,5 @@
 import { randomUUID, createHash } from "node:crypto";
+import { requireActiveAgent } from './agent-lifecycle.js';
 import { z } from "zod";
 import {
   routes,
@@ -322,6 +323,7 @@ export function runSkills(
       )
         fail("VALIDATION_ERROR");
       for (const agentId of settings.boundAgentIds) {
+        requireActiveAgent(s.db, agentId);
         const a = s.contact(agentId);
         if (
           a.identity.kind !== "personal_agent" ||
@@ -377,6 +379,7 @@ export function skillContext(
     settings = policy(r);
   if (!settings.enabled || !granted(s, r, "callMemberIds")) fail("FORBIDDEN");
   if (exact && r.version !== selection.version) fail("VERSION_CONFLICT");
+  requireActiveAgent(s.db, agentId);
   const a = s.contact(agentId);
   if (
     a.identity.kind !== "personal_agent" ||

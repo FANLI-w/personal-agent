@@ -8,8 +8,10 @@ import { fail } from './errors.js'
 import { connectionCommands, ownedSpecialist, externalContact, handleConnection } from './agent-connections.js'
 import { isLabManager } from './invite-management.js'
 import { roleCatalogDigest } from './agent-roles.js'
+import { agentDeleted, requireActiveAgent } from './agent-lifecycle.js'
+import { deletionOwner, deletePersonalAgent } from './agent-removal.js'
 
-export const directoryCommands = ['importAgentProfile','exportAgentProfile',...connectionCommands,'chatContact','updateContactProfile','createPersonalAgent','requestContact','contactRequests','decideContactRequest','revokeContact','revokeContactRequest','chatMemories','createChatMemory','reviseChatMemory','revokeChatMemory','chatMemoryHistory'] as const
+export const directoryCommands = ['deletePersonalAgent','importAgentProfile','exportAgentProfile',...connectionCommands,'chatContact','updateContactProfile','createPersonalAgent','requestContact','contactRequests','decideContactRequest','revokeContact','revokeContactRequest','chatMemories','createChatMemory','reviseChatMemory','revokeChatMemory','chatMemoryHistory'] as const
 export class ContactDirectory {
   constructor(readonly chat: ChatService) {}
   get db() { return this.chat.db }
@@ -32,6 +34,12 @@ export class ContactDirectory {
   contact(id: string): Contact {
     const value = this.chat.baseContact(id), p = this.profile(id), { displayName, ...profile } = p
     value.profile = profile; if (displayName) value.displayName = displayName
+    if (agentDeleted(this.db, id)) {
+      value.displayName = value.displayName.slice(0, 150) + '（已删除）'
+      value.allowedActions = []; value.availability = { status: 'disabled', reason: 'capability_unavailable' }
+      value.relationship = this.owns(value) ? { status: 'own', requestId: null, version: 0 } : { status: 'revoked', requestId: null, version: 0 }
+      return Contact.parse(value)
+    }
     const own = this.owns(value), relation = own ? undefined : this.relationRow(value)
     value.relationship = own ? {status:'own',requestId:null,version:0} : relation ? { status: relation.status==='pending' ? relation.requester_id===this.actor.id?'pending_outbound':'pending_inbound' : relation.status as 'accepted'|'declined'|'revoked', requestId:String(relation.id),version:Number(relation.version) } : {status:'none',requestId:null,version:0}
     value.allowedActions=[]
@@ -60,9 +68,11 @@ export class ContactDirectory {
     if(scope==='private_agent') {
       const contact=this.contact(scopeId)
       if(contact.identity.kind!=='personal_agent'||contact.identity.ownerMemberId!==this.actor.id)fail('NOT_FOUND')
+      if(write)requireActiveAgent(this.db,scopeId)
     } else {
       const conversation=this.chat.conversation(scopeId,false)
       if(write && conversation.ownerMemberId!==this.actor.id)fail('FORBIDDEN')
+      if(write && !conversation.allowedActions.includes('manage_memory'))fail('FORBIDDEN')
     }
   }
   memory(id:string,write=false):ChatMemory {
@@ -91,9 +101,10 @@ export class ContactDirectory {
   authorize(name:ChatCommand,req:ChatRequest) {
     if(!(directoryCommands as readonly string[]).includes(name))return false
     const id=req.params.id!
+    if(name==='deletePersonalAgent'){deletionOwner(this.chat,id);return true}
     if((connectionCommands as readonly string[]).includes(name)||name==='exportAgentProfile'){ownedSpecialist(this.chat,id);return true}
     if(['chatContact','requestContact','revokeContact','updateContactProfile'].includes(name)) {
-      const contact=this.contact(id); if(name==='updateContactProfile'&&!this.mayEdit(contact))fail('FORBIDDEN')
+      const contact=this.contact(id); if(name!=='chatContact')requireActiveAgent(this.db,id); if(name==='updateContactProfile'&&!this.mayEdit(contact))fail('FORBIDDEN')
     } else if(['decideContactRequest','revokeContactRequest'].includes(name)) {
       const request=this.request(id); if(name==='decideContactRequest'&&request.deciderMemberId!==this.actor.id)fail('FORBIDDEN')
     } else if(name==='chatMemories') this.memoryScope(req.query.scope as ChatMemory['scope'],req.query.scopeId!)
@@ -110,11 +121,12 @@ export class ContactDirectory {
   }
   handle(name:ChatCommand,req:ChatRequest):unknown {
     const id=req.params.id!,b=req.body
+    if(name==='deletePersonalAgent')return deletePersonalAgent(this.chat,id,(b as RequestFor<'deletePersonalAgent'>['body']).expectedVersion)
     if((connectionCommands as readonly string[]).includes(name))return handleConnection(this.chat,name as typeof connectionCommands[number],req)
     if(name==='exportAgentProfile'){const c=ownedSpecialist(this.chat,id);return {data:{format:'research-agent-profile/v1',profile:{displayName:c.displayName,introduction:c.profile.introduction,capabilityDescription:c.profile.capabilityDescription,personality:c.profile.personality}}}}
     if(name==='importAgentProfile'){
       const profile=(b as RequestFor<'importAgentProfile'>['body']).profile
-      const old=this.db.prepare("SELECT c.id FROM chat_contacts c JOIN chat_contact_profiles p ON p.contact_id=c.id WHERE c.owner_id=? AND c.kind='personal_agent' AND p.role='specialist' AND p.display_name=? AND p.introduction=? AND p.capability_description=? AND p.personality=? AND NOT EXISTS(SELECT 1 FROM agent_connections a WHERE a.contact_id=c.id AND a.configured=1) ORDER BY c.id LIMIT 1").get(this.actor.id,profile.displayName,profile.introduction,profile.capabilityDescription,profile.personality)
+      const old=this.db.prepare("SELECT c.id FROM chat_contacts c JOIN chat_contact_profiles p ON p.contact_id=c.id WHERE c.owner_id=? AND c.kind='personal_agent' AND p.role='specialist' AND c.id NOT IN (SELECT contact_id FROM deleted_personal_agents) AND p.display_name=? AND p.introduction=? AND p.capability_description=? AND p.personality=? AND NOT EXISTS(SELECT 1 FROM agent_connections a WHERE a.contact_id=c.id AND a.configured=1) ORDER BY c.id LIMIT 1").get(this.actor.id,profile.displayName,profile.introduction,profile.capabilityDescription,profile.personality)
       const key='import_'+hash(this.actor.id+':'+req.headers['Idempotency-Key']).slice(0,48)
       const request=(body:unknown,part:string):ChatRequest=>({params:{},query:{},body,headers:{'Idempotency-Key':key+'_'+part}})
       const contact=old?this.contact(String(old.id)):(this.chat.run('createPersonalAgent',request(profile,'profile')) as {data:Contact}).data
@@ -129,7 +141,7 @@ export class ContactDirectory {
       return {data:this.contact(id)}
     }
     if(name==='createPersonalAgent') {
-      if(Number(this.db.prepare("SELECT count(*) n FROM chat_contacts WHERE lab_id=? AND kind='personal_agent' AND owner_id=? AND principal<>owner_id").get(this.actor.labId,this.actor.id)!.n)>=20)fail('RATE_LIMITED')
+      if(Number(this.db.prepare("SELECT count(*) n FROM chat_contacts WHERE lab_id=? AND kind='personal_agent' AND owner_id=? AND principal<>owner_id AND id NOT IN (SELECT contact_id FROM deleted_personal_agents)").get(this.actor.labId,this.actor.id)!.n)>=20)fail('RATE_LIMITED')
       const body=b as RequestFor<'createPersonalAgent'>['body'],contactId=randomUUID()
       this.db.prepare("INSERT INTO chat_contacts VALUES (?,?,'personal_agent',?,?)").run(contactId,this.actor.labId,this.actor.id,randomUUID())
       this.db.prepare("INSERT INTO chat_contact_profiles VALUES (?,?,'specialist',?,?,?,1)").run(contactId,body.displayName,body.introduction,body.capabilityDescription,body.personality)

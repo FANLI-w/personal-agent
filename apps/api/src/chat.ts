@@ -17,6 +17,7 @@ import { personalModelRuntime } from './personal-models.js'
 import type { Config } from './config.js'
 import { fail } from './errors.js'
 import { ContactDirectory, directoryCommands } from './contact-directory.js'
+import { agentDeleted, requireActiveAgent } from './agent-lifecycle.js'
 import { fileReadMetadata,pageNumbersFromQuestion,fileReadingBudget } from './agent-files.js'
 import type { FileDocument, ParsedAgentFile } from './agent-files.js'
 import type { AgentFileSelection } from '@research-agent-platform/contracts'
@@ -119,7 +120,8 @@ export class ChatService {
     if (value.kind === 'direct') {
       const other = value.members.find(member => member.contactId !== self)
       if (other) {
-        const contact=this.contact(other.contactId);if(!contact.allowedActions.includes('chat'))fail('NOT_FOUND');value.title=contact.displayName
+        const contact=this.contact(other.contactId),deleted=agentDeleted(this.db,other.contactId);if(!contact.allowedActions.includes('chat')&&!deleted)fail('NOT_FOUND');value.title=contact.displayName
+        if(deleted)value.allowedActions=[]
       }
     } else if(value.kind==='personal') {
       const agent=value.members.find(member=>member.contactId!==self)
@@ -157,6 +159,7 @@ export class ChatService {
     if(socialTaskId){if(kind!=='group'||socialTaskId!==true&&!this.db.prepare("SELECT 1 FROM personal_work_tasks WHERE id=? AND owner_id=? AND status='proposed'").get(socialTaskId,this.c.actor.id))fail('FORBIDDEN');this.db.prepare('INSERT INTO social_groups VALUES (?,?)').run(value.id,socialTaskId===true?null:socialTaskId)}
     const self = this.human().id
     for (const contactId of new Set([self, ...contactIds])) {
+      requireActiveAgent(this.db,contactId)
       const contact = this.contact(contactId)
       if(kind==='group' && (socialTaskId?!socialContactAllowed(this,this.c.actor.id,contactId):!this.teamContact(contact)))fail('FORBIDDEN')
       // Selecting one's own Agent while explicitly confirming a social group
@@ -183,6 +186,7 @@ export class ChatService {
     return decode(row.document) as { id: string; conversationId: string; title: string; invitedContactId: string; invitedByMemberId: string; status: string; version: number }
   }
   joinedAgent(group: Conversation, contactId: string) {
+    requireActiveAgent(this.db,contactId)
     const contact = this.contact(contactId)
     if (!group.members.some(m => m.contactId === contactId && m.status === 'joined')) fail('NOT_FOUND')
     if (contact.identity.kind === 'human') fail('VALIDATION_ERROR')
@@ -429,6 +433,7 @@ export class ChatService {
   inviteContact(groupId:string,contactId:string) {
     const group=this.conversation(groupId,false)
     this.validatePayload({kind:'invite_contact',contactId},groupId)
+    requireActiveAgent(this.db,contactId)
     const contact=this.contact(contactId),existing=group.members.find(m=>m.contactId===contact.id)
     if(existing?.status==='joined'||existing?.status==='invited')fail('INVALID_STATE')
     const status=contact.identity.kind==='public_agent'?'joined':'invited'
@@ -536,6 +541,7 @@ export class ChatService {
         if(account){discoveredOwner=String(account.member_id);this.ensureMemberContacts(discoveredOwner)}
       }
       const project=(id:string)=>{
+        if(agentDeleted(this.db,id))fail('NOT_FOUND')
         const contact=this.contact(id)
         if(req.query.view==='mine'&&!['own','accepted'].includes(contact.relationship.status))fail('NOT_FOUND')
         if(req.query.scope==='global'){
@@ -598,6 +604,7 @@ export class ChatService {
     }
     if (name === 'sendChatMessage'||name==='agentChatMessage'||name==='agentFileMessage') {
       const group=this.conversation(id)
+      if(!group.allowedActions.includes('send'))fail('FORBIDDEN')
       const agents=group.members.filter(m=>m.status==='joined'&&this.contact(m.contactId).identity.kind!=='human')
       if(name!=='sendChatMessage'&&(group.kind==='group'||agents.length!==1))fail('FORBIDDEN')
       const input = SendChatMessage.parse(name!=='sendChatMessage'?{text:(b as {text?:string}).text??'请阅读这个附件，概括要点并说明阅读范围。',intent:'ask_agent',agentContactId:agents[0]!.contactId,budget:{maxTokens:4000,maxSeconds:90}}:b)

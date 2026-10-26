@@ -4,11 +4,13 @@ import { canonical } from './ai.js'
 import { hash } from './auth.js'
 import { fail } from './errors.js'
 import { modelAgentProfile } from './agent-roles.js'
+import { requireActiveAgent } from './agent-lifecycle.js'
 
 export type PlanningColleagueRef = { contactId: string; conversationId: string }
 export type PlanningColleagueBinding = PlanningColleagueRef & { fingerprint: string }
 export function planningColleagueReader(s: ChatService) {
   return (ref: PlanningColleagueRef, text: string) => {
+    requireActiveAgent(s.db,ref.contactId)
     const context = s.directory.modelContext(ref.contactId, ref.conversationId)
     const agent = context.agent, conversation = s.conversation(ref.conversationId, false)
     if (agent.identity.kind !== 'personal_agent' || agent.identity.ownerMemberId !== s.c.actor.id || agent.profile.role !== 'specialist' || agent.agentRuntime ||

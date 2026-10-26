@@ -6,11 +6,12 @@ import { signingKey } from './auth.js'
 import { encrypt,decrypt,masterAvailable } from './lab-ai-settings.js'
 import { fail } from './errors.js'
 import { externalEndpoint } from './external-agent-client.js'
+import { requireActiveAgent } from './agent-lifecycle.js'
 
 type Row={contact_id:string;owner_id:string;protocol:'chat_completions';endpoint:string;model:string;configured:number;enabled:number;allow_accepted_contacts:number;encrypted_api_key:string|null;version:number;updated_at:string;last_probe_json:string|null}
 export const connectionCommands=['agentConnection','updateAgentConnection','disconnectAgentConnection','probeAgentConnection'] as const
 export function connectionRow(s:ChatService,id:string){return s.db.prepare('SELECT * FROM agent_connections WHERE contact_id=?').get(id) as Row|undefined}
-export function ownedSpecialist(s:ChatService,id:string){const c=s.contact(id);if(c.identity.kind!=='personal_agent'||c.identity.ownerMemberId!==s.c.actor.id||c.profile.role!=='specialist')fail('FORBIDDEN');return c}
+export function ownedSpecialist(s:ChatService,id:string){const c=s.contact(id);if(c.identity.kind!=='personal_agent'||c.identity.ownerMemberId!==s.c.actor.id||c.profile.role!=='specialist')fail('FORBIDDEN');requireActiveAgent(s.db,id);return c}
 const scope=(row:Pick<Row,'owner_id'|'contact_id'|'endpoint'>)=>`external-agent:${row.owner_id}:${row.contact_id}:${row.endpoint}`
 export function connectionState(s:ChatService,id:string){
  ownedSpecialist(s,id);const row=connectionRow(s,id)
