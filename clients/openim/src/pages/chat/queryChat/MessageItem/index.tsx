@@ -24,6 +24,7 @@ import SoundMessageRender from "./SoundMessageRender";
 import ResearchMessageRender from "@/research/ResearchMessageRender";
 import { useConversationStore } from "@/store";
 import { useResearchStore } from "@/research/store";
+import { selectedMessageText } from "@/research/chat-message-copy";
 
 export interface IMessageItemProps {
   message: MessageItemType;
@@ -32,6 +33,7 @@ export interface IMessageItemProps {
   conversationID?: string;
   messageUpdateFlag?: string;
   onReadableText?: (text: string) => void;
+  onReply?: () => void;
 }
 
 const components: Record<number, FC<IMessageItemProps>> = {
@@ -52,7 +54,16 @@ const MessageItem: FC<IMessageItemProps> = ({
 }) => {
   const messageWrapRef = useRef<HTMLDivElement>(null);
   const [canonicalText, setCanonicalText] = useState("");
+  const [selectionText, setSelectionText] = useState("");
   const text = readableMessage(message) || canonicalText;
+  const copyText = [
+    MessageType.TextMessage,
+    MessageType.AtTextMessage,
+    MessageType.QuoteMessage,
+    MessageType.CustomMessage,
+  ].includes(message.contentType)
+    ? readableMessage(message) || canonicalText
+    : "";
   const generation = useResearchStore((s) => s.generation);
   const isDirectChat = useConversationStore(
     (s) => s.currentConversation?.conversationType === SessionType.Single,
@@ -99,16 +110,24 @@ const MessageItem: FC<IMessageItemProps> = ({
             </div>
 
             <Dropdown
+              disabled={message.contentType === MessageType.PictureMessage}
               trigger={["contextMenu"]}
               menu={{
                 items: [
                   { key: "reply", label: "引用回复", disabled: disabled || !text },
-                  { key: "copy", label: "复制文字", disabled: !text },
+                  ...(copyText
+                    ? [
+                        {
+                          key: "copy",
+                          label: selectionText ? "复制选中文字" : "复制消息文字",
+                        },
+                      ]
+                    : []),
                 ],
                 onClick: ({ key }) => {
                   if (key === "reply" && text)
                     selectChatReply(message, text, conversationID, generation);
-                  if (key === "copy" && text) {
+                  if (key === "copy" && copyText) {
                     if (!navigator.clipboard)
                       feedbackToast({
                         msg: "复制暂不可用，请选中文字复制",
@@ -116,7 +135,8 @@ const MessageItem: FC<IMessageItemProps> = ({
                       });
                     else
                       void navigator.clipboard
-                        .writeText(text)
+                        .writeText(selectionText || copyText)
+                        .then(() => feedbackToast({ msg: "文字已复制" }))
                         .catch((error) =>
                           feedbackToast({ error, msg: "复制失败，请选中文字复制" }),
                         );
@@ -124,13 +144,26 @@ const MessageItem: FC<IMessageItemProps> = ({
                 },
               }}
             >
-              <div className={styles["menu-wrap"]}>
+              <div
+                className={styles["menu-wrap"]}
+                onContextMenu={(event) => {
+                  setSelectionText(
+                    selectedMessageText(event.currentTarget, window.getSelection()),
+                  );
+                }}
+              >
                 <MessageItemErrorBoundary message={message}>
                   <MessageRenderComponent
                     message={message}
                     isSender={isSender}
                     disabled={disabled}
                     onReadableText={setCanonicalText}
+                    onReply={
+                      !disabled && text
+                        ? () =>
+                            selectChatReply(message, text, conversationID, generation)
+                        : undefined
+                    }
                   />
                 </MessageItemErrorBoundary>
 
