@@ -1917,3 +1917,12 @@ Windows冻结构建Web/4SDK/55运行包/NSIS/4入口及更新清单通过；ASAR
 本批仅配套后台和文档，不重打安装包、不修改公开Release/tag，Latest仍v0.10.52。未追加安装/原生启动/真实账号材料/真实模型/飞书/双机或绘图/PPT实际导出体验验收；数据保全仅比较摘要、不用私人正文评价。注册超时未定因、飞书本人试点和原件互传在线/10MiB/无TURN边界保持。[完整部署与回退说明](deployment/research-colleagues-20261026.md)。
 
 收尾重新读取公开Latest仍v0.10.52/423781483、tag目标667bc34。文档内容/链接检查356份Markdown/19方法及git diff --check通过；首次因工程日志链接到本机Skill路径被内容守卫拒绝，改为纯文字技能名称后通过，失败content.log保留。只提交部署记录和状态文档，没有重跑已通过完整根CI或修改产品源码。
+
+
+## 2026-10-26：联系人/自建Agent删除与本机0.10.53候选
+
+从最新main **d25781d**另开 **feat/contact-agent-removal**，产品提交 **e947fb26c42a94d5401974e11428ecbe5200245e**，CI入口提交 **c7351c1**。通讯录名片、详细资料和聊天右键菜单提供“删除联系人”或“删除 Agent”；系统个人助理保留。真人/别人拥有的Agent只撤销本人的关系，不注销账号或移除课题组成员；本人自建Agent逻辑删除，历史只读，既有任务、资料和成果保留。停止进行中回复/绑定规划/定时工作，阻止迟到正文和待发提醒，保留实际用量；清除外部密钥，只解除私人Skill对此Agent的绑定，保留正文、修订及其他绑定，活跃额度释放且不会复用旧身份。[设计与兼容](development/contact-agent-removal.md)。
+
+新增deletePersonalAgent接口，contract **0.33.0/schema027**；只加deleted_personal_agents表，旧迁移checksum及消息/Contact结构保持。最终根ci **799项/63文件、2项生产CLI/HTTP、B0与生产边界**通过；**123项客户端/17文件**及renderer/Electron类型通过，Windows冻结构建、NSIS和既有4启动入口/更新清单守卫通过。客户端6项新边界已接入Windows CI。初稿迁移漏登记、规划用例fence假定、旧迁移夹具/contract计数及生产入口schema26断言失败已修正，失败和最终证据保留，没有跳过检查、提高预算或改时限。
+
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.53.exe**，**88,222,763字节**，SHA256 **ba6ceb2ecd4fd427a20880548deb88f11d8ed781786f6bcfa8ca37db67224a9e**，复制摘要一致、旧包保留。[交付记录](deployment/acceptcat-0.10.53.md)。本批尚未合并main、未公开Release、未部署后台；公开Latest重新核对仍 **v0.10.52/423781483**，当前线上仍 **acf4b711/contract0.32/schema026**（上批实际部署见下节）。新自建Agent删除需单独升级API/worker及迁移027；一旦有删除数据，不能直接退旧镜像忽略删除状态，应保留027约束修复，不回灌旧库覆盖后续消息/任务。未代安装/原生启动/界面、真实账号删除、真实模型或私人资料体验，也未追加手工安装包载荷验收。Git外证据 **D:/deepseek-agent/.runtime/contact-agent-removal-20261026**。他人注册超时仍未定因，飞书试点及资料权限边界保持。

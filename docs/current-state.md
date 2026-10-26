@@ -2,6 +2,14 @@
 
 更新日期：2026-10-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 0.10.53本机候选：联系人和自建Agent明确删除（后台待升级）
+
+从最新main **d25781d**另开 **feat/contact-agent-removal**，产品提交 **e947fb26c42a94d5401974e11428ecbe5200245e**，CI入口提交 **c7351c1**。通讯录名片、详细资料和聊天右键菜单提供“删除联系人”或“删除 Agent”；系统个人助理保留。真人/别人拥有的Agent只撤销本人的关系，不注销账号或移除课题组成员；本人自建Agent逻辑删除，历史只读，既有任务、资料和成果保留。停止进行中回复/绑定规划/定时工作，阻止迟到正文和待发提醒，保留实际用量；清除外部密钥，只解除私人Skill对此Agent的绑定，保留正文、修订及其他绑定，活跃额度释放且不会复用旧身份。[设计与兼容](development/contact-agent-removal.md)。
+
+新增deletePersonalAgent接口，contract **0.33.0/schema027**；只加deleted_personal_agents表，旧迁移checksum及消息/Contact结构保持。最终根ci **799项/63文件、2项生产CLI/HTTP、B0与生产边界**通过；**123项客户端/17文件**及renderer/Electron类型通过，Windows冻结构建、NSIS和既有4启动入口/更新清单守卫通过。客户端6项新边界已接入Windows CI。初稿迁移漏登记、规划用例fence假定、旧迁移夹具/contract计数及生产入口schema26断言失败已修正，失败和最终证据保留，没有跳过检查、提高预算或改时限。
+
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.53.exe**，**88,222,763字节**，SHA256 **ba6ceb2ecd4fd427a20880548deb88f11d8ed781786f6bcfa8ca37db67224a9e**，复制摘要一致、旧包保留。[交付记录](deployment/acceptcat-0.10.53.md)。本批尚未合并main、未公开Release、未部署后台；公开Latest重新核对仍 **v0.10.52/423781483**，当前线上仍 **acf4b711/contract0.32/schema026**（上批实际部署见下节）。新自建Agent删除需单独升级API/worker及迁移027；一旦有删除数据，不能直接退旧镜像忽略删除状态，应保留027约束修复，不回灌旧库覆盖后续消息/任务。未代安装/原生启动/界面、真实账号删除、真实模型或私人资料体验，也未追加手工安装包载荷验收。Git外证据 **D:/deepseek-agent/.runtime/contact-agent-removal-20261026**。他人注册超时仍未定因，飞书试点及资料权限边界保持。
+
 ## 0.10.52配套角色后台已单独升级
 
 按负责人“后台可以升级一下，我已经登录了”的明确授权，固定发布提交 **667bc34**，在已核对的7d75165a生产基线上离线构建角色/方法配套API/worker，8份API源及共享包叠加，保留其他功能。北京时间 **10:02:14—10:02:36**完成排空、停写备份、独立恢复核对和配对升级；新镜像 **research-openim-api:research-colleagues-20261026** / **sha256:acf4b711a791d4110f20b3c63af99456df54c187c875e5a18f8bfe7700b959d2**，contract **0.32.0/schema026**保持，无迁移。18角色、37旧默认档案的只读投影及19方法共同加载现已进入后台，用户编辑/私人偏好、联系人及私人Skill版本保持。[完整部署回执](deployment/research-colleagues-20261026.md)。

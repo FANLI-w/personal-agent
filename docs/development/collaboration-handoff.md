@@ -46,6 +46,8 @@
 - 原有聊天交互、独立资料页、飞书库打开/明确共享、自助课题组创建/已有账号邀请接受均保持，任务规划和资料Agent继续聊天交互。负责人确认旧附件0.10.35为同事干净构建成功样本，勿列为已确认坏包。
 - 已部署后台为contract0.32/schema026、DSH0.2.1-rc.2/Cordis4.0.5：2026-10-26按单独授权，以固定发布提交667bc34叠加原7d75165a生产基线，新镜像research-openim-api:research-colleagues-20261026 / sha256:acf4b711a791d4110f20b3c63af99456df54c187c875e5a18f8bfe7700b959d2。10:02:14—10:02:36停写备份、独立恢复及API/worker配对切换成功，127项/10文件隔离、117叠加/183编译/183基线/76角色/48方法核对、103表/7原件/22配置输入保全及健康通过，无迁移；18角色、37旧默认只读投影、19方法加载生效，自改档案/私人偏好保持。其他6服务、运营种子和原权限范围保持，已有1个lab_shared飞书集合没有扩散；广场同步GITHUB_CATALOG_SYNC=0/nextCheckAt=null，Harness仍not_verified。详见docs/deployment/research-colleagues-20261026.md，证据在Git外research-colleague-backend-20261026和服务器受限ops目录。首轮运维探针旧生成摘要冲突在切换前修正，失败保留。该版本同协议/schema，回退只停新服务并用旧完整Compose链配对恢复7d75165a，使用当前数据，不取消任务或回灌旧DB；本批未实际触发回退。安装包/公开Latest仍0.10.52/tag667bc34，未代安装或真实模型/私人材料体验。
 
+- 新本机候选0.10.53：从main/d25781d另开feat/contact-agent-removal，产品e947fb26、CI c7351c1。名片/详情/聊天右键明确删除联系人或自建专门Agent，系统个人助理保留；历史/任务/资料保全、在途/定时停止、私人Skill只解绑、外部密钥清除与活跃额度释放。799根/123客户端、双类型和Windows冻结NSIS/更新守卫通过；桌面C:/Users/luo/Desktop/AcceptCat_0.10.53.exe，88,222,763字节，SHA256 ba6ceb2ecd4fd427a20880548deb88f11d8ed781786f6bcfa8ca37db67224a9e。未合main/未公开/未部署，新删除需contract0.33/schema027配套升级，不能把上一批0.52后台授权当作长期授权；一旦有删除记录，不可直接退忽略027的旧镜像使Agent复活。未代真实删除/安装/体验或额外载荷验收；公开Latest仍0.10.52、线上0.32/schema026。见docs/deployment/acceptcat-0.10.53.md及docs/development/contact-agent-removal.md，证据Git外contact-agent-removal-20261026。
+
 尚未完成及边界：
 - 他人注册新账号超时根因尚未确认，仍待对方设备的具体错误、安装版本和同机连接信息；不能宣布已修复。
 - 课题组已支持同账号创建、已有账号邀请接受、邀请码确认加入、成员查看/普通成员移除退出与多组切换；每人最多负责一组，负责人交接/解散仍需维护者处理，未完成任务发起/审阅职责须先完成或取消。好友/群聊不自动授予课题组权限。
