@@ -1,5 +1,16 @@
 # 2026-10-26任务流转修复与后台升级
 
+## 实际部署完成
+
+负责人重新登录并明确续办后，**2026-10-26 16:31:05—16:31:27（北京时间）**完成排空、停写备份、独立恢复校验和API/worker配对切换。当前 **research-openim-api:task-flow-safe-recovery-20261026** / **sha256:7720ec9b8f8c533c52352471eccc13a85731b2c257cb6d5f8bf349cae4abb850**，产品 **04e184f26123920fafa5c8f962fe100477525a63** 增量叠加已核验b9901ac5基线；契约 **0.33.0**、数据库 **027**保持，**没有迁移**。现有0.10.56客户端可用，本批没有重打/公开安装包、Release或合main，[PR117](https://github.com/luoyan96/personal-agent/pull/117)仍待审。
+
+服务器无网络隔离回归 **97项/7文件**通过；源码/编译守卫通过，既有18角色/19方法及运营seed保持。备份恢复后 **104表、8份原件**的结构、行摘要、文件摘要/模式和完整性/外键检查一致，隔离副本只读HTTP及复查通过，生产启动前再次全量核对一致；启动后配置/凭据、默认模型、飞书连接/来源、集合与共享范围保持。**24份配置/密钥输入**备份及摘要核对一致，服务运行参数及其他6服务保持。API healthy、worker running，均restart0；HTTPS ready200/0.33，匿名受保护接口401，广场定时同步仍disabled/nextCheckAt=null。Harness仍not_verified，没有新增真实模型、真实IM送达或私人材料体验验收。
+
+备份 **/srv/research-openim-backups/task-flow-safe-recovery-20261026-20261026T083108Z/research.tar.gz**，SHA256 **220cf0dfc76ee8dac76afd16048467bcaa01d0edb8ad40b7e681b304bf29129a**；在同一ECS，未做异地/整栈恢复。运维目录 **/opt/research-openim/ops/task-flow-safe-recovery-20261026**，完整Compose链在contact-agent-removal-20261026/images.yaml后追加本目录images.yaml。两镜像均支持0.33/schema027，必要时停写后成对退回b9901ac5并保留当前数据，不回灌旧备份、不退到0.32/schema026；本次成功未执行回退。
+
+根完整ci **812项/64文件**及生产边界通过；GitHub已核对文档head **871108a**四项均success，新部署文档提交的检查状态另看实际结果。失败的终端分段传输、登录过期和.sh的CRLF预检拒绝均保留；完整文件上传及各源码摘要校验后，只修正两份运维脚本换行并核对规范化摘要，bash预检通过后才启动构建/部署。Git外 **D:/deepseek-agent/.runtime/task-flow-safe-recovery-20261026**保存包、原失败、本机/服务器检查、原始截图及回执。回执从Workbench编辑器复制，Windows剪贴板CRLF还原LF后与服务器 **4760字节 / SHA256 f362d40ce72d0de3991fce83799748783db45faa4908ad84c04249dcbfcf7cde** 完全匹配，规范JSON摘要也一致；没有下载或提交运行数据库/私人材料/密钥。
+
+
 ## 源码与兼容性
 
 产品源码 **04e184f26123920fafa5c8f962fe100477525a63**，[PR117](https://github.com/luoyan96/personal-agent/pull/117)待审；基于最新main d25781d建立独立分支，普通merge保留已发布0.10.56及其待审依赖、同事PR115/8e6e2a6。没有合main或修改同事Fork。
@@ -16,13 +27,13 @@ API源码四文件，契约 **0.33.0**、数据库 **027**及客户端均不变�
 - 首次完整检查因新增测试缺少联合类型收窄及nullable text处理失败，修正后完整重跑通过；失败证据保留。没有放宽实际权限、生产解析时限或成果版本门禁。
 - 读取PR117源码04e184f的GitHub检查时，两个Linux Foundation及Windows package成功，Windows Foundation仍进行中，不宣称四项均完成。Windows package是自动CI检查，没有另行公开安装包或Release。
 
-## 当前部署进度
+## 首次准备记录（升级前，已续办）
 
 负责人已授权升级；只读核对API/worker仍为 **research-openim-api:contact-agent-removal-20261026**，image **sha256:b9901ac52ec7822e04a5944cac7be464f34d6d30235b06ab42204b1ed3a85c63**，二者运行、API健康，其余六服务运行。现有Compose链与预期一致；约9.49GB空闲。
 
 已准备与固定源码一致的隔离运维包 **114,741字节**，SHA256 **3f2a20daccd7f2c725e03cd5f1889db3905364105c6242d4f18762562bb5d17c**。终端分段粘贴被截断/混入，偏移断言及完整base64校验失败，未启动构建或切换。原传输失败文件保留在新的运维目录；没有覆盖运行数据。文件管理另提示账号登录过期，常规刷新后转至阿里云登录页，已请负责人重新连接。
 
-截至本记录：**尚未执行服务器隔离测试、备份/恢复校验或生产切换**。现有后台、安装包、公开Latest0.10.56保持；本记录不是部署成功回执。
+首次记录时：**尚未执行服务器隔离测试、备份/恢复校验或生产切换**。现有后台、安装包、公开Latest0.10.56保持；本记录不是部署成功回执。
 
 后续使用经摘要验证的文件包，在独立镜像中无网络复验7组测试并比对源码、既有角色和运营seed；停止写入后备份运行目录及配置/密钥输入，在隔离副本校验全部表/文件与只读HTTP，再同时更新API和worker。两镜像均为0.33/schema027，可成对退回b9901ac5并保留当前数据，不把旧备份覆盖后续写入，不退到0.32/schema026。实际完成后追加镜像、时间、备份摘要与保留检查。
 
