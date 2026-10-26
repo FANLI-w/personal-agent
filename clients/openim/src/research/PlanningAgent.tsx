@@ -36,7 +36,6 @@ import {
   plannerDeadline,
   plannerPlanInput,
   plannerTaskShape,
-  plannerConversationTaskShape,
   planningPrompt,
   plannerReplyMessage,
   readPlannerHistory,
@@ -590,10 +589,7 @@ function PlanningAgentSession({
     const deadlineQuestion = statedDeadline
       ? false
       : needsDeadlineClarification(text) || !!thread.deadlineQuestion;
-    const taskShape = plannerTaskShape(
-      text,
-      plannerConversationTaskShape(thread.messages),
-    );
+    const taskShape = plannerTaskShape(text);
     void run(async (isCurrent) => {
       const context = planningPrompt(
         retry ? retry.messages : thread.messages,

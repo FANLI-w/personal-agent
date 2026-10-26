@@ -34,13 +34,6 @@ export function plannerTaskShape(
   return previous;
 }
 
-export function plannerConversationTaskShape(messages: PlannerMessage[]) {
-  return messages.reduce<PlannerTaskShape>(
-    (shape, m) => (m.role === "user" ? plannerTaskShape(m.text, shape) : shape),
-    "auto",
-  );
-}
-
 // Normalize the reviewed draft, not just its label. Preserve all content and
 // refuse changes that would hide invalid dependencies or merge authorizations.
 export function plannerTaskInput(input: TaskDraft, shape: PlannerTaskShape): TaskDraft {
@@ -293,7 +286,7 @@ export function readPlannerHistory(raw: string | null): PlannerHistory | undefin
       threads: threads.map((t) => ({
         ...t,
         // Keep the previously reviewed preview and any pending write stable.
-        // New requests derive preferences from user speech, never an old button flag.
+        // Every new request starts automatic, with conversation carried in its prompt.
         taskShape: t.creating?.taskShape ?? t.taskShape ?? "auto",
       })),
     };

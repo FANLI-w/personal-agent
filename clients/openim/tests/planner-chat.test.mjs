@@ -12,7 +12,6 @@ import {
   needsDeadlineClarification,
   plannerPlanInput,
   plannerTaskShape,
-  plannerConversationTaskShape,
   plannerTaskInput,
   isPlannerCreateCommand,
   createPlannerTasks,
@@ -399,11 +398,12 @@ test("old previews stay stable but new requests ignore button-only flags and res
       readPlannerHistory(JSON.stringify({ active: thread.id, threads: [thread] }))
         .threads[0];
     assert.equal(restore().taskShape, taskShape || "auto");
-    assert.equal(plannerConversationTaskShape(restore().messages), "auto");
+    assert.equal(plannerTaskShape("继续完善安排"), "auto");
     thread.messages = [{ id: "user_split", role: "user", text: "拆成三个任务" }];
-    assert.equal(plannerConversationTaskShape(restore().messages), "multiple");
+    assert.equal(plannerTaskShape(thread.messages.at(-1).text), "multiple");
     thread.messages.push({ id: "user_combine", role: "user", text: "合并成一个任务" });
-    assert.equal(plannerConversationTaskShape(restore().messages), "single");
+    assert.equal(plannerTaskShape(thread.messages.at(-1).text), "single");
+    assert.equal(plannerTaskShape("这次分开安排好些"), "auto"); // Let the model read natural corrections in context.
     thread.creating = {
       key: "synthetic_confirmation",
       plan: makePlan(),
@@ -445,6 +445,8 @@ test("planner has no manual sizing switch; both preview and confirmation default
   assert(!source.includes("合为一项任务"));
   assert(!source.includes("改为多项任务"));
   assert(source.includes('taskShape: thread.taskShape || "auto"'));
+  assert(source.includes("const taskShape = plannerTaskShape(text);"));
+  assert(!source.includes("plannerTaskShape(text, thread.taskShape)"));
 });
 test("transcript keys isolate service, actor and laboratory, restored pending writes remain explicit", () => {
   assert.notEqual(
