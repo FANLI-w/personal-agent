@@ -114,6 +114,23 @@ export class Coordination {
       this.stopDispatch(task.id)
     }
   }
+  resolveDownstream(upstream: TaskModel) {
+    const rows = this.db.prepare(`WITH RECURSIVE downstream(id) AS (SELECT task_id FROM task_dependencies WHERE upstream_id=? UNION SELECT e.task_id FROM task_dependencies e JOIN downstream d ON e.upstream_id=d.id) SELECT t.document FROM tasks t JOIN downstream d ON d.id=t.id WHERE t.status='blocked'`).all(upstream.id)
+    for (const row of rows) {
+      const task = Task.parse(JSON.parse(String(row.document)))
+      if (task.blocker?.reason !== 'Dependency changed; reassess preserved work.' && task.blocker?.reason !== '等待前置任务完成') continue
+      try {
+        this.dependenciesReady(task, true)
+        task.status = task.blocker.resumeStatus; task.blocker = null
+        for (const imp of this.db.prepare("SELECT id, document FROM dependency_impacts WHERE task_id=? AND acknowledged=0").all(task.id)) {
+          const impact = DependencyImpact.parse(JSON.parse(String(imp.document)))
+          impact.acknowledgedBy = 'system'; impact.acknowledgedAt = now(); impact.comment = 'Upstream dependency completed; resolved automatically.'
+          this.db.prepare('UPDATE dependency_impacts SET acknowledged=1, document=? WHERE id=?').run(encode(impact), String(imp.id))
+        }
+        this.touch(task,'resumed','Upstream dependency completed; reassessment resolved.')
+      } catch { /* 依赖仍不满足，保持 blocked */ }
+    }
+  }
   stopDispatch(taskId: string) { this.db.prepare("UPDATE outbox SET status='cancelled' WHERE aggregate_id=? AND status IN ('pending','leased')").run(taskId) }
   endMember(task: TaskModel, memberId: string, status: 'withdrawn'|'cancelled', transferTo: string|null = null) {
     for (const row of this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND member_id=? AND status IN ('accepted','pending')").all(task.id,memberId)) {
@@ -134,7 +151,7 @@ export class Coordination {
       if (!['ready','in_progress','changes_requested'].includes(t.status)) fail('INVALID_STATE')
       if (body.requestedMemberId) {
         this.c.member(body.requestedMemberId)
-        if (!this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='full'").get(t.id,body.requestedMemberId)) fail('NOT_FOUND')
+        if (this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='revoked'").get(t.id,body.requestedMemberId)) fail('FORBIDDEN')
       }
       t.blocker={reason:body.reason,requestedMemberId:body.requestedMemberId,requestedAction:body.requestedAction,resumeStatus:t.status as 'ready'|'in_progress'|'changes_requested'};t.status='blocked'
       this.touch(t,'blocked');this.stopDispatch(t.id);this.impact(t,'blocked');return {data:this.c.actions(t)}

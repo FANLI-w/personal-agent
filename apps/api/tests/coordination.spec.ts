@@ -146,8 +146,7 @@ describe('B2b A6–A9: transaction database and two actual HTTP processes',()=>{
     expect((await command('resume',down,clients.B)).value.error?.code).toBe('DEPENDENCY_BLOCKED')
     expect((await command('resume',up,clients.A)).status).toBe(200);await finish(up)
     let value=await detail(down,clients.B)
-    expect((await command('acknowledgeImpacts',down,clients.B,{impactIds:value.dependencyImpacts!.filter(i=>!i.acknowledgedBy).map(i=>i.id),comment:'Checked current evidence'})).status).toBe(200)
-    expect((await command('resume',down,clients.B)).value.data.status).toBe('ready')
+    expect(value.task.status).toBe('ready')
     await command('start',down,clients.B)
     const delivery=await command('submit',down,clients.B,{summary:'Retain this downstream work',artifactRefs:[],sources:[]});expect(delivery.status).toBe(201)
     const changed=await propose(up,{goal:'Changed upstream scope'});expect(changed.status).toBe(201)
@@ -164,6 +163,35 @@ describe('B2b A6–A9: transaction database and two actual HTTP processes',()=>{
     expect((await command('resume',down,clients.B)).value.data.status).toBe('in_review')
     expect((await detail(down)).deliverables).toHaveLength(1)
     expect(db.prepare('SELECT count(*) n FROM reviews WHERE deliverable_id IN (SELECT id FROM deliverables WHERE task_id=?)').get(up)!.n).toBe(2)
+  })
+
+  it('A6 block can request support from a member without full access',async()=>{
+    const u=item('self','u')
+    const {taskIds}=await createConfirmed([u]);const [up]=taskIds as [string]
+    const block=await command('block',up,clients.A,{reason:'Synthetic need help',requestedMemberId:'member_C',requestedAction:'Please help'})
+    expect(block.status).toBe(200)
+  })
+
+  it('A6 accepting an upstream review resolves a downstream dependency-change block',async()=>{
+    const u=item('self','u'),d=item('invitation','d');d.dependencies=['u']
+    const {taskIds}=await createConfirmed([u,d]);const [up,down]=taskIds as [string,string];await accept(down)
+    await command('start',up,clients.A)
+    const sub1=await command('submit',up,clients.A,{summary:'Synthetic v1',artifactRefs:[],sources:[]})
+    const t1=(await detail(up)).task
+    const rev1=await request('review',{client:clients.A,params:{id:sub1.value.data.id},body:{expectedVersion:1,expectedTaskVersion:t1.version,revision:sub1.value.data.revision,decision:'changes_requested',comment:'Redo'}});expect(rev1.status).toBe(200)
+    expect((await detail(down,clients.B)).task.status).toBe('blocked')
+    const sub2=await command('submit',up,clients.A,{summary:'Synthetic v2',artifactRefs:[],sources:[]})
+    const t2=(await detail(up)).task
+    const rev2=await request('review',{client:clients.A,params:{id:sub2.value.data.id},body:{expectedVersion:1,expectedTaskVersion:t2.version,revision:sub2.value.data.revision,decision:'accepted',comment:'Approved'}});expect(rev2.status).toBe(200)
+    expect((await detail(down,clients.B)).task.status).toBe('ready')
+  })
+
+  it('A6 claiming a task with unfinished dependency waits and auto-resumes',async()=>{
+    const u=item('self','u'),d=item('invitation','d');d.dependencies=['u']
+    const {taskIds}=await createConfirmed([u,d]);const [up,down]=taskIds as [string,string];await accept(down)
+    expect((await detail(down,clients.B)).task.status).toBe('blocked')
+    await finish(up)
+    expect((await detail(down,clients.B)).task.status).toBe('ready')
   })
 
   it('A7 refusal preserves scope/time; only unanimous acceptance changes commitment; members, actions and overview share one snapshot',async()=>{
