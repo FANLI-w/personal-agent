@@ -122,7 +122,11 @@ export class Coordination {
       try {
         this.dependenciesReady(task, true)
         task.status = task.blocker.resumeStatus; task.blocker = null
-        this.db.prepare("UPDATE dependency_impacts SET acknowledged=1 WHERE task_id=? AND acknowledged=0").run(task.id)
+        for (const imp of this.db.prepare("SELECT id, document FROM dependency_impacts WHERE task_id=? AND acknowledged=0").all(task.id)) {
+          const impact = DependencyImpact.parse(JSON.parse(String(imp.document)))
+          impact.acknowledgedBy = 'system'; impact.acknowledgedAt = now(); impact.comment = 'Upstream dependency completed; resolved automatically.'
+          this.db.prepare('UPDATE dependency_impacts SET acknowledged=1, document=? WHERE id=?').run(encode(impact), String(imp.id))
+        }
         this.touch(task,'resumed','Upstream dependency completed; reassessment resolved.')
       } catch { /* 依赖仍不满足，保持 blocked */ }
     }
