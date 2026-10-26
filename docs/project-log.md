@@ -1982,3 +1982,13 @@ Git外证据 **D:/deepseek-agent/.runtime/contact-directory-pages-20261026**保�
 桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.55.exe**，**88,221,426字节**，SHA256 **88575553d299146f0bcd7df2cc0bef61fe8526c602167872733a259bd8069678**，源包/副本摘要一致，旧包保留。API/共享契约/数据库/角色/锁无变化，本批未重跑根799项、未升级后台；线上保持 **b9901ac5/contract0.33/schema027**。修复继续在[PR114](https://github.com/luoyan96/personal-agent/pull/114)待审，未合main/未公开Release，Latest重新读取仍 **v0.10.52/423781483**。
 
 Git外证据 **D:/deepseek-agent/.runtime/contact-stars-status-20261026**保留修复前失败、42项最终、双类型、Windows构建/更新和delivery摘要。未代安装、原生启动、浏览器产品或真实账号/材料体验，没有新生产探测或后台操作。注册超时仍未定因，飞书/私人资料边界保持。
+
+## 2026-10-26：0.10.56统一通讯录与智能体管理
+
+按负责人要求，从fetch后的main **d25781d**另开 **feat/unified-contact-directory**，普通merge待审PR114/769c883作为依赖，保留PR113删除、0.10.55星标修复及同事功能。产品 **f45c278d899e5452a1b56b1d85c0e715411c8833**：移除“我的 → 我的 Agent”重复栏目；通讯录保留智能体/联系人两页，去掉我的/课题组切换，原两个授权来源合并为同一列表。技能库和本人站内Agent的技能/资料绑定移到通讯录，模型设置等个人栏目保持；旧Agent/Skill/目录链接跳转并保留目标。[设计](development/unified-contact-directory.md)。
+
+两个来源并行读取、独立分页，own/accepted由mine提供，其余课题组身份从directory提供并按稳定ID去重，跳过重复/其他类别空页；不拉全库、不扩大关系/私聊/资料权限。任一来源失败不显示误导性的半张名单；资源管理仍核对本人、站内及edit_profile。**80项/12文件**客户端（含新增8项）、renderer/Electron类型、Windows冻结NSIS/4启动守卫及更新清单通过；共享根799项未重跑。
+
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.56.exe**，**88,227,913字节**，SHA256 **454fb4a9728445af9f288f6f26a2704caf255c928a2582b3ddb7af1a6b26ff9f**，源包/桌面副本摘要一致，旧包保留。[交付](deployment/acceptcat-0.10.56.md)。API/契约/数据库/共享角色方法/锁与PR114无差异，无需升级后台，仍 **b9901ac5/contract0.33/schema027**。功能分支待审，未合main或公开Release；Latest重新读取仍 **v0.10.52/423781483**。
+
+Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**保留80项、双类型、构建/更新/交付摘要与编辑预检说明。首次预检对类型字符串次数假定为1、实际3处，写入前退出，修正后检查首次通过；只读路径误查未改文件。未代安装、原生启动、浏览器产品、真实账号/材料/模型或新增手工载荷验收；没有后台操作/新生产探测，注册超时仍未定因。
