@@ -9,6 +9,8 @@ import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchContactChat } from "./useResearchContactChat";
 import { AcceptCatAccountNumber } from "./AcceptCatAccountNumber";
 import { ContactRemovalButton } from './useContactRemoval';
+import { AgentResources, type OpenAgentSkills } from './AgentResources';
+import { canManageDirectoryAgent } from './contact-directory';
 
 export const contactRelationshipLabel: Record<
   Contact["relationship"]["status"],
@@ -28,11 +30,13 @@ export function WorkspaceContactCard({
   contactId,
   onManage,
   onChanged,
+  onOpenSkills,
   children,
 }: {
   contactId: string;
   onManage?: (id: string) => void;
   onChanged?: () => Promise<void>;
+  onOpenSkills?: OpenAgentSkills;
   children?: ReactNode;
 }) {
   const read = useResearchRead(
@@ -247,6 +251,9 @@ export function WorkspaceContactCard({
         )}
         <ContactRemovalButton contact={c} onRemoved={async () => { await read.refresh(); await onChanged?.(); }} />
       </div>
+      {onOpenSkills && canManageDirectoryAgent(c, actor?.member.id) && (
+        <AgentResources key={c.id} agentId={c.id} onOpenSkills={onOpenSkills} />
+      )}
       {children}
     </section>
   );

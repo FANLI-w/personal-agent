@@ -2,8 +2,10 @@ import type { Contact, ResponseFor } from '@research-agent-platform/contracts';
 
 export type DirectoryKind = 'agents' | 'people';
 export const contactDirectoryKind = (contact: Contact): DirectoryKind => contact.identity.kind === 'human' ? 'people' : 'agents';
+export const canManageDirectoryAgent = (contact: Contact, memberId?: string) => contact.identity.kind === 'personal_agent' && contact.identity.ownerMemberId === memberId && !contact.agentRuntime && contact.allowedActions.includes('edit_profile');
 type Page = ResponseFor<'chatContacts'>;
-export type DirectoryQuery = { view: 'mine' | 'directory'; kind: DirectoryKind; search: string; cursor?: string };
+export type DirectoryView = 'mine' | 'directory';
+export type DirectoryCursor = Record<DirectoryView, string | null>;
 
 /** Skip mixed pages with no requested identity; search remains server-side across every page. */
 export async function readDirectoryPage(read: (cursor: string | undefined) => Promise<Page>, kind: DirectoryKind, signal: AbortSignal, cursor?: string): Promise<Page> {
@@ -17,6 +19,27 @@ export async function readDirectoryPage(read: (cursor: string | undefined) => Pr
     if (seen.has(page.nextCursor) || page.nextCursor === cursor) throw new Error('通讯录分页暂时无法继续，请刷新重试。');
     seen.add(page.nextCursor); cursor = page.nextCursor;
   }
+}
+
+/** Keep the two authorized server scopes in one list, with independent cursors. */
+export async function readCombinedDirectoryPage(
+  read: (view: DirectoryView, cursor: string | undefined) => Promise<Page>,
+  kind: DirectoryKind,
+  signal: AbortSignal,
+  cursor?: DirectoryCursor,
+): Promise<{ data: Contact[]; nextCursor: DirectoryCursor | null }> {
+  const [mine, directory] = await Promise.all((['mine', 'directory'] as const).map(view => {
+    if (cursor?.[view] === null) return { data: [], nextCursor: null };
+    return readDirectoryPage(async next => {
+      const page = await read(view, next);
+      // Owned/accepted identities belong to mine even when they are also in this lab.
+      return view === 'mine' ? page : { ...page, data: page.data.filter(contact => !['own', 'accepted'].includes(contact.relationship.status)) };
+    }, kind, signal, cursor?.[view] ?? undefined);
+  }));
+  signal.throwIfAborted();
+  const data = [...new Map([...directory.data, ...mine.data].map(contact => [contact.id, contact])).values()];
+  const next = { mine: mine.nextCursor ?? null, directory: directory.nextCursor ?? null };
+  return { data, nextCursor: next.mine !== null || next.directory !== null ? next : null };
 }
 
 export function starStorageKey(service: string, actorId: string) {

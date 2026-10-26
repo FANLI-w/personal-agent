@@ -266,7 +266,7 @@ export function CommunityResearchCatalog({
                 </p>
                 <Link
                   className="community-install-link"
-                  to={`/me?view=agents&panel=skills&catalog=${selected.id}`}
+                  to={`/contact?kind=agents&panel=skills&catalog=${selected.id}`}
                 >
                   在技能库中准备安装
                 </Link>

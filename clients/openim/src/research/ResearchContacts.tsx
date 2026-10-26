@@ -1,5 +1,5 @@
 import { Alert, Button, Input, Modal, Segmented, Tabs } from "antd";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Id } from "@research-agent-platform/contracts";
 import { researchApi } from "./api";
@@ -14,19 +14,21 @@ import { AgentImport } from "./AgentImport";
 import { ExternalAgentSetup } from "./ExternalAgentSetup";
 import type { Contact } from "@research-agent-platform/contracts";
 import { ContactDirectoryRow } from "./ContactDirectoryRow";
-import { contactDirectoryKind, readDirectoryPage, sortDirectoryContacts, type DirectoryKind } from "./contact-directory";
+import { contactDirectoryKind, readCombinedDirectoryPage, sortDirectoryContacts, type DirectoryKind, type DirectoryCursor } from "./contact-directory";
 import { useContactStars } from "./useContactStars";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { WorkspaceContactCard } from "./WorkspaceContactCard";
 import "./workspace.scss";
 
+const DirectorySkillLibrary = lazy(() => import("./DirectorySkillLibrary").then(module => ({ default: module.DirectorySkillLibrary })));
+
 export function ResearchContacts() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const requestedView = params.get("view");
-  const view = requestedView === "directory" ? "directory" : "mine";
   const kind: DirectoryKind = params.get("kind") === "agents" ? "agents" : "people";
   const label = kind === "agents" ? "智能体" : "联系人";
+  const library = kind === "agents" && params.get("panel") === "skills";
   const [search, setSearch] = useState("");
   const [adding, setAdding] = useState(false);
   const [addTab, setAddTab] = useState("friend");
@@ -36,19 +38,19 @@ export function ResearchContacts() {
   const selectedContact = selected?.kind === kind ? selected.id : undefined;
   const generation = useResearchStore((s) => s.generation);
   const actorId = useResearchStore((s) => s.actor?.member.id);
-  const filterKey = `${generation}:${kind}:${view}:${search}`;
-  const [paging, setPaging] = useState<{ key: string; cursors: (string | undefined)[] }>();
+  const filterKey = `${generation}:${kind}:${search}`;
+  const [paging, setPaging] = useState<{ key: string; cursors: (DirectoryCursor | undefined)[] }>();
   const pages = paging?.key === filterKey ? paging.cursors : [undefined];
-  const setPages = (update: (old: (string | undefined)[]) => (string | undefined)[]) => setPaging({ key: filterKey, cursors: update(pages) });
+  const setPages = (update: (old: (DirectoryCursor | undefined)[]) => (DirectoryCursor | undefined)[]) => setPaging({ key: filterKey, cursors: update(pages) });
   const cursor = pages[pages.length - 1];
   const stars = useContactStars();
-  const directoryOperation = usePersonalOperation(true, `contact-directory:${kind}:${view}`);
+  const directoryOperation = usePersonalOperation(true, `contact-directory:${kind}:${library}`);
   const profile = useRef<OverlayVisibleHandle>(null);
   const { data, error, refresh, refreshChecked } = useResearchRead(
-    signal => readDirectoryPage(next => researchApi("chatContacts", {
+    signal => readCombinedDirectoryPage((view, next) => researchApi("chatContacts", {
       query: { view, scope: "local", limit: 50, cursor: next, search: search.trim() }, signal,
     }), kind, signal, cursor),
-    `${filterKey}:${cursor || ""}`,
+    `${filterKey}:${JSON.stringify(cursor) || ""}`,
   );
   const openChat = useResearchContactChat();
   const [savedId, setSavedId] = useState<string>();
@@ -109,6 +111,11 @@ export function ResearchContacts() {
   }, [generation, creating]);
   const selectContact = (contact: Contact) => {
     setAdding(false); setSelected({ id: contact.id, kind: contactDirectoryKind(contact) });
+    if (library) {
+      const next = new URLSearchParams(params);
+      ["panel", "agent", "skill", "catalog"].forEach(key => next.delete(key));
+      setParams(next);
+    }
   };
   const openProfile = (id: string) => {
     const ticket = directoryOperation.capture();
@@ -116,7 +123,9 @@ export function ResearchContacts() {
       if (!ticket.isCurrent()) return;
       const targetKind = contactDirectoryKind(result.data);
       selectContact(result.data);
-      const next = new URLSearchParams(params); next.set("kind", targetKind); setParams(next);
+      const next = new URLSearchParams(params); next.set("kind", targetKind);
+      ["panel", "agent", "skill", "catalog"].forEach(key => next.delete(key));
+      setParams(next);
     }).catch(error => { if (ticket.isCurrent()) setPageFailure(error instanceof Error ? error.message : "资料暂未打开。"); });
   };
   const manageProfile = (id: string) => {
@@ -125,7 +134,22 @@ export function ResearchContacts() {
   const filtered = sortDirectoryContacts(data?.data || [], stars.ids);
   const changeKind = (nextKind: DirectoryKind) => {
     setSearch(""); setAdding(false);
-    const next = new URLSearchParams(params); next.set("kind", nextKind); next.delete("contact"); next.delete("action"); setParams(next);
+    const next = new URLSearchParams(params); next.set("kind", nextKind);
+    ["contact", "action", "view", "panel", "agent", "skill", "catalog"].forEach(key => next.delete(key));
+    setParams(next);
+  };
+  const openSkills = (skillId?: string, agentId?: string) => {
+    setAdding(false);
+    const next = new URLSearchParams({ kind: "agents", panel: "skills" });
+    if (skillId) next.set("skill", skillId);
+    if (agentId) next.set("agent", agentId);
+    setParams(next);
+  };
+  const closeSkills = () => {
+    const next = new URLSearchParams({ kind: "agents" });
+    const agent = params.get("agent");
+    if (agent) next.set("contact", agent);
+    setParams(next);
   };
   return (
     <div className="social-workspace desktop-contacts-content">
@@ -133,6 +157,8 @@ export function ResearchContacts() {
         <aside className="workspace-list-pane">
           <div className="workspace-heading">
             <h1>通讯录</h1>
+            <div className="flex gap-2">
+            {kind === "agents" && <Button type="text" onClick={() => openSkills()}>技能库</Button>}
             <Button
               type="text"
               onClick={() => {
@@ -142,27 +168,13 @@ export function ResearchContacts() {
             >
               添加
             </Button>
+            </div>
           </div>
           <nav className="directory-page-tabs" aria-label="通讯录分类">
             <button type="button" aria-pressed={kind === "agents"} onClick={() => changeKind("agents")}>智能体</button>
             <button type="button" aria-pressed={kind === "people"} onClick={() => changeKind("people")}>联系人</button>
           </nav>
           <div className="workspace-toolbar">
-            <Segmented
-              value={view}
-              onChange={(nextView) => {
-                setSearch("");
-                setSelected(undefined);
-                const next = new URLSearchParams(params);
-                if (nextView === "mine") next.delete("view");
-                else next.set("view", String(nextView));
-                setParams(next);
-              }}
-              options={[
-                { value: "mine", label: kind === "agents" ? "我的智能体" : "我的联系人" },
-                { value: "directory", label: kind === "agents" ? "课题组智能体" : "课题组成员" },
-              ]}
-            />
             <Input
               className="max-w-[320px]"
               maxLength={200}
@@ -227,12 +239,17 @@ export function ResearchContacts() {
           </div>
         </aside>
         <main className="workspace-detail-pane">
-          {selectedContact ? (
+          {library ? (
+            <Suspense fallback={<p role="status">正在打开技能库…</p>}>
+              <DirectorySkillLibrary onBack={closeSkills} />
+            </Suspense>
+          ) : selectedContact ? (
             <WorkspaceContactCard
               key={selectedContact}
               contactId={selectedContact}
               onManage={manageProfile}
               onChanged={refresh}
+              onOpenSkills={openSkills}
             />
           ) : (
             <div className="workspace-empty">

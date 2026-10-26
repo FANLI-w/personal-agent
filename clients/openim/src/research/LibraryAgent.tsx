@@ -185,7 +185,7 @@ function LibraryChat({
           remembered.current,
         );
         if (found?.agentRuntime)
-          throw new Error("资料 Agent 已改为外部服务，请在我的 Agent 核对配置。");
+          throw new Error("资料 Agent 已改为外部服务，请在通讯录的智能体资料中核对配置。");
         const current = found
           ? (
               await researchApi("agentResearchCollections", {

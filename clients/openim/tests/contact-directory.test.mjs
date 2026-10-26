@@ -6,7 +6,7 @@ import ts from 'typescript';
 const source = await readFile(new URL('../src/research/contact-directory.ts', import.meta.url), 'utf8');
 const module = { exports: {} };
 vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, { module, exports: module.exports, require: name => { throw Error(name); } });
-const { contactDirectoryKind, readDirectoryPage, starStorageKey, readContactStars, writeContactStar, sortDirectoryContacts } = module.exports;
+const { contactDirectoryKind, readDirectoryPage, readCombinedDirectoryPage, canManageDirectoryAgent, starStorageKey, readContactStars, writeContactStar, sortDirectoryContacts } = module.exports;
 const human = { id: 'human', displayName: '陈同事', identity: { kind: 'human' } };
 const agent = { id: 'agent', displayName: '研究方案助手', identity: { kind: 'personal_agent' } };
 const page = (data, nextCursor = null) => ({ data, nextCursor });
@@ -59,4 +59,77 @@ test('puts visible starred contacts first without changing the server list or ch
   const result = sortDirectoryContacts(contacts, [agent.id]);
   assert.equal(result[0].id, agent.id); assert.equal(JSON.stringify(contacts), original);
   assert.equal('pinned' in result[0], false);
+});
+
+test('unifies owned, cross-space accepted and laboratory identities without duplicates', async () => {
+  const own = { ...agent, relationship: { status: 'own' } };
+  const accepted = { ...agent, id: 'accepted-other-space', relationship: { status: 'accepted' } };
+  const lab = { ...agent, id: 'lab-agent', relationship: { status: 'none' } };
+  const seen = [];
+  const result = await readCombinedDirectoryPage(async (view, cursor) => {
+    seen.push([view, cursor]);
+    return view === 'mine' ? page([own, accepted]) : page([own, lab, accepted]);
+  }, 'agents', new AbortController().signal);
+  assert.deepEqual(seen.map(([view]) => view).sort(), ['directory', 'mine']);
+  assert.equal(JSON.stringify(result.data.map(c => c.id).sort()), JSON.stringify(['agent', 'accepted-other-space', 'lab-agent'].sort()));
+  assert.equal(result.nextCursor, null);
+  assert.equal(lab.relationship.status, 'none');
+});
+
+test('combined paging skips duplicate-only lab pages and never restarts an exhausted source', async () => {
+  const own = { ...human, relationship: { status: 'own' } };
+  const accepted = { ...human, id: 'friend', relationship: { status: 'accepted' } };
+  const lab = { ...human, id: 'lab-human', relationship: { status: 'none' } };
+  const later = { ...human, id: 'later-friend', relationship: { status: 'accepted' } };
+  const seen = [];
+  const read = async (view, cursor) => {
+    seen.push([view, cursor]);
+    if (view === 'mine') return cursor ? page([later]) : page([own, accepted], 'mine-next');
+    return cursor ? page([lab]) : page([accepted, own], 'lab-next');
+  };
+  const first = await readCombinedDirectoryPage(read, 'people', new AbortController().signal);
+  assert.equal(first.data.length, 3);
+  assert.equal(first.nextCursor.mine, 'mine-next');
+  assert.equal(first.nextCursor.directory, null);
+  const second = await readCombinedDirectoryPage(read, 'people', new AbortController().signal, first.nextCursor);
+  assert.equal(JSON.stringify(second.data.map(c => c.id)), '["later-friend"]');
+  assert.equal(second.nextCursor, null);
+  assert.equal(seen.filter(([view]) => view === 'directory').length, 2);
+});
+
+test('combined directory keeps identity filtering for each independently paginated source', async () => {
+  const person = { ...human, relationship: { status: 'none' } };
+  const bot = { ...agent, relationship: { status: 'own' } };
+  const calls = [];
+  const result = await readCombinedDirectoryPage(async (view, cursor) => {
+    calls.push([view, cursor]);
+    if (view === 'directory') return page([person]);
+    return cursor ? page([bot]) : page([person], 'only-people');
+  }, 'agents', new AbortController().signal);
+  assert.equal(JSON.stringify(result.data.map(c => c.id)), '["agent"]');
+  assert.ok(calls.some(([view, cursor]) => view === 'mine' && cursor === 'only-people'));
+  assert.equal(result.nextCursor, null);
+});
+
+test('one failed scope or a late aborted combined read cannot publish a partial directory', async () => {
+  const failure = new Error('synthetic lab query failure');
+  await assert.rejects(readCombinedDirectoryPage(async view => {
+    if (view === 'directory') throw failure;
+    return page([{ ...agent, relationship: { status: 'own' } }]);
+  }, 'agents', new AbortController().signal), error => error === failure);
+  const controller = new AbortController(); let release;
+  const reading = readCombinedDirectoryPage(view => view === 'mine'
+    ? new Promise(resolve => { release = resolve; }) : Promise.resolve(page([])), 'agents', controller.signal);
+  controller.abort(); release(page([]));
+  await assert.rejects(reading, { name: 'AbortError' });
+});
+
+test('private skill and material controls remain restricted to editable owned local Agents', () => {
+  const owned = { ...agent, identity: { kind: 'personal_agent', ownerMemberId: 'owner-A' }, allowedActions: ['edit_profile'] };
+  assert.equal(canManageDirectoryAgent(owned, 'owner-A'), true);
+  assert.equal(canManageDirectoryAgent(owned, 'owner-B'), false);
+  assert.equal(canManageDirectoryAgent({ ...owned, allowedActions: [] }, 'owner-A'), false);
+  assert.equal(canManageDirectoryAgent({ ...owned, agentRuntime: { kind: 'external' } }, 'owner-A'), false);
+  assert.equal(canManageDirectoryAgent({ ...owned, identity: { kind: 'public_agent', ownerMemberId: 'owner-A' } }, 'owner-A'), false);
+  assert.equal(canManageDirectoryAgent({ ...owned, identity: { kind: 'human', memberId: 'owner-A' } }, 'owner-A'), false);
 });
