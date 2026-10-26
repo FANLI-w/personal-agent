@@ -1,5 +1,7 @@
 # 开发路线图
 
+2026-10-26：按负责人指令，[PR112](https://github.com/luoyan96/personal-agent/pull/112)最终四项检查通过后以667bc34合main，PR105至PR111随之MERGED，保留同事及既有功能。[0.10.52](deployment/acceptcat-0.10.52.md)四附件核对后已公开为Latest，tag固定该合并提交；科研同伴团队、单任务规划、聊天/通知、图标和界面精简一起交付。配套角色API/worker仍待单独升级，本次没有后台操作；安装与真实科研体验由负责人检查。下方各批记录描述当时状态，当前状态以本条及current-state为准。
+
 2026-10-26：[科研同伴团队](development/research-colleague-team.md)完成18角色/19方法与本机0.10.52：补论文全流程、项目/PPT及专利/软著，分类添加、内置方法按需预览私人安装、旧档案与作者编辑保持。789根/107客户端及Windows包检查通过，实际安装与真实交流效果由负责人体验；配套API/worker、main合并、公开Release分别处理，未把角色文字当作新增工具。
 
 2026-10-25：[0.10.46统一角色文件](deployment/acceptcat-0.10.46.md)已完成本机包：十类默认角色与未来角色采用Persona/Work/Skill和manifest，API/桌面同源，保留自改档案与私人偏好；787根检查/60客户端/双类型/NSIS和成品角色核对通过。配套后台尚未部署，源码未合main或公开。后续由负责人检查真实同事交流与科研效果，后台升级和合并/Release分别安排。

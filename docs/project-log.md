@@ -1887,3 +1887,15 @@ Windows冻结构建Web/4SDK/55运行包/NSIS/4入口及更新清单通过；ASAR
 共享角色/方法包需配套API/worker单独升级，新建/显式保存的角色及Skill仍沿原接口；contract0.32/schema026、锁与权限保持，无迁移，本批未部署或新线上操作。PR111/8f82e23四项GitHub检查success，新PR另记；未合main或公开，线上0e78530/7d75165a和Latest v0.10.37/422478602保持，注册超时根因仍未确定。
 
 内容/链接及git diff --check通过。[PR112](https://github.com/luoyan96/personal-agent/pull/112)已创建并挂接，OPEN/MERGEABLE，目标main，保留PR111及此前功能；首次head5740bf4三项GitHub检查in_progress、Windows Foundation queued，未确认通过，github-created.json保留。未合并、公开或部署。
+
+## 2026-10-26 PR112合main与0.10.52公开Latest
+
+负责人明确要求“合并一下，安装包也传上去”。重新fetch主仓库，main仍fb2150b，功能分支feat/research-colleague-team/d1f913acc3fc92326eae6d842051172c0e9c6e7a干净，PR112可合并，最终三平台Foundation与Windows打包四项GitHub检查均success。核对产品f9122fe后仅5份文档变化，原本机根789项/客户端107项/双类型/Windows包和成品检查证据保持，没有重复全量检查或重建安装包。
+
+北京时间09:37:08，merge commit **667bc34fea851fea0c929e975f3467474eedcc71**合main，父提交为fb2150b和受审d1f913a，树9234f800291e85b5e7d5f906aa3ad9ab4528f0bf完全相同。PR105至PR111于09:37:10自动标记MERGED，保留原始提交、同事聊天、资料/课题组及本次角色/方法和界面改动，本机main普通ff同步，无强推或覆盖。连接器合并返回403后保留错误，改用原已登录gh，同样限定merge方法和expected head，未改权限。
+
+09:39:41，Release **423781483** / [v0.10.52](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.52)公开、非预发布并设为Latest，tag固定667bc34。先确认无同名tag/Release、建立唯一草稿，上传原通过检查的EXE/blockmap/latest.yml及SHA256SUMS，四附件uploaded状态、大小及SHA256 digest与本机一致，再公开。EXE **88,222,587字节**、SHA256 **7484a4b4a1b86718438b4d063748ad070f5b511d81143bbbe3cc456e4ece7e4a**；桌面副本摘要一致。未登录公开latest API确认同一Release、公开tag提交正确、公开latest.yml和SHA256SUMS逐字节相同；旧Release/旧包及其他草稿保留。README下载、current-state、交接和路线图同步实际状态，发布后文档不移动tag。
+
+本批Git外证据 **D:/deepseek-agent/.runtime/release-0.10.52-20261026**保存preflight、github-preflight、merge-gh/merge-verified、merged-prs、草稿/上传/公开及公开小文件与摘要核对。前置记录工具两次失败（functions无btoa、命令过长）和gh只读列表不支持databaseId字段均保留说明，精简后完成，未导致重复创建或覆盖。合并667bc34新运行40255102374两项Ubuntu success、Windows Foundation仍in_progress，新Windows打包40255102397已success；未声称新运行全成功，PR最终四项success单独成立。发布文档内容/链接（355份Markdown/19方法）及git diff --check通过。
+
+本轮没有后台部署、备份、重启、迁移或新线上业务探测；线上仍 **0e78530/7d75165a、contract0.32/schema026**。新默认角色/历史投影及共享方法包的配套API/worker仍需单独升级，新建/显式保存角色和文字Skill沿原接口。未代安装、原生启动、浏览器产品、真实模型、私人材料/飞书、双机或绘图/PPT导出体验验收；注册超时未定因，角色/方法不冒称新增执行工具。附件及完整边界见[0.10.52交付](deployment/acceptcat-0.10.52.md)。

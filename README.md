@@ -82,11 +82,13 @@ AcceptCat 把这些事情放在同一个工作空间里：用聊天说清需求�
 
 | 版本入口 | 当前状态 |
 | --- | --- |
-| **最新公开桌面试用版：0.10.37** | Windows x64 安装包已发布：[下载 AcceptCat_0.10.37.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.37/AcceptCat_0.10.37.exe)。新增任务拆解与依赖图、同组本机资料互传，修正构建流程；保留聊天、资料与课题组功能。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.37) · [交付范围](docs/deployment/acceptcat-0.10.37.md) |
+| **最新公开桌面试用版：0.10.52** | Windows x64 安装包已发布：[下载 AcceptCat_0.10.52.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.52/AcceptCat_0.10.52.exe)。18类科研同伴角色、19个内置方法，一个目标默认一项任务；完善聊天返回与通知，精简工作台和资料页，统一大肥鱼图标。保留同事聊天、资料和课题组功能。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.52) · [交付范围](docs/deployment/acceptcat-0.10.52.md) |
 | **飞书只读本人试点** | 文档快照与命名多维表格论文库代码已包含，配套后台及飞书 0.2.0 已部署；指定论文库的真实读取、私人绑定和 DSH 试读已完成。飞书应用仍仅罗岩本人可用，其他成员不会因安装客户端而自动获得权限。[试点记录与边界](docs/deployment/acceptcat-0.10.27.md) |
 | **后台模型运行层：DSH 0.2.1-rc.2** | 已部署并验证现有模型的真实短句回复，保留现有账号、资料与模型设置；已有客户端无需重装。[部署说明](docs/deployment/harness-0.2.1-rc.2-20261020.md) |
-| **历史公开版本** | 原 v0.10.34、v0.6.0 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.37 |
-| **产品源码与协作基线** | [v0.10.37 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.37)固定本次发布源码；[main](https://github.com/luoyan96/personal-agent/tree/main)已通过[PR94](https://github.com/luoyan96/personal-agent/pull/94)整合PR92/PR93，保留同事原始提交及既有功能。后续从主仓库最新main新建功能分支，通过PR合并 |
+| **历史公开版本** | 原 v0.10.37、v0.10.34、v0.6.0 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.52 |
+| **产品源码与协作基线** | [v0.10.52 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.52)固定本次发布源码；[main](https://github.com/luoyan96/personal-agent/tree/main)已通过[PR112](https://github.com/luoyan96/personal-agent/pull/112)整合PR105至PR111，保留同事原始提交及既有功能。后续从主仓库最新main新建功能分支，通过PR合并 |
+
+0.10.52客户端已经公开，配套API/worker的新默认角色目录与历史档案投影仍待单独升级；本次没有后台部署。普通聊天未新增生图、脚本或PPTX导出工具，实际能力与限制见发布说明。
 
 已有试用版的团队：登录后在“我的 → 模型设置”配置自己的模型，从一个真实课题的小任务开始。新团队如希望参与试用，可以在 [Issues](https://github.com/luoyan96/personal-agent/issues) 留下使用场景和试用意向；请不要提交账号密钥、未公开论文或学生的私人材料。
 

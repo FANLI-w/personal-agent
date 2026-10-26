@@ -2,7 +2,15 @@
 
 更新日期：2026-10-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 本机0.10.52：科研同伴团队18角色、19方法
+## 0.10.52已合main并公开为Latest，后台保持
+
+负责人明确要求“合并一下，安装包也传上去”后，重新fetch核对main **fb2150b**、干净功能分支及[PR112](https://github.com/luoyan96/personal-agent/pull/112)最终head **d1f913acc3fc92326eae6d842051172c0e9c6e7a**，四项GitHub检查均success、MERGEABLE。北京时间 **09:37:08**以merge commit **667bc34fea851fea0c929e975f3467474eedcc71**合main；父提交为原main和受审head，合并树与受审树一致，产品f9122fe后仅文档变化。PR105至PR111于09:37:10随之标记MERGED，原始提交、同事聊天和既有功能均保留，本机main普通快进同步。
+
+北京时间 **09:39:41**，[v0.10.52](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.52) / Release **423781483**公开、非预发布并设为Latest，tag固定 **667bc34**；后续文档不移动tag。[安装包下载](https://github.com/luoyan96/personal-agent/releases/download/v0.10.52/AcceptCat_0.10.52.exe)，**88,222,587字节**，SHA256 **7484a4b4a1b86718438b4d063748ad070f5b511d81143bbbe3cc456e4ece7e4a**。先建唯一草稿，上传EXE、blockmap、latest.yml、SHA256SUMS.txt，四附件uploaded/大小/digest均与本机一致，再公开。未登录公开latest API已返回同一Release，tag提交正确，公开latest.yml和SHA256SUMS逐字节核对一致；旧Release、旧包及其他草稿保持。
+
+本批复核此前789根/107客户端及Windows成品记录，未重复已通过全量检查或重新打包。合并667bc34新运行另计：两项Ubuntu Foundation和Windows打包已success，Windows Foundation仍in_progress，尚未确认全成功；PR最终四项均success。文档内容/链接及git diff --check通过。仅合并、上传和文档；**没有后台部署、重启、备份、迁移或新线上业务探测**。线上仍 **0e78530/7d75165a、contract0.32/schema026**，角色/方法配套API/worker仍待单独升级；他人注册超时未定因。未代安装、原生启动、浏览器产品、真实模型/私人材料/双机或绘图/PPT导出体验。完整附件、检查和边界见[交付](deployment/acceptcat-0.10.52.md)；本批Git外证据 **D:/deepseek-agent/.runtime/release-0.10.52-20261026**。
+
+## 0.10.52制作记录：科研同伴团队18角色、19方法（已按上节发布）
 
 按负责人要求，在GitHub检索并选读Distilly、K-Dense科学技能、Agency Agents、Anthropic PPTX与中国专利交底项目，独立打磨中文角色/方法。从fetch后的main/fb2150b另开feat/research-colleague-team，普通快进保留PR111/8f82e23及PR110至PR105；产品 **f9122fe580bf88fbfac4eaed1155241b89ecd41c**。覆盖基础助理/规划/资料，选题/文献/实验设计/复现/写作/润色/修稿/绘图，项目申请/PPT，专利/软著及协作/证据审阅；15个专门助手在添加列表按分工筛选。每位有具体接话、判断与交付边界，默认先帮一步，不把方法变问卷或把一个目标拆多任务。[分工与来源](development/research-colleague-team.md)。
 

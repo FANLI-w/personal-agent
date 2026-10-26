@@ -7,7 +7,7 @@
 
 工作目录：D:\deepseek-agent\research-agent-platform-chat-integration
 主仓库：https://github.com/luoyan96/personal-agent
-共同开发基线：主仓库最新 main，已包含聊天、资料/课题组、同组本机资料互传、任务拆解/依赖图、构建修复及PR97/96科研助手交流调整、PR100/99科研同伴与连续规划修复，以及PR104/103/102规划正常回复、同一助手设置和聊天展开（main合并2736ffc）；公开Latest为v0.10.37。
+共同开发基线：主仓库最新 main，已包含此前聊天/资料/课题组和PR112整合的PR105至PR111：单任务规划、Markdown角色组织、聊天返回/通知、大肥鱼头像/图标、工作台/资料页精简，以及18角色/19方法科研同伴团队。本轮合并667bc34，公开Latest为v0.10.52，tag固定该合并；main可继续有后续文档提交，操作前重新fetch核对。
 
 先读取根目录 AGENTS.md，然后读取 CONTRIBUTING.md、docs/current-state.md、docs/project-log.md 最新记录、README.md、docs/roadmap.md 和 docs/development/collaboration-handoff.md。
 
@@ -24,7 +24,8 @@
 6. 代码合并、安装包制作、公开 Release、后台部署分别记录，不能把其中一项完成说成全部完成。此前同步 main/发布0.10.29的授权已履行，不是以后自动合并或发布的长期授权；按我当前指令推进，不重复询问已明确授权的同一操作。
 
 当前交付事实：
-- 最新本机0.10.52候选：产品f9122fe580bf88fbfac4eaed1155241b89ecd41c，从最新main另开feat/research-colleague-team，保留PR111及PR110至PR105。18类同伴角色/19方法覆盖基础、论文、项目、专利/软著和协作，15专门助手分类添加，内置方法按需预览私人安装/绑定选择。37历史精确档案只读投影、用户编辑/私人偏好保持；789根/2生产入口、107客户端/双类型与NSIS/更新清单/76角色48方法3模块核对通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.52.exe，88222587字节，SHA256 7484a4b4a1b86718438b4d063748ad070f5b511d81143bbbe3cc456e4ece7e4a。配套API/worker需单独升级，无contract0.32/schema026迁移；未合main/公开/部署或代安装/真实模型，普通聊天未增加绘图/PPT/脚本执行工具。见current-state和development/research-colleague-team.md，旧7总数测试首轮失败及实际检查证据保留。
+- 最新公开0.10.52：产品f9122fe580bf88fbfac4eaed1155241b89ecd41c，PR112受审d1f913a四项GitHub检查success后于2026-10-26 09:37:08以667bc34合main，PR105至PR111随之MERGED，双方历史/同事功能保留，合并树与受审head一致。09:39:41 Release423781483/v0.10.52公开、非预发布并设Latest，tag固定667bc34；四附件大小/digest、未登录latest API/tag和公开小文件字节均核对。18类同伴角色/19方法覆盖基础、论文、项目、专利/软著和协作，15专门助手分类添加，内置方法按需预览私人安装/绑定选择。37历史精确档案只读投影、用户编辑/私人偏好保持；原789根/107客户端/双类型及Windows成品检查通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.52.exe，88222587字节，SHA256 7484a4b4a1b86718438b4d063748ad070f5b511d81143bbbe3cc456e4ece7e4a。配套API/worker仍需单独升级，线上0e78530/7d75165a、contract0.32/schema026保持；本轮无后台操作或代安装/真实模型，普通聊天未新增绘图/PPT/脚本执行工具。见current-state、deployment/acceptcat-0.10.52.md及Git外release-0.10.52-20261026证据；本轮授权已履行，不代表后续可自动发布或部署。
+- 下列0.10.51及更早条目保留制作当时的检查与部署记录；其“未合main/未公开”描述是历史状态。PR105至PR111现已合main，其功能已包含在公开0.10.52；没有逐个另发旧版本Release，后台是否升级仍按各项及最新current-state区分。
 - 前批本机0.10.51候选：产品d321556504bc54fda7bdf28f0869bc9cf5ffc731，从最新main另开fix/library-copy-cleanup，保留PR110/109/108/107/106/105。资料页/资料库/集合抬头/飞书解释/范围折叠块和助手介绍、输入区说明/模型设置/快捷键小字移除，设置数据/真实状态与主要操作保持。双类型、19项资料回归、Windows包/更新清单和ASAR文字/图标/署名通过，桌面C:/Users/luo/Desktop/AcceptCat_0.10.51.exe，88156281字节，SHA256 faf9cda60758bee088911ac3375b1c74c5e0a4a28493e739884627e148a32ba0。保留旧测试夹具缺失角色目录首轮失败并补接重跑；PR110 Windows原迁移用例15秒超时，本机原条件1通过/16未选；PR111/8f82e23后续四项检查success。无需本批后台，前批角色仍待安排，未合main/公开或代安装体验，见current-state。
 - 前批本机0.10.50候选：产品690a86983820a807c04fd1a7e02d9549eedfa956，从最新main另开fix/workbench-copy-cleanup，保留PR109/108/107/106/105；去掉截图中的工作台/研究方向/空任务说明、范围说明折叠块、规划介绍及输入区模型设置/快捷键小字，保留发送/停止和实际状态。38项规划回归、双类型、Windows包/更新清单及成品文字/图标/署名核对通过，桌面C:/Users/luo/Desktop/AcceptCat_0.10.50.exe，88155412字节，SHA256 555ddfb2bab93ff1a1acec5064ac8a4961a03b2a942134ba0ddbeb9e6953067b。PR109/1e07441、PR108/a670787四项检查重新读取均success，PR110后续状态见上条。无需本批后台升级，前批角色仍待安排；未合main/公开或代安装体验，见current-state。
 - 前批本机0.10.49候选：产品5b441ffcf5394c095a26ee0ad195359188e5981d，从最新main另开feat/dafeiyu-app-icon，保留PR108/107/106/105；应用/安装器/窗口/托盘/标题登录关于图标统一大肥鱼，名称/appId/数据保持。双类型、Windows包/更新清单和程序/安装EXE四档图标、ASAR图标署名核对通过，桌面C:/Users/luo/Desktop/AcceptCat_0.10.49.exe。前批PR108 Windows长对话30秒超时已保留、本机原时限7项通过并发起该job重跑，后续成功见上条；未代安装或验证系统图标缓存。无需为本批部署，前批角色后台仍待安排，未合main/公开，最新PR见current-state。

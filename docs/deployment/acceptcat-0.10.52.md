@@ -1,6 +1,6 @@
 # AcceptCat 0.10.52：科研同伴团队
 
-2026-10-26，北京时间。本机Windows候选；角色默认目录的后台升级、main合并和公开发布分别处理。
+2026-10-26，北京时间。Windows版本现已合main、公开并设为Latest；角色默认目录的配套后台升级仍单独待办。本机制作时记录保留如下，合并和发布回执见末节。
 
 ## 受测代码与行为
 
@@ -24,13 +24,34 @@
 
 - 桌面：C:/Users/luo/Desktop/AcceptCat_0.10.52.exe；源包clients/openim/release/Base/0.10.52/AcceptCat_0.10.52.exe。
 - 大小：**88,222,587字节**；SHA256：**7484a4b4a1b86718438b4d063748ad070f5b511d81143bbbe3cc456e4ece7e4a**。
-- 桌面复制摘要一致，旧包保留；EXE/blockmap/latest.yml及包内更新源通过，未上传Release。
+- 桌面复制摘要一致，旧包保留；EXE/blockmap/latest.yml及包内更新源通过，已按末节核对上传Release。
 - Git外证据：D:/deepseek-agent/.runtime/research-colleague-team-20261026，含原默认快照、来源与既有PR状态、root-ci、roles-focused、builtin-http、client-focused首轮及最终107项、双类型、desktop-win、asar-inspection/asar-icons.json、windows-update、delivery。源码组织与公开评价情境在仓库中，运行记录/安装包在Git外。
 
-## 后台、合并与公开状态
+## 制作时的后台、合并与公开状态（后续回执见下节）
 
 共享角色/方法包改变，配套API/worker需单独重建升级才采用新版默认目录、历史投影与共同加载。新建或显式保存的角色/文字Skill继续走原接口。contract0.32/schema026、数据库、依赖锁及权限边界保持，无迁移。本批没有后台部署、备份或新线上探测，线上仍0e78530/7d75165a；此前真实注册超时未确定根因。
 
 PR111/8f82e23四项GitHub检查重新读取success，本批新PR另记。未合main、公开或部署，公开Latest重新读取仍v0.10.37/422478602。内容/链接和git diff --check通过。
 
 [PR112](https://github.com/luoyan96/personal-agent/pull/112)已创建并挂接，OPEN/MERGEABLE，目标main；首次head5740bf4三项GitHub检查in_progress、Windows Foundation queued，未确认通过，github-created.json保留。未合并、公开或部署。
+
+## 09:37合并与09:39公开发布
+
+负责人本轮明确授权合并和上传安装包。重新fetch后main仍fb2150b、功能分支干净；最终受审head **d1f913acc3fc92326eae6d842051172c0e9c6e7a**的[三平台Foundation](https://github.com/luoyan96/personal-agent/actions/runs/40215380180)及[Windows打包](https://github.com/luoyan96/personal-agent/actions/runs/40215380190)四项检查均success。GitHub连接器合并返回403 Resource not accessible by integration，保留响应后改用原已登录gh CLI，同样指定merge方法和expected head，没有更改权限或绕过检查。
+
+北京时间 **09:37:08**，merge commit **667bc34fea851fea0c929e975f3467474eedcc71**合main。父提交精确为fb2150b9055520bdf7ad1386aa7a9a27f09b582b与d1f913acc3fc92326eae6d842051172c0e9c6e7a；树 **9234f800291e85b5e7d5f906aa3ad9ab4528f0bf**与受审head相同，产品f9122fe之后仅5份文档变化，因此上传原通过检查的包，没有重建或混用其他版本。PR105至PR111于09:37:10自动MERGED；普通快进本机main，保留作者、同事聊天及全部既有功能，没有强推或覆盖。
+
+北京时间 **09:39:41**，Release **423781483** / [v0.10.52](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.52)公开、非预发布并设为Latest；tag固定上述合并提交。先确认无同名tag/Release，再创建唯一草稿、上传四附件，对照本机大小/SHA256与GitHubuploaded状态及digest后公开。后续状态文档不修改tag或成品。
+
+| 附件 | 字节 | SHA256 |
+| --- | ---: | --- |
+| AcceptCat_0.10.52.exe | 88,222,587 | 7484a4b4a1b86718438b4d063748ad070f5b511d81143bbbe3cc456e4ece7e4a |
+| AcceptCat_0.10.52.exe.blockmap | 92,278 | b15718af30ded02d276b7e4bc666faf83ba636dba7c1da00732c7585d5378ba3 |
+| latest.yml | 340 | c9c80680a8a8718fda88019c4f084aaf83ae6c77d9982bfc52403725e4982e0d |
+| SHA256SUMS.txt | 262 | 2c53c71434df8882699dcfa12bdfc69bb947b6ff0ed44abf4e99b0e181bc71f5 |
+
+未登录公开latest API返回同一v0.10.52/Release；公开tag精确指向667bc34，下载公开latest.yml与SHA256SUMS逐字节相同。没有下载或运行88MB安装器追加体验验收，原公开Release、旧包及其他草稿均保留。合并667bc34的[新Foundation运行](https://github.com/luoyan96/personal-agent/actions/runs/40255102374)两项Ubuntu success、Windows仍in_progress；[新Windows打包](https://github.com/luoyan96/personal-agent/actions/runs/40255102397)success，尚未确认新运行全成功，PR最终四项success单独成立。发布文档内容/链接及git diff --check通过。
+
+Git外 **D:/deepseek-agent/.runtime/release-0.10.52-20261026**保存合并前状态/PR检查、前后树与父提交、8个PR合并回执、草稿/上传/公开和公开下载核对、原安装包摘要与SHA256SUMS。本批前置回执脚本曾遇functions无btoa及Windows命令过长，改为精简字段后保存；一次gh只读列表请求了不支持的databaseId字段，改用支持字段，均发生在相应操作前，未导致重复创建或覆盖，原错误说明保留。
+
+**后台不随本次发布升级**，仍0e78530/7d75165a、contract0.32/schema026。共享角色/方法目录仍需单独升级API/worker，新建或显式保存的角色/文字Skill沿原接口。没有新后台检查、备份、重启或迁移；原真实注册超时仍未确定根因，未代用户安装、真实模型/私人材料/双机或绘图/PPT实际导出验收。
