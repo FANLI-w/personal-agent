@@ -9,6 +9,7 @@ import {
   updateMaximize,
   connectResearchService,
   getResearchServiceStatus,
+  getWebContents,
 } from "./windowManage";
 import { t } from "i18next";
 import { IpcRenderToMain } from "../constants";
@@ -25,13 +26,38 @@ import { registerMessageNotificationBridge } from "./messageNotificationManage";
 import { registerFeishuAuthorizationBridge, registerFeishuLibraryBridge } from "./feishuManage";
 
 const store = getStore();
-const assertLocalConnectionPage = (event: Electron.IpcMainInvokeEvent) => {
-  if (
-    event.senderFrame !== event.sender.mainFrame ||
-    event.senderFrame.url.split("#")[0] !==
+const isLocalConnectionPage = (event: Electron.IpcMainInvokeEvent) => {
+  const contents = getWebContents();
+  return (
+    event.sender === contents &&
+    event.senderFrame === contents.mainFrame &&
+    event.senderFrame.url.split("#")[0] ===
       pathToFileURL(global.pathConfig.indexHtml).href
-  )
+  );
+};
+const assertLocalConnectionPage = (event: Electron.IpcMainInvokeEvent) => {
+  if (!isLocalConnectionPage(event))
     throw new Error("仅本机连接页面可管理科研服务入口");
+};
+const assertServiceStatusReader = (
+  event: Electron.IpcMainInvokeEvent,
+  status: ReturnType<typeof getResearchServiceStatus>,
+) => {
+  if (isLocalConnectionPage(event)) return;
+  // The connected UI needs its stable backend address for stars and cards.
+  // Reading status does not grant permission to change the service connection.
+  const contents = getWebContents();
+  try {
+    if (
+      event.sender === contents &&
+      event.senderFrame === contents.mainFrame &&
+      status.connected &&
+      status.rendererOrigin &&
+      new URL(event.senderFrame.url).origin === status.rendererOrigin &&
+      new URL(contents.getURL()).origin === status.rendererOrigin
+    ) return;
+  } catch { /* Invalid or stale frame URLs are not connected application pages. */ }
+  throw new Error("仅本机连接页面或当前应用页面可读取科研服务状态");
 };
 const readPreference = (key: unknown) => {
   if (key !== "closeAction" && key !== "language")
@@ -51,8 +77,9 @@ export const setIpcMainListener = () => {
   registerFeishuAuthorizationBridge();
   registerFeishuLibraryBridge();
   ipcMain.handle("research-service-status", (event) => {
-    assertLocalConnectionPage(event);
-    return getResearchServiceStatus();
+    const status = getResearchServiceStatus();
+    assertServiceStatusReader(event, status);
+    return status;
   });
   ipcMain.handle("configure-research-service", (event, address) => {
     assertLocalConnectionPage(event);
