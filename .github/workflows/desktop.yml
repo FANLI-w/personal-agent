@@ -7,6 +7,7 @@ on:
       - 'packages/contracts/**'
       - 'packages/research-skills/**'
       - 'agents/skills/**'
+      - 'agents/roles/**'
       - 'scripts/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -19,6 +20,7 @@ on:
       - 'packages/contracts/**'
       - 'packages/research-skills/**'
       - 'agents/skills/**'
+      - 'agents/roles/**'
       - 'scripts/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -53,6 +55,10 @@ jobs:
           corepack pnpm@10.28.0 run test:build
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:planner-chat
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --test tests/chat-attention.test.mjs tests/agent-chat-navigation.test.mjs tests/conversation-actions.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --test tests/builtin-methods.test.mjs tests/agent-starters.test.mjs tests/agent-role-documents.test.mjs tests/agent-card-actions.test.mjs tests/capability-center.test.mjs tests/library-agent.test.mjs tests/library-chat.test.mjs
           exit $LASTEXITCODE
       - name: Build NSIS and verify packaged CommonJS entries
         working-directory: clients/openim

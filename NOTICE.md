@@ -64,3 +64,15 @@ B3 的受限运行组合依赖官方 DeepSeek Harness `@deepseek-ai/dsh-llm` / `
 ## 2026-10-24 科研同伴角色设计参考
 
 参考 [titanwings/Distilly](https://github.com/titanwings/distilly/tree/0afc45c29c360ba7bc8260f1bb0bf34e9155f4fa)（原colleague-skill，MIT）的人格场景、对话示例和可修订纠正设计。只借鉴组织思路，AcceptCat的角色文字、示例、明确指令识别及私人记忆接入均独立编写；未复制上游模板、脚本、采集器、人物素材或运行环境，没有安装/执行上游项目。既有OpenIM/OpenMuse等来源许可保持。范围见 [科研同伴设计](docs/development/research-colleague.md)。
+
+## 2026-10-25 角色文件组织
+
+2026-10-26科研同伴团队扩展按负责人要求选读Distilly、Agency Agents、K-Dense科学技能、Anthropic PPTX与中国专利交底项目，固定来源和设计取舍见[设计记录](docs/development/research-colleague-team.md)。本批角色、中文方法和示例独立编写，只参考一般组织与工作流思想；未复制上游模板/代码、人物数据或资源，没有安装/执行第三方仓库、引入其工具或收费服务。上游各自许可不因参考而转授给本项目；既有来源许可与大肥鱼署名保持。
+
+按负责人要求采用 Persona + Work + Skill 组织默认与自建角色，参考Distilly固定0afc45c29c360ba7bc8260f1bb0bf34e9155f4fa的组织思路。agents/roles中文内容、编译器、历史档案投影与导入/导出由本项目独立编写，未复制上游正文、代码、人物资料或执行其生成/采集器。来源和范围见[角色设计](docs/development/agent-role-skills.md)，已有来源许可保持。
+
+## 2026-10-25 私人助理头像
+
+作者：YunYueSama；仓库：[YunYueSama/codex-deepseek-pet](https://github.com/YunYueSama/codex-deepseek-pet)。按负责人要求采用DeepSeek鲸鱼娘社区二创「大肥鱼」的独立头像，取固定修订7661c8b304c5400701f91da01b1a643a207331de的build/icon.png，像素原样保留，不引入上游代码或角色台词。适用“大肥鱼项目署名许可1.0”（自定义许可，非MIT），完整许可、上游素材边界和来源随客户端public/third-party/dafeiyu进入安装包，关于页提供署名。该许可仅覆盖上游有权授权的贡献，不改变既有第三方权利，不表示官方认可。详见[头像来源](clients/openim/public/third-party/dafeiyu/ORIGIN.md)。
+
+同日按负责人要求，将上述原始PNG和同修订build/icon.ico同时用于AcceptCat应用/安装器/快捷方式、窗口、标题栏、启动/登录/关于页及托盘图标，许可与署名同上；ICO原样保留16/32/48/256px四档。不引入上游桌宠运行时，不更改AcceptCat名称或appId。原Catnap橘猫记录仅描述历史版本，不再作为本机0.10.49的新应用图标；旧来源及许可历史保留。

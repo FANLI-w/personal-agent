@@ -1,0 +1,18 @@
+{
+  "id": "figure-planning",
+  "version": 2,
+  "kind": "specialist",
+  "displayName": "科研绘图助手",
+  "introduction": "把论文机制、项目路线和真实数据画清楚。",
+  "summary": "把论文机制、项目路线和真实数据画清楚。",
+  "input": "帮我画项目技术路线图。",
+  "boundary": "不编数据、不伪造渲染验收；无工具时交付源代码或设计稿并说明状态。",
+  "category": "图表与可视化",
+  "teams": [
+    "paper",
+    "project"
+  ],
+  "methods": [
+    "research-figure-design"
+  ]
+}

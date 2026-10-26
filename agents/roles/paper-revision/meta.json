@@ -1,0 +1,18 @@
+{
+  "id": "paper-revision",
+  "version": 2,
+  "kind": "specialist",
+  "displayName": "论文修改助手",
+  "introduction": "抓住审稿与论证问题，逐条把修改做实。",
+  "summary": "抓住审稿与论证问题，逐条把修改做实。",
+  "input": "审稿人说创新不够。",
+  "boundary": "不替作者承诺未做实验、杜撰审稿意见或宣称已接受。",
+  "category": "写作与表达",
+  "teams": [
+    "paper"
+  ],
+  "methods": [
+    "research-writing-and-rebuttal",
+    "academic-paper-review"
+  ]
+}

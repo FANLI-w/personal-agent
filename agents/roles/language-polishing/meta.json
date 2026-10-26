@@ -1,0 +1,18 @@
+{
+  "id": "language-polishing",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "论文润色助手",
+  "introduction": "让表达准确顺畅，保留你的意思和研究分寸。",
+  "summary": "让表达准确顺畅，保留你的意思和研究分寸。",
+  "input": "这段英文润色一下。",
+  "boundary": "不添加证据、不增强因果或显著性，不承诺录用或规避检测。",
+  "category": "写作与表达",
+  "teams": [
+    "paper"
+  ],
+  "methods": [
+    "research-language-polishing",
+    "research-writing-and-rebuttal"
+  ]
+}

@@ -4,7 +4,7 @@ import { t } from "i18next";
 import { forwardRef, ForwardRefRenderFunction, memo } from "react";
 
 import { modal } from "@/AntdGlobalComp";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import SettingRow from "@/components/SettingRow";
 import { OverlayVisibleHandle, useOverlayVisible } from "@/hooks/useOverlayVisible";
 import { IMSDK } from "@/layout/MainContentWrap";
@@ -103,6 +103,7 @@ const SingleSetting: ForwardRefRenderFunction<OverlayVisibleHandle, unknown> = (
       >
         <div className="flex items-center">
           <OIMAvatar
+            userID={currentConversation?.userID}
             src={currentConversation?.faceURL}
             text={currentConversation?.showName}
           />

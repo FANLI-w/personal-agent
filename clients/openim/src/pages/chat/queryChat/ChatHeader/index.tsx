@@ -7,7 +7,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import group_member from "@/assets/images/chatHeader/group_member.png";
 import launch_group from "@/assets/images/chatHeader/launch_group.png";
 import settings from "@/assets/images/chatHeader/settings.png";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { OverlayVisibleHandle } from "@/hooks/useOverlayVisible";
 import { useConversationStore, useUserStore } from "@/store";
 import { emit } from "@/utils/events";
@@ -129,6 +129,7 @@ const ChatHeader = () => {
         <div className="flex flex-1 items-center overflow-hidden">
           {
             <OIMAvatar
+              userID={currentConversation?.userID}
               src={currentConversation?.faceURL}
               text={currentConversation?.showName}
               isgroup={Boolean(currentConversation?.groupID)}
@@ -143,17 +144,6 @@ const ChatHeader = () => {
             <div className="truncate text-base font-semibold">
               {contact?.displayName || currentConversation?.showName}
             </div>
-            {!isGroupSession && contact && (
-              <div className="truncate text-xs text-slate-500">
-                {contact.identity.kind === "human"
-                  ? contact.username
-                    ? `@${contact.username}`
-                    : "真人"
-                  : isCoordinator
-                  ? "你的个人助理 · 聊天、文件与协作"
-                  : contact.profile.introduction || "AI 联系人 · 可以直接聊天"}
-              </div>
-            )}
             {isGroupSession && currentUserIsInGroup && (
               <div className="flex items-center text-xs text-[var(--sub-text)]">
                 <img width={20} src={group_member} alt="member" />

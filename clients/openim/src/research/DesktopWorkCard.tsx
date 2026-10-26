@@ -11,7 +11,7 @@ const readableReportError = (error: unknown, fallback: string) => {
   return text.match(/DESKTOP_REPORT_[A-Z_]+:\s*(.+)/)?.[1] ||
     (text.startsWith("Error invoking remote method") ? fallback : text);
 };
-export default function DesktopWorkCard({ scope, variant = "toolbar" }: { scope: DesktopReportScope; variant?: "toolbar" | "chat" }) {
+export default function DesktopWorkCard({ scope, variant = "toolbar" }: { scope: DesktopReportScope; variant?: "toolbar" | "chat" | "menu" }) {
   const jobs = useDesktopWork(s => s.jobs);
   const related = jobs.filter(j => j.scope.actorId === scope.actorId && j.scope.conversationId === scope.conversationId);
   const latest = related[related.length - 1];
@@ -22,7 +22,7 @@ export default function DesktopWorkCard({ scope, variant = "toolbar" }: { scope:
     setOpen(false); setError(""); setReports([]);
   }, [key, latest?.id]);
   useEffect(() => {
-    if (variant !== "toolbar") return;
+    if (variant === "chat") return;
     let current = true;
     void window.electronAPI?.listDesktopReports(scope).then(r => { if (current) setReports(r); })
       .catch(() => { if (current) setError("暂时无法读取本机报告。"); });

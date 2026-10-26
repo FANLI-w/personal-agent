@@ -21,6 +21,7 @@ import { registerPeerLibraryBridge } from "./peerLibraryManage";
 import { registerImageClipboardBridge } from "./imageClipboardManage";
 import { registerDesktopWorkBridge } from "./desktopWorkManage";
 import { registerDesktopUpdateBridge } from "./updateManage";
+import { registerMessageNotificationBridge } from "./messageNotificationManage";
 import { registerFeishuAuthorizationBridge, registerFeishuLibraryBridge } from "./feishuManage";
 
 const store = getStore();
@@ -46,6 +47,7 @@ export const setIpcMainListener = () => {
   registerZoteroBridge();
   registerDesktopWorkBridge();
   registerDesktopUpdateBridge();
+  registerMessageNotificationBridge();
   registerFeishuAuthorizationBridge();
   registerFeishuLibraryBridge();
   ipcMain.handle("research-service-status", (event) => {

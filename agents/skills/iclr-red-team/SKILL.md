@@ -1,5 +1,6 @@
 ---
 name: iclr-red-team
+displayName: 投稿前证据审查
 description: Simulate an evidence-grounded ICLR-style pre-submission review of a manuscript, claim register, experiment artifacts, and reproducibility package. Use when preparing an ICLR or similar ML conference submission, after results and a draft exist, to identify reject-worthy gaps in problem significance, novelty, technical soundness, empirical rigor, clarity, reproducibility, and compliance. Produces a severity-ranked repair plan; never invent venue policy or claim acceptance.
 ---
 

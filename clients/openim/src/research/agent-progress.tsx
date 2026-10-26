@@ -5,7 +5,7 @@ import { useConversationStore } from "@/store";
 import { researchApi } from "./api";
 import { useResearchStore } from "./store";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import DesktopWorkCard from "./DesktopWorkCard";
 
 type Entry = {
@@ -221,7 +221,7 @@ export function AgentReplyProgress({ onResize }: { onResize?: () => void }) {
           data-progress-turn={turnId}
           className="desktop-streaming-row text-sm"
         >
-          <OIMAvatar size={36} src={conversation?.faceURL} text={conversation?.showName} />
+          <OIMAvatar userID={conversation?.userID} size={36} src={conversation?.faceURL} text={conversation?.showName} />
           <div className="desktop-streaming-content">
           {error ? (
             <div className="text-xs text-slate-600">

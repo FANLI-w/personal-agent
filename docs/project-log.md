@@ -1794,3 +1794,96 @@ PR104/d8d0718的三平台Foundation40162061752与Windows package40162061691四�
 北京时间 **16:55:51**，PR104实际MERGED，合并提交 **2736ffcfabcf10c45e1118f4443afe5c29bc606b**，两个父提交精确为原main/c971d9c和受审head/bc29c54；16:55:53，PR103/102自动标记MERGED。fetch后核对合并tree与受审tree相同、双方历史/产品提交全部保持祖先关系，再将本机main快进到合并提交，未重写作者/历史或覆盖修改。Git外证据 **D:/deepseek-agent/.runtime/merge-pr104-20261025**保留受审检查、合并回执、403记录及tree/祖先核对。
 
 本批只合并与更新current-state、交接、路线图及0.10.44交付记录，执行内容/差异检查；未重复根完整CI、真实模型/安装后体验或后台健康探测。桌面0.10.44原包与既有SHA256保持，没有重打/代安装；后台沿已部署0e78530/7d75165a、contract0.32/schema026，没有再次部署/迁移，广场同步沿既有关闭记录。重新读取公开Latest仍v0.10.37/422478602，未公开Release。main合并后的Foundation40178576207与Windows package40178576214首次读取运行中，不把PR已通过检查当成新运行已结束。注册超时未定因、飞书本人试点、原件在线/10MiB/无TURN及本机规划历史等边界保持；下一项功能须重新fetch最新main后另开分支。
+
+
+## 2026-10-25 — 工作台一个要求默认一项任务，交付本机0.10.45
+
+负责人要求修正一句需求生成七项独立任务，并询问是否写在人设里。核对干净main/fb2150b、origin主仓库并fetch，新建fix/planner-single-task；产品 **a600ec06e5a01b6755c7511cdda7b81ed26dea18**。规划提示与canonical拆解方法改为默认一项任务、内部执行步骤，目标足够就给待确认草案；只有明确要求分别创建或主动选择多项时才拆。不是只改按钮：预览转换保留各步骤标题/目的/交付/验收和依赖顺序，确认前沿editPlan保存同一份单项草案，再按精确版本confirmPlan。人设/私人偏好不覆盖，任务数量由功能规则控制。
+
+旧已确认任务不合并/删除或改日期，旧未完成多任务创建须重新核对；旧已成功回执只读取真实链接。不同分工/执行授权/资料、冲突日程、原图错误和容量超限拒绝静默合并；不丢内容或擅改权限/日期。换账号/组/对话、版本冲突和原幂等保护保持。
+
+冻结根准备、完整根CI **781项/60文件**及2生产CLI/HTTP/B0/生产边界、客户端 **52项**与renderer/Electron双类型通过。2项真实本机HTTP/SQLite合成账号沿当前0.32 API验证七步草案在编辑或确认丢回执后均仅1任务/1分工；测试清理路径增加绝对路径/前缀守卫后只复核这2项，通过。首次renderer预览收窄TS18048失败修正后通过，原失败保存，不减断言或改类型限制。根desktop:win冻结顺序、两共享包先构建、Web/4SDK/55运行包、NSIS/成品4入口及更新清单通过，既有警告保留。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.45.exe**，**87,408,189字节**，SHA256 **a33243130a749450a4b7d4c15ed65701a92efd18c6edcfcbb3fa3cf4b459ecd8**，复制摘要一致，旧包保留。
+
+更新current-state、roadmap、交接prompt、[0.10.45交付](deployment/acceptcat-0.10.45.md)、设计与评价情境。证据Git外 **D:/deepseek-agent/.runtime/planner-single-task-20261025**。本批无API/contract0.32/schema026、后台源码、依赖或锁变更，无迁移，无需再次部署；没有新线上操作/健康探测，沿已部署0e78530/7d75165a和广场同步关闭记录。新方法原文随客户端生效，不声称服务器canonical/私人安装版本已更新。未代安装、浏览器产品、真实模型/私人材料或双机体验，语言情境未实跑。源码未合main、0.10.45未公开，重新读取公开Latest仍v0.10.37；原注册超时/飞书试点/原件在线与10MiB/无TURN及本机规划历史边界保持。
+
+已创建并挂接[PR105](https://github.com/luoyan96/personal-agent/pull/105)，目标main，OPEN/MERGEABLE。GitHub连接器创建返回403 Resource not accessible by integration，改用本机已登录CLI提交相同标题/正文，未修改权限或绕过保护。首次受读head3f2bcf6三平台Foundation40181190900与Windows package40181190860四项运行中，未结束不算通过；后续纯文档head另计。Git外github-created.json及最终回执保存实际状态，未合并/公开。
+
+
+## 2026-10-25 — 开始统一Agent角色文件组织
+
+核对干净fix/planner-single-task/b5b72ca、origin主仓库并fetch，main仍fb2150b；新建feature/agent-role-skills后快进保留PR105，不覆盖/丢弃改动。按负责人要求，以agents/roles的meta/persona/work/SKILL和manifest组织十类默认角色，生成桌面/API共享目录，保留27份精确历史档案的复用/投影与用户自改档案、私人偏好。前端角色查看/编辑/导出及新旧格式导入沿既有API，角色不能扩大权限。配套API/worker有变但无协议/数据库迁移，部署、合并与Release尚未执行。定向48项与客户端11项通过，完整检查和本机Windows候选继续处理中；最终事实另追加。
+
+
+## 2026-10-25 — 统一全部Agent角色文件，交付本机0.10.46
+
+产品 **ccbc411dd76d32f4504cf76c261a78a4a4bdf0a4**，从最新main/fb2150b新建feature/agent-role-skills并保留PR105/b5b72ca。十类默认角色统一为meta.json、persona.md、work.md、SKILL.md和manifest，唯一内容源在agents/roles，桌面/API同版编译使用。默认人设不再散放前端TS；新默认角色注册后自动出现在添加列表，自建/导入角色沿同一角色解释与导出器。设置页可查看/编辑Markdown、分别保存和导出完整角色包，兼容旧JSON。27份历史默认档案仅精确匹配时投影新版，存储记录、用户自改档案、联系人/会话及私人偏好保留；角色不扩大权限、工具、预算或任务数量。采用Distilly固定0afc45c的组织思路，文字和实现独立编写，未复制/运行其生成器或人物素材。
+
+完整根CI **787项/61文件**、2生产CLI/HTTP及B0/生产边界，客户端 **60项**（含2项真实本机HTTP/SQLite单项创建回执）、renderer/Electron双类型通过。冻结顺序两共享包先构建、Windows Web/4SDK/55运行包/NSIS/4启动入口及更新清单通过；成品ASAR另逐字节核对 **44份角色原文与2个角色模块**。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.46.exe**，**87,372,525字节**，SHA256 **b8d2f7b87a4ff6d8b16c2fa4e2d0e315341fd4bdad51abe84ee9d098947585de**，复制摘要一致，旧包保留。首轮定向和中止全量失败、Windows换行及JSON导入失败均保留，缩短默认助理和重复协议后全部重跑通过，不提高预算/时限、截断用户角色或删除原断言；临时合成诊断已移除。证据 **D:/deepseek-agent/.runtime/agent-role-skills-20261025**，更新current-state、交付、设计、角色新增规范、来源/迁移和评价记录。
+
+配套API/worker源码有变化，**需要单独升级后台**才采用新版共同规则、默认角色投影和无绑定规划/证据审阅角色。contract **0.32.0**、schema026、现有接口、依赖锁保持，无数据库迁移；本批未部署、做新线上探测或更新服务器canonical/私人Skill。线上沿已部署0e78530/7d75165a，广场同步沿关闭记录。源码尚未合main、0.10.46未公开，重新读取公开Latest仍 **v0.10.37/422478602**。未代安装、原生启动、浏览器产品、真实模型/私人材料或双机体验；合成模型只证明加载与业务边界，同事交流质量仍由负责人检查。注册超时未定因、飞书本人试点、原件在线/10MiB/无TURN及本机规划历史保持；没有把语言情境当真实模型或用户体验已验收。PR创建回执另追加。
+
+[PR106](https://github.com/luoyan96/personal-agent/pull/106)已创建并挂接，目标main，OPEN/MERGEABLE；首次head6da3514读取GitHub检查尚未出现，后续自动检查另计，不能当作已通过。GitHub连接器创建返回403后沿本机已登录CLI提交，未改权限或绕过保护。尚未合main/公开Release或部署后台。Git外github-created.json及403回执保留。
+
+## 2026-10-25：私人助理大肥鱼头像 / 本机Windows0.10.47
+
+从fetch后的main/fb2150b另开feat/personal-assistant-avatar，快进保留PR106/fc6be83和PR105单任务修复；本批产品0ef32388828e6f051f023a03438db86ff2c793b7。头像按coordinator身份/本人IM映射，统一联系人、会话、消息、详情及生成中回复，固定PNG本地加载，不按昵称替换或改写SDK数据。YunYueSama固定7661c8b原始头像、完整自定义许可/素材边界随包保留，关于页署名，不引入桌宠代码/台词或改角色正文。
+
+renderer类型、内容/链接、冻结顺序Windows Web/4SDK/55运行包/NSIS/4启动入口及更新清单通过；ASAR头像/3份署名文件字节和renderer引用通过。早期上游Markdown相对链接与Windows ASAR探针分隔符修正后通过，记录保留。桌面C:/Users/luo/Desktop/AcceptCat_0.10.47.exe，87793560字节，SHA256 fb69b87b2a0c7376690aec4b2c879219a136fc4ce3be20af756134e076bdb31a，复制摘要一致，旧包保留。未新增低影响重复测试或重跑完整根CI；前批角色787根/60客户端/双类型仍为其受测源码结果，重新读取PR106/fc6be83四项GitHub检查均success。未代安装、原生启动、浏览器、真实模型/私人材料或双机体验。
+
+头像纯客户端，无接口/数据库/锁变化，无需为头像部署。前批角色API/worker仍需单独升级，本批未合main、公开Release或部署；线上0e78530/7d75165a、contract0.32/schema026和Latest v0.10.37保持。[交付](deployment/acceptcat-0.10.47.md)，证据D:/deepseek-agent/.runtime/personal-assistant-avatar-20261025。
+
+[PR107](https://github.com/luoyan96/personal-agent/pull/107)已创建并挂接，OPEN/MERGEABLE，main为目标，保留PR106/105；首次headcddc265四项GitHub检查queued/in_progress，未宣称通过。回执github-created.json保留，未合并、发布或部署。
+
+
+## 2026-10-25：聊天返回、简化操作与未读提醒 / 本机0.10.48
+
+从fetch后的main/fb2150b另开fix/chat-return-and-notifications，普通快进保留PR107/fe79016及PR106/105；产品e4c411fc2fc4027c42790780b2e80f1e3a6e33f4。消息入口恢复本次登录上次聊天，置顶只排序，登出/删除对应会话清除记忆；后台不自动已读，恢复焦点后才读取。SDK未读同步侧栏和Windows任务栏红点，后台增加时闪烁，归零清除；全局免打扰、旧计数/跨账号守卫和受限IPC保持。小字/重复介绍移除，文件报告/协作/索取资料收进更多，列表字号/短日期调整；原授权与回执保留。
+
+27项客户端隔离回归（含模拟Electron通知、焦点、账号、免打扰/置顶与合成文件报告）、9构建守卫、双类型及Windows Web/4SDK/55运行包/NSIS/4入口/更新清单通过。ASAR通知模块/IPC/preload三文件与头像/3份署名核对通过，未重复未变更根CI。桌面C:/Users/luo/Desktop/AcceptCat_0.10.48.exe，87798284字节，SHA256 c55ff31af665002cafa78869efb612f2ad7279fa08de670929370f1bf309c389，复制摘要一致，旧包保留。未代安装/原生运行/浏览器/真实双机收信或任务栏效果/真实模型与私人材料体验。
+
+本批仅客户端与Windows CI，无API、契约、数据库、角色或锁变化，无需为本批部署；前批角色API/worker仍待单独升级。线上0e78530/7d75165a、contract0.32/schema026及公开Latest v0.10.37/422478602保持，未合main、公开或部署。前批PR107/fe79016四项GitHub检查重新读取均success，新PR另记。[交付](deployment/acceptcat-0.10.48.md)，证据D:/deepseek-agent/.runtime/chat-return-notifications-20261025。
+
+[PR108](https://github.com/luoyan96/personal-agent/pull/108)已创建并挂接，main为目标，OPEN/MERGEABLE；首次head38e234a四项GitHub检查in_progress，尚未确认通过，回执github-created.json保留。未自行合并、发布或部署。
+
+
+## 2026-10-25：大肥鱼应用图标 / 本机0.10.49
+
+从fetch后的main/fb2150b另开feat/dafeiyu-app-icon，普通快进保留PR108/a670787及PR107/106/105；产品5b441ffcf5394c095a26ee0ad195359188e5981d。固定来源PNG与16/32/48/256px ICO原样用于应用/安装器/卸载器/快捷方式、窗口/任务栏/托盘及标题栏/登录/关于/启动页，README同步；非Windows托盘只在显示时适配20px，完整自定义许可/署名与历史猫图标记录保留。AcceptCat名称、appId、数据目录、账号、更新源不变。
+
+双类型、内容/链接及Windows冻结顺序Web/4SDK/55运行包/NSIS/4入口/更新清单通过；实际程序/安装EXE四档位图与原ICO逐字节一致，ASAR六份公共图标、renderer图标及3份署名核对通过。图标只读探针初次NUL转义错误保留，修正后通过、包未变。桌面C:/Users/luo/Desktop/AcceptCat_0.10.49.exe，88154141字节，SHA256 5565fe5a58d66673b0426ddcc3c392e42416dbc5cc683282c90d64a25b0596d4，复制摘要一致，旧包保留。未代安装/卸载/原生启动/系统缓存或实际快捷方式任务栏体验，未打Mac/Linux包，未新增镜像测试或重复完整根CI。
+
+前批PR108/a670787三项GitHub检查success，Windows Foundation原长对话用例30000ms超时（786通过/1失败）；保留原日志，本机原条件该文件7项通过，未改测试或时限，已发起该job重跑，attempt2首次读取in_progress，结果未确认。新PR结果另计。仅客户端图标与显示配置，无API/数据库/角色/锁变化、无需为本批升级后台；前批角色后台仍待单独安排。线上0e78530/7d75165a、contract0.32/schema026、Latest v0.10.37保持，未合main/公开/部署。[交付](deployment/acceptcat-0.10.49.md)，证据D:/deepseek-agent/.runtime/dafeiyu-app-icon-20261025。
+
+[PR109](https://github.com/luoyan96/personal-agent/pull/109)已创建并挂接，目标main，OPEN/MERGEABLE；首次headb3c296a四项GitHub检查in_progress，未确认通过，github-created.json保留。未自行合并、发布或部署。
+
+## 2026-10-26：工作台界面精简 / 本机0.10.50
+
+按负责人截图，从fetch后的main/fb2150b另开fix/workbench-copy-cleanup，普通快进保留PR109/1e07441及PR108/107/106/105；产品690a86983820a807c04fd1a7e02d9549eedfa956。删除工作台/研究方向副标题、空任务解释、整个“任务范围与进度说明”、规划助手闲置介绍、输入区模型设置和快捷键小字及闲置样式。发送/停止、键盘操作、实际状态/错误、任务操作与回执保持，模型设置仍可在“我的”使用；前批聊天返回/通知、角色、单任务和大肥鱼头像/图标保留。
+
+renderer/Electron双类型、38项现有规划/依赖回归、Windows冻结顺序Web/4SDK/55运行包/NSIS/4启动入口与更新清单通过。ASAR核对五处删除说明不在renderer、发送入口仍在，六份图标/renderer图标/3份署名原样随包。桌面C:/Users/luo/Desktop/AcceptCat_0.10.50.exe，88155412字节，SHA256 555ddfb2bab93ff1a1acec5064ac8a4961a03b2a942134ba0ddbeb9e6953067b，复制摘要一致、旧包保留。低影响界面删减未新增镜像测试或重复完整根CI，未代安装/原生启动/浏览器或实际用户体验验收。
+
+重新读取PR109/1e07441及PR108/a670787四项GitHub检查均success，前批Windows超时与重跑证据保留，新PR另记。本批无API/worker、契约、数据库、角色正文或依赖锁变化，无需升级后台；前批统一角色后台仍待单独安排。未合main、公开Release或部署，线上0e78530/7d75165a、contract0.32/schema026保持，公开Latest重新读取仍v0.10.37/422478602。[交付](deployment/acceptcat-0.10.50.md)，证据D:/deepseek-agent/.runtime/workbench-copy-cleanup-20261026。
+
+[PR110](https://github.com/luoyan96/personal-agent/pull/110)已创建并挂接，目标main，OPEN/MERGEABLE；首次head7242876四项GitHub检查in_progress，尚未确认通过，github-created.json保留。未自行合并、发布或部署。
+
+## 2026-10-26：资料页界面精简 / 本机0.10.51
+
+按负责人截图，从fetch后的main/fb2150b另开fix/library-copy-cleanup，普通快进保留PR110/54cc54d及PR109/108/107/106/105；产品d321556504bc54fda7bdf28f0869bc9cf5ffc731。删除资料/资料库介绍、集合抬头说明、飞书共享/查询解释及折叠块、资料助手闲置介绍、输入区说明/模型设置/快捷键小字。集合说明保存在设置中，真实状态/错误、共享范围和打开/复制/集合设置/撤回/发送/停止保持，前批工作台等功能保留。
+
+双类型、19项现有资料对话/飞书范围/原件下载隔离回归、Windows冻结构建Web/4SDK/55运行包/NSIS/4入口和更新清单通过。首轮旧资料对话VM夹具未注入统一角色目录（12项通过/1文件失败），仅补接真实目录后原断言19项通过，失败保留。ASAR确认12处删除说明不在renderer、关键操作/图标/署名保持。桌面C:/Users/luo/Desktop/AcceptCat_0.10.51.exe，88156281字节，SHA256 faf9cda60758bee088911ac3375b1c74c5e0a4a28493e739884627e148a32ba0，复制摘要一致、旧包保留；未代安装/原生启动/浏览器或实际体验验收。
+
+前批PR110/54cc54d三项GitHub检查success、Windows Foundation原registration迁移008幂等用例15000ms超时（786通过/1失败）；保留日志，本机原用例/时限1通过、16未选，未改后端或断言/时限，未重复完整根CI。新PR另计，真实注册超时根因仍未确定。无API/契约/数据库/角色正文/锁变化，无需本批后台升级，前批角色后台仍待安排。未合main、公开或部署；线上0e78530/7d75165a、contract0.32/schema026和Latest v0.10.37保持。[交付](deployment/acceptcat-0.10.51.md)，证据D:/deepseek-agent/.runtime/library-copy-cleanup-20261026。
+
+内容/链接及git diff --check通过。[PR111](https://github.com/luoyan96/personal-agent/pull/111)已创建并挂接，OPEN/MERGEABLE，目标main，保留PR110及之前功能；首次headf076d06四项GitHub检查in_progress，未确认通过，github-created.json保留。未自行合并、发布或部署。
+
+## 2026-10-26：科研同伴团队 / 本机0.10.52
+
+按负责人要求检索并选读GitHub上的Distilly、K-Dense科学技能、Agency Agents、Anthropic PPTX和中国专利交底项目，角色/方法中文正文及接话示例独立设计，不安装或执行上游程序。从main/fb2150b另开feat/research-colleague-team，普通快进保留PR111/8f82e23及PR110至PR105；产品f9122fe580bf88fbfac4eaed1155241b89ecd41c。18类角色/19方法覆盖基础、论文、项目、知识产权和协作；15个专门助手按分工添加，方法按需预览、私人安装、明确绑定选择。默认先帮一步，只问阻塞下一步的一件事；不擅自拆任务、派活、编证据或虚报工具执行。
+
+上一版10份完整默认档案加入历史表共37份，精确匹配只读投影，用户编辑、名字/联系人、私人偏好、已安装版本和任务保持。个人助理491字节、其他不超过原1600字节上限，不提高业务预算/时限。根789项/62文件及2生产入口/B0/生产边界、客户端107项与双类型通过；实际HTTP/SQLite合成模型核对各角色进输入、内置方法私有与绑定/选择、跨账号拒绝。首轮51通过/1失败因固定旧7角色数量，更新为核验旧7模板仍复用；旧VM夹具补接真实角色目录、旧措辞断言换实际权限覆盖，失败保留，没有跳过测试或修改原业务限制。真实模型与交流质量未代验。
+
+Windows冻结构建Web/4SDK/55运行包/NSIS/4入口及更新清单通过；ASAR76角色文件/48方法文件/3生成模块逐字节一致、独立方法chunk、图标/署名和前批12处说明删减保持。桌面C:/Users/luo/Desktop/AcceptCat_0.10.52.exe，88222587字节，SHA256 7484a4b4a1b86718438b4d063748ad070f5b511d81143bbbe3cc456e4ece7e4a，复制摘要一致、旧包保留。未代安装、原生启动、浏览器、私人材料/飞书/双机或绘图/PPT真实导出体验；普通聊天没有因角色新增而获得浏览器/脚本/生图/PPT导出工具。[设计与来源](development/research-colleague-team.md)、[交付](deployment/acceptcat-0.10.52.md)，证据D:/deepseek-agent/.runtime/research-colleague-team-20261026。
+
+共享角色/方法包需配套API/worker单独升级，新建/显式保存的角色及Skill仍沿原接口；contract0.32/schema026、锁与权限保持，无迁移，本批未部署或新线上操作。PR111/8f82e23四项GitHub检查success，新PR另记；未合main或公开，线上0e78530/7d75165a和Latest v0.10.37/422478602保持，注册超时根因仍未确定。
+
+内容/链接及git diff --check通过。[PR112](https://github.com/luoyan96/personal-agent/pull/112)已创建并挂接，OPEN/MERGEABLE，目标main，保留PR111及此前功能；首次head5740bf4三项GitHub检查in_progress、Windows Foundation queued，未确认通过，github-created.json保留。未合并、公开或部署。

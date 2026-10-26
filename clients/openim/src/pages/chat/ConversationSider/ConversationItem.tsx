@@ -9,7 +9,7 @@ import { t } from "i18next";
 import { memo, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { useConversationStore } from "@/store";
 import { MessageReceiveOption } from "@openim/wasm-client-sdk";
 import {
@@ -70,7 +70,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
     return content;
   }, [conversation.latestMsg]);
 
-  const latestMessageTime = formatConversionTime(conversation.latestMsgSendTime);
+  const latestMessageTime = formatConversionTime(conversation.latestMsgSendTime, Boolean(window.electronAPI));
 
   const mapping = useResearchStore((s) =>
     s.mappings.find((c) => c.imConversationID === conversation.conversationID),
@@ -196,6 +196,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
           color={isMuted ? "rgba(0,0,0,0.25)" : undefined}
         >
           <OIMAvatar
+            userID={conversation.userID}
             src={conversation.faceURL}
             isgroup={Boolean(conversation.groupID)}
             text={conversation.showName}
@@ -207,7 +208,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
           <div className="flex items-center justify-between">
             <div className="flex-1 truncate font-medium">
               {contact?.displayName || conversation.showName}
-              {contact && contact.identity.kind !== "human" ? (
+              {!window.electronAPI && (contact && contact.identity.kind !== "human" ? (
                 <span className="desktop-agent-label ml-1 text-xs text-blue-600">
                   Agent
                 </span>
@@ -215,9 +216,9 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
                 <span className="desktop-agent-label ml-1 text-xs text-slate-500">
                   群
                 </span>
-              ) : null}
+              ) : null)}
             </div>
-            <div className="desktop-conversation-time ml-2 text-xs text-[var(--sub-text)]">
+            <div className="desktop-conversation-time ml-2 shrink-0 text-xs text-[var(--sub-text)]">
               {latestMessageTime}
             </div>
           </div>
@@ -225,8 +226,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
           <div className="flex items-center">
             <div className="flex min-h-[16px] flex-1 items-center overflow-hidden text-xs">
               <div className="truncate text-[rgba(81,94,112,0.5)]">
-                {latestMessageContent ||
-                  (isCoordinator ? contact?.displayName || conversation.showName : "")}
+                {latestMessageContent}
               </div>
             </div>
             {(isCoordinator || conversation.isPinned) && (

@@ -17,6 +17,7 @@ import { feedbackToast } from "@/utils/common";
 
 import SendActionBar from "./SendActionBar";
 import ImagePasteTray, { type ImagePasteTrayRef } from "@/research/ImagePasteTray";
+import ChatMoreActions from "@/research/ChatMoreActions";
 import { useFileMessage } from "./SendActionBar/useFileMessage";
 import { useSendMessage } from "./useSendMessage";
 import { useAgentFileReading } from "@/research/useAgentFileReading";
@@ -383,6 +384,7 @@ const ChatFooter = () => {
           mentionContacts={composer.mentionContacts}
           stageImages={(files) => imageTray.current?.stage(files)}
           pasteImages={() => imageTray.current?.readClipboard()}
+          moreActions={<ChatMoreActions collaboration={composer.advancedToggle} />}
         />
         <ImagePasteTray
           key={scope}
@@ -523,12 +525,6 @@ const ChatFooter = () => {
             onChange={onChange}
           />
           <div className="desktop-composer-bottom flex items-center justify-between px-3 py-2">
-            <div>{composer.advancedToggle}</div>
-            {window.electronAPI && (
-              <span className="desktop-send-shortcut">
-                Enter 发送 · Shift+Enter 换行
-              </span>
-            )}
             <Button
               className="w-fit px-6 py-1"
               type="primary"

@@ -1,7 +1,7 @@
 import { Alert, Button, Input, Modal, Space, Tag } from "antd";
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { OverlayVisibleHandle, useOverlayVisible } from "@/hooks/useOverlayVisible";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { useUserStore } from "@/store";
 import { researchApi } from "./api";
 import { useResearchStore } from "./store";
@@ -11,6 +11,8 @@ import { useResearchContactChat } from "./useResearchContactChat";
 import { AgentConnectionPanel } from "./AgentConnectionPanel";
 import { AcceptCatAccountNumber } from "./AcceptCatAccountNumber";
 import { ContactCardShare } from "./ContactCardShare";
+import { AgentRoleDocuments } from "./AgentRoleDocuments";
+import { contactRoleProfile } from "./agent-role-documents";
 
 export const ResearchUserCard = forwardRef<
   OverlayVisibleHandle,
@@ -36,7 +38,7 @@ export const ResearchUserCard = forwardRef<
   const contact = data?.data;
   const [editing, setEditing] = useState(false);
   const [memories, setMemories] = useState(false);
-  const [connection, setConnection] = useState(false), [exported, setExported] = useState("");
+  const [connection, setConnection] = useState(false);
   const [form, setForm] = useState({
     displayName: "",
     introduction: "",
@@ -65,13 +67,13 @@ export const ResearchUserCard = forwardRef<
   useEffect(() => {
     setEditing(false);
     setMemories(false);
-    setConnection(false); setExported("");
+    setConnection(false);
     setFailure("");
     setBusy(false);
   }, [scope]);
   const edit = () => {
     if (!contact) return;
-    setForm({
+    setForm(contact.identity.kind !== "human" ? contactRoleProfile(contact) : {
       displayName: contact.displayName,
       introduction: contact.profile.introduction,
       capabilityDescription: contact.profile.capabilityDescription,
@@ -114,7 +116,7 @@ export const ResearchUserCard = forwardRef<
       footer={null}
       destroyOnClose
       centered
-      width={500}
+      width={contact?.identity.kind !== "human" ? 680 : 500}
       styles={{ body: { maxHeight: "calc(100vh - 180px)", overflowY: "auto" } }}
     >
       {(error || failure) && <Alert type="error" showIcon message={error || failure} />}
@@ -124,7 +126,7 @@ export const ResearchUserCard = forwardRef<
       {contact && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <OIMAvatar text={contact.displayName} size={48} />
+            <OIMAvatar contact={contact} text={contact.displayName} size={48} />
             <div>
               <strong>{contact.displayName}</strong>
               <div>
@@ -177,8 +179,8 @@ export const ResearchUserCard = forwardRef<
                 [
                     ["displayName", contact.identity.kind === "human" ? "昵称" : "名称"],
                   ["introduction", "介绍"],
-                  ["capabilityDescription", "能力描述"],
-                  ["personality", "性格与偏好"],
+                  ["capabilityDescription", contact.identity.kind === "human" ? "能力描述" : "职责与工作方法（work.md）"],
+                  ["personality", contact.identity.kind === "human" ? "性格与偏好" : "角色、判断与交流（persona.md）"],
                 ] as const
               ).map(([key, label]) => (
                 <label className="block" key={key}>
@@ -192,13 +194,13 @@ export const ResearchUserCard = forwardRef<
                         ? 4000
                         : 2000
                     }
-                    rows={key === "displayName" ? 1 : 3}
+                    rows={key === "displayName" ? 1 : key === "introduction" ? 2 : 7}
                     placeholder={key === "personality" && contact.identity.kind !== "human" ? "例如：讨论方案时先给自己的判断；我卡住时先帮一个小步骤。可补一段希望它怎样接话的示例。" : undefined}
                     onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                   />
                 </label>
               ))}
-              {contact.identity.kind !== "human" && <p className="text-xs text-slate-500">这里是角色档案。只想让它记住与你的相处偏好，可以使用私人记忆。</p>}
+              {contact.identity.kind !== "human" && <p className="text-xs text-slate-500">支持 Markdown。可以写遇到某种情况时如何判断、怎样接话，并补一个对话示例。私人交流纠正可在「私人记忆」查看、修改或撤回。工具和资料权限仍按实际配置。</p>}
               <Space>
                 <Button
                   type="primary"
@@ -221,7 +223,7 @@ export const ResearchUserCard = forwardRef<
             </div>
           ) : (
             <>
-              <dl>
+              {contact.identity.kind !== "human" ? <AgentRoleDocuments contact={contact} /> : <dl>
                 {(
                   [
                     ["introduction", "介绍"],
@@ -236,7 +238,7 @@ export const ResearchUserCard = forwardRef<
                     </dd>
                   </div>
                 ))}
-              </dl>
+              </dl>}
               <Space wrap>
                 {contact.allowedActions.includes("chat") && (
                   <Button
@@ -289,23 +291,17 @@ export const ResearchUserCard = forwardRef<
                   </Button>
                 )}
                 {contact.allowedActions.includes("edit_profile") && (
-                  <Button onClick={edit}>编辑资料</Button>
+                  <Button onClick={edit}>{contact.identity.kind === "human" ? "编辑资料" : "编辑角色"}</Button>
                 )}
                 {contact.allowedActions.includes("manage_private_memory") && (
                   <Button onClick={() => setMemories(!memories)}>私人记忆</Button>
                 )}
                 {contact.identity.kind === "personal_agent" && contact.profile.role === "specialist" && contact.identity.ownerMemberId === actor?.member.id && <>
                   <Button onClick={() => setConnection(!connection)}>外部服务</Button>
-                  <Button loading={busy} onClick={() => void command(async isCurrent => {
-                    const result = await researchApi("exportAgentProfile", { params: { id: contact.id } });
-                    if (isCurrent()) setExported(JSON.stringify(result.data, null, 2));
-                  })}>导出人设资料</Button>
                 </>}
               </Space>
               <ContactCardShare contact={contact} active={isOverlayOpen} />
-              {exported && <div className="space-y-2"><p className="text-xs text-slate-600">只包含公开人设四项资料。导入会创建或复用对方自己的 Agent，不转移此联系人的身份或外部连接。</p><Input.TextArea aria-label="导出的人设 JSON" readOnly rows={6} value={exported} onFocus={e => e.target.select()} /><Button onClick={() => {
-                const url = URL.createObjectURL(new Blob([exported], { type: "application/json" })); const link = document.createElement("a"); link.href = url; link.download = "agent-profile.json"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-              }}>保存资料 JSON</Button></div>}
+
             </>
           )}
           {memories && contact.allowedActions.includes("manage_private_memory") && (

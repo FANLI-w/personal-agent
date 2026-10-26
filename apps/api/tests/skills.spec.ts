@@ -8,6 +8,8 @@ import { readConfig } from "../src/config.js";
 import { openDatabase, migrate } from "../src/database.js";
 import { createServer } from "../src/server.js";
 import { ChatWorker } from "../src/chat-worker.js";
+import { builtinMethods } from "@research-agent-platform/research-skills/builtin-methods";
+import { agentRoles } from "@research-agent-platform/research-skills/role-catalog";
 import { parseImportedSkill } from "@research-agent-platform/research-skills/import";
 import { loadResearchSkills } from "@research-agent-platform/research-skills";
 import type { ModelCall, ModelResult } from "../src/execution-worker.js";
@@ -185,6 +187,35 @@ describe(
   "private skill installation and real chat integration (synthetic model only)",
   { timeout: 30000 },
   () => {
+    it("installs a built-in method privately and loads it only after the owner binds and explicitly selects it", async () => {
+      const s = await setup();
+      const method = builtinMethods.find(method => method.id === "patent-technical-disclosure")!;
+      const role = agentRoles.find(role => role.id === "patent-drafting")!;
+      const agent = (await s.call("createPersonalAgent", role.profile)).value.data;
+      const direct = (await s.call("createDirectConversation", { contactId: agent.id })).value.data;
+      const installed = await s.call("installSkill", { package: method.package, source: { kind: "copy", label: "AcceptCat 内置方法", revision: method.digest } });
+      expect(installed.status, JSON.stringify(installed.value)).toBe(201);
+      let skill = installed.value.data;
+      expect(skill.settings).toMatchObject({ listed: false, boundAgentIds: [], callMemberIds: [], sourceMemberIds: [] });
+      expect((await s.call("skillSource", null, skill.id, 1)).status).toBe(404);
+      const message = () => s.call("agentChatMessage", { text: "请依据当前文字讨论交底结构，不宣称已检索或递交", continuous: true, skill: { id: skill.id, version: skill.version, referencePaths: [], acceptLimitations: true } }, direct.id);
+      expect((await message()).status).toBe(403);
+      skill = await s.configure(skill, { boundAgentIds: [agent.id] });
+      const sent = await message();
+      expect(sent.status, JSON.stringify(sent.value)).toBe(201);
+      let calls = 0;
+      await s.tick(async request => {
+        calls++;
+        const input = JSON.parse(request.prompt);
+        expect(input.selectedSkill.instructions).toBe(method.package.instructions);
+        expect(input.selectedSkill.references).toEqual([]);
+        expect(input.requestedAgent.profile.personality).toBe(role.profile.personality);
+        for (const file of method.package.references) expect(request.prompt).not.toContain(file.text);
+        return result("先整理当前技术问题与实现依据；查新和递交尚未执行。");
+      });
+      expect(calls).toBe(1);
+      expect((await s.call("skillUses", null, skill.id)).value.data[0].status).toBe("succeeded");
+    });
     it("preserves exact-limit text through install, revise, rollback and selected-reference chat", async () => {
       const s = await setup();
       let skill = await s.bind(await s.install());

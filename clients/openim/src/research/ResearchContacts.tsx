@@ -12,7 +12,7 @@ import { ContactFinder } from "./ContactFinder";
 import { useResearchContactChat } from "./useResearchContactChat";
 import { AgentImport } from "./AgentImport";
 import { ExternalAgentSetup } from "./ExternalAgentSetup";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { WorkspaceContactCard } from "./WorkspaceContactCard";
 import "./workspace.scss";
 
@@ -178,7 +178,7 @@ export function ResearchContacts() {
                 aria-pressed={selectedContact === contact.id}
                 onClick={() => openProfile(contact.id)}
               >
-                <OIMAvatar text={contact.displayName} />
+                <OIMAvatar contact={contact} text={contact.displayName} />
                 <div>
                   <strong>{contact.displayName}</strong>
                   <span

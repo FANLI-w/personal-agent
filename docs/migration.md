@@ -119,3 +119,13 @@ paper-framework-figure-studio-pro 固定修订仅在 Git 外测试完整包往�
 2026-10-20按用户要求将受限Harness组合从官方dsh-llm / dsh-llm-deepseek-api-key 0.2.0-rc.1及Cordis4.0.4升级为精确0.2.1-rc.2及4.0.5。来源为官方npm包，GitHub候选发布dsh-v0.2.1-rc.2；完整性随根锁文件固定，保留minimumReleaseAge/strictDepBuilds，不迁入上游源码或改变agents/skills单一来源。沿公开LlmRuntime/LlmAdapter接口，工具列表保持空，默认模型、权限、契约和schema023不变；任务运行元数据在实际派发时使用新版，已完成历史不重写。后台实际部署与验证按当前状态/项目日志分别记录，桌面0.10.24安装包保持。
 
 2026-10-24科研同伴调整沿原personality档案和private_agent记忆/修订/撤回接口：明确本人指令才在本人的本地Agent私人会话保存相处偏好，不改变角色归属、公开档案、共享或工具权限。contract0.30/schema026与依赖锁保持，无迁移、旧数据重写或上游Distilly源码迁入；本机与后台状态分开记。来源与边界见development/research-colleague.md和NOTICE。
+
+2026-10-25角色重组：agents/roles成为默认角色单一来源，旧TypeScript默认档案保留为27份精确匹配JSON供复用/只读投影。用户自改档案、联系人ID和记忆不重写；继续使用既有四字段及导入接口，contract0.32/schema026和依赖锁不变。新增生成的浏览器/API目录及原文随包保留。参见[设计与来源](development/agent-role-skills.md)；API/worker与客户端需分别交付，不将代码合并当部署。
+
+2026-10-26科研同伴团队扩至18角色/19方法。上一版10份完整默认档案追加到历史表共37份，仅精确匹配时只读投影，保留用户改动、名字、联系人、记忆和既有任务/私人Skill版本。category/teams/methods只是源码发现与建议字段，仍使用原四字段角色和copy来源的Skill安装接口，不改contract0.32/schema026、依赖锁、权限或数据库。内置方法正文按LF规范化、原解析器校验并动态加载，预览后才确认私人安装，不自动绑定或调用。[设计与实际能力边界](development/research-colleague-team.md)。
+
+同日私人助理头像采用YunYueSama/codex-deepseek-pet固定7661c8b的独立PNG，完整许可、素材边界及来源随客户端保留；不迁入桌宠代码、人设或用户数据。仅客户端按coordinator身份和本人IM映射显示，旧SDK头像不写回数据库，不按昵称替换真人或自建助手头像。无API、数据库、依赖锁或角色正文变化；[来源](../clients/openim/public/third-party/dafeiyu/ORIGIN.md)。
+
+同日0.10.48仅在客户端内存分别记录实时选择和最后会话，登出/删除对应会话时清理；新增同源主窗口限定的未读计数IPC，使用既有Electron22通知接口，不发送正文，不引入系统通知依赖或改SDK/后台。聊天次要功能迁入更多菜单，原文件与协作权限保持；无接口契约、数据库、角色、锁或持久数据迁移。[实际交付](deployment/acceptcat-0.10.48.md)。
+
+同日0.10.49按负责人要求将私人助理同款大肥鱼扩展为应用图标，取原固定来源PNG及四档ICO原样替换品牌资源，NSIS安装/卸载/页头明确指定同图；完整许可、关于页署名和旧猫图标历史来源保留。应用名称、appId、数据目录、更新源及账号不变，不删除系统缓存或修改现有安装，无新运行依赖/数据迁移/后台部署。[交付](deployment/acceptcat-0.10.49.md)。

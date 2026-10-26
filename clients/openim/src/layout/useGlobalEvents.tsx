@@ -34,8 +34,10 @@ import { researchApi, researchMode } from "@/research/api";
 import { useResearchStore } from "@/research/store";
 import { setIMProfile } from "@/utils/storage";
 import { initializeCoordinator } from "@/research/bridge";
+import { useMessageNotifications } from "@/research/useMessageNotifications";
 
 export function useGlobalEvent() {
+  useMessageNotifications();
   const navigate = useNavigate();
   const resume = useRef(false);
   const loginAttempt = useRef(false);

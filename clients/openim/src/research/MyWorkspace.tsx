@@ -149,6 +149,15 @@ export function MyWorkspace() {
                   反馈问题与建议
                 </a>
                 <details className="my-about-diagnostics">
+                  <summary>头像素材署名</summary>
+                  <p>
+                    应用图标与私人助理「大肥鱼」头像：
+                    <a href="https://github.com/YunYueSama/codex-deepseek-pet" target="_blank" rel="noreferrer">
+                      YunYueSama / codex-deepseek-pet
+                    </a>
+                  </p>
+                </details>
+                <details className="my-about-diagnostics">
                   <summary>版本详情与诊断</summary>
                   <AboutContent embedded />
                 </details>

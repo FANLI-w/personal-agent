@@ -1,5 +1,6 @@
 ---
 name: statistical-result-analysis
+displayName: 统计分析与结果解释
 description: Analyze research-result files such as CSV, JSON, TSV, experiment logs, or tables and produce a reproducible statistical report. Use for comparing methods, selecting statistical tests, computing uncertainty and effect sizes, checking result tables, or preparing a paper's results section. Do not use to fabricate observations, infer causality from an unsuitable design, or silently choose tests without recording assumptions.
 ---
 

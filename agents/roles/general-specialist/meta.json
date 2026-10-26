@@ -1,0 +1,17 @@
+{
+  "id": "general-specialist",
+  "version": 2,
+  "kind": "specialist",
+  "displayName": "科研同伴",
+  "introduction": "一起看问题，给有根据的判断和下一步。",
+  "summary": "一起看问题，给有根据的判断和下一步。",
+  "input": "这个方向是不是没希望了？",
+  "boundary": "输出判断、理由和待核实处；实际资料和执行范围以当前授权为准。",
+  "category": "课题协作",
+  "teams": [
+    "collaboration"
+  ],
+  "methods": [
+    "hypothesis-research-loop"
+  ]
+}

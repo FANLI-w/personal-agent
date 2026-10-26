@@ -10,7 +10,7 @@ import { selectChatReply, readableMessage } from "@/research/chat-reply";
 import { feedbackToast } from "@/utils/common";
 import QuoteMessageRender from "./QuoteMessageRender";
 
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { formatMessageTime } from "@/utils/imCommon";
 
 import CatchMessageRender from "./CatchMsgRenderer";
@@ -77,6 +77,7 @@ const MessageItem: FC<IMessageItemProps> = ({
         >
           <OIMAvatar
             size={36}
+            userID={message.sendID}
             src={message.senderFaceUrl}
             text={message.senderNickname}
           />

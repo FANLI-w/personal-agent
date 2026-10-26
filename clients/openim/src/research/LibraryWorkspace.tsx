@@ -15,7 +15,6 @@ export function LibraryWorkspace() {
       <header className="workspace-heading">
         <div>
           <h1>资料</h1>
-          <p>整理科研资料、查看来源，和资料 Agent 直接聊。</p>
         </div>
       </header>
       <div className="workspace-toolbar">

@@ -132,7 +132,7 @@ function LibraryBody() {
     catch (error) { if (isCurrent()) { setFailure(failureText(error)); await collections.refresh(); } }
   };
   return <div className="research-library">
-    <header className="research-library-heading"><div><h2>资料库</h2><p>管理自己的科研资料，也可明确共享给课题组；每个资料库分别设置可见范围。</p></div><div className="research-library-actions"><Button onClick={() => setFeishuOpen(true)}>连接飞书资料</Button><Button type="primary" onClick={() => setEditing("new")}>新建集合</Button></div></header>
+    <header className="research-library-heading"><div><h2>资料库</h2></div><div className="research-library-actions"><Button onClick={() => setFeishuOpen(true)}>连接飞书资料</Button><Button type="primary" onClick={() => setEditing("new")}>新建集合</Button></div></header>
     {failure && <Alert type="warning" message={failure} />}
     <div className={`research-library-body ${sourceId ? "has-source" : ""}`}>
       <aside className="research-collection-rail" aria-label="资料集合">
@@ -145,8 +145,8 @@ function LibraryBody() {
       </aside>
       <section className="research-file-list" aria-label="集合文件">
         {collection ? <>
-          <div className="research-library-subheading"><div><h3>{collection.name}</h3><p>{collection.description || researchScopeLabels[collection.scope]}</p></div>{collection.owned && <Button onClick={() => setEditing(collection)}>集合设置</Button>}</div>
-          {collection.externalSource ? <FeishuLibrarySource id={collection.id} scope={collection.scope} owned={collection.owned} onAsk={()=>{setChatCollectionId(collection.id);setChatFocus(n=>n+1);}}/> : <>
+          <div className="research-library-subheading"><div><h3>{collection.name}</h3></div>{collection.owned && <Button onClick={() => setEditing(collection)}>集合设置</Button>}</div>
+          {collection.externalSource ? <FeishuLibrarySource id={collection.id} scope={collection.scope} onAsk={()=>{setChatCollectionId(collection.id);setChatFocus(n=>n+1);}}/> : <>
           <div className="research-library-actions">{collection.owned && <Button type="primary" icon={<UploadOutlined />} onClick={() => setImporting({ collection })}>导入文件</Button>}{collection.owned && collection.scope === "owner_private" && <Button onClick={() => setZoteroId(collection.id)}>从 Zotero 选择</Button>}<Input.Search aria-label="检索资料正文" placeholder="检索实际提取文字" value={search} allowClear onChange={e => setSearch(e.target.value)} onSearch={v => setQuery(v.trim())} /></div>
           {(files.error || matches.error) && <Alert type="warning" message={files.error || matches.error} action={<Button onClick={() => { void files.refresh(); void matches.refresh(); }}>重试</Button>} />}
           {query ? <div className="research-search-results">{matches.loading && <p role="status">正在检索…</p>}{matches.data?.data.map((match, i) => <button key={`${match.citation.sourceId}:${match.citation.version}:${match.citation.pageNumber}:${i}`} onClick={() => setSourceId(match.citation.sourceId)}><strong>{match.filename}</strong><small>v{match.citation.version} · 第 {match.citation.pageNumber} 页 · 字符 {match.citation.start}–{match.citation.end}</small><p>{match.text}</p>{match.partial && <small>此处为实际提取页的局部片段</small>}</button>)}{matches.data && !matches.data.data.length && <div className="research-library-empty"><h3>未找到实际文字片段</h3><p>调整关键词；仅保存原件的素材不会产生文字检索结果。</p></div>}<Button onClick={() => { setQuery(""); setSearch(""); }}>返回文件列表</Button></div> : <>

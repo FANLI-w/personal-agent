@@ -1,6 +1,6 @@
 import { Tag } from "antd";
 import type { Contact } from "@research-agent-platform/contracts";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 
 export function ContactRow({
   contact,
@@ -22,7 +22,7 @@ export function ContactRow({
       onClick={onOpen}
       className="desktop-contact-row flex w-full min-w-0 items-center gap-3 rounded-lg p-3 text-left hover:bg-slate-50 focus-visible:outline focus-visible:outline-blue-500"
     >
-      <OIMAvatar text={contact.displayName.slice(0, 2)} />
+      <OIMAvatar contact={contact} text={contact.displayName.slice(0, 2)} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <strong className="break-words text-sm">{contact.displayName}</strong>

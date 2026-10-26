@@ -1,5 +1,9 @@
 # 科研 Skills 加载
 
+`./builtin-methods` 是从 `agents/skills` 生成的公开文字目录，包含中文名称、原有导入器校验的方法正文/参考与来源摘要；客户端只在打开“内置方法”时动态加载。用户预览确认后沿既有安装接口取得私人副本，默认设置、绑定与每次调用仍由原服务控制，不执行脚本、安装外部程序或覆盖已有修订。角色meta中的methods仅用于推荐，见[科研同伴团队](../../docs/development/research-colleague-team.md)。新增方法建议填写单行中文displayName，现有根加载器继续按name和description识别。
+
+默认角色正文独立维护在[agents/roles](../../agents/roles/README.md)。`./roles`提供浏览器可用的角色文档编译/严格导入，`./role-catalog`是从canonical Markdown生成的同版目录、共同交流规则与摘要。API和桌面共用，角色原文随包复制到dist/roles；`loadResearchSkills()`仍只返回科研方法。用户私人角色继续存数据库，不进入公共canonical目录。
+
 `loadResearchSkills()` 返回打包的完整方法正文、名称、描述和本地参考目录。它不依赖 Harness，也不执行科研任务。
 
 唯一编辑来源是 [agents/skills](../../agents/skills)。构建将该目录复制到 `dist/skills`；参考文件随包保留，插件可按实际运行环境注册能力。

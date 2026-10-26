@@ -174,7 +174,6 @@ export function ResearchTeamWorkbench({
         <header className="lab-section-heading">
           <div>
             <h2 id="lab-directions-title">研究方向与任务</h2>
-            <p>课题组正在做什么，接下来准备做什么。</p>
           </div>
           <Button
             icon={<ReloadOutlined />}
@@ -219,11 +218,6 @@ export function ResearchTeamWorkbench({
             <h3>
               {scope === "mine" ? "还没有你参与的课题组任务" : "还没有课题组任务"}
             </h3>
-            <p>
-              {scope === "mine"
-                ? "切换到课题组可见，查看你有权访问的其他任务。"
-                : "在下方告诉任务规划 Agent 您的目标，任务建立后在这里跟进分工和成果。"}
-            </p>
             <Button
               type="primary"
               onClick={scope === "mine" ? () => setScope("lab") : onPlan}
@@ -531,20 +525,6 @@ export function ResearchTeamWorkbench({
           )}
         </section>
       )}
-      <details className="lab-scope-guide">
-        <summary>任务范围与进度说明</summary>
-        <p>
-          按同一计划的获准任务归组；未确认的私人草案保留在“我的任务 →
-          研究计划”。其他人的私人计划目标不会在这里公开。
-        </p>
-        <p>
-          进度按当前成果的明确验收计，已取消项不计入分母；邀请待接受不计为已承接。任务数量不代表研究质量或目标已达成。筛选与搜索覆盖本次已读取任务。
-        </p>
-        <ResearchTeamAccountHint />
-        {read.data && (
-          <p>更新于 {new Date(read.data.snapshot.at).toLocaleTimeString("zh-CN")}</p>
-        )}
-      </details>
       <Modal
         title="任务、交付与审阅"
         open={!!selected}

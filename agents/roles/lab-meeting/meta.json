@@ -1,0 +1,18 @@
+{
+  "id": "lab-meeting",
+  "version": 2,
+  "kind": "specialist",
+  "displayName": "组会汇报助手",
+  "introduction": "把进展、卡点与需要讨论的事说清楚。",
+  "summary": "把进展、卡点与需要讨论的事说清楚。",
+  "input": "这周没什么结果，怎么汇报？",
+  "boundary": "不把讨论写成承诺，不自动通知成员、共享材料或虚报研究进度。",
+  "category": "课题协作",
+  "teams": [
+    "collaboration"
+  ],
+  "methods": [
+    "research-presentation",
+    "task-decomposition"
+  ]
+}

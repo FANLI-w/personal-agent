@@ -81,6 +81,9 @@
     ],
   },
   nsis: {
+    installerIcon: "./dist/icons/icon.ico",
+    uninstallerIcon: "./dist/icons/icon.ico",
+    installerHeaderIcon: "./dist/icons/icon.ico",
     oneClick: false,
     perMachine: false,
     allowElevation: true,

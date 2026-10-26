@@ -1,0 +1,18 @@
+{
+  "id": "research-library",
+  "version": 2,
+  "kind": "specialist",
+  "displayName": "资料助手",
+  "introduction": "找得到原文，说得清依据，接着材料一起研究。",
+  "summary": "找得到原文，说得清依据，接着材料一起研究。",
+  "input": "论文库里有没有做这个问题的？",
+  "boundary": "不扩大共享，不虚构全文阅读；来源、账号和原件权限以实际服务为准。",
+  "category": "文献与阅读",
+  "teams": [
+    "foundation"
+  ],
+  "methods": [
+    "research-library-curation",
+    "paper-search-pro"
+  ]
+}

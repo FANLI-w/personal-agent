@@ -3,7 +3,7 @@ import { MessageItem } from "@openim/wasm-client-sdk";
 import { Button, Popover } from "antd";
 import clsx from "clsx";
 import { t } from "i18next";
-import { memo, useId, useLayoutEffect, useRef, useState } from "react";
+import { memo, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import image from "@/assets/images/chatFooter/image.png";
 import fileIcon from "@/assets/images/chatFooter/file.png";
@@ -39,6 +39,7 @@ const SendActionBar = ({
   mentionContacts,
   stageImages,
   pasteImages,
+  moreActions,
 }: {
   sendMessage: (params: SendMessageParams) => Promise<void>;
   sendFile: (file: File, kind: SelectedFileKind, isCurrent?: () => boolean, agentFileText?: string) => Promise<boolean>;
@@ -48,6 +49,7 @@ const SendActionBar = ({
   mentionContacts: GroupMentionContact[];
   stageImages?: (files: File[]) => void;
   pasteImages?: () => void;
+  moreActions?: ReactNode;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [voiceVisible, setVoiceVisible] = useState(false);
@@ -137,6 +139,7 @@ const SendActionBar = ({
           </Popover>
         )}
         <LocalFolderAction sendFile={sendFile} />
+        {moreActions}
         {!researchMode && !isGroupSession && <Popover content={<CallPopContent closeAllPop={() => setExpanded(false)} />} trigger="click" arrow={false} placement="top"><button type="button" className={toolbarClass} aria-label={t("placeholder.call")}><img src={rtc} width={20} alt="" /></button></Popover>}
       </div>
       <Button
@@ -195,6 +198,7 @@ const SendActionBar = ({
           <span>语音</span>
         </button>
         <LocalFolderAction sendFile={sendFile} menu />
+        {moreActions}
         {!researchMode && !isGroupSession && (
           <Popover content={<CallPopContent closeAllPop={() => setExpanded(false)} />} trigger="click" arrow={false} placement="top">
             <button type="button" className={actionClass} aria-label={t("placeholder.call")}>

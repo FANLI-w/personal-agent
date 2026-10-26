@@ -19,7 +19,6 @@ import { useResearchContactChat } from "./useResearchContactChat";
 import { CreatedAgentChatButton } from "./CreatedAgentChatButton";
 import { PersonalReceiptCard } from "./PersonalReceiptCard";
 import { peerChatRequest } from "./peer-library-runtime";
-import { PeerLibraryChatLink } from "./PeerLibraryPanel";
 import { registerAgentProgress } from "./agent-progress";
 import { groupMentions } from "./group-mentions";
 
@@ -394,7 +393,6 @@ export function useResearchComposer() {
             )}
           </div>
         )}
-        {isDirectAgent && !external && peer?.profile.role === "coordinator" && <PeerLibraryChatLink />}
         {currentTurn && (
           <div className="mx-3">
             <PersonalReceiptCard turn={currentTurn} compact />
@@ -552,13 +550,13 @@ export function useResearchComposer() {
       researchMode && mapping && agents.length && !external ? (
         <Button
           type="text"
-          size="small"
+          aria-expanded={advanced}
           onClick={() => setAdvanced(!advanced)}
           icon={
             advanced ? <UpOutlined rev={undefined} /> : <DownOutlined rev={undefined} />
           }
         >
-          可选协作
+          协作设置
         </Button>
       ) : null,
     invalid:

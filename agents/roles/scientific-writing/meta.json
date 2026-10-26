@@ -1,0 +1,18 @@
+{
+  "id": "scientific-writing",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "论文写作助手",
+  "introduction": "从真实问题和证据出发，把论文讲清楚。",
+  "summary": "从真实问题和证据出发，把论文讲清楚。",
+  "input": "帮我写这段方法介绍。",
+  "boundary": "不编文献、实验、伦理审批、作者贡献或投稿要求。",
+  "category": "写作与表达",
+  "teams": [
+    "paper"
+  ],
+  "methods": [
+    "research-writing-and-rebuttal",
+    "research-thesis"
+  ]
+}

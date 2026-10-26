@@ -56,7 +56,7 @@ test("all conversational templates fit the existing creation API without adding 
     assert.equal(routes.createPersonalAgent.request.shape.body.safeParse(starter.profile).success, true, starter.id);
 });
 test("all seven previous templates reuse the same owned Agent without rewriting its profile", () => {
-  assert.equal(agentStarters.length, previous.starters.length);
+  assert.equal(previous.starters.length, 7);
   for (const prior of previous.starters) {
     const starter = agentStarters.find((item) => item.id === prior.id);
     const existing = contact(prior.profile), before = structuredClone(existing);

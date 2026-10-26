@@ -23,6 +23,7 @@ import { personalMemoryContext } from './personal-memories.js'
 import { personalAssistantSystem,PersonalAssistantOutput,assistantCandidates,assistantPeople,assistantTeamAgents,rankedAssistantCandidates,assistantComplexRequest,delegateWork,AssistantBudgetError } from './personal-assistant.js'
 import {createWork,recordAssistantAnswerWork} from './workspace.js'
 import {recentDialogue,olderDialogue,dialogueTaskState,packDialogueLayers,saveDialogueSelection,memoryContextSources,dialogueContextSystem,type DialogueLayers} from './dialogue-context.js'
+import { modelAgentProfile } from './agent-roles.js'
 
 // Local model protocol: validated JSON, no model-side tools or business authority.
 export const ChatModelOutput = z.strictObject({
@@ -78,7 +79,7 @@ export class ChatWorker {
         const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'\nAnswer currentRequest only; forwarded names may differ from the sender.')
         system=contextSystem(layers)
         const candidates=rankedAssistantCandidates(s,current),shown:typeof candidates=[]
-        const serialize=(selection=layers)=>JSON.stringify({currentRequest:current,requestedAgent:{id:agentContext.agent.id,displayName:agentContext.agent.displayName,profile:Object.fromEntries(Object.entries(agentContext.agent.profile).filter(([key,value])=>key!=='version'&&value!==''))},...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(agentContext.memories.length?{memories:agentContext.memories}:{}),localSpecialists:shown,...(shown.length<candidates.length?{specialistsOmitted:true}:{}),...(complex?{labId:s.c.actor.labId,collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(selection.messages.some(m=>!required.has(m.id))?{recentDialogue:selection.messages.filter(m=>!required.has(m.id))}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
+        const serialize=(selection=layers)=>JSON.stringify({currentRequest:current,requestedAgent:{id:agentContext.agent.id,displayName:agentContext.agent.displayName,profile:Object.fromEntries(Object.entries(modelAgentProfile(agentContext.agent)).filter(([key,value])=>key!=='version'&&value!==''))},...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(agentContext.memories.length?{memories:agentContext.memories}:{}),localSpecialists:shown,...(shown.length<candidates.length?{specialistsOmitted:true}:{}),...(complex?{labId:s.c.actor.labId,collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(selection.messages.some(m=>!required.has(m.id))?{recentDialogue:selection.messages.filter(m=>!required.has(m.id))}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
         prompt=serialize()
         for(const candidate of candidates){if(shown.length>=3)break;shown.push(candidate);const trial=serialize();if(input.budget.maxTokens-chatInputTokenBound(system,trial)>=512)prompt=trial;else shown.pop()}
         layers=packDialogueLayers(recent,required,notes,tasks,trial=>input.budget.maxTokens-chatInputTokenBound(contextSystem(trial),serialize(trial))>=512)
@@ -108,7 +109,7 @@ export class ChatWorker {
       const publicContact = (contact:ReturnType<typeof s.contact>) => ({id:contact.id,displayName:contact.displayName,identity:contact.identity,availability:{status:contact.availability.status,...(contact.availability.reason?{reason:contact.availability.reason}:{})},profile:Object.fromEntries(Object.entries(contact.profile).filter(([key,value])=>key!=='version'&&value!==''))})
       const candidates=input.dailyChat?group.members.map(m=>m.contactId).filter(id=>id!==turn.agentContactId):this.db.prepare('SELECT id FROM chat_contacts WHERE lab_id=? AND id<>? ORDER BY id').all(s.c.actor.labId,turn.agentContactId).map(r=>String(r.id))
       const contacts = candidates.flatMap(id => { try { return [publicContact(s.contact(id))] } catch { return [] } }).slice(0, 100)
-      const agentContext=s.directory.modelContext(turn.agentContactId,group.id),requestedAgent=publicContact(agentContext.agent)
+      const agentContext=s.directory.modelContext(turn.agentContactId,group.id),requestedAgent=(({availability:_availability,...value})=>value)(publicContact({...agentContext.agent,profile:modelAgentProfile(agentContext.agent)}))
       const personal=personalMemoryContext(s,agentContext.agent,group,currentTurnText(s,turn.id))
       input.memoryContextSources=memoryContextSources(s,personal.records,agentContext.memories)
       input.agentContextFingerprint=agentContext.fingerprint
@@ -117,7 +118,7 @@ export class ChatWorker {
       const selectedTasks=input.context.filter(ref=>ref.kind==='task').map(ref=>s.c.task(ref.ref.id))
       system=input.dailyChat?dailyChatSystem:chatModelSystem({group:group.kind==='personal'&&agentContext.agent.profile.role==='coordinator',inviteContact:group.kind==='group'&&group.ownerMemberId===s.c.actor.id,inviteTask:group.kind==='group'&&group.ownerMemberId===s.c.actor.id&&selectedTasks.some(task=>task.initiatorId===s.c.actor.id),runTask:group.kind==='group'&&selectedTasks.some(task=>task.leadId===s.c.actor.id)})
       if(input.scheduledFollowupId)system+='\nThe latest service message is an explicitly owner-authorized scheduled instruction. Execute that instruction within the provided conversation text only, and return the result conversationally. It does not grant web browsing, tools, filesystem access, business mutations, contact creation, or further scheduling. State any missing inputs/access plainly; never claim to have performed actions outside this scope.'
-      if(input.assistantMode==='coordinate')system=personalAssistantSystem+'\n'+chatModelSystem({group:true,inviteContact:false,inviteTask:false,runTask:false}).split('\n').filter(line=>/^(Ref=|Group=|Item=|Schedule=)/.test(line)).join('\n')
+      if(input.assistantMode==='coordinate')system=personalAssistantSystem+'\n'+chatModelSystem({group:true,inviteContact:false,inviteTask:false,runTask:false}).split('\n').filter(line=>/^(Ref=|Group=|Item=|S=|s=string)/.test(line)).join('\n')
       const selectedSkill=input.skill?skillContext(s,input.skill,turn.agentContactId):undefined
       if(selectedSkill)system+=skillSystem
       const library=retrieveResearchContext(s,input,currentTurnText(s,turn.id))

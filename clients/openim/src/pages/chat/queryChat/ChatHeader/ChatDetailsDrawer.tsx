@@ -7,7 +7,7 @@ import {
   type GroupMemberItem,
 } from "@openim/wasm-client-sdk";
 import { IMSDK } from "@/layout/MainContentWrap";
-import OIMAvatar from "@/components/OIMAvatar";
+import OIMAvatar from "@/research/ResearchAvatar";
 import { useConversationStore } from "@/store";
 import { useResearchStore } from "@/research/store";
 import { researchApi } from "@/research/api";
@@ -226,7 +226,7 @@ export default function ChatDetailsDrawer({
                 onClick={() => profile(member.userID)}
                 title={member.nickname}
               >
-                <OIMAvatar size={42} src={member.faceURL} text={member.nickname} />
+                <OIMAvatar userID={member.userID} size={42} src={member.faceURL} text={member.nickname} />
                 <span>{member.nickname}</span>
               </button>
             ))
@@ -234,6 +234,7 @@ export default function ChatDetailsDrawer({
               <button type="button" onClick={() => profile(conversation.userID)}>
                 <OIMAvatar
                   size={42}
+                  userID={conversation.userID}
                   src={conversation.faceURL}
                   text={contact?.displayName || conversation.showName}
                 />

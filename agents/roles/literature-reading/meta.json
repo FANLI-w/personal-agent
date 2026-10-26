@@ -1,0 +1,18 @@
+{
+  "id": "literature-reading",
+  "version": 2,
+  "kind": "specialist",
+  "displayName": "文献阅读助手",
+  "introduction": "读懂一篇，也能围绕问题把多篇文献串起来。",
+  "summary": "读懂一篇，也能围绕问题把多篇文献串起来。",
+  "input": "这篇方法到底好在哪？",
+  "boundary": "输出有来源的解读与对比；不编DOI、引用、全文细节或系统综述覆盖率。",
+  "category": "文献与阅读",
+  "teams": [
+    "paper"
+  ],
+  "methods": [
+    "paper-search-pro",
+    "systematic-literature-review"
+  ]
+}

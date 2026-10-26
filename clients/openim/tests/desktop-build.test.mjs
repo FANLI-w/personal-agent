@@ -36,6 +36,10 @@ function fixture(t) {
   put('packages/research-skills/src/import.ts','export const importer=1');
   put('packages/research-skills/dist/import.js','export const importer=1');
   put('packages/research-skills/dist/import.cjs','module.exports={importer:1}');
+  put('packages/research-skills/dist/role-catalog.js','export const agentRoles=[]');
+  put('packages/research-skills/dist/builtin-methods.js','export const builtinMethods=[]');
+  put('agents/roles/sample/persona.md','Synthetic colleague');
+  put('packages/research-skills/dist/roles/sample/persona.md','Synthetic colleague');
   put('agents/skills/sample/SKILL.md','Synthetic build fixture');
   put('packages/research-skills/dist/skills/sample/SKILL.md','Synthetic build fixture');
   return {temporary,workspace,client,put};
@@ -62,6 +66,18 @@ test('blocks missing newly added contract modules and the Electron CommonJS skil
 test('blocks stale packaged skill text', t => {
   const f=fixture(t);f.put('agents/skills/sample/SKILL.md','Updated source');
   assert.throws(()=>verifyWorkspaceOutputs(f.client),/Stale built skill/);
+});
+
+test('blocks stale role Markdown and missing generated catalog before desktop bundling', t => {
+  const f=fixture(t);verifyWorkspaceOutputs(f.client);
+  f.put('agents/roles/sample/persona.md','Changed colleague');
+  assert.throws(()=>verifyWorkspaceOutputs(f.client),/Stale built role/);
+  f.put('packages/research-skills/dist/roles/sample/persona.md','Changed colleague');
+  rmSync(path.join(f.workspace,'packages/research-skills/dist/builtin-methods.js'));
+  assert.throws(()=>verifyWorkspaceOutputs(f.client),/builtin-methods/);
+  f.put('packages/research-skills/dist/builtin-methods.js','export const builtinMethods=[]');
+  rmSync(path.join(f.workspace,'packages/research-skills/dist/role-catalog.js'));
+  assert.throws(()=>verifyWorkspaceOutputs(f.client),/role-catalog/);
 });
 
 test('detects mixed builder components rather than trusting only the top-level version', t => {

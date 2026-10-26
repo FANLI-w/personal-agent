@@ -1,13 +1,22 @@
 import type { Contact } from "@research-agent-platform/contracts";
-export const researchCategories = ["全部", "文献与阅读", "写作与表达", "研究设计", "图表与可视化", "数据与代码", "课题协作"] as const;
+import { roleCategories } from "@research-agent-platform/research-skills/roles";
+export const researchCategories = ["全部", ...roleCategories] as const;
 export type ResearchCategory = typeof researchCategories[number];
 export function capabilityCategory(contact: Pick<Contact, "displayName" | "profile">, tags: readonly string[] = []): ResearchCategory {
-  const text = `${contact.displayName} ${tags.join(" ")} ${contact.profile.introduction} ${contact.profile.capabilityDescription}`;
-  if (/图表|可视化|绘图|图注/.test(text)) return "图表与可视化";
-  if (/论文修改|写作|表达|润色|翻译/.test(text)) return "写作与表达";
-  if (/文献|阅读|检索|摘要/.test(text)) return "文献与阅读";
-  if (/研究方案|研究设计|实验设计|研究问题/.test(text)) return "研究设计";
-  if (/数据|代码|统计|编程|脚本/.test(text)) return "数据与代码";
+  const classify = (text: string): ResearchCategory | undefined => {
+    if (/专利|软著|著作权/.test(text)) return "知识产权";
+    if (/申请|申报|基金/.test(text)) return "项目申报";
+    if (/PPT|幻灯|演示/i.test(text)) return "汇报演示";
+    if (/图表|可视化|绘图|图注/.test(text)) return "图表与可视化";
+    if (/论文修改|写作|表达|润色|翻译/.test(text)) return "写作与表达";
+    if (/文献|阅读|检索|摘要/.test(text)) return "文献与阅读";
+    if (/研究方案|研究设计|实验设计|研究问题|选题/.test(text)) return "研究设计";
+    if (/数据|代码|统计|编程|脚本|复现/.test(text)) return "数据与代码";
+  };
+  const named = classify(`${contact.displayName} ${tags.join(" ")}`);
+  if (named) return named;
+  const described = classify(`${contact.profile.introduction} ${contact.profile.capabilityDescription}`);
+  if (described) return described;
   return "课题协作";
 }
 export function capabilityInput(contact: Pick<Contact, "profile">) {

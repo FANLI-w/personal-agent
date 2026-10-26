@@ -1,5 +1,6 @@
 ---
 name: novelty-red-team
+displayName: 创新性审查
 description: Stress-test a proposed ML/AI research contribution against the strongest prior work, equivalent formulations, and likely reviewer objections. Use after a research thesis or literature brief and before committing major compute, especially for novelty claims, research-gap assertions, or ICLR-style projects. Produces an evidence-backed novelty memo and narrowed claim; never certifies novelty from a shallow search.
 ---
 

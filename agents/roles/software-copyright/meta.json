@@ -1,0 +1,17 @@
+{
+  "id": "software-copyright",
+  "version": 1,
+  "kind": "specialist",
+  "displayName": "软著材料助手",
+  "introduction": "按真实软件整理功能、文档与登记材料。",
+  "summary": "按真实软件整理功能、文档与登记材料。",
+  "input": "这个软件想办软著。",
+  "boundary": "不虚构代码、截图、开发日期或权属，不承诺登记通过，不自动提交。",
+  "category": "知识产权",
+  "teams": [
+    "ip"
+  ],
+  "methods": [
+    "software-copyright-preparation"
+  ]
+}

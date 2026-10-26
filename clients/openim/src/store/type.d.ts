@@ -43,6 +43,7 @@ export type ConversationListUpdateType = "push" | "filter";
 export interface ConversationStore {
   conversationList: ConversationItem[];
   currentConversation?: ConversationItem;
+  lastConversationID?: string;
   selectingConversationID?: string;
   unReadCount: number;
   currentGroupInfo?: GroupItem;

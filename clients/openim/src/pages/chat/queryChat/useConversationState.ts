@@ -29,6 +29,9 @@ export default function useConversationState() {
     const conversation = latestCurrentConversation.current;
     if (
       !conversation ||
+      !mounted.current ||
+      document.visibilityState !== "visible" ||
+      !document.hasFocus() ||
       conversation.conversationID !== latestRouteID.current ||
       !latestSdkReady.current
     )
@@ -75,11 +78,15 @@ export default function useConversationState() {
 
   useEffect(() => {
     mounted.current = true;
+    window.addEventListener("focus", checkConversationState);
+    document.addEventListener("visibilitychange", checkConversationState);
     return () => {
       mounted.current = false;
+      window.removeEventListener("focus", checkConversationState);
+      document.removeEventListener("visibilitychange", checkConversationState);
       clearTimeout(throttleTimer.current);
     };
-  }, []);
+  }, [checkConversationState]);
 
   return {
     currentConversation,
