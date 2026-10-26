@@ -2060,3 +2060,11 @@ Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**�
 根冻结安装及完整CI 812项/64文件、类型、contract0.33、2项生产CLI/HTTP、B0和Web边界通过；客户端64项/7文件及双类型通过。d090810首包成功后再去除前端上一轮数量锁，重跑64项及renderer类型，重新冻结打包最终d6ab6cd；共享源码未变，没有重复根CI。首包与日志保留在Git外superseded-d090810，未放桌面/安装/公开。最终Web/Electron/NSIS、既有4项成品入口与本地EXE/blockmap/latest.yml/SHA512守卫通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.58.exe，88,215,492字节，SHA256 b093c4aa975722f2c57b8c548f418a76db7d04eba91da5c1e20cb1954faceeb3，与构建目录一致，旧0.10.57保留。
 
 无后台API/契约/数据库结构变化或实际部署，服务器仍7720ec9b/contract0.33/schema027及原角色包；客户端新提示/方法可沿用既有API，服务器默认角色v3/新增精确默认迁移尚未部署，不能冒称已上线。公开Latest仍0.10.56，没有公开0.10.58或覆盖更新。没有真实模型语言评测、产品UI、安装、私人材料或额外载荷/原生启动验收，结构/合成回归不能冒称语言效果通过。详见docs/deployment/acceptcat-0.10.58.md，Git外planner-auto-shape-20261026保存根/客户端、首轮测试失败与两次构建证据。
+
+## 2026-10-26：群聊多助手与公开状态代码完成，0.10.59打包中
+
+新功能分支fix/group-agent-mentions-and-visibility由fetch后的main/c3f7d0f开始，普通merge保留待审PR119及PR118。修复前端单Agent限制、只从自己通讯录解析群成员及群消息使用他人私有请求接口的问题。新会话名单端点提供当前已加入成员公开档案；单条消息显式@最多5位本地助手，事务中持久化一条真人消息与多个独立请求，幂等重放不重复；默认每助手16000tokens/90秒，整批总额均分，显式/排队/重试预算保持。关联工作任务只捕获一次版本，主要结果仍由首位跟踪，不增加任务。
+
+新增群内公开状态投影，普通群成员可读每位助手状态和失败原因，不含私有预算、用量、记忆或回执。共享正文仍检查材料权限，再移除他人私有turnId；完整请求及操作保持发起人边界。contract0.34/schema027，无数据库结构变化。根冻结完整CI819项/64文件、共享类型、契约、生产CLI/HTTP两项、B0及Web边界通过；客户端35项/5文件、双类型通过。合成HTTP/SQLite覆盖双回复、状态可读、私有详情404、幂等、非法/并发部分插入回滚、显式低预算、工作版本、材料撤权；待发恢复保留全部目标及原预算，跨账号清除。
+
+保留focused-api-attempt1/2、renderer-types-attempt1及root-ci-attempt1失败证据。前两轮夹具遗漏旧实验室群需单独接受Agent邀请、SQL误列名和端点数量断言，renderer响应联合类型未显式声明turns；首轮完整CI818通过/1失败为Web旧0.33断言，同步0.34后重跑通过。安装包/PR制作中；无真实模型、安装器或产品UI验收，无合main、后台部署或Release。线上7720ec9b/04e184f/0.33/schema027、Latest0.10.56保持。证据Git外group-agent-mentions-20261026。

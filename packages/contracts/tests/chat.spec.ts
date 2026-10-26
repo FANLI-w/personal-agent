@@ -22,6 +22,11 @@ describe('CHAT1 dispatch and sharing boundaries', () => {
     expect(SendChatMessage.safeParse({ text: 'hello', mentions: [{ contactId: 'a', start: 0, end: 3 }, { contactId: 'b', start: 2, end: 4 }] }).success).toBe(false)
     expect(ChatActionPayload.safeParse({ kind: 'execute', command: 'arbitrary shell' }).success).toBe(false)
   })
+  it('bounds group fanout to five explicitly mentioned distinct Agents and a single aggregate budget',()=>{
+    const batch={text:'@甲 @乙 你好',mentions:[{contactId:'agent_a',start:0,end:2},{contactId:'agent_b',start:3,end:5}],intent:'ask_agent',agentContactIds:['agent_a','agent_b'],budget:{maxTokens:32000,maxSeconds:180}}
+    expect(SendChatMessage.safeParse(batch).success).toBe(true)
+    for(const value of [{...batch,agentContactId:'agent_a'},{...batch,mentions:[]},{...batch,intent:'chat'},{...batch,agentContactIds:['agent_a','agent_a']},{...batch,agentContactIds:Array.from({length:6},(_,i)=>`agent_${i}`)}])expect(SendChatMessage.safeParse(value).success).toBe(false)
+  })
   it('requires explicit selected sharing and version-bound plan for group proposals', () => {
     const payload = { kind: 'create_group', title: '合成任务群', plan: { id: 'plan_a', version: 1 }, contactIds: ['human_a'], sharedContext: { selectedText: null, artifactRefs: [] } }
     expect(ChatActionPayload.safeParse(payload).success).toBe(true)
@@ -30,7 +35,7 @@ describe('CHAT1 dispatch and sharing boundaries', () => {
   })
   it('marks all CHAT1 endpoints implemented with the service milestone', () => {
     const chat = Object.values(routes).filter(r => r.stage === 'CHAT1')
-    expect(chat).toHaveLength(68)
+    expect(chat).toHaveLength(70)
     for (const r of chat) expect(r.implemented).toBe(true)
   })
 })

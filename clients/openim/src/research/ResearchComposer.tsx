@@ -20,7 +20,7 @@ import { CreatedAgentChatButton } from "./CreatedAgentChatButton";
 import { PersonalReceiptCard } from "./PersonalReceiptCard";
 import { peerChatRequest } from "./peer-library-runtime";
 import { registerAgentProgress } from "./agent-progress";
-import { groupMentions } from "./group-mentions";
+import { groupMessageBody } from "./group-mentions";
 
 import { useSkillChatSelection } from "./SkillLibrary";
 export type PreparedResearchSend =
@@ -66,6 +66,15 @@ export function useResearchComposer() {
     researchMode && !!mapping,
   );
   const [advanced, setAdvanced] = useState(false);
+  const groupRoster = useResearchRead(
+    (signal) => researchApi("chatConversationContacts", {
+      params: { id: mapping?.researchConversationId || "" },
+      query: { limit: 100 },
+      signal,
+    }),
+    `${mapping?.researchConversationId}:members:${canonical.data?.data.version}`,
+    researchMode && mapping?.kind === "group" && !!canonical.data,
+  );
   const [externalConsent, setExternalConsent] = useState(false);
   const [mode, setMode] = useState<"chat" | "ask_agent">("chat"),
     [agentId, setAgentId] = useState(""),
@@ -83,7 +92,9 @@ export function useResearchComposer() {
     canonical.data?.data.members
       .filter((m) => m.status === "joined")
       .flatMap((m) => {
-        const contact = contacts.find((c) => c.contact.id === m.contactId)?.contact;
+        const contact = mapping?.kind === "group"
+          ? groupRoster.data?.data.find((c) => c.id === m.contactId)
+          : contacts.find((c) => c.contact.id === m.contactId)?.contact;
         return contact && contact.identity.kind !== "human" ? [contact] : [];
       }) || [];
   const isDirectAgent =
@@ -174,9 +185,7 @@ export function useResearchComposer() {
     canonical.data?.data.members
       .filter((member) => member.status === "joined")
       .flatMap((member) => {
-        const contact = contacts.find(
-          (item) => item.contact.id === member.contactId,
-        )?.contact;
+        const contact = groupRoster.data?.data.find((item) => item.id === member.contactId);
         return contact
           ? [
               {
@@ -187,13 +196,15 @@ export function useResearchComposer() {
               },
             ]
           : [];
-      }) || [], [canonical.data?.data.members, contacts]);
+      }) || [], [canonical.data?.data.members, groupRoster.data]);
 
   const prepareResearch = (text: string): PreparedResearchSend | undefined => {
     const advancedRequest = advanced && mode === "ask_agent";
+    if (researchMode && mapping?.kind === "group" && !advanced && text.trimStart().startsWith("@") && !groupRoster.data)
+      throw new Error("群成员名单尚未读取，请稍后重试；若持续失败，请确认后台已升级。");
     const addressed =
       researchMode && mapping?.kind === "group" && !advanced
-        ? groupMentions(text, mentionContacts)
+        ? groupMessageBody(text, mentionContacts)
         : undefined;
     if (addressed) {
       if (!mapping || !canonical.data?.data.allowedActions.includes("send"))
@@ -201,14 +212,7 @@ export function useResearchComposer() {
       return {
         route: "sendChatMessage",
         conversationId: mapping.researchConversationId,
-        body: {
-          text,
-          intent: addressed.agentContactId ? "ask_agent" : "chat",
-          agentContactId: addressed.agentContactId || null,
-          budget: addressed.agentContactId ? { maxTokens, maxSeconds } : null,
-          mentions: addressed.mentions,
-          context: [],
-        },
+        body: addressed,
       };
     }
     if (external && (!external.callerAllowed || !consentAvailable.current))
@@ -322,8 +326,10 @@ export function useResearchComposer() {
       useConversationStore.getState().currentConversation?.conversationID === imID &&
       useUserStore.getState().selfInfo.userID === selfUserID
     ) {
-      if (result.data.turn)
-        registerAgentProgress(generation, imID || "", result.data.turn);
+      const acknowledged: {turn:AgentTurn | null; turns?:AgentTurn[]} = result.data;
+      const sentTurns = acknowledged.turns ?? (acknowledged.turn ? [acknowledged.turn] : []);
+      for (const sentTurn of sentTurns)
+        registerAgentProgress(generation, imID || "", sentTurn);
       if (intent === sendIntent.current)
         setTurn(
           result.data.turn
