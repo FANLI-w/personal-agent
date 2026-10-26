@@ -146,7 +146,9 @@ describe('B2b A6–A9: transaction database and two actual HTTP processes',()=>{
     expect((await command('resume',down,clients.B)).value.error?.code).toBe('DEPENDENCY_BLOCKED')
     expect((await command('resume',up,clients.A)).status).toBe(200);await finish(up)
     let value=await detail(down,clients.B)
-    expect(value.task.status).toBe('ready')
+    expect(value.task.status).toBe('blocked')
+    expect((await command('acknowledgeImpacts',down,clients.B,{impactIds:value.dependencyImpacts!.filter(i=>!i.acknowledgedBy).map(i=>i.id),comment:'Rechecked the upstream block'})).status).toBe(200)
+    expect((await command('resume',down,clients.B)).status).toBe(200)
     await command('start',down,clients.B)
     const delivery=await command('submit',down,clients.B,{summary:'Retain this downstream work',artifactRefs:[],sources:[]});expect(delivery.status).toBe(201)
     const changed=await propose(up,{goal:'Changed upstream scope'});expect(changed.status).toBe(201)
@@ -172,7 +174,7 @@ describe('B2b A6–A9: transaction database and two actual HTTP processes',()=>{
     expect(block.status).toBe(200)
   })
 
-  it('A6 accepting an upstream review resolves a downstream dependency-change block',async()=>{
+  it('A6 accepting an upstream review retains review-returned impacts until human reassessment',async()=>{
     const u=item('self','u'),d=item('invitation','d');d.dependencies=['u']
     const {taskIds}=await createConfirmed([u,d]);const [up,down]=taskIds as [string,string];await accept(down)
     await command('start',up,clients.A)
@@ -183,7 +185,11 @@ describe('B2b A6–A9: transaction database and two actual HTTP processes',()=>{
     const sub2=await command('submit',up,clients.A,{summary:'Synthetic v2',artifactRefs:[],sources:[]})
     const t2=(await detail(up)).task
     const rev2=await request('review',{client:clients.A,params:{id:sub2.value.data.id},body:{expectedVersion:1,expectedTaskVersion:t2.version,revision:sub2.value.data.revision,decision:'accepted',comment:'Approved'}});expect(rev2.status).toBe(200)
-    expect((await detail(down,clients.B)).task.status).toBe('ready')
+    const value=await detail(down,clients.B)
+    expect(value.task.status).toBe('blocked')
+    expect(value.dependencyImpacts!.some(i=>i.kind==='review_returned'&&!i.acknowledgedBy)).toBe(true)
+    expect((await command('acknowledgeImpacts',down,clients.B,{impactIds:value.dependencyImpacts!.filter(i=>!i.acknowledgedBy).map(i=>i.id),comment:'Rechecked returned evidence'})).status).toBe(200)
+    expect((await command('resume',down,clients.B)).status).toBe(200)
   })
 
   it('A6 claiming a task with unfinished dependency waits and auto-resumes',async()=>{
