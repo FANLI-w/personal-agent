@@ -2,13 +2,15 @@
 
 更新日期：2026-10-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 群聊多助手与状态读取（0.10.59本机候选完成，PR120待审）
+## 群聊多助手与状态读取（0.10.59候选与后台完成，PR120待审）
 
 从最新main/c3f7d0f新建fix/group-agent-mentions-and-visibility，普通merge保留PR119/7449c0d及PR118依赖。当前群已加入成员名单支持群内独有助手；开头显式@最多5位本地助手，保存一条真人消息、独立持久请求与回复。群成员读公开等待/回复/失败状态，完整请求、私人回执与重试/取消仍限发起人；正文先检查材料ACL，其他成员不再使用私有turnId读取状态。普通新请求每助手16000tokens/90秒，整批总额均分，旧显式预算和重试不提高；幂等、整批回滚及工作任务版本边界保留。[设计](development/group-agent-mentions-and-visibility.md)。
 
 本批contract0.34/schema027（无数据库迁移），客户端0.10.59需要配套后台。根冻结CI819项/64文件、共享类型、契约、2项生产CLI/HTTP、B0及Web边界通过；客户端35项/5文件、双类型通过，合成HTTP/SQLite覆盖独立回复、公开状态与私有详情拒绝、撤权、预算、容量回滚和待发恢复。首轮测试夹具/数量/SQL断言、renderer联合类型和Web旧契约版本断言失败日志已留Git外，修正后通过。
 
-产品/打包源码 **db11a6d7429db1f5a2060b2fd4293eac61719a61**，[PR120](https://github.com/luoyan96/personal-agent/pull/120)待审。根desktop:win冻结构建、NSIS、既有4项成品入口和本地更新元数据守卫通过，publish never。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.59.exe**，**88,221,597字节**，SHA256 **9bcba06540bb11256e3c097a53515e725856cbe066a6599519f240cd31c304c5**，与构建目录一致。后台固定源码包和部署/回滚方案已准备，尚未构建或切换服务器镜像；当前后台仍7720ec9b/产品04e184f/contract0.33/schema027，本批没有部署、重启、合main或公开Release。Latest核对仍v0.10.56，v0.10.59未公开。未代真实模型、安装器、产品UI或私人材料验收。证据D:/deepseek-agent/.runtime/group-agent-mentions-20261026，[本批交付记录](deployment/acceptcat-0.10.59.md)。
+产品/打包源码 **db11a6d7429db1f5a2060b2fd4293eac61719a61**，[PR120](https://github.com/luoyan96/personal-agent/pull/120)待审。根desktop:win冻结构建、NSIS、既有4项成品入口和本地更新元数据守卫通过，publish never。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.59.exe**，**88,221,597字节**，SHA256 **9bcba06540bb11256e3c097a53515e725856cbe066a6599519f240cd31c304c5**，与构建目录一致。配套后台已获本轮授权，并于**2026-10-26 19:47:04–19:47:26（北京时间）**从7720ec9b切换API/worker到 **research-openim-api:group-agent-mentions-20261026**，镜像 **sha256:63d87995f6ba84595aadf79fe44562d736685e4515beaeb2e5ed04fadee2d4bb**，产品同为db11a6d，**contract0.34/schema027**，无迁移。隔离93项/8文件通过；备份恢复及启动前104表、8个原文件一致，25份配置/密钥输入和其他6个服务保持；资料范围及广场同步关闭状态保持。当前规划角色v3、38份精确旧默认映射和本批群聊接口均已进入后台，私人编辑不覆盖。本批未合main或公开Release。Latest核对仍v0.10.56，v0.10.59未公开。未代真实模型、安装器、产品UI或私人材料验收。证据D:/deepseek-agent/.runtime/group-agent-mentions-20261026，[本批交付记录](deployment/acceptcat-0.10.59.md)。
+
+实际备份 **/srv/research-openim-backups/group-agent-mentions-20261026-20261026T114706Z/research.tar.gz**，SHA256 **6abdf06ab898eb7bb34889dae58a94fa1eb434eb6293c97c1f1300c9699b6bf2**；服务器运维目录 **/opt/research-openim/ops/group-agent-mentions-20261026**。回执5121字节与服务器摘要一致，Git外保存deployment-receipt.server.json、public-ready.json和完成截图。第一次隔离包遗漏2份测试支持文件（86通过、1个suite未加载），补齐并校验后完整重跑93项通过，原日志保留；首次上传NoSuchKey在停写前通过新会话恢复。PR120/3c1f166的三项foundation及Windows package已全绿；CI中的图片IPC测试夹具漏登记已修复，88项/13文件通过，仅测试/工作流变化，未重打产品未变的安装包。
 
 ## 任务粒度自动安排（0.10.58本机候选完成，PR119待审）
 

@@ -8,9 +8,11 @@
 
 本批新增agentContactIds/可选turns、会话成员公开档案与群内公开状态接口，**contract0.34.0/schema027**。旧单助手发送兼容，新客户端群聊功能需要配套后台。没有数据库结构、密钥或用户材料变更；不能只安装客户端就宣称群聊修复已在线生效。
 
-当前线上仍为research-openim-api:task-flow-safe-recovery-20261026，镜像7720ec9b，产品04e184f，contract0.33/schema027。此批尚未部署、重启或变更服务器配置。
+负责人本轮明确授权升级。**2026-10-26 19:47:04–19:47:26（北京时间）**，API/worker成对从7720ec9b切换到 **research-openim-api:group-agent-mentions-20261026**，镜像 **sha256:63d87995f6ba84595aadf79fe44562d736685e4515beaeb2e5ed04fadee2d4bb**。部署产品 **db11a6d7429db1f5a2060b2fd4293eac61719a61**，**contract0.34.0/schema027**，没有执行数据库迁移。API healthy、worker running、restartCount均为0；公网ready返回0.34/ok，数据库、存储和认证检查正常。没有执行真实模型探测（harness仍not_verified）。
 
-待单独授权部署后：核对在用容器/镜像和组合compose；备份当前运行数据与配置，验证恢复；从本批固定产品提交构建独立镜像，以隔离复制数据启动，检查健康及契约、schema和原记录；再切换原API/worker并记录实际镜像、时间与前后数量。rollback使用原7720ec9b镜像及原compose组合，不用旧备份覆盖新运行数据。不得在隔离库中自动运行正式模型、发消息或调度。
+先核对原镜像和完整compose组合，原服务运行时构建隔离镜像并完成93项/8文件无网络合成回归；然后停API、排空请求并停worker，备份并恢复复制库，比较104表和8个原文件的数量/摘要与完整性。恢复库HTTP ready及受保护端点401通过，检查后复制库/启动前运行库均与快照一致。25份配置/密钥输入、API/worker设置和其他6个服务保持，资料集合范围及飞书连接保持，广场同步仍disabled/nextCheckAt=null。备份 **/srv/research-openim-backups/group-agent-mentions-20261026-20261026T114706Z/research.tar.gz**，SHA256 **6abdf06ab898eb7bb34889dae58a94fa1eb434eb6293c97c1f1300c9699b6bf2**。
+
+运维目录 **/opt/research-openim/ops/group-agent-mentions-20261026**，本轮images.yaml追加在task-flow-safe-recovery组合之后。未执行rollback；需要回退时使用原7720ec9b镜像和原完整compose组合，当前数据仍是schema027，不能用旧备份覆盖后续业务写入。
 
 ## 检查与交付进度
 
@@ -18,6 +20,10 @@
 
 首轮新增测试遗漏同实验室旧群仍需主人单独接受Agent邀请、SQL误用origin物理列、CHAT1端点数量误计，修正合成夹具和断言后通过；首轮renderer响应联合类型未显式声明可选turns，调整类型后通过。首轮完整CI仅Web契约版本断言仍为0.33而失败（818通过/1失败），同步到0.34后重新完整CI通过。原失败日志保留在Git外 **D:/deepseek-agent/.runtime/group-agent-mentions-20261026**，不能当作通过证据。
 
-公开Latest已核对仍v0.10.56；v0.10.59不存在。本批尚未公开Release、上传安装包或合main。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.59.exe**，**88,221,597字节**，SHA256 **9bcba06540bb11256e3c097a53515e725856cbe066a6599519f240cd31c304c5**，与构建目录一致，旧0.10.57/58保留。没有实际安装或自动更新公开。PR120待审，不能把本机包当作Release。
+公开Latest已核对仍v0.10.56；v0.10.59不存在。本批未公开Release、上传Release资产或合main。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.59.exe**，**88,221,597字节**，SHA256 **9bcba06540bb11256e3c097a53515e725856cbe066a6599519f240cd31c304c5**，与构建目录一致，旧0.10.57/58保留。没有实际安装或自动更新公开。PR120待审，不能把本机包当作Release。
 
-后台源码包Git外backend-source-db11a6d.tar.gz，固定产品提交，同目录backend-manifest.json保存SHA256、原镜像和未部署状态。归档仅Git追踪内容，不含运行数据库、密钥、用户材料和构建目录。尚未在服务器构建此镜像，不能声称隔离升级或切换已完成。
+后台完整Git源码归档仍保留；实际上传191207字节运维包，以固定旧生产镜像做129份受控源码覆盖并重编译，565份基线源码和191份编译产物对照通过，保留生产catalog seed。18个角色、38份旧默认精确映射、19个方法及角色digest120edc86均核对。第一次上传NoSuchKey，刷新并恢复既有连接后成功，未在传输失败时停写。首次隔离86项通过、1个suite因运维包遗漏external-wire和synthetic-external-tls两份支持文件而未加载；补传4210字节支持包、逐份摘要校验后完整8文件重跑93项通过。原preparation/isolated-tests/build/source-check等attempt1证据保留在服务器。没有改产品源码或掩盖失败。
+
+PR120/3c1f166已核对三项foundation和Windows package全绿。首次Windows CI的5项失败来自服务状态夹具未登记图片IPC，已补齐并将本批群聊回归接入CI，整组88项/13文件通过。之后只有测试/工作流/文档变化，未重复根完整CI或重打db11a6d产品安装包。
+
+Git外deployment-receipt.server.json与服务器回执逐字节一致（5121字节，SHA256 0d84349b9e87ff42b14e258eea6cd3f8fd8ae7c524c783652256f1df247766e2），另有public-ready.json、receipt-copy-verification.json、ci-test-fix-success.json及deployment-success.png。没有登录客户账号或代验真实模型、实际群聊与安装体验。

@@ -2082,3 +2082,14 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 负责人明确同意现在升级0.10.59配套后台。只读核对线上API/worker仍为7720ec9b，原compose链包含task-flow-safe-recovery，其他服务未动。运维包acceptcat-group-agent-db11a6d-ops.tar.gz为固定产品db11a6d，129份overlay、191份编译结果摘要和8份隔离测试；191207字节，SHA256 7c2130d0b7b2d2cb3660fab444c1a9d87e2aaf6f8b55b4e169a423d88a7c27fc。首次Workbench文件上传NoSuchKey，未启动构建/停写/部署；刷新并恢复既有免密连接后重新上传成功，完整包及137份源码/测试哈希、LF和bash语法前置校验通过，已开始无网络隔离构建，生产尚未切换。
 
 核对PR120/baf2e07三项foundation为success，package失败：服务状态IPC测试夹具漏登记PR118新增chatImageActionsManage，导致5项Unexpected import；产品实现无变化。补齐该夹具，并将本批35项群聊/待发/传输检查接入Windows CI。定向5项与整组88项/13文件通过，保留ci-package-failure.log。仅测试/工作流变化，不改变db11a6d产品或现有0.10.59安装包，不重复已通过的根完整CI或额外安装验收。后续部署结果另记。
+
+
+## 2026-10-26：0.10.59配套后台升级完成，contract0.34/schema027
+
+负责人本轮明确同意升级。北京时间19:47:04–19:47:26完成API/worker成对切换，产品db11a6d7429db1f5a2060b2fd4293eac61719a61，镜像research-openim-api:group-agent-mentions-20261026 / sha256:63d87995f6ba84595aadf79fe44562d736685e4515beaeb2e5ed04fadee2d4bb，替换原7720ec9b；schema仍027，没有迁移。93项/8文件无网络隔离回归、565份原源码和191份编译对照、角色/方法目录及生产catalog seed保持检查通过。备份恢复与启动前104表/8个原文件一致，25份配置/密钥输入保持，其他6个服务及API/worker运行设置保持。API健康、worker正常、restartCount为0，服务器和本机公网ready均为0.34/ok，受保护端点401；harness未做真实探测。广场同步仍disabled，资料范围和飞书连接保持。
+
+备份/srv/research-openim-backups/group-agent-mentions-20261026-20261026T114706Z/research.tar.gz，SHA256 6abdf06ab898eb7bb34889dae58a94fa1eb434eb6293c97c1f1300c9699b6bf2；运维目录/opt/research-openim/ops/group-agent-mentions-20261026，compose在task-flow-safe-recovery之后追加本批images.yaml。未回滚；如需恢复旧镜像，保留当前schema027业务数据，不覆盖旧备份。默认规划角色v3/38份旧默认精确映射随本批后台进入线上，仍保留私人修改。
+
+首次Workbench上传NoSuchKey及一次重试失败，停写前通过刷新新连接恢复。首次运维测试包遗漏2份transitive支持文件，86项已过但1个suite未加载，补传并校验后完整8文件重跑93项通过；attempt1日志和支持包摘要全部保留。PR120/3c1f166三项foundation与Windows package全绿；此前Windows CI漏登记图片IPC夹具的5项失败已修复，88项/13文件通过，仅测试/工作流变化，db11a6d产品/本机0.10.59安装包保持，不重复已通过的根819项或额外安装验收。
+
+部署回执从Workbench文件编辑器复制并按服务器5121字节/SHA256 0d84349b9e87ff42b14e258eea6cd3f8fd8ae7c524c783652256f1df247766e2核对，连同公网ready与完成截图保留Git外group-agent-mentions-20261026。没有用户账号、真实模型、实际群聊或安装UI验收。PR120仍待审未合main，Latest重新核对仍v0.10.56，本轮未公开Release或上传Release资产。
