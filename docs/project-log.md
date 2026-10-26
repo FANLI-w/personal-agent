@@ -2040,3 +2040,9 @@ Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**�
 从最新main/c3f7d0f另开fix/chat-image-context-actions，原工作区干净，保留PR113–117及同事功能。参考负责人提供的微信截图，图片气泡、放大预览及本机待发送图片共用复制图片/另存为/本机提取文字，消息保持引用。修复portal触发通用文字菜单和复制“[图片]”的问题；文字区分选区与整条消息，文件/语音占位词不复制。复制PNG像素；保存系统对话框确认的原图字节；OCR结果只展示/复制，不自动发送Agent。保持文件来源/长度/窗口校验、取消与错误反馈；纯格式模块纳入Electron编译目录。
 
 客户端相关61项/8文件及双类型通过，新增19项加入Windows CI。首轮16项里1个VM Error跨realm测试失败，修正测试环境后通过，原情况留Git外notes；内容文档补丁一次标题不匹配，未写入，按真实标题修正。尚在准备Windows冻结构建，后续追加成品、PR实际状态。没有后台/契约/数据库改动，无需升级；公开Latest仍0.10.56，main未合本功能。按负责人要求未运行安装器、产品UI或原生剪贴板/真实资料验收。证据D:/deepseek-agent/.runtime/chat-image-context-20261026，实现见docs/development/chat-image-context-actions.md。
+
+## 2026-10-26：0.10.57图片右键候选安装包完成，PR118待审
+
+产品及实际打包源码0a2afb629b4315cb6c6867a2db45a40490dcba0d。根desktop:win按两个固定pnpm及冻结锁文件、共享包先build的顺序完成Web/Electron/NSIS，4项既有成品入口守卫与本地EXE/blockmap/latest.yml/SHA512检查通过，publish never。桌面C:/Users/luo/Desktop/AcceptCat_0.10.57.exe，88,218,163字节，SHA256 7afb5b71e594dd20a5ca886fb34514c46b450edff35b2be8570dca4b2676c8b3，与构建目录摘要一致，旧包保留。
+
+相关61项/8文件通过，最后小调整后19项再次通过，双类型及内容检查通过。renderer曾捕获跨TS工程共用模块TS6305，改为单一JS及.d.ts后重新通过，失败日志保留；未用force安装或放松锁文件。GitHub连接器创建PR返回403无写权限，使用本机现有gh登录成功创建并附加PR118，未合main。代码没有后台、契约、数据库或角色变化，无需升级，仍沿用7720ec9b/contract0.33/schema027。公开Latest仍0.10.56，没有公开0.10.57或覆盖更新清单。未主动运行安装器、产品UI、原生剪贴板/保存窗口、真实资料/模型或额外载荷验收；根CI未在本机重跑。细节见docs/deployment/acceptcat-0.10.57.md；Git外chat-image-context-20261026保存检查与成品回执。

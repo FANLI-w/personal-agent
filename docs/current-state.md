@@ -2,11 +2,13 @@
 
 更新日期：2026-10-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 图片右键操作修复（本机候选0.10.57，构建中）
+## 图片右键操作修复（本机候选0.10.57已完成，PR118待审）
 
 从fetch后的main **c3f7d0f**另开 **fix/chat-image-context-actions**，工作区原本干净，既有同事任务/通讯录改动保留。图片气泡、预览和待发送图片统一提供复制图片、另存为及Windows本机提取文字；消息可引用。复制实际图片像素，保存原图字节，取消不写入；不再复制“[图片]”。文字消息区分复制整条消息和当前消息内选中文字，文件/语音占位词不作为文字复制。提取文字只在本机展示，不自动发给Agent。[实现及边界](development/chat-image-context-actions.md)。
 
-客户端定向及相关回归 **61项/8文件**、renderer/Electron双类型通过；新增19项已接入Windows CI。初次16项中1项因VM测试Error跨realm判断失败，修正测试环境后通过；未据此改产品错误判断。当前准备冻结Windows构建，尚未完成安装包、提交PR或公开Release；构建后追加真实状态。无后台/契约/数据库变化，仍为7720ec9b / contract0.33/schema027，公开Latest仍v0.10.56，不代安装、原生剪贴板/保存窗口或真实资料体验验收。Git外 **D:/deepseek-agent/.runtime/chat-image-context-20261026**保存日志。
+产品/安装包源码 **0a2afb629b4315cb6c6867a2db45a40490dcba0d**，[PR118](https://github.com/luoyan96/personal-agent/pull/118)待审、未合main。客户端定向及相关回归 **61项/8文件**、renderer/Electron双类型通过；新增19项已接入Windows CI，最后小调整后19项再次通过。根冻结Windows入口、NSIS、4项既有成品守卫及本地更新元数据检查通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.57.exe**，**88,218,163字节**，SHA256 **7afb5b71e594dd20a5ca886fb34514c46b450edff35b2be8570dca4b2676c8b3**；旧包保留。没有公开Release或覆盖更新，公开Latest仍v0.10.56。
+
+首轮测试有1项VM Error跨realm失败，修正测试环境；随后renderer检查捕获共用TS模块TS6305，改成单一JS实现及.d.ts，双类型及61项重新通过。原失败说明和类型日志保留。无后台/契约/数据库变化，无需升级，沿用7720ec9b / contract0.33/schema027；未重跑本机根完整CI，远端检查看PR实际状态。本批未代安装、产品UI、原生剪贴板/保存窗口、真实资料或模型体验验收。Git外 **D:/deepseek-agent/.runtime/chat-image-context-20261026**保存日志与回执。[交付范围](deployment/acceptcat-0.10.57.md)。
 
 ## PR117整合到main（本节随合并生效）
 
