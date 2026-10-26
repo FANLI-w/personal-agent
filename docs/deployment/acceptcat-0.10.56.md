@@ -18,6 +18,6 @@
 
 ## 协作、后台与证据
 
-功能分支待提交PR，由负责人决定是否合并和公开Release；本批未合main、未公开，Latest重新读取仍v0.10.52/423781483。没有Workbench、后台部署/重启/迁移或新生产探测，注册超时仍未定因。
+[PR116](https://github.com/luoyan96/personal-agent/pull/116)已创建并挂接，目标main，OPEN/MERGEABLE；GitHub自动检查尚未确认完成，由负责人决定是否合并和公开Release；本批未合main、未公开，Latest重新读取仍v0.10.52/423781483。没有Workbench、后台部署/重启/迁移或新生产探测，注册超时仍未定因。
 
 Git外 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**保留80项、renderer/Electron类型/exit、desktop-win日志/exit、windows-update.log和delivery.json；协作回执、PR正文和notes同目录。密钥、用户材料、运行数据库、安装包和构建目录留Git外。
