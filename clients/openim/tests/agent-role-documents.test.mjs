@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { agentRoles } from '@research-agent-platform/research-skills/role-catalog';
+import { agentRoles, legacyRoleProfiles } from '@research-agent-platform/research-skills/role-catalog';
 import { contactRoleBundle, contactRoleProfile, readRoleImport } from '../src/research/agent-role-documents.ts';
 
 const contact = (profile, role = 'specialist') => ({ id: 'synthetic-agent-id', displayName: profile.displayName,
@@ -26,4 +26,12 @@ test('unknown formats, memory/connection additions and partial bundles cannot pr
   for (const value of [{ format: 'other' }, { format: 'acceptcat-agent-role/v1' },
     { format: 'research-agent-profile/v1', profile: agentRoles[0].profile, privateMemory: 'no' }])
     assert.throws(() => readRoleImport(JSON.stringify(value)));
+});
+test('the unchanged previous planner adopts the new method while any authored field remains untouched', () => {
+  const previous = legacyRoleProfiles.findLast(item => item.id === 'research-planning').profile;
+  const current = agentRoles.find(role => role.id === 'research-planning');
+  assert.equal(current.version, 3);
+  assert.deepEqual(contactRoleProfile(contact(previous)), current.profile);
+  const edited = { ...previous, personality: previous.personality + '\n合成私人编辑，必须保留。' };
+  assert.deepEqual(contactRoleProfile(contact(edited)), edited);
 });

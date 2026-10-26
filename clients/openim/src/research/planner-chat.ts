@@ -1,13 +1,13 @@
 import { Id, Plan, PlanInput, routes } from "@research-agent-platform/contracts";
 import type { RequestFor, ResponseFor } from "@research-agent-platform/contracts";
 
-export type PlannerTaskShape = "single" | "multiple";
+export type PlannerTaskShape = "auto" | "single" | "multiple";
 type TaskDraft = ReturnType<typeof PlanInput.parse>;
 
-// A model's step count, quotations and complaints do not authorize more tasks.
+// Explicit user corrections override automatic draft sizing; creation still needs confirmation.
 export function plannerTaskShape(
   text: string,
-  previous: PlannerTaskShape = "single",
+  previous: PlannerTaskShape = "auto",
 ): PlannerTaskShape {
   const value = text.trim();
   if (/[“”「」『』"<>?？]/.test(value)) return previous;
@@ -37,7 +37,7 @@ export function plannerTaskShape(
 // Normalize the reviewed draft, not just its label. Preserve all content and
 // refuse changes that would hide invalid dependencies or merge authorizations.
 export function plannerTaskInput(input: TaskDraft, shape: PlannerTaskShape): TaskDraft {
-  if (shape === "multiple" || input.proposedItems.length <= 1) return input;
+  if (shape !== "single" || input.proposedItems.length <= 1) return input;
   const items = input.proposedItems;
   if (
     items.some((item) =>
@@ -217,6 +217,7 @@ export const newPlannerThread = (): PlannerThread => ({
   title: "新的任务规划",
   messages: [],
   draft: "",
+  taskShape: "auto",
   updatedAt: new Date().toISOString(),
 });
 export const plannerCacheKey = (service: string, actor: string, lab: string) =>
@@ -260,7 +261,8 @@ export function readPlannerHistory(raw: string | null): PlannerHistory | undefin
                 Number.isSafeInteger(m.plan.version))),
         ) &&
         validDeadline(t.deadline) &&
-        (t.taskShape === undefined || ["single", "multiple"].includes(t.taskShape)) &&
+        (t.taskShape === undefined ||
+          ["auto", "single", "multiple"].includes(t.taskShape)) &&
         (t.deadlineQuestion === undefined || typeof t.deadlineQuestion === "boolean") &&
         (!t.taskIds ||
           (Array.isArray(t.taskIds) &&
@@ -275,13 +277,18 @@ export function readPlannerHistory(raw: string | null): PlannerHistory | undefin
           (/^[A-Za-z0-9_-]{16,128}$/.test(t.creating.key) &&
             Plan.safeParse(t.creating.plan).success &&
             (t.creating.taskShape === undefined ||
-              ["single", "multiple"].includes(t.creating.taskShape)) &&
+              ["auto", "single", "multiple"].includes(t.creating.taskShape)) &&
             validDeadline(t.creating.deadline))),
     );
     if (!threads.length) return;
     return {
       active: threads.some((t) => t.id === value.active) ? value.active : threads[0].id,
-      threads,
+      threads: threads.map((t) => ({
+        ...t,
+        // Keep the previously reviewed preview and any pending write stable.
+        // Every new request starts automatic, with conversation carried in its prompt.
+        taskShape: t.creating?.taskShape ?? t.taskShape ?? "auto",
+      })),
     };
   } catch {
     return;
@@ -294,7 +301,7 @@ export function planningPrompt(
   people: { id: string; displayName: string }[],
   deadline?: DeadlineChoice,
   decompositionSkill = "",
-  taskShape: PlannerTaskShape = "single",
+  taskShape: PlannerTaskShape = "auto",
 ) {
   const taskDecompositionBody = decompositionSkill
     .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
@@ -310,7 +317,9 @@ export function planningPrompt(
 任务数量规则：${
     taskShape === "single"
       ? "本次只创建一项任务，proposedItems必须只有一项。整理、实验、检查、写作等执行步骤写进这项任务的goal，交付与验收写入对应说明；一个目标包含多步不等于多项任务，不为流程阶段另建任务。"
-      : "用户已明确选择分开创建，才将独立工作写成多项proposedItems；不强行凑数。"
+      : taskShape === "multiple"
+      ? "用户已明确要求分开创建，将独立工作写成多项proposedItems；不强行凑数。"
+      : "由你根据实际工作判断任务粒度，不要求用户选择模式。普通目标默认一项proposedItem：完善论文、比较多个模型、准备报告等，准备、实验、检查、写作是内部步骤，不拆成整套待办。只有工作确实需要独立分工、分别交付和跟踪，或是包含多个独立成果与实际前置关系的大项目，才返回多项proposedItems；说明为什么需要分开，不凭‘难’‘重要’或篇数、动作数量拆分，也不为展示依赖图而凑任务。多项中的每项都要有独立交付价值；优先给最少、够用的任务。用户明确说合成一项或分开安排时按其意图重写完整草案。"
   }这是任务结构规则，人设和方法建议不能改变。
 
 口吻示例（不照念）：‘论文和代码都在，可以先找最缺的证据。你把摘要发来，我先帮你挑一个值得加强的点。’已提供就直接分析；用户说问太多时先帮一步，不再追问。
@@ -439,7 +448,7 @@ export function needsDeadlineClarification(text: string, choice?: DeadlineChoice
 export function plannerPlanInput(
   plan: ChatPlan,
   deadline?: DeadlineChoice,
-  taskShape: PlannerTaskShape = "multiple",
+  taskShape: PlannerTaskShape = "auto",
 ) {
   const input = PlanInput.parse({
     labId: plan.labId,
@@ -568,7 +577,7 @@ export async function createPlannerTasks(
   const legacyMultiple = !intent.taskShape && intent.plan.proposedItems.length > 1;
   if (legacyMultiple && current.status !== "confirmed")
     throw new Error(
-      "上次多任务创建尚未确认。请点“读取最新方案”，重新核对为一项任务后再创建；原步骤保留。",
+      "上次多任务创建尚未确认。请点“读取最新方案”，重新核对任务数量后再创建；原步骤保留。",
     );
   const expected = plannerPlanInput(
     intent.plan,
