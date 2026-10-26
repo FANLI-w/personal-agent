@@ -8,7 +8,7 @@
 
 任务/资料助手入口改为“助手资料”，Agent资料直接显示介绍、能力、性格，角色文件折叠保留。分类分页会跳过另一类别的空页，搜索仍逐页走服务端；共享名片按实际身份跳页，账号/页面切换关闭旧删除确认，存储失败不会假称星标成功。[设计](development/contact-directory-pages.md)。**96项客户端/10文件**（87定向+9名片）、renderer/Electron类型、冻结NSIS及既有4启动/更新清单守卫通过；新增8项分类/分页/星标边界接入Windows CI。
 
-桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.54.exe**，**88,226,822字节**，SHA256 **d84dfee1ed8d1992ce5bcf6ec26aa3d8bc89a103b6cb51b32d9fafca2a6ae106**，复制摘要一致，旧包保留。[交付](deployment/acceptcat-0.10.54.md)。本批仅客户端/工作流/文档，API/契约/数据库/角色方法与PR113逐字diff为空；沿用已部署 **b9901ac5/contract0.33/schema027**，无需新后台升级，没有生产服务操作。上一批799项根CI不是本批重跑。PR待创建，未合main/未公开，Latest仍0.10.52；现有PR113仍待审。
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.54.exe**，**88,226,822字节**，SHA256 **d84dfee1ed8d1992ce5bcf6ec26aa3d8bc89a103b6cb51b32d9fafca2a6ae106**，复制摘要一致，旧包保留。[交付](deployment/acceptcat-0.10.54.md)。本批仅客户端/工作流/文档，API/契约/数据库/角色方法与PR113逐字diff为空；沿用已部署 **b9901ac5/contract0.33/schema027**，无需新后台升级，没有生产服务操作。上一批799项根CI不是本批重跑。[PR114](https://github.com/luoyan96/personal-agent/pull/114)已创建待审，GitHub自动检查尚在运行，未合main/未公开，Latest仍0.10.52；现有PR113仍待审。
 
 Git外证据 **D:/deepseek-agent/.runtime/contact-directory-pages-20261026**保留96项检查、双类型、构建/更新和交付摘要。首次本地编辑命令工作目录错用根相对路径，在读文件时失败、无写入；纠正后最终类型/测试通过。未代安装、原生启动、右键/窄屏视觉、浏览器产品、真实账号删除、真实模型/私人材料或手工载荷验收。注册超时仍未定因，飞书试点/共享边界保持。
 

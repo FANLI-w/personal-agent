@@ -31,4 +31,4 @@ Git外 **D:/deepseek-agent/.runtime/contact-directory-pages-20261026**保留首�
 
 不改后台，现有 **research-openim-api:contact-agent-removal-20261026/b9901ac5、contract0.33/schema027**可直接使用；本批没有连接Workbench、备份/迁移/重启或新线上业务探测。原后台部署见[上一批回执](contact-agent-removal-20261026.md)，注册超时仍未定因，飞书授权和私人资料不会因本次分页面扩散。
 
-PR待创建；本分支包含PR113依赖，不将其误称已合main。未合main、未公开v0.10.54，公开Latest仍v0.10.52，README公开下载入口保持。合并与公开Release由负责人另行决定。
+[PR114](https://github.com/luoyan96/personal-agent/pull/114)已创建待审，GitHub自动检查尚在运行；本分支包含PR113依赖，不将其误称已合main。未合main、未公开v0.10.54，公开Latest仍v0.10.52，README公开下载入口保持。合并与公开Release由负责人另行决定。
