@@ -12,7 +12,11 @@ import { ContactFinder } from "./ContactFinder";
 import { useResearchContactChat } from "./useResearchContactChat";
 import { AgentImport } from "./AgentImport";
 import { ExternalAgentSetup } from "./ExternalAgentSetup";
-import OIMAvatar from "@/research/ResearchAvatar";
+import type { Contact } from "@research-agent-platform/contracts";
+import { ContactDirectoryRow } from "./ContactDirectoryRow";
+import { contactDirectoryKind, readDirectoryPage, sortDirectoryContacts, type DirectoryKind } from "./contact-directory";
+import { useContactStars } from "./useContactStars";
+import { usePersonalOperation } from "./usePersonalOperation";
 import { WorkspaceContactCard } from "./WorkspaceContactCard";
 import "./workspace.scss";
 
@@ -21,24 +25,31 @@ export function ResearchContacts() {
   const [params, setParams] = useSearchParams();
   const requestedView = params.get("view");
   const view = requestedView === "directory" ? "directory" : "mine";
+  const kind: DirectoryKind = params.get("kind") === "agents" ? "agents" : "people";
+  const label = kind === "agents" ? "智能体" : "联系人";
   const [search, setSearch] = useState("");
   const [adding, setAdding] = useState(false);
   const [addTab, setAddTab] = useState("friend");
   const [integration, setIntegration] = useState("profile");
   const [pageFailure, setPageFailure] = useState("");
-  const [selectedContact, setSelectedContact] = useState<string>();
-  const [pages, setPages] = useState<(string | undefined)[]>([undefined]);
-  const cursor = pages[pages.length - 1];
-  const profile = useRef<OverlayVisibleHandle>(null);
-  const { data, error, refresh } = useResearchRead(
-    () =>
-      researchApi("chatContacts", {
-        query: { view, scope: "local", limit: 50, cursor },
-      }),
-    `${view}:${cursor || ""}`,
-  );
+  const [selected, setSelected] = useState<{ id: string; kind: DirectoryKind }>();
+  const selectedContact = selected?.kind === kind ? selected.id : undefined;
   const generation = useResearchStore((s) => s.generation);
   const actorId = useResearchStore((s) => s.actor?.member.id);
+  const filterKey = `${generation}:${kind}:${view}:${search}`;
+  const [paging, setPaging] = useState<{ key: string; cursors: (string | undefined)[] }>();
+  const pages = paging?.key === filterKey ? paging.cursors : [undefined];
+  const setPages = (update: (old: (string | undefined)[]) => (string | undefined)[]) => setPaging({ key: filterKey, cursors: update(pages) });
+  const cursor = pages[pages.length - 1];
+  const stars = useContactStars();
+  const directoryOperation = usePersonalOperation(true, `contact-directory:${kind}:${view}`);
+  const profile = useRef<OverlayVisibleHandle>(null);
+  const { data, error, refresh, refreshChecked } = useResearchRead(
+    signal => readDirectoryPage(next => researchApi("chatContacts", {
+      query: { view, scope: "local", limit: 50, cursor: next, search: search.trim() }, signal,
+    }), kind, signal, cursor),
+    `${filterKey}:${cursor || ""}`,
+  );
   const openChat = useResearchContactChat();
   const [savedId, setSavedId] = useState<string>();
   const [creating, setCreating] = useState(false);
@@ -54,8 +65,8 @@ export function ResearchContacts() {
   useLayoutEffect(() => {
     setAdding(false);
     setCreating(false);
-    setSelectedContact(undefined);
-    setPages([undefined]);
+    setSelected(undefined);
+    setPaging(undefined);
     setSavedId(undefined);
     setPageFailure("");
     setForm({
@@ -67,25 +78,27 @@ export function ResearchContacts() {
   }, [generation]);
   useEffect(() => {
     if (!actorId) return;
-    const action = params.get("action"),
-      sharedId = params.get("contact");
+    const action = params.get("action"), sharedId = params.get("contact");
     if (!action && sharedId === null && requestedView !== "search") return;
+    const controller = new AbortController();
+    const sameActor = () => !controller.signal.aborted && generation === useResearchStore.getState().generation && actorId === useResearchStore.getState().actor?.member.id;
     const next = new URLSearchParams(params);
-    next.delete("action");
-    next.delete("contact");
+    next.delete("action"); next.delete("contact");
     if (requestedView === "search") next.delete("view");
-    setParams(next, { replace: true });
     if (sharedId !== null) {
-      if (!Id.safeParse(sharedId).success)
-        setPageFailure("联系人名片链接无效，请重新复制完整链接。");
-      else {
-        setSelectedContact(sharedId);
-      }
+      if (!Id.safeParse(sharedId).success) {
+        setPageFailure("联系人名片链接无效，请重新复制完整链接。"); setParams(next, { replace: true });
+      } else void researchApi("chatContact", { params: { id: sharedId }, signal: controller.signal }).then(result => {
+        if (!sameActor()) return;
+        const targetKind = contactDirectoryKind(result.data);
+        next.set("kind", targetKind); setSelected({ id: sharedId, kind: targetKind }); setParams(next, { replace: true });
+      }).catch(error => { if (sameActor()) { setPageFailure(error instanceof Error ? error.message : "名片暂未打开。"); setParams(next, { replace: true }); } });
     } else {
-      setAdding(true);
-      setAddTab(action === "create-agent" ? "agent" : "friend");
+      if (action === "create-agent") next.set("kind", "agents");
+      setAdding(true); setAddTab(action === "create-agent" ? "agent" : "friend"); setParams(next, { replace: true });
     }
-  }, [params, requestedView, setParams, actorId]);
+    return () => controller.abort();
+  }, [params, requestedView, setParams, actorId, generation]);
   useLayoutEffect(() => {
     epoch.current++;
     setBusy(false);
@@ -94,20 +107,26 @@ export function ResearchContacts() {
       epoch.current++;
     };
   }, [generation, creating]);
+  const selectContact = (contact: Contact) => {
+    setAdding(false); setSelected({ id: contact.id, kind: contactDirectoryKind(contact) });
+  };
   const openProfile = (id: string) => {
-    setAdding(false);
-    setSelectedContact(id);
+    const ticket = directoryOperation.capture();
+    void researchApi("chatContact", { params: { id } }).then(result => {
+      if (!ticket.isCurrent()) return;
+      const targetKind = contactDirectoryKind(result.data);
+      selectContact(result.data);
+      const next = new URLSearchParams(params); next.set("kind", targetKind); setParams(next);
+    }).catch(error => { if (ticket.isCurrent()) setPageFailure(error instanceof Error ? error.message : "资料暂未打开。"); });
   };
   const manageProfile = (id: string) => {
-    setSelectedContact(id);
-    profile.current?.openOverlay();
+    setSelected({ id, kind }); profile.current?.openOverlay();
   };
-  const filtered =
-    data?.data.filter(
-      (c) =>
-        c.displayName.toLowerCase().includes(search.toLowerCase()) ||
-        c.username?.includes(search),
-    ) || [];
+  const filtered = sortDirectoryContacts(data?.data || [], stars.ids);
+  const changeKind = (nextKind: DirectoryKind) => {
+    setSearch(""); setAdding(false);
+    const next = new URLSearchParams(params); next.set("kind", nextKind); next.delete("contact"); next.delete("action"); setParams(next);
+  };
   return (
     <div className="social-workspace desktop-contacts-content">
       <div className="workspace-split">
@@ -117,33 +136,38 @@ export function ResearchContacts() {
             <Button
               type="text"
               onClick={() => {
-                setAddTab("friend");
+                setAddTab(kind === "agents" ? "agent" : "friend");
                 setAdding(true);
               }}
             >
               添加
             </Button>
           </div>
+          <nav className="directory-page-tabs" aria-label="通讯录分类">
+            <button type="button" aria-pressed={kind === "agents"} onClick={() => changeKind("agents")}>智能体</button>
+            <button type="button" aria-pressed={kind === "people"} onClick={() => changeKind("people")}>联系人</button>
+          </nav>
           <div className="workspace-toolbar">
             <Segmented
               value={view}
               onChange={(nextView) => {
                 setSearch("");
-                setPages([undefined]);
+                setSelected(undefined);
                 const next = new URLSearchParams(params);
                 if (nextView === "mine") next.delete("view");
                 else next.set("view", String(nextView));
                 setParams(next);
               }}
               options={[
-                { value: "mine", label: "我的联系人" },
-                { value: "directory", label: "团队通讯录" },
+                { value: "mine", label: kind === "agents" ? "我的智能体" : "我的联系人" },
+                { value: "directory", label: kind === "agents" ? "课题组智能体" : "课题组成员" },
               ]}
             />
             <Input
               className="max-w-[320px]"
-              aria-label="搜索联系人"
-              placeholder="搜索昵称或 AcceptCat 号"
+              maxLength={200}
+              aria-label={`搜索${label}`}
+              placeholder={kind === "agents" ? "搜索智能体" : "搜索姓名或 AcceptCat 号"}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -165,40 +189,19 @@ export function ResearchContacts() {
               />
             )}
             {error && <Alert type="error" message={error} />}
+            {stars.error && <Alert type="warning" message={stars.error} />}
             {!data && !error && (
               <p role="status" className="p-4 text-sm text-slate-500">
                 正在读取通讯录…
               </p>
             )}
-            {filtered.map((contact) => (
-              <button
-                type="button"
-                className="workspace-person-row"
-                key={contact.id}
-                aria-pressed={selectedContact === contact.id}
-                onClick={() => openProfile(contact.id)}
-              >
-                <OIMAvatar contact={contact} text={contact.displayName} />
-                <div>
-                  <strong>{contact.displayName}</strong>
-                  <span
-                    className={`workspace-kind ${
-                      contact.identity.kind === "human" ? "human" : "agent"
-                    }`}
-                  >
-                    {contact.identity.kind === "human" ? "个人" : "Agent"}
-                  </span>
-                  <p>
-                    {contact.profile.introduction ||
-                      contact.profile.capabilityDescription ||
-                      (contact.username ? `AcceptCat 号：${contact.username}` : "尚未填写介绍")}
-                  </p>
-                </div>
-              </button>
-            ))}
+            {filtered.map(contact => <ContactDirectoryRow key={`${filterKey}:${contact.id}`} contact={contact}
+              selected={selectedContact === contact.id} starred={stars.ids.includes(contact.id)}
+              onSelect={() => selectContact(contact)} onDetails={() => { selectContact(contact); manageProfile(contact.id); }}
+              onStar={() => stars.toggle(contact.id)} onRemoved={async () => { setSelected(previous => previous?.id === contact.id ? undefined : previous); await refreshChecked(); }} />)}
             {data && !filtered.length && (
               <p className="py-10 text-center text-sm text-slate-500">
-                {search ? "没有匹配的联系人" : "暂无联系人，从添加联系人开始。"}
+                {search ? `没有匹配的${label}` : `暂无${label}`}
               </p>
             )}
             {(pages.length > 1 || data?.nextCursor) && (
@@ -217,7 +220,7 @@ export function ResearchContacts() {
                     if (data?.nextCursor) setPages((v) => [...v, data.nextCursor!]);
                   }}
                 >
-                  更多联系人
+                  更多{label}
                 </Button>
               </div>
             )}
@@ -233,15 +236,14 @@ export function ResearchContacts() {
             />
           ) : (
             <div className="workspace-empty">
-              <h2>人与 Agent，都在通讯录里</h2>
-              <p>选择一张名片查看能力、性格与所属账号，直接开始聊天。</p>
+              <h2>{kind === "agents" ? "智能体" : "联系人"}</h2>
               <Button
                 onClick={() => {
-                  setAddTab("agent");
+                  setAddTab(kind === "agents" ? "agent" : "friend");
                   setAdding(true);
                 }}
               >
-                创建或接入 Agent
+                {kind === "agents" ? "添加智能体" : "添加联系人"}
               </Button>
             </div>
           )}
@@ -249,7 +251,7 @@ export function ResearchContacts() {
       </div>
       <ResearchUserCard contactId={selectedContact} ref={profile} />
       <Modal
-        title="添加联系人"
+        title={kind === "agents" ? "添加智能体" : "添加联系人"}
         className="workspace-add-dialog"
         open={adding}
         onCancel={() => setAdding(false)}
@@ -263,8 +265,8 @@ export function ResearchContacts() {
           items={[
             {
               key: "friend",
-              label: "朋友与已有 Agent",
-              children: <ContactFinder onOpen={openProfile} active={adding && addTab === "friend"} />,
+              label: kind === "agents" ? "查找智能体" : "查找联系人",
+              children: <ContactFinder kind={kind} onOpen={openProfile} active={adding && addTab === "friend"} />,
             },
             {
               key: "agent",
@@ -314,7 +316,7 @@ export function ResearchContacts() {
                 </div>
               ),
             },
-          ]}
+          ].filter(item => kind === "agents" || item.key === "friend")}
         />
       </Modal>
       <Modal

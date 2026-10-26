@@ -46,6 +46,10 @@
 - 原有聊天交互、独立资料页、飞书库打开/明确共享、自助课题组创建/已有账号邀请接受均保持，任务规划和资料Agent继续聊天交互。负责人确认旧附件0.10.35为同事干净构建成功样本，勿列为已确认坏包。
 - 已部署后台为contract0.32/schema026、DSH0.2.1-rc.2/Cordis4.0.5：2026-10-26按单独授权，以固定发布提交667bc34叠加原7d75165a生产基线，新镜像research-openim-api:research-colleagues-20261026 / sha256:acf4b711a791d4110f20b3c63af99456df54c187c875e5a18f8bfe7700b959d2。10:02:14—10:02:36停写备份、独立恢复及API/worker配对切换成功，127项/10文件隔离、117叠加/183编译/183基线/76角色/48方法核对、103表/7原件/22配置输入保全及健康通过，无迁移；18角色、37旧默认只读投影、19方法加载生效，自改档案/私人偏好保持。其他6服务、运营种子和原权限范围保持，已有1个lab_shared飞书集合没有扩散；广场同步GITHUB_CATALOG_SYNC=0/nextCheckAt=null，Harness仍not_verified。详见docs/deployment/research-colleagues-20261026.md，证据在Git外research-colleague-backend-20261026和服务器受限ops目录。首轮运维探针旧生成摘要冲突在切换前修正，失败保留。该版本同协议/schema，回退只停新服务并用旧完整Compose链配对恢复7d75165a，使用当前数据，不取消任务或回灌旧DB；本批未实际触发回退。安装包/公开Latest仍0.10.52/tag667bc34，未代安装或真实模型/私人材料体验。
 
+- 新本机候选0.10.53与配套后台：main/d25781d另开feat/contact-agent-removal，产品e947fb26，PR113待审、bf97137四项GitHub检查success，未合main/未公开。名片/详情/聊天右键明确删除联系人或自建专门Agent，系统个人助理保留；历史/任务/资料保全，停止在途/定时，只解绑私人Skill并清外部密钥。799根/123客户端、双类型、Windows冻结NSIS/更新守卫通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.53.exe，88,222,763字节，SHA256 ba6ceb2ecd4fd427a20880548deb88f11d8ed781786f6bcfa8ca37db67224a9e。负责人本批另行批准后台后，2026-10-26 12:01:00—12:01:26升级b9901ac5、contract0.33/schema027；184项隔离（首轮177+补充7）、迁移演练、555基线/15叠加/187编译及备份/恢复保全103原表/7原件/23配置和健康通过。原辅助文件漏带/汇总数量与LF摘要失败停写前修正、证据保留。027后旧026镜像不能直接使用，即使空删除表也前滚保留约束，不回灌旧库；未触发回退，留存运维守卫已收紧。其他6服务、飞书1个lab_shared集合及广场关闭保持。未代真实删除/安装/体验或额外载荷验收。Latest仍0.10.52。见docs/deployment/acceptcat-0.10.53.md、docs/deployment/contact-agent-removal-20261026.md及docs/development/contact-agent-removal.md，Git外证据contact-agent-removal-20261026与contact-agent-backend-20261026；原始后台JSON留服务器，本机observed为可见整理。
+
+- 最新本机候选0.10.54：main/d25781d另开feat/contact-directory-pages，普通merge待审PR113/e0e911b作为删除依赖，产品81a3838675c82f6838c140e97ff177fda30c4e4b，未合main/未公开。通讯录分智能体/联系人两页，添加查找分类，右键发消息/资料/星标/按权限删除，星标按服务+账号仅本机保存；任务/资料入口为助手资料，介绍/能力/性格直接展示。96项客户端/10文件、双类型及Windows冻结NSIS/更新守卫通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.54.exe，88,226,822字节，SHA256 d84dfee1ed8d1992ce5bcf6ec26aa3d8bc89a103b6cb51b32d9fafca2a6ae106，旧包保留。后台没有改动，仍b9901ac5/contract0.33/schema027，无需再升级；上一批799根检查不冒称本批重跑。未代安装/右键视觉/真实删除或额外载荷验收。见docs/deployment/acceptcat-0.10.54.md及docs/development/contact-directory-pages.md；Git外证据contact-directory-pages-20261026。[PR114](https://github.com/luoyan96/personal-agent/pull/114)已创建待审，GitHub自动检查尚在运行，公开Latest仍0.10.52。
+
 尚未完成及边界：
 - 他人注册新账号超时根因尚未确认，仍待对方设备的具体错误、安装版本和同机连接信息；不能宣布已修复。
 - 课题组已支持同账号创建、已有账号邀请接受、邀请码确认加入、成员查看/普通成员移除退出与多组切换；每人最多负责一组，负责人交接/解散仍需维护者处理，未完成任务发起/审阅职责须先完成或取消。好友/群聊不自动授予课题组权限。
@@ -55,3 +59,5 @@
 
 每批完成更新docs/current-state.md并追加docs/project-log.md，记录提交、PR、打包/部署/发布状态与剩余事项。先简要汇报当前基线、已完成、未完成和风险，然后根据我接下来给出的具体需求继续开发，不自行选择其他功能或扩大任务范围。
 ```
+
+- 0.10.55修正0.10.54星标读取被桌面IPC拦截的回归，产品4e87b349，在原PR114内继续待审；main仍d25781d，未合main/未公开。主窗口当前应用页只读状态，配置仍限本机连接页；42项/7文件、双类型、冻结NSIS与更新守卫通过，原3通过/2失败复现保留。桌面C:/Users/luo/Desktop/AcceptCat_0.10.55.exe，88,221,426字节，SHA256 88575553d299146f0bcd7df2cc0bef61fe8526c602167872733a259bd8069678。无需后台升级，保持b9901ac5/contract0.33/schema027；Latest仍0.10.52，安装体验由负责人检查。见docs/deployment/acceptcat-0.10.55.md，Git外contact-stars-status-20261026。

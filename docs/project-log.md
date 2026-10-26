@@ -1917,3 +1917,68 @@ Windows冻结构建Web/4SDK/55运行包/NSIS/4入口及更新清单通过；ASAR
 本批仅配套后台和文档，不重打安装包、不修改公开Release/tag，Latest仍v0.10.52。未追加安装/原生启动/真实账号材料/真实模型/飞书/双机或绘图/PPT实际导出体验验收；数据保全仅比较摘要、不用私人正文评价。注册超时未定因、飞书本人试点和原件互传在线/10MiB/无TURN边界保持。[完整部署与回退说明](deployment/research-colleagues-20261026.md)。
 
 收尾重新读取公开Latest仍v0.10.52/423781483、tag目标667bc34。文档内容/链接检查356份Markdown/19方法及git diff --check通过；首次因工程日志链接到本机Skill路径被内容守卫拒绝，改为纯文字技能名称后通过，失败content.log保留。只提交部署记录和状态文档，没有重跑已通过完整根CI或修改产品源码。
+
+
+## 2026-10-26：联系人/自建Agent删除与本机0.10.53候选
+
+从最新main **d25781d**另开 **feat/contact-agent-removal**，产品提交 **e947fb26c42a94d5401974e11428ecbe5200245e**，CI入口提交 **c7351c1**。通讯录名片、详细资料和聊天右键菜单提供“删除联系人”或“删除 Agent”；系统个人助理保留。真人/别人拥有的Agent只撤销本人的关系，不注销账号或移除课题组成员；本人自建Agent逻辑删除，历史只读，既有任务、资料和成果保留。停止进行中回复/绑定规划/定时工作，阻止迟到正文和待发提醒，保留实际用量；清除外部密钥，只解除私人Skill对此Agent的绑定，保留正文、修订及其他绑定，活跃额度释放且不会复用旧身份。[设计与兼容](development/contact-agent-removal.md)。
+
+新增deletePersonalAgent接口，contract **0.33.0/schema027**；只加deleted_personal_agents表，旧迁移checksum及消息/Contact结构保持。最终根ci **799项/63文件、2项生产CLI/HTTP、B0与生产边界**通过；**123项客户端/17文件**及renderer/Electron类型通过，Windows冻结构建、NSIS和既有4启动入口/更新清单守卫通过。客户端6项新边界已接入Windows CI。初稿迁移漏登记、规划用例fence假定、旧迁移夹具/contract计数及生产入口schema26断言失败已修正，失败和最终证据保留，没有跳过检查、提高预算或改时限。
+
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.53.exe**，**88,222,763字节**，SHA256 **ba6ceb2ecd4fd427a20880548deb88f11d8ed781786f6bcfa8ca37db67224a9e**，复制摘要一致、旧包保留。[交付记录](deployment/acceptcat-0.10.53.md)。[PR113](https://github.com/luoyan96/personal-agent/pull/113)已提交待审、GitHub自动检查仍运行；本批未合并main、未公开Release、未部署后台；公开Latest重新核对仍 **v0.10.52/423781483**，当前线上仍 **acf4b711/contract0.32/schema026**（上批实际部署见下节）。新自建Agent删除需单独升级API/worker及迁移027；一旦有删除数据，不能直接退旧镜像忽略删除状态，应保留027约束修复，不回灌旧库覆盖后续消息/任务。未代安装/原生启动/界面、真实账号删除、真实模型或私人资料体验，也未追加手工安装包载荷验收。Git外证据 **D:/deepseek-agent/.runtime/contact-agent-removal-20261026**。他人注册超时仍未定因，飞书试点及资料权限边界保持。
+
+
+## 2026-10-26：0.10.53删除配套后台按本批授权升级
+
+负责人在0.10.53安装包、PR113均已完成后，另行明确回复“现在升级后台”。通过已登录阿里云Workbench核对当前API/worker为acf4b711、running/restart0、公网ready200/contract0.32、约8.9GB可用空间，再固定本批产品提交 **e947fb26c42a94d5401974e11428ecbe5200245e**，叠加现有角色后台，不用整个main覆盖生产运营基线。
+
+## 部署结果
+
+北京时间 **12:01:00—12:01:26**完成排空、停写备份、恢复验证、显式迁移和API/worker配对切换。新镜像 **research-openim-api:contact-agent-removal-20261026**，ID **sha256:b9901ac52ec7822e04a5944cac7be464f34d6d30235b06ab42204b1ed3a85c63**；contract **0.33.0/schema027**。deploy.exit0/DEPLOY_OK，API healthy、worker running、均restart0，公网ready200；四个既有受保护接口及格式完整的新删除POST匿名均401，未替用户执行真实删除。
+
+删除接口/逻辑删除、停止该Agent后续回复和绑定规划/定时工作、清除外部连接密钥及只解绑私人Skill的配套已进入后台。历史/既有任务/资料保留规则见[功能设计](development/contact-agent-removal.md)。本机[0.10.53安装包](deployment/acceptcat-0.10.53.md)未重新制作，真实安装和删除体验仍由负责人检查。
+
+## 源码、隔离检查与失败保留
+
+- 本机与服务器固定codeload源码归档 **37,240,769字节**，SHA256 **cd8aa38c887242d9a546672dc0195447f44e2cd2c5373ea8f248f8b67b44cff8**。14文件部署包48,236字节，SHA2564166d26b59ee8c7eba22b46866e1dbf736499ebde922496af927c4026f2f2abb；解包前验证摘要、普通文件类型与限定路径。
+- 离线构建前 **555份基线**摘要守卫，构建后 **15份叠加源/187份编译文件、76份角色/48份方法**核对通过，生产运营种子保持；18角色/37历史档案/19方法保持。两服务使用同一镜像，原密钥、模型/角色/私人偏好、飞书及其他功能配置不替换。
+- 服务器无生产数据挂载、network none的合成隔离检查累计 **184项/16文件**。首轮15文件177项通过，外部Agent测试文件因部署包漏带support模块未加载；补齐同一提交的external-wire.ts及synthetic-external-tls.ts两个公开合成夹具、逐字摘要验证后，仅重跑受影响文件，实际7项全部通过。没有重跑通过的15文件，没有改产品/测试/预算/时限或跳过断言。
+- 运维汇总初稿错误假定补充8项，测试已通过后被汇总断言阻止；按实际7项修正，累计177+7。首次汇总脚本传输被LF/CRLF摘要差异守卫拒绝，规范字节后重新验证，未执行未通过摘要的脚本。这些失败均在停写前，first-summary/首轮测试、汇总和摘要失败证据保留。
+- 独立合成迁移审计演练覆盖026快照/原样恢复、027重复迁移、原有表/行/文件完整保持、新增空表及027后再次核对，未挂生产数据。最终PREPARATION_OK和迁移演练通过才进入部署。
+
+## 备份、恢复与保全
+
+备份 **/srv/research-openim-backups/contact-agent-removal-20261026-20261026T040103Z/research.tar.gz**；SHA256 **12d67365153c44c2c696b08f0163b9ed6f3cffc179cbb115663c4f0704efb3cd**。同ECS受限目录，未冒称异地灾备。旧备份/镜像保留，不清理用户文件。
+
+停写时先证明没有queued/running工作，备份原库/原件及 **23份配置/密钥输入**，独立恢复逐表逐行摘要、结构、迁移历史/checksum、文件摘要/权限、完整性与外键均通过。恢复副本先验证schema026的 **103表/7原件**与原库相同，再迁移027，证明仅增加第104张deleted_personal_agents空表和第27条迁移记录；全部原表/原件/运行密钥保持。副本HTTP ready200/.33及匿名401，HTTP后再核对副本没有新增账号/会话；原库迁移前后同样核对，再启服务。
+
+API/worker运行设置、23配置输入摘要/权限、账号/档案/私人记忆/模型默认值、飞书连接/集合和其他6服务保持。已有1个lab_shared飞书集合没有自动扩散。广场同步仍enabledfalse/statedisabled/nextCheckAt=null、11收录19候选；DSH0.2.1-rc.2/Cordis4.0.5、Harness not_verified保持，不把健康检查当作真实模型验证。
+
+## 恢复限制与证据
+
+schema027已经生效；旧0.32镜像严格要求schema026，即使删除表为空也不能直接启动在027数据库。保留027和新API/worker约束，采用前滚修复；禁止删除迁移记录/表来绕过检查、使旧Agent复活，也禁止回灌旧DB覆盖后续消息/任务。部署未触发回退。成功后运维复核发现原备用分支只查删除记录、未覆盖旧镜像严格schema边界，保留原执行脚本deploy-executed.sh，并将留存deploy.sh恢复守卫收紧为遇到任何027状态均保留新镜像前滚；仅维护恢复脚本，没有再次切服务或改数据库。
+
+服务器 **/opt/research-openim/ops/contact-agent-removal-20261026**保留原始manifest/日志/JSON/迁移核对、失败修正及备份回执。Git外 **D:/deepseek-agent/.runtime/contact-agent-backend-20261026**保留准备包、源码/摘要、失败说明和三张完成截图，deployment-observed.json是按可见终端整理的回执，不冒称下载原始服务器JSON。空白中间preparation截图也保留，不作为通过证明。computer-use技能用于浏览器Workbench，未用Windows原生终端自动化。
+
+本批只部署配套后台并维护文档，未合PR113或发布v0.10.53，公开Latest仍v0.10.52。PR113的bf97137四项GitHub检查已success，后续仅交付文档变化的检查须看实际head。未代安装/界面/真实联系人或Agent删除、真实模型/私人材料/飞书或双机验收。他人注册超时仍未定因。
+
+
+## 2026-10-26：智能体/真人独立通讯录和本机0.10.54
+
+按负责人截图要求，从fetch后的main **d25781d**另开 **feat/contact-directory-pages**，普通merge待审PR113/e0e911b作为已有删除依赖，保留历史，未合主仓库main。产品 **81a3838675c82f6838c140e97ff177fda30c4e4b**：通讯录拆成智能体和联系人两个页面，以实际identity分类，我的/课题组范围及添加查找也分别显示；右键或Shift+F10可发消息、查看资料、星标与按原权限删除。系统个人助理保留；未添加关系不能靠右键私聊。星标按当前服务/账号存在本机，只影响当前页标记和排序，不等于聊天置顶或跨设备同步。
+
+任务/资料助手入口改为“助手资料”，Agent资料直接显示介绍、能力、性格，角色文件折叠保留。分类分页会跳过另一类别的空页，搜索仍逐页走服务端；共享名片按实际身份跳页，账号/页面切换关闭旧删除确认，存储失败不会假称星标成功。[设计](development/contact-directory-pages.md)。**96项客户端/10文件**（87定向+9名片）、renderer/Electron类型、冻结NSIS及既有4启动/更新清单守卫通过；新增8项分类/分页/星标边界接入Windows CI。
+
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.54.exe**，**88,226,822字节**，SHA256 **d84dfee1ed8d1992ce5bcf6ec26aa3d8bc89a103b6cb51b32d9fafca2a6ae106**，复制摘要一致，旧包保留。[交付](deployment/acceptcat-0.10.54.md)。本批仅客户端/工作流/文档，API/契约/数据库/角色方法与PR113逐字diff为空；沿用已部署 **b9901ac5/contract0.33/schema027**，无需新后台升级，没有生产服务操作。上一批799项根CI不是本批重跑。[PR114](https://github.com/luoyan96/personal-agent/pull/114)已创建待审，GitHub自动检查尚在运行，未合main/未公开，Latest仍0.10.52；现有PR113仍待审。
+
+Git外证据 **D:/deepseek-agent/.runtime/contact-directory-pages-20261026**保留96项检查、双类型、构建/更新和交付摘要。首次本地编辑命令工作目录错用根相对路径，在读文件时失败、无写入；纠正后最终类型/测试通过。未代安装、原生启动、右键/窄屏视觉、浏览器产品、真实账号删除、真实模型/私人材料或手工载荷验收。注册超时仍未定因，飞书试点/共享边界保持。
+
+## 2026-10-26：0.10.55星标桌面调用修复
+
+负责人安装0.10.54发现黄色星标读取提示并要求修复。在现有 **feat/contact-directory-pages / PR114**继续修正该批回归；fetch后的main仍 **d25781d**，没有覆盖或丢弃已有修改。产品 **4e87b3492b66e2a94813206985cc78fb116f2209**：research-service-status只读接口原来误用仅连接页管理权限，现允许当前已连接应用主窗口/主frame且两个实际文档来源匹配rendererOrigin；配置地址仍限本机连接页。星标和名片继续使用实际后台origin，原记录/账号隔离保持，不清空存储。[交付](deployment/acceptcat-0.10.55.md)。
+
+新增真实主进程注册/preload/renderer模块串联的5项合成回归，旧代码3通过/2失败，修复后与既有检查共 **42项/7文件**通过；客户端页面和Electron类型、冻结Windows NSIS/4启动入口及更新清单守卫通过。原0.10.54的96项没有覆盖该调用链，不把此前构建通过当作星标安装体验通过；失败日志保留，未放宽断言或预算。新桥接和既有名片检查已加入Windows CI。
+
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.55.exe**，**88,221,426字节**，SHA256 **88575553d299146f0bcd7df2cc0bef61fe8526c602167872733a259bd8069678**，源包/副本摘要一致，旧包保留。API/共享契约/数据库/角色/锁无变化，本批未重跑根799项、未升级后台；线上保持 **b9901ac5/contract0.33/schema027**。修复继续在[PR114](https://github.com/luoyan96/personal-agent/pull/114)待审，未合main/未公开Release，Latest重新读取仍 **v0.10.52/423781483**。
+
+Git外证据 **D:/deepseek-agent/.runtime/contact-stars-status-20261026**保留修复前失败、42项最终、双类型、Windows构建/更新和delivery摘要。未代安装、原生启动、浏览器产品或真实账号/材料体验，没有新生产探测或后台操作。注册超时仍未定因，飞书/私人资料边界保持。

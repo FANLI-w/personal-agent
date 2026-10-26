@@ -6,6 +6,7 @@ import { useResearchStore } from "./store";
 import { ContactRow } from "./ContactRow";
 import { AcceptCatAccountNumber } from "./AcceptCatAccountNumber";
 import type { Contact } from "@research-agent-platform/contracts";
+import { contactDirectoryKind, type DirectoryKind } from './contact-directory';
 import {
   parseContactLookup,
   readContactServiceOrigin,
@@ -15,9 +16,11 @@ import {
 export function ContactFinder({
   onOpen,
   active = true,
+  kind,
 }: {
   onOpen: (id: string) => void;
   active?: boolean;
+  kind: DirectoryKind;
 }) {
   const [draft, setDraft] = useState(""),
     [query, setQuery] = useState("");
@@ -62,17 +65,13 @@ export function ContactFinder({
     else setQuery(next);
   };
   const contacts = data?.data.filter(
-    (contact) => contact.profile.role !== "coordinator",
+    (contact) => contact.profile.role !== "coordinator" && contactDirectoryKind(contact) === kind,
   );
   return (
     <div className="space-y-3">
       <AcceptCatAccountNumber username={own?.username} isSelf active={active} />
       <p className="text-sm leading-6 text-slate-600">
-        通过 AcceptCat 号或名片添加联系人
-      </p>
-      <p className="text-xs leading-6 text-slate-500">
-        AcceptCat 号是注册时设置的用户名，区分大小写。也可以粘贴真人或 Agent
-        的完整名片，查看实际资料后发送申请；私人 Agent 由主人单独同意。
+        {kind === 'agents' ? '输入所属账号的 AcceptCat 号，或粘贴智能体名片。' : '输入 AcceptCat 号，或粘贴联系人名片。'}
       </p>
       <div className="flex items-start gap-2">
         <Input.TextArea
@@ -103,7 +102,7 @@ export function ContactFinder({
       ))}
       {contacts && !contacts.length && (
         <p className="py-3 text-sm text-slate-500">
-          没有找到可添加的联系人，请核对 AcceptCat 号或名片。
+          {kind === 'agents' ? '没有找到可添加的智能体' : '没有找到可添加的联系人'}，请核对 AcceptCat 号或名片。
         </p>
       )}
     </div>

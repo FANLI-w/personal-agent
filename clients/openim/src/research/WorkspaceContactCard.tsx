@@ -8,6 +8,7 @@ import { useResearchStore } from "./store";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchContactChat } from "./useResearchContactChat";
 import { AcceptCatAccountNumber } from "./AcceptCatAccountNumber";
+import { ContactRemovalButton } from './useContactRemoval';
 
 export const contactRelationshipLabel: Record<
   Contact["relationship"]["status"],
@@ -244,6 +245,7 @@ export function WorkspaceContactCard({
             {c.allowedActions.includes("edit_profile") ? "资料与管理" : "更多资料"}
           </Button>
         )}
+        <ContactRemovalButton contact={c} onRemoved={async () => { await read.refresh(); await onChanged?.(); }} />
       </div>
       {children}
     </section>
