@@ -10,6 +10,7 @@ import type { Config } from './config.js'
 import { reminderRequest,displayReminderTime } from './personal-time.js'
 import { nextRecurring,scheduledRequest,recurrenceLabel } from './recurring-time.js'
 import { abortChatCall } from './continuous-chat.js'
+import { requireActiveAgent } from './agent-lifecycle.js'
 
 type Quiet={start:string;end:string}|null
 type FollowupInput=ReturnType<typeof PersonalFollowupInput.parse>
@@ -45,6 +46,7 @@ function checkTask(s:ChatService,value:FollowupInput){
  if(value.task){const task=s.c.task(value.task.id);s.c.checkVersion(task.version,value.task.version);if(['completed','cancelled'].includes(task.status))fail('INVALID_STATE')}
 }
 function ownAgent(s:ChatService,id:string){
+ requireActiveAgent(s.db,id)
  const contact=s.contact(id)
  if(contact.identity.kind!=='personal_agent'||contact.identity.ownerMemberId!==s.c.actor.id||contact.agentRuntime||s.db.prepare('SELECT configured FROM agent_connections WHERE contact_id=?').get(id)?.configured===1)fail('FORBIDDEN')
  return contact

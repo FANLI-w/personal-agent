@@ -26,6 +26,7 @@ import { feedbackToast } from "@/utils/common";
 
 import styles from "./conversation-item.module.scss";
 import { useResearchStore } from "@/research/store";
+import { useContactRemoval } from '@/research/useContactRemoval';
 
 interface IConversationProps {
   isActive: boolean;
@@ -39,6 +40,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
     (s) => s.contacts.find((c) => c.userID === conversation.userID)?.contact,
   );
   const isCoordinator = coordinator?.imConversationID === conversation.conversationID;
+  const removal = useContactRemoval(contact);
   const isMuted =
     conversation.recvMsgOpt === MessageReceiveOption.ReceiveWithoutNotification;
   const actorGeneration = useResearchStore((s) => s.generation);
@@ -88,6 +90,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
     },
     { key: "mute", label: isMuted ? "取消免打扰" : "开启免打扰" },
     { key: "delete", label: "删除聊天", danger: true, disabled: isCoordinator },
+    ...(removal.action ? [{ key: 'remove-contact', label: removal.action.label, danger: true }] : []),
   ];
 
   const perform = async (
@@ -173,6 +176,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
         ),
       ).catch(() => {});
     else if (key === "delete") deleteConversation();
+    else if (key === 'remove-contact') removal.confirm();
   };
 
   return (

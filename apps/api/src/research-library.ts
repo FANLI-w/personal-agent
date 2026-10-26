@@ -8,6 +8,7 @@ import type { Actor } from './auth.js'
 import { fail, ApiError } from './errors.js'
 import {sharedCollectionAccess,teamLabId,hasLabMembership} from './lab-access.js'
 import { extractAgentFile } from './agent-files.js'
+import { requireActiveAgent } from './agent-lifecycle.js'
 
 type Row = Record<string, string | number | bigint | Uint8Array | null>
 type Import = z.infer<typeof ResearchFileImport>
@@ -70,7 +71,7 @@ export class ResearchLibraryService {
   }
   private fileView(r:Row):ResearchFile {const c=this.collection(String(r.collection_id),true);return ResearchFile.parse({...this.fileVersion(r).model,id:r.id,collectionId:r.collection_id,status:r.status,owned:c.owner_id===this.actor.id})}
   authorizeImport(collectionId:string,raw:z.input<typeof ResearchFileImport>){const input=ResearchFileImport.parse(raw),c=this.owned(collectionId,input.expectedCollectionVersion);if(this.db.prepare('SELECT 1 FROM feishu_library_sources WHERE collection_id=?').get(c.id!))fail('INVALID_STATE');if(input.fileId){const f=this.file(input.fileId);if(f.collection_id!==c.id)fail('NOT_FOUND');if(f.version!==input.expectedVersion)fail('VERSION_CONFLICT')}return c}
-  private agent(id:string){if(!this.db.prepare("SELECT id FROM chat_contacts WHERE id=? AND kind='personal_agent' AND owner_id=?").get(id,this.actor.id))fail('NOT_FOUND')}
+  private agent(id:string){if(!this.db.prepare("SELECT id FROM chat_contacts WHERE id=? AND kind='personal_agent' AND owner_id=?").get(id,this.actor.id))fail('NOT_FOUND');requireActiveAgent(this.db,id)}
   bindings(agentId:string){
     this.agent(agentId)
     const r=this.db.prepare('SELECT * FROM research_agent_bindings WHERE agent_id=? AND owner_id=?').get(agentId,this.actor.id)

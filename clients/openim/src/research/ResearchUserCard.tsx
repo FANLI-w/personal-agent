@@ -13,6 +13,7 @@ import { AcceptCatAccountNumber } from "./AcceptCatAccountNumber";
 import { ContactCardShare } from "./ContactCardShare";
 import { AgentRoleDocuments } from "./AgentRoleDocuments";
 import { contactRoleProfile } from "./agent-role-documents";
+import { ContactRemovalButton } from './useContactRemoval';
 
 export const ResearchUserCard = forwardRef<
   OverlayVisibleHandle,
@@ -270,33 +271,14 @@ export const ResearchUserCard = forwardRef<
                     添加联系人
                   </Button>
                 )}
-                {contact.allowedActions.includes("remove") && (
-                  <Button
-                    danger
-                    onClick={() =>
-                      Modal.confirm({
-                        title: "移除关系？",
-                        content: "取消私聊关系，不自动撤销已有任务承接或群成员身份。",
-                        onOk: () =>
-                          command(() =>
-                            researchApi("revokeContact", {
-                              params: { id: contact.id },
-                              body: { expectedVersion: contact.relationship.version },
-                            }),
-                          ),
-                      })
-                    }
-                  >
-                    移除关系
-                  </Button>
-                )}
+                <ContactRemovalButton contact={contact} active={isOverlayOpen} onRemoved={close} />
                 {contact.allowedActions.includes("edit_profile") && (
                   <Button onClick={edit}>{contact.identity.kind === "human" ? "编辑资料" : "编辑角色"}</Button>
                 )}
                 {contact.allowedActions.includes("manage_private_memory") && (
                   <Button onClick={() => setMemories(!memories)}>私人记忆</Button>
                 )}
-                {contact.identity.kind === "personal_agent" && contact.profile.role === "specialist" && contact.identity.ownerMemberId === actor?.member.id && <>
+                {contact.identity.kind === "personal_agent" && contact.profile.role === "specialist" && contact.identity.ownerMemberId === actor?.member.id && contact.allowedActions.includes('edit_profile') && <>
                   <Button onClick={() => setConnection(!connection)}>外部服务</Button>
                 </>}
               </Space>

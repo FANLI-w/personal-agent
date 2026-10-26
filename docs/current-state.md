@@ -2,6 +2,18 @@
 
 更新日期：2026-10-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 0.10.53候选与配套删除后台已完成（PR113待审、未公开）
+
+从main **d25781d**另开 **feat/contact-agent-removal**，产品 **e947fb26**。通讯录名片、详细资料和聊天右键菜单提供“删除联系人”或“删除 Agent”；系统个人助理保留。真人/别人拥有的Agent只撤销本人的关系，不注销账号或移除课题组成员；本人自建Agent逻辑删除、历史只读，既有任务、资料和成果保留。停止在途回复/绑定规划/定时工作和未发提醒，保留实际用量；清除外部密钥，私人Skill只解绑该Agent，保留正文/修订/其他绑定，释放活跃额度且不复活旧身份。[设计](development/contact-agent-removal.md)。
+
+最终根ci **799项/63文件及2生产CLI/HTTP、B0/生产边界**、**123项客户端/17文件**、双类型、Windows冻结NSIS与既有启动/更新守卫通过；首轮迁移/旧夹具/计数等失败保留。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.53.exe**，**88,222,763字节**，SHA256 **ba6ceb2ecd4fd427a20880548deb88f11d8ed781786f6bcfa8ca37db67224a9e**。旧包保留。[交付](deployment/acceptcat-0.10.53.md)；[PR113](https://github.com/luoyan96/personal-agent/pull/113)待审，bf97137四项GitHub检查success，后续文档head另看实际结果，未合main/未公开；Latest仍v0.10.52/423781483。
+
+负责人本批另行回复“现在升级后台”后，北京时间 **12:01:00—12:01:26**完成配套升级，当前线上 **research-openim-api:contact-agent-removal-20261026 / sha256:b9901ac52ec7822e04a5944cac7be464f34d6d30235b06ab42204b1ed3a85c63**，**contract0.33/schema027**。[完整回执](deployment/contact-agent-removal-20261026.md)。累计 **184项/16文件**服务器隔离（177+补充7）及迁移审计演练、555基线/15叠加/187编译/角色方法摘要通过；首轮漏带两个测试辅助文件、汇总误计8及LF摘要失败在停写前修正，未改产品/测试/时限。
+
+备份 **/srv/research-openim-backups/contact-agent-removal-20261026-20261026T040103Z/research.tar.gz**，SHA256 **12d67365153c44c2c696b08f0163b9ed6f3cffc179cbb115663c4f0704efb3cd**。独立恢复和原库迁移前后保全 **103原表/7原件/23配置输入**，只新增第104表和027历史；API healthy/worker running均restart0、ready200/.33、新删除接口完整匿名请求401，其他6服务保持。广场同步仍关闭、飞书已有1个lab_shared集合不扩散、DSH/Cordis及Harness not_verified保持。
+
+027后不能直接退严格要求026的旧镜像，即使空删除表也须保留新约束前滚；禁止回灌旧库或删迁移绕过。本批未触发回退，成功后留存恢复脚本已补该守卫、保留原执行脚本。证据Git外 **D:/deepseek-agent/.runtime/contact-agent-removal-20261026**及 **contact-agent-backend-20261026**，原始后台JSON留服务器，本机observed为可见终端整理。未代安装/真实删除/界面、真实模型或私人资料体验，未额外手工载荷验收。注册超时仍未定因，飞书本人试点/原件互传边界保持。
+
 ## 0.10.52配套角色后台已单独升级
 
 按负责人“后台可以升级一下，我已经登录了”的明确授权，固定发布提交 **667bc34**，在已核对的7d75165a生产基线上离线构建角色/方法配套API/worker，8份API源及共享包叠加，保留其他功能。北京时间 **10:02:14—10:02:36**完成排空、停写备份、独立恢复核对和配对升级；新镜像 **research-openim-api:research-colleagues-20261026** / **sha256:acf4b711a791d4110f20b3c63af99456df54c187c875e5a18f8bfe7700b959d2**，contract **0.32.0/schema026**保持，无迁移。18角色、37旧默认档案的只读投影及19方法共同加载现已进入后台，用户编辑/私人偏好、联系人及私人Skill版本保持。[完整部署回执](deployment/research-colleagues-20261026.md)。

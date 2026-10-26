@@ -117,6 +117,7 @@ export function SkillLibrary({
     (c) =>
       c.identity.kind === "personal_agent" &&
       c.identity.ownerMemberId === state.actor?.member.id &&
+        c.allowedActions.includes('edit_profile') &&
       !c.agentRuntime,
   );
   const people = state.contacts
