@@ -2035,3 +2035,14 @@ Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**�
 负责人在后台已升级后明确要求合并，当前工作目录干净；fetch后的主仓库main仍d25781d，PR117头d22f778可合并。重新读取PR113/e0e911b、PR114/769c883、PR115/8e6e2a6、PR116/26bce00，head均与已整合版本一致。普通merge保留同事提交和各批功能，不另行合并旧PR、整文件覆盖或强推。任务产品04e184f与已部署/受测代码相同；本批只更新交接/合并记录，执行内容及差异检查，等待实际PR head的GitHub检查成功，再带固定head合并。此记录在PR117进入main后生效，实际merge SHA/时间以GitHub回执为准；Git外pr117-merge-20261026保存检查、祖先关系、执行和main同步回执。
 
 沿用根812项、服务器97项和既有客户端/安装包受测证据，不无故重跑或追加真人验收。公开0.10.56/tag f45c278和16:31已部署7720ec9b/产品04e184f/contract0.33/schema027保持；本轮没有安装包/Release、后台重启/迁移或真实模型/材料/IM送达检查。下一个功能重新fetch最新main并另开分支。合并后当前事实以current-state新节和PR状态为准，旧未合记录保留其当时含义。
+## 2026-10-26：聊天图片与文字右键操作修复，准备0.10.57候选
+
+从最新main/c3f7d0f另开fix/chat-image-context-actions，原工作区干净，保留PR113–117及同事功能。参考负责人提供的微信截图，图片气泡、放大预览及本机待发送图片共用复制图片/另存为/本机提取文字，消息保持引用。修复portal触发通用文字菜单和复制“[图片]”的问题；文字区分选区与整条消息，文件/语音占位词不复制。复制PNG像素；保存系统对话框确认的原图字节；OCR结果只展示/复制，不自动发送Agent。保持文件来源/长度/窗口校验、取消与错误反馈；纯格式模块纳入Electron编译目录。
+
+客户端相关61项/8文件及双类型通过，新增19项加入Windows CI。首轮16项里1个VM Error跨realm测试失败，修正测试环境后通过，原情况留Git外notes；内容文档补丁一次标题不匹配，未写入，按真实标题修正。尚在准备Windows冻结构建，后续追加成品、PR实际状态。没有后台/契约/数据库改动，无需升级；公开Latest仍0.10.56，main未合本功能。按负责人要求未运行安装器、产品UI或原生剪贴板/真实资料验收。证据D:/deepseek-agent/.runtime/chat-image-context-20261026，实现见docs/development/chat-image-context-actions.md。
+
+## 2026-10-26：0.10.57图片右键候选安装包完成，PR118待审
+
+产品及实际打包源码0a2afb629b4315cb6c6867a2db45a40490dcba0d。根desktop:win按两个固定pnpm及冻结锁文件、共享包先build的顺序完成Web/Electron/NSIS，4项既有成品入口守卫与本地EXE/blockmap/latest.yml/SHA512检查通过，publish never。桌面C:/Users/luo/Desktop/AcceptCat_0.10.57.exe，88,218,163字节，SHA256 7afb5b71e594dd20a5ca886fb34514c46b450edff35b2be8570dca4b2676c8b3，与构建目录摘要一致，旧包保留。
+
+相关61项/8文件通过，最后小调整后19项再次通过，双类型及内容检查通过。renderer曾捕获跨TS工程共用模块TS6305，改为单一JS及.d.ts后重新通过，失败日志保留；未用force安装或放松锁文件。GitHub连接器创建PR返回403无写权限，使用本机现有gh登录成功创建并附加PR118，未合main。代码没有后台、契约、数据库或角色变化，无需升级，仍沿用7720ec9b/contract0.33/schema027。公开Latest仍0.10.56，没有公开0.10.57或覆盖更新清单。未主动运行安装器、产品UI、原生剪贴板/保存窗口、真实资料/模型或额外载荷验收；根CI未在本机重跑。细节见docs/deployment/acceptcat-0.10.57.md；Git外chat-image-context-20261026保存检查与成品回执。

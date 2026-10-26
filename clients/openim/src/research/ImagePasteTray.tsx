@@ -10,6 +10,7 @@ import { formatOcrText } from "@/utils/ocrText";
 import type { OcrTextMode } from "@/utils/ocrText";
 import { proofreadOcr } from "./ocrProofreading";
 import type { OcrProofreadingJob } from "./ocrProofreading";
+import ChatImage from "./ChatImage";
 
 type ImageDraft = {
   id: string;
@@ -411,7 +412,7 @@ const ImagePasteTray = forwardRef<
           <div className="image-paste-previews">
             {images.map((item, index) => (
               <div className="image-paste-preview" key={item.id}>
-                <img src={item.url} alt={`图片 ${index + 1}：${item.file.name}`} />
+                <ChatImage src={item.url} source={{ file: item.file }} wrapperStyle={{ width: "100%", height: "100%" }} disabled={busy} alt={`图片 ${index + 1}：${item.file.name}`} />
                 <span>{index + 1}</span>
                 {item.reading || item.refining || item.sending ? (
                   <LoadingOutlined className="image-paste-remove" />
