@@ -1,5 +1,17 @@
 # 开发路线图
 
+2026-10-26：负责人授权[PR117](https://github.com/luoyan96/personal-agent/pull/117)整合main，包含PR113至PR116的删除、通讯录/星标与同事任务改动及安全恢复/支持通知修正；本条随合并生效，合并前以GitHub实际状态为准。后台已单独于16:31部署7720ec9b/产品04e184f/contract0.33/schema027，97项隔离、104表/8原件及24配置输入保全通过，无迁移。公开Latest0.10.56/tag f45c278继续对应原包，本轮仅代码合并及交接，不重新发布、部署或代用户体验。下方未合等描述保留为历史批次，见[current-state](current-state.md)与[后台回执](deployment/task-flow-safe-recovery-20261026.md)。
+
+2026-10-26：按负责人要求先上传，[v0.10.56](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.56)于15:35:28公开为Latest，tag固定f45c278实际构建源码；四附件摘要和未登录更新清单核对通过。[PR116](https://github.com/luoyan96/personal-agent/pull/116)仍待审，未合main，后台b9901ac5/contract0.33/schema027未变。本批只发布与文档，未重新打包或代安装体验，见[回执](deployment/acceptcat-0.10.56.md)。
+
+2026-10-26：[0.10.56统一通讯录](deployment/acceptcat-0.10.56.md)移除我的Agent重复栏目和通讯录我的/课题组切换，智能体/联系人分别一个合并列表，技能库/本人技能与资料管理迁入通讯录，旧链接保持目标。80项客户端、双类型、冻结NSIS/更新通过；从main/d25781d新开分支并保留PR114依赖，[PR116](https://github.com/luoyan96/personal-agent/pull/116)待审、未合main/未公开，无需后台升级，实际安装由负责人检查。
+
+2026-10-26：[0.10.55星标修复](deployment/acceptcat-0.10.55.md)修正只读服务状态误用连接管理权限导致的星标读取错误，当前应用页面可读状态、配置权限保持；新增主进程/preload/renderer串联回归，42项客户端、双类型、冻结NSIS和更新守卫通过。安装包已放桌面，同一PR114待审，未合main/未公开，无需后台升级；实际安装体验由负责人检查。
+
+2026-10-26：[0.10.54本机候选](deployment/acceptcat-0.10.54.md)将通讯录拆为智能体/真人两页，添加查找同样分类，右键管理和本机账号隔离星标，助手资料直接显示介绍/能力/性格。96项客户端、双类型与冻结NSIS/更新守卫通过。新分支从main/d25781d起并普通merge待审PR113依赖，[PR114](https://github.com/luoyan96/personal-agent/pull/114)待审，未合main/未公开。后台无变化，沿用b9901ac5/contract0.33/schema027；安装/实际右键体验由负责人检查。
+
+2026-10-26：[0.10.53删除功能](deployment/acceptcat-0.10.53.md)完成本机包及[配套后台升级](deployment/contact-agent-removal-20261026.md)，PR113待审、未合main/未公开。明确删除联系人/自建专门Agent，历史和任务资料保留；799根/123客户端、双类型和NSIS通过。按本批另行授权12:01:26部署b9901ac5、contract0.33/schema027，184项服务器隔离及备份/恢复、103原表/7原件/23配置保全和健康通过；027后须保留新约束前滚，不能直接退026旧镜像。安装和真实删除由负责人体验，公开Latest仍0.10.52。
+
 2026-10-26：[0.10.52配套角色后台](deployment/research-colleagues-20261026.md)按单独授权于10:02:36上线acf4b711，18角色/37旧默认档案只读投影与19方法同源加载生效，保留用户编辑及私人偏好。127项服务器隔离、源码/成品摘要、停写备份/独立恢复、103表/7原件/22配置输入及健康通过，contract0.32/schema026无迁移。公开安装包仍0.10.52；真实交流与科研效果由负责人体验，未新增普通聊天生图/PPT执行工具。
 
 2026-10-26：按负责人指令，[PR112](https://github.com/luoyan96/personal-agent/pull/112)最终四项检查通过后以667bc34合main，PR105至PR111随之MERGED，保留同事及既有功能。[0.10.52](deployment/acceptcat-0.10.52.md)四附件核对后已公开为Latest，tag固定该合并提交；科研同伴团队、单任务规划、聊天/通知、图标和界面精简一起交付。配套角色API/worker仍待单独升级，本次没有后台操作；安装与真实科研体验由负责人检查。下方各批记录描述当时状态，当前状态以本条及current-state为准。

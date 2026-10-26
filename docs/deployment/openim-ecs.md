@@ -1,6 +1,13 @@
 # 新 ECS：OpenIM 科研微信（2026-10-06）
 
-## 当前后台：规划真实回复，0.32/schema026（2026-10-25）
+## 当前后台：任务安全恢复及支持通知，0.33/schema027（2026-10-26）
+
+北京时间 **16:31:05—16:31:27**，负责人授权并重新连接后，配对升级API/worker至 **research-openim-api:task-flow-safe-recovery-20261026** / **sha256:7720ec9b8f8c533c52352471eccc13a85731b2c257cb6d5f8bf349cae4abb850**。产品04e184f叠加b9901ac5基线，contract0.33/schema027不变，无迁移。97项服务器隔离、104表/8原件恢复、24配置/密钥输入保全通过；API healthy、worker running/restart0，其他6服务、默认模型、飞书来源与共享范围保持，广场同步关闭。HTTPS ready200、匿名受保护接口401，Harness仍not_verified。
+
+运维目录 **/opt/research-openim/ops/task-flow-safe-recovery-20261026**，完整Compose链在contact-agent-removal-20261026/images.yaml后追加本目录images.yaml。备份 **/srv/research-openim-backups/task-flow-safe-recovery-20261026-20261026T083108Z/research.tar.gz**，SHA256 **220cf0dfc76ee8dac76afd16048467bcaa01d0edb8ad40b7e681b304bf29129a**。两镜像均为0.33/schema027，可停写后成对退回b9901ac5并保留当前数据库，不能回灌旧备份或退至0.32/schema026；本次未回退。完整检查、失败记录及界限见[实际回执](task-flow-safe-recovery-20261026.md)。PR117待审，公开0.10.56安装包可继续用，本批没有合main、重新发布或真实材料/模型验收。
+
+
+## 历史后台：规划真实回复，0.32/schema026（2026-10-25）
 
 负责人本批单独授权后，北京时间 **12:39:24—12:39:44**完成API/worker排空、停写备份、独立恢复核对及配对切换。当前 **research-openim-api:planning-conversation-20261025** / **sha256:7d75165a49a586e8c45b0045b31df172481325a7604fe8fe6a6aaa3a281ebbfa**，产品0e78530叠加已核验de6dce92生产基线，contract0.32.0/schema026，无迁移。82项隔离、103表/7原件、21配置输入保全通过；运行设置、私人资料范围、运营seed及其他6服务保持。两服务running/restart0、API healthy、HTTPS ready200/0.32、匿名受保护接口401，广场同步仍关闭，Harness仍not_verified。
 

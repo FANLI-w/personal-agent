@@ -64,7 +64,7 @@ export async function prepareColleagueAgent(options: {
   if (!isCurrent()) return;
   let agent = findOwnedStarter(owned.data, starter, actorId, options.rememberedId);
   if (options.rememberedId && agent?.id !== options.rememberedId)
-    throw new Error("这位助手的身份已变化，请在我的 Agent 核对，原对话仍保留。");
+    throw new Error("这位助手的身份已变化，请在通讯录的智能体资料中核对，原对话仍保留。");
   if (!agent && options.create === false) return;
   if (!agent) agent = (await api("createPersonalAgent", { body: starter.profile, idempotencyKey: options.creationKey })).data;
   if (!isCurrent()) return;

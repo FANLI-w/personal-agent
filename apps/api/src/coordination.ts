@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { Artifact, Assignment, ChangeProposal, DependencyImpact, Task, TaskEvent } from '@research-agent-platform/contracts'
 import type { ArtifactModel, ChangeProposalModel, DependencyImpactModel, RequestFor, TaskModel, ScheduleModel } from '@research-agent-platform/contracts'
 import type { Collaboration } from './collaboration.js'
-import { fail } from './errors.js'
+import { ApiError, fail } from './errors.js'
 
 export const coordinationCommands = ['block', 'resume', 'proposeChange', 'decideChange', 'withdraw', 'cancelTask', 'revokeAccess', 'acknowledgeImpacts', 'upload', 'artifact', 'content', 'revokeArtifact', 'events'] as const
 export type CoordinationCommand = typeof coordinationCommands[number]
@@ -84,6 +84,7 @@ export class Coordination {
     }
   }
   dependenciesReady(task: TaskModel, bind = false) {
+    const bindings: [string, string, number][] = []
     for (const d of task.dependencies) {
       if (d.kind !== 'accepted_deliverable') fail('NOT_IMPLEMENTED')
       const latest = this.db.prepare(`SELECT d.revision,r.document,d.document delivery FROM tasks t JOIN deliverables d ON d.task_id=t.id JOIN reviews r ON r.deliverable_id=d.id
@@ -92,12 +93,24 @@ export class Coordination {
       const revision = d.requiredRevision ?? (bound ? Number(bound.revision) : null)
       if (!latest || JSON.parse(String(latest.document)).decision !== 'accepted' || (revision !== null && Number(latest.revision) !== revision)) fail('DEPENDENCY_BLOCKED')
       for(const artifactId of JSON.parse(String(latest.delivery)).artifactRefs as string[]) if(!this.db.prepare("SELECT 1 FROM artifacts WHERE id=? AND task_id=? AND status='available'").get(artifactId,d.taskId)) fail('DEPENDENCY_BLOCKED')
-      if (bind && !bound) this.db.prepare('INSERT INTO dependency_bindings VALUES (?,?,?)').run(task.id,d.taskId,Number(latest.revision))
+      if (bind && !bound) bindings.push([task.id,d.taskId,Number(latest.revision)])
     }
+    // Validate the complete set before writing any revision, including callers
+    // that catch DEPENDENCY_BLOCKED to retain an accepted assignment.
+    for (const binding of bindings) this.db.prepare('INSERT INTO dependency_bindings VALUES (?,?,?)').run(...binding)
   }
   runnable(task: TaskModel, bind = false) {
-    this.dependenciesReady(task,bind)
     if (this.db.prepare('SELECT 1 FROM dependency_impacts WHERE task_id=? AND acknowledged=0').get(task.id)) fail('DEPENDENCY_BLOCKED')
+    this.dependenciesReady(task,bind)
+  }
+  acceptedState(task: TaskModel) {
+    try { this.runnable(task); task.status='ready'; task.blocker=null }
+    catch (error) {
+      if (!(error instanceof ApiError && error.code==='DEPENDENCY_BLOCKED')) throw error
+      task.status='blocked'
+      const impacted=!!this.db.prepare('SELECT 1 FROM dependency_impacts WHERE task_id=? AND acknowledged=0').get(task.id)
+      task.blocker={reason:impacted?'Dependency changed; reassess preserved work.':'等待前置任务完成',requestedMemberId:null,requestedAction:impacted?'Verify dependencies and acknowledge impacts before resuming.':'前置任务完成后自动恢复',resumeStatus:'ready'}
+    }
   }
   impact(upstream: TaskModel, kind: DependencyImpactModel['kind']) {
     const rows = this.db.prepare(`WITH RECURSIVE downstream(id) AS (SELECT task_id FROM task_dependencies WHERE upstream_id=? UNION SELECT e.task_id FROM task_dependencies e JOIN downstream d ON e.upstream_id=d.id)
@@ -112,6 +125,23 @@ export class Coordination {
       }
       this.touch(task,'dependency_impacted')
       this.stopDispatch(task.id)
+    }
+  }
+  resolveDownstream(upstream: TaskModel) {
+    const rows = this.db.prepare(`WITH RECURSIVE downstream(id) AS (SELECT task_id FROM task_dependencies WHERE upstream_id=? UNION SELECT e.task_id FROM task_dependencies e JOIN downstream d ON e.upstream_id=d.id) SELECT t.document FROM tasks t JOIN downstream d ON d.id=t.id WHERE t.status='blocked'`).all(upstream.id)
+    for (const row of rows) {
+      const task = Task.parse(JSON.parse(String(row.document)))
+      // Only an untouched assignment waiting for first-time prerequisites can
+      // recover automatically. Evidence changes always require human review.
+      if (task.blocker?.reason !== '等待前置任务完成' || task.blocker.resumeStatus!=='ready' || task.blocker.requestedMemberId!==null) continue
+      if (this.db.prepare("SELECT 1 FROM task_events WHERE task_id=? AND json_extract(document,'$.kind')='started'").get(task.id)
+        || this.db.prepare('SELECT 1 FROM deliverables WHERE task_id=?').get(task.id)
+        || this.db.prepare('SELECT 1 FROM dependency_bindings WHERE task_id=?').get(task.id)) continue
+      try {
+        this.runnable(task)
+        task.status = task.blocker.resumeStatus; task.blocker = null
+        this.touch(task,'resumed','前置任务已完成，可以开始。')
+      } catch (error) { if (!(error instanceof ApiError && error.code==='DEPENDENCY_BLOCKED')) throw error }
     }
   }
   stopDispatch(taskId: string) { this.db.prepare("UPDATE outbox SET status='cancelled' WHERE aggregate_id=? AND status IN ('pending','leased')").run(taskId) }
@@ -134,10 +164,12 @@ export class Coordination {
       if (!['ready','in_progress','changes_requested'].includes(t.status)) fail('INVALID_STATE')
       if (body.requestedMemberId) {
         this.c.member(body.requestedMemberId)
-        if (!this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='full'").get(t.id,body.requestedMemberId)) fail('NOT_FOUND')
+        if (this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='revoked'").get(t.id,body.requestedMemberId)) fail('FORBIDDEN')
       }
       t.blocker={reason:body.reason,requestedMemberId:body.requestedMemberId,requestedAction:body.requestedAction,resumeStatus:t.status as 'ready'|'in_progress'|'changes_requested'};t.status='blocked'
-      this.touch(t,'blocked');this.stopDispatch(t.id);this.impact(t,'blocked');return {data:this.c.actions(t)}
+      this.touch(t,'blocked');this.stopDispatch(t.id);this.impact(t,'blocked')
+      if(body.requestedMemberId)this.c.outbox(t,'support_requested',{taskId:t.id,labId:this.c.labId,requestedBy:this.c.actor.id})
+      return {data:this.c.actions(t)}
     },
     resume: ({params,body}) => {
       const t=this.c.task(params.id);this.c.checkVersion(t.version,body.expectedVersion)

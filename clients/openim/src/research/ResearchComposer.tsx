@@ -55,13 +55,14 @@ export function useResearchComposer() {
   );
   const contacts = useResearchStore((s) => s.contacts);
   const actorGeneration = useResearchStore((s) => s.generation);
+  const peer = contacts.find((c) => c.userID === conversation?.userID)?.contact;
   const manager = useResearchStore((s) => s.actor?.isLabManager || false);
   const canonical = useResearchRead(
     () =>
       researchApi("chatConversation", {
         params: { id: mapping?.researchConversationId || "" },
       }),
-    mapping?.researchConversationId || "",
+    `${mapping?.researchConversationId || ''}:${peer?.profile.version ?? 0}:${peer?.allowedActions.join(',') ?? ''}`,
     researchMode && !!mapping,
   );
   const [advanced, setAdvanced] = useState(false);
@@ -85,7 +86,6 @@ export function useResearchComposer() {
         const contact = contacts.find((c) => c.contact.id === m.contactId)?.contact;
         return contact && contact.identity.kind !== "human" ? [contact] : [];
       }) || [];
-  const peer = contacts.find((c) => c.userID === conversation?.userID)?.contact;
   const isDirectAgent =
     !!mapping && mapping.kind !== "group" && !!peer && peer.identity.kind !== "human";
   const external = isDirectAgent ? peer?.agentRuntime : undefined;

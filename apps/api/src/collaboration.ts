@@ -180,9 +180,9 @@ export class Collaboration {
     const event = TaskEvent.parse({ id: id(), taskId: task.id, actor: { kind: 'member', memberId: this.actor.id }, kind, resourceVersion: task.version, timestamp: now(), summary: summary ?? `Task ${kind}` })
     this.db.prepare('INSERT INTO task_events(id,task_id,document) VALUES (?,?,?)').run(event.id, task.id, encode(event))
   }
-  outbox(task: TaskModel, kind: string) {
+  outbox(task: TaskModel, kind: string, payload: Record<string,unknown> = {taskId:task.id}) {
     this.coordination.active(task)
-    this.db.prepare('INSERT INTO outbox(id,dedup_key,aggregate_id,aggregate_version,kind,payload_json,available_at,created_at) VALUES (?,?,?,?,?,?,?,?)').run(id(), `${task.id}:${task.version}:${kind}`, task.id, task.version, kind, encode({ taskId: task.id }), now(), now())
+    this.db.prepare('INSERT INTO outbox(id,dedup_key,aggregate_id,aggregate_version,kind,payload_json,available_at,created_at) VALUES (?,?,?,?,?,?,?,?)').run(id(), `${task.id}:${task.version}:${kind}`, task.id, task.version, kind, encode(payload), now(), now())
   }
   grant(taskId: string, memberId: string, access: 'full' | 'summary') {
     this.db.prepare('INSERT INTO task_access VALUES (?,?,?) ON CONFLICT(task_id,member_id) DO UPDATE SET access=excluded.access').run(taskId, memberId, access)
@@ -473,7 +473,8 @@ export class Collaboration {
       if (body.decision === 'accepted') {
         const schedule={...offer.schedule,committed:body.committed??offer.schedule.committed};this.validateSchedule(schedule,true)
         assignment.commitment = { scope: offer.scope, schedule, acceptedAt: now() }
-        task.leadId = this.actor.id; task.status = 'ready'; task.schedule = assignment.commitment.schedule; this.grant(task.id, this.actor.id, 'full')
+        task.leadId = this.actor.id; task.schedule = assignment.commitment.schedule; this.grant(task.id, this.actor.id, 'full')
+        this.coordination.acceptedState(task)
         new ReuseService(this).copy('plan',task.planId,'task',task.id)
         for(const row of this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId')=?").all(task.id,this.actor.id)) {const old=Assignment.parse(JSON.parse(String(row.document)));old.status='transferred';old.version++;this.saveAssignment(old)}
       } else { if(body.committed) fail('VALIDATION_ERROR');task.status = 'unassigned'; this.db.prepare("DELETE FROM task_access WHERE task_id=? AND member_id=? AND access='summary'").run(task.id, this.actor.id) }
@@ -490,7 +491,9 @@ export class Collaboration {
       const schedule={...summary.schedule,committed:body.committed??null};this.validateSchedule(schedule,true)
       const assignment = this.createAssignment(task, 'claim', this.actor.id, summary.deliverable, schedule)
       task.schedule=schedule
-      task.leadId = this.actor.id; task.status = 'ready'; task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'claimed')
+      task.leadId = this.actor.id
+      this.coordination.acceptedState(task)
+      task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'claimed')
       return { data: assignment }
     },
     start: ({ params, body }) => {
@@ -526,6 +529,7 @@ export class Collaboration {
       this.db.prepare('UPDATE deliverables SET version=?,document=? WHERE id=?').run(delivery.version, encode(delivery), delivery.id)
       task.status = body.decision === 'accepted' ? 'completed' : 'changes_requested'; task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'reviewed')
       if(body.decision==='changes_requested') this.coordination.impact(task,'review_returned')
+      else this.coordination.resolveDownstream(task)
       return { data: delivery }
     },
   }

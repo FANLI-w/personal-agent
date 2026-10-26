@@ -514,7 +514,7 @@ export function FeishuImport({
                 <Alert
                   type="success"
                   message="已保存到私人资料集合"
-                  description="在“我的 Agent → 资料绑定”中授权此集合后，Agent 才能检索引用。若要规划任务，可从上方预览复制需要的文字到下面。"
+                  description="在“通讯录 → 智能体 → 技能与资料”中授权此集合后，Agent 才能检索引用。若要规划任务，可从上方预览复制需要的文字到下面。"
                 />
                 <label>
                   用于任务规划的片段
