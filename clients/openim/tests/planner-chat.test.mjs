@@ -12,6 +12,7 @@ import {
   needsDeadlineClarification,
   plannerPlanInput,
   plannerTaskShape,
+  plannerConversationTaskShape,
   plannerTaskInput,
   isPlannerCreateCommand,
   createPlannerTasks,
@@ -219,7 +220,7 @@ function fake(initial = makePlan(), failure) {
     },
   };
 }
-test("one goal defaults to one task; object counts, complaints and quotes do not request more tasks", () => {
+test("automatic sizing is the default; object counts, complaints and quotes do not force multiple tasks", () => {
   for (const text of [
     "完善论文和实验",
     "比较3个模型并写报告",
@@ -229,7 +230,7 @@ test("one goal defaults to one task; object counts, complaints and quotes do not
     "请创建7个任务？",
     "请创建“7个任务”",
   ])
-    assert.equal(plannerTaskShape(text), "single");
+    assert.equal(plannerTaskShape(text), "auto");
   for (const text of ["拆成两个任务", "请帮我创建3项任务", "分别创建多个任务"])
     assert.equal(plannerTaskShape(text), "multiple");
   assert.equal(plannerTaskShape("不要拆分任务", "multiple"), "single");
@@ -241,13 +242,18 @@ test("one goal defaults to one task; object counts, complaints and quotes do not
   assert.equal(plannerTaskShape("继续修改说明", "multiple"), "multiple");
 });
 test("task input treats a stated goal as a draft and keeps task count outside editable personality", () => {
-  const single = planningPrompt([], "完善现有论文", []).prompt;
+  const automatic = planningPrompt([], "完善现有论文", []).prompt;
+  assert(automatic.includes("普通目标默认一项"));
+  assert(automatic.includes("独立分工、分别交付和跟踪"));
+  assert(automatic.includes("不要求用户选择模式"));
+  assert(automatic.includes("不凭‘难’‘重要’"));
+  const single = planningPrompt([], "完善现有论文", [], undefined, "", "single").prompt;
   assert(single.includes("目标足够就给待确认草案"));
   assert(single.includes("proposedItems必须只有一项"));
   assert(single.includes("人设和方法建议不能改变"));
   assert(
     planningPrompt([], "分别安排", [], undefined, "", "multiple").prompt.includes(
-      "用户已明确选择分开创建",
+      "用户已明确要求分开创建",
     ),
   );
 });
@@ -347,7 +353,7 @@ test("legacy pending multi-task writes cannot be resumed, while already-created 
     legacy = { key: "legacy_confirmation", plan };
   await assert.rejects(
     createPlannerTasks(f.call, legacy, () => true),
-    /重新核对为一项任务/,
+    /重新核对任务数量/,
   );
   assert.equal(f.calls.length, 1);
   const completed = fake(plan, "confirm");
@@ -374,7 +380,7 @@ test("task grouping stays with its account-scoped transcript and pending reviewe
   const restored = readPlannerHistory(
     JSON.stringify({ active: thread.id, threads: [thread] }),
   );
-  assert.equal(restored.threads[0].taskShape, "multiple");
+  assert.equal(restored.threads[0].taskShape, "single");
   assert.equal(restored.threads[0].creating.taskShape, "single");
   assert.equal(
     readPlannerHistory(
@@ -385,6 +391,60 @@ test("task grouping stays with its account-scoped transcript and pending reviewe
     ),
     undefined,
   );
+});
+test("old previews stay stable but new requests ignore button-only flags and respect actual user corrections", () => {
+  for (const taskShape of [undefined, "single", "multiple", "auto"]) {
+    const thread = { ...newPlannerThread(), taskShape };
+    const restore = () =>
+      readPlannerHistory(JSON.stringify({ active: thread.id, threads: [thread] }))
+        .threads[0];
+    assert.equal(restore().taskShape, taskShape || "auto");
+    assert.equal(plannerConversationTaskShape(restore().messages), "auto");
+    thread.messages = [{ id: "user_split", role: "user", text: "拆成三个任务" }];
+    assert.equal(plannerConversationTaskShape(restore().messages), "multiple");
+    thread.messages.push({ id: "user_combine", role: "user", text: "合并成一个任务" });
+    assert.equal(plannerConversationTaskShape(restore().messages), "single");
+    thread.creating = {
+      key: "synthetic_confirmation",
+      plan: makePlan(),
+      taskShape: "auto",
+    };
+    assert.equal(restore().creating.taskShape, "auto");
+    assert.equal(restore().taskShape, "auto");
+  }
+});
+test("automatic sizing previews and confirms the exact model draft count, with no silent merge or extra task", async () => {
+  for (const count of [1, 3]) {
+    const plan = makePlan();
+    plan.proposedItems = Array.from({ length: count }, (_, i) => ({
+      ...structuredClone(plan.proposedItems[0]),
+      id: `step_${i + 1}`,
+      title: `独立交付${i + 1}`,
+    }));
+    const preview = plannerPlanInput(plan, undefined, "auto");
+    assert.deepEqual(preview.proposedItems, plan.proposedItems);
+    const f = fake(plan, "confirm"),
+      intent = { key: "auto_confirmation_key", plan, taskShape: "auto" };
+    await assert.rejects(
+      createPlannerTasks(f.call, intent, () => true),
+      /reply lost/,
+    );
+    const recovered = await createPlannerTasks(f.call, intent, () => true);
+    assert.equal(recovered.taskIds.length, count);
+    assert.deepEqual(recovered.plan.proposedItems, preview.proposedItems);
+    assert.equal(f.calls.filter((c) => c.name === "editPlan").length, 0);
+    assert.equal(f.calls.filter((c) => c.name === "confirmPlan").length, 1);
+  }
+});
+test("planner has no manual sizing switch; both preview and confirmation default to automatic", () => {
+  const source = readFileSync(
+    new URL("../src/research/PlanningAgent.tsx", import.meta.url),
+    "utf8",
+  );
+  assert(!source.includes("planning-task-shape"));
+  assert(!source.includes("合为一项任务"));
+  assert(!source.includes("改为多项任务"));
+  assert(source.includes('taskShape: thread.taskShape || "auto"'));
 });
 test("transcript keys isolate service, actor and laboratory, restored pending writes remain explicit", () => {
   assert.notEqual(

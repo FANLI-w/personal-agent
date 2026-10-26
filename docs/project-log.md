@@ -2046,3 +2046,9 @@ Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**�
 产品及实际打包源码0a2afb629b4315cb6c6867a2db45a40490dcba0d。根desktop:win按两个固定pnpm及冻结锁文件、共享包先build的顺序完成Web/Electron/NSIS，4项既有成品入口守卫与本地EXE/blockmap/latest.yml/SHA512检查通过，publish never。桌面C:/Users/luo/Desktop/AcceptCat_0.10.57.exe，88,218,163字节，SHA256 7afb5b71e594dd20a5ca886fb34514c46b450edff35b2be8570dca4b2676c8b3，与构建目录摘要一致，旧包保留。
 
 相关61项/8文件通过，最后小调整后19项再次通过，双类型及内容检查通过。renderer曾捕获跨TS工程共用模块TS6305，改为单一JS及.d.ts后重新通过，失败日志保留；未用force安装或放松锁文件。GitHub连接器创建PR返回403无写权限，使用本机现有gh登录成功创建并附加PR118，未合main。代码没有后台、契约、数据库或角色变化，无需升级，仍沿用7720ec9b/contract0.33/schema027。公开Latest仍0.10.56，没有公开0.10.57或覆盖更新清单。未主动运行安装器、产品UI、原生剪贴板/保存窗口、真实资料/模型或额外载荷验收；根CI未在本机重跑。细节见docs/deployment/acceptcat-0.10.57.md；Git外chat-image-context-20261026保存检查与成品回执。
+
+## 2026-10-26：规划自动判断任务粒度，移除切换按钮
+
+从fetch后main/c3f7d0f另开fix/planner-automatic-task-shape，普通merge保留待审PR118/8172b66作为桌面候选依赖，未合main。原按钮只改本机数量标记而不重写草案，当前删除提示行/切换及样式。普通工作一项、内部放步骤；确需独立分工/交付的大项目允许建议多项，不以“很难”、动作或对象数量做拆分依据。auto采用助手草案原结构，明确用户合并/拆分指令优先，预览和实际创建同一快照，仍需正式确认。旧预览数量保留，新请求忽略旧按钮标记；待重试创建快照及已有任务保持。
+
+更新task-decomposition和research-planning/work.md，角色v3加上一版精确默认档案迁移，保留私人编辑。定向45项及扩展64项/7文件通过，含4个本机HTTP/SQLite创建/回执恢复情景；首次两项新增断言漏计明确截止日期的editPlan，修正测试后通过，原43通过/2失败日志保留。根冻结CI与类型检查正在执行，安装包尚未完成。无API/契约/数据库变化，没有后台部署；旧服务器默认角色不冒称已升级，新客户端通过现有规划接口传入规则。Latest仍0.10.56，保留0.10.57候选；未代安装、真实模型或产品UI验收。实现见docs/development/planner-automatic-task-shape.md，Git外planner-auto-shape-20261026保存日志。
