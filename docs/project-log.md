@@ -1972,3 +1972,13 @@ schema027已经生效；旧0.32镜像严格要求schema026，即使删除表为�
 桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.54.exe**，**88,226,822字节**，SHA256 **d84dfee1ed8d1992ce5bcf6ec26aa3d8bc89a103b6cb51b32d9fafca2a6ae106**，复制摘要一致，旧包保留。[交付](deployment/acceptcat-0.10.54.md)。本批仅客户端/工作流/文档，API/契约/数据库/角色方法与PR113逐字diff为空；沿用已部署 **b9901ac5/contract0.33/schema027**，无需新后台升级，没有生产服务操作。上一批799项根CI不是本批重跑。[PR114](https://github.com/luoyan96/personal-agent/pull/114)已创建待审，GitHub自动检查尚在运行，未合main/未公开，Latest仍0.10.52；现有PR113仍待审。
 
 Git外证据 **D:/deepseek-agent/.runtime/contact-directory-pages-20261026**保留96项检查、双类型、构建/更新和交付摘要。首次本地编辑命令工作目录错用根相对路径，在读文件时失败、无写入；纠正后最终类型/测试通过。未代安装、原生启动、右键/窄屏视觉、浏览器产品、真实账号删除、真实模型/私人材料或手工载荷验收。注册超时仍未定因，飞书试点/共享边界保持。
+
+## 2026-10-26：0.10.55星标桌面调用修复
+
+负责人安装0.10.54发现黄色星标读取提示并要求修复。在现有 **feat/contact-directory-pages / PR114**继续修正该批回归；fetch后的main仍 **d25781d**，没有覆盖或丢弃已有修改。产品 **4e87b3492b66e2a94813206985cc78fb116f2209**：research-service-status只读接口原来误用仅连接页管理权限，现允许当前已连接应用主窗口/主frame且两个实际文档来源匹配rendererOrigin；配置地址仍限本机连接页。星标和名片继续使用实际后台origin，原记录/账号隔离保持，不清空存储。[交付](deployment/acceptcat-0.10.55.md)。
+
+新增真实主进程注册/preload/renderer模块串联的5项合成回归，旧代码3通过/2失败，修复后与既有检查共 **42项/7文件**通过；客户端页面和Electron类型、冻结Windows NSIS/4启动入口及更新清单守卫通过。原0.10.54的96项没有覆盖该调用链，不把此前构建通过当作星标安装体验通过；失败日志保留，未放宽断言或预算。新桥接和既有名片检查已加入Windows CI。
+
+桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.55.exe**，**88,221,426字节**，SHA256 **88575553d299146f0bcd7df2cc0bef61fe8526c602167872733a259bd8069678**，源包/副本摘要一致，旧包保留。API/共享契约/数据库/角色/锁无变化，本批未重跑根799项、未升级后台；线上保持 **b9901ac5/contract0.33/schema027**。修复继续在[PR114](https://github.com/luoyan96/personal-agent/pull/114)待审，未合main/未公开Release，Latest重新读取仍 **v0.10.52/423781483**。
+
+Git外证据 **D:/deepseek-agent/.runtime/contact-stars-status-20261026**保留修复前失败、42项最终、双类型、Windows构建/更新和delivery摘要。未代安装、原生启动、浏览器产品或真实账号/材料体验，没有新生产探测或后台操作。注册超时仍未定因，飞书/私人资料边界保持。

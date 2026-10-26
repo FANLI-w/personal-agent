@@ -59,3 +59,5 @@
 
 每批完成更新docs/current-state.md并追加docs/project-log.md，记录提交、PR、打包/部署/发布状态与剩余事项。先简要汇报当前基线、已完成、未完成和风险，然后根据我接下来给出的具体需求继续开发，不自行选择其他功能或扩大任务范围。
 ```
+
+- 0.10.55修正0.10.54星标读取被桌面IPC拦截的回归，产品4e87b349，在原PR114内继续待审；main仍d25781d，未合main/未公开。主窗口当前应用页只读状态，配置仍限本机连接页；42项/7文件、双类型、冻结NSIS与更新守卫通过，原3通过/2失败复现保留。桌面C:/Users/luo/Desktop/AcceptCat_0.10.55.exe，88,221,426字节，SHA256 88575553d299146f0bcd7df2cc0bef61fe8526c602167872733a259bd8069678。无需后台升级，保持b9901ac5/contract0.33/schema027；Latest仍0.10.52，安装体验由负责人检查。见docs/deployment/acceptcat-0.10.55.md，Git外contact-stars-status-20261026。
