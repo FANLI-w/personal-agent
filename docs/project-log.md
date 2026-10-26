@@ -2016,3 +2016,6 @@ Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**�
 负责人授权后台升级。新分支fix/task-flow-safe-recovery从fetch后的main d25781d建立，普通merge保留PR116/0.10.56依赖、本地审阅日志及PR115/8e6e2a6，未合main。accept/claim不预先绑定，全部依赖验证后才写版本；纯等待且未开始/提交/绑定/受待复核影响时才能自动恢复。changed、review_returned等仍由人工复核，历史成果保留。显式支持请求由专用worker发送收件人个人助理聊天及IM队列，最小内容、不增加任务权限，检查成员/账号/撤权、任务版本及阻碍，幂等和停止投递场景已覆盖；历史其他outbox仍休眠。
 
 定向26项通过，冻结安装及完整ci 812项/64文件、类型、契约、2项生产CLI/HTTP、B0和前端生产边界通过。第一次完整检查仅新增测试类型收窄/nullable text失败，修正测试后完整重跑通过；Git外task-flow-safe-recovery-20261026保留两次日志。一次文档补丁标题预检不匹配，未写入，修正上下文后继续；若干只读Windows glob/不存在路径查询失败未改文件。此记录时尚未部署，后台b9901ac5/0.33/schema027，公开Latest0.10.56不变；无客户端/角色/契约/迁移变化，不重做安装包，不代真实用户体验。后续部署另追加实际状态。
+## 2026-10-26：PR117已提交，部署因阿里云登录过期待续
+
+产品04e184f，PR117已创建并附到任务，未合main。GitHub两Linux Foundation和Windows package成功，Windows Foundation仍进行中。已准备114741字节运维包、摘要3f2a20daccd7f2c725e03cd5f1889db3905364105c6242d4f18762562bb5d17c；校验脚本先核对完整包、各源码/测试再构建。Workbench批量终端粘贴出现截断/混入，末段偏移断言和完整base64校验失败，原失败文件保留，未构建/备份/切换。改用文件管理时提示账号未登录/过期，常规确认重新登录后跳阿里云登录页，已请负责人重新连接。旧API/worker实际b9901ac5仍运行，API健康，其余六服务运行。没有数据库迁移/安装包/Release变化；Git外transport-notes和部署文档记录实际进度。
