@@ -78,6 +78,8 @@ Git 外证据：`D:/deepseek-agent/.runtime/chat-unified-desktop-20261027`。最
 
 ## 交付与下一步
 
+普通 IM 文字/提及镜像的撤回另需升级 OpenIM 派生镜像并启用 `afterRevokeMsg`。上游固定 SHA `865bb89517b48493ef9b1b5d9fde87fe0cb05cc7` 的撤回回调只提供会话/序号，发送回调在入队后触发，不能假定发送时已有可配对序号。本 PR 的既有派生补丁从服务端查到的原消息补充 SendID/ClientMsgID；API 校验可信操作人、自己的原消息和业务会话，幂等更新镜像，并持久记录撤回先到的情况。固定版本回调名称为 `callbackBeforeAfterMsgCommand`，单独分流，不能误走 before 授权逻辑。没有原消息标识的旧服务端回调不会按猜测撤回业务消息；其他人/管理员撤回不在本次开放范围。部署须同时更新 API、迁移028、派生镜像和 webhook 配置，本轮未执行。
+
 本机没有生成本批 Windows 安装器或 APK，没有安装/操作正在使用的客户端。Windows 打包由 PR 既有 CI 单独执行，必须核对本次 head 的完成状态和 artifact；上一版 PR 的绿色状态或安装包不能替代本次验证。手工打包命令为根目录 `corepack pnpm@11.21.0 run desktop:win`，默认输出 `clients/openim/release/Base/<version>`，不是公开发布。
 
 合并、后台部署、内部安装验收和公开 Release 分开处理，Windows 更新清单/发布通道未改动。手机后置。
@@ -89,3 +91,19 @@ Git 外证据：`D:/deepseek-agent/.runtime/chat-unified-desktop-20261027`。最
 首次远端 d3ad075 在打包前的图片操作测试失败：编译夹具缺少新 timeline/roster 导入，且图片专用右键菜单仍需隔离。产品修正 `7504d0dcbdffc234e878f5e83bd3f8ffc8ad39c4` 保留图片自己的右键菜单，统一转发/多选通过独立“更多”入口使用；同时阻止旧会话异步创建的转发消息进入新操作缓存。更新夹具为按菜单 key 检查复制动作，并将新旧后台兼容测试纳入远端打包守卫。
 
 本机重跑完整 Windows 打包前测试集合：构建失败守卫9、规划/依赖41、客户端操作182，共232项通过，原有图片复制/另存/OCR/选择文字保护继续成立。记录在 `package-build-guards.log`、`package-planner-guards.log`、`package-client-guards.log`；远端原失败保存在 `remote-package-failure.log`。最终安装包仍以修正后的 PR head 构建为准。
+
+### 最终撤回同步与安装包核验
+
+产品源码最终为 `7352c5bcbb84510fafa1f133f4aa52edd083f71a`，后续只补验证文档。原生撤回桥接新增1项综合回归，检查重复、乱序、错误操作人/会话和旧上游缺少消息标识；OpenIM 定向15项通过。最终本机完整 CI 828/830通过，两个已有聊天测试超过15秒上限；保持原时限，单独重跑2项均通过，不将这次本机全量写成全部通过。完整 CI 以同一产品提交的 [Foundation 40491790829](https://github.com/luoyan96/personal-agent/actions/runs/40491790829) 为准，Linux Node22.19/24两路已通过。过程证据 `root-ci-final.log`、`chat-timeout-recheck.log`、`native-revoke-tests.log` 均保留。
+
+固定 OpenIM 官方 SHA 的干净源码通过 `git apply --check`。用 Git 外便携 Go1.27.3/Windows 实际编译 `internal/rpc/msg` 并运行 `TestRAPRevokeCallbackOriginalIdentity` 通过，`go mod verify` 通过；首轮检查暂停、后续限制并发完成，日志分别保留为 `go-revoke-test.log`、`go-revoke-test-bounded.log` 和 `go-module-verification.log`。派生 Dockerfile 仍固定 Go1.22.12，已纳入该包测试；本轮没有 Docker 镜像构建或服务启动结果。
+
+产品提交7352c5b的 [Windows CI 40491790846](https://github.com/luoyan96/personal-agent/actions/runs/40491790846) 已通过类型、232项打包前检查、NSIS及包内CommonJS检查、安装器/更新元数据一致性检查。下载的内部测试包：
+
+- `D:/deepseek-agent/.runtime/chat-unified-desktop-20261027/windows-7352c5b/0.10.60/AcceptCat_0.10.60.exe`
+- 88,236,573字节；SHA256 `300a0741719b980bf87517c3899573ed45e009974f64f7d813cbac31f326acf3`。
+- SHA512已与同一artifact内 `latest.yml` 比对一致，记录 `installer-verification.json`；没有执行安装器。
+
+因此“工程可编译、Windows测试安装包已生成”已有证据；“新后台已部署、真实两人两Agent群聊、多设备和安装体验已通过”仍没有实际验收证据。原版本号0.10.60只用于内部构建，不代表新的公开版本，不能把artifact的latest.yml上传到现有更新通道。手机仍后置。
+
+最终核对：Foundation40491790829已全部成功，Linux Node22.19、Linux Node24和Windows Node24三路完整CI均通过；与Windows打包组成四项绿色检查。完整远端记录保存为 `remote-final-foundation.log`，安装器校验另存上述JSON。本次最后仅提交文档，产品和安装包受测源码保持7352c5b。

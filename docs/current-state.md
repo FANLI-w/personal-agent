@@ -4,6 +4,12 @@
 
 ## 桌面统一聊天体验整体扩展（PR125 待审，手机后置）
 
+最终产品提交 **7352c5bcbb84510fafa1f133f4aa52edd083f71a** 补齐普通 IM 文字镜像撤回：可信回调关联原消息、幂等和乱序处理，不开放撤回他人的消息。除 API/worker 与迁移028外，还需重建 OpenIM 派生镜像并启用 `afterRevokeMsg`；本轮均未部署。固定官方源码已实际应用补丁，新增消息回调 Go 测试通过，模块校验通过；没有构建/启动 Docker 镜像。
+
+最终 Windows 安装包来自产品提交7352c5b的 [CI 40491790846](https://github.com/luoyan96/personal-agent/actions/runs/40491790846)，已下载并校验 SHA512 与元数据一致：`D:/deepseek-agent/.runtime/chat-unified-desktop-20261027/windows-7352c5b/0.10.60/AcceptCat_0.10.60.exe`，88,236,573 字节。它是独立内部测试 artifact，未安装、未发布、未修改自动更新通道。最终检查细节见开发说明下方“最终撤回同步与安装包核验”，以下原主体实现记录保留各自阶段。
+
+最终产品提交的四项远端检查全部通过：Foundation40491790829的Linux Node22.19、Linux Node24、Windows Node24三路完整CI（各830项共享测试，另含生产流程/B0/Web检查），以及Windows打包。最后本机全量出现的2项超时已经单独复跑通过，失败日志保留；不把本机该轮标成全绿。
+
 2026-10-27 按负责人要求继续完成五项桌面工程改造。独立 clone `D:/deepseek-agent/acceptcat-chat-experience` / `feat/chat-conversation-experience`，开始和交付前 fetch 的 main 均为 `aaa0eea`，原桌面目录保持原状。首批代码 `6a3d62d`，整体扩展代码 **7504d0dcbdffc234e878f5e83bd3f8ffc8ad39c4（主体实现 280f8ea）**，仍通过 [PR125](https://github.com/luoyan96/personal-agent/pull/125) 交由负责人合并。
 
 四类聊天共用消息操作和布局；群提及、同名归属、原问题/引用定位、逐助手状态与重试贯通。新增实际业务消息撤回、引用关系、搜索分页跳转、多选/转发/本机删除、阅读位置与引用草稿恢复、迟到消息隔离；长 Agent 回答有独立宽正文，任务/资料/助手设置移入详情，群名单分页显示归属。转发核对原 SDK 消息防止丢失回执后重复发送，业务正文重新鉴权后按署名文字转发，不复制任务权限。沿用图片/文件、群管理、免打扰、通知与既有权限。
