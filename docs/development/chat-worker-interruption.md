@@ -21,3 +21,5 @@
 冻结安装通过；相关14项定向检查通过。完整 `pnpm run ci` 通过：826项/65文件、生产CLI/HTTP三项、B0及Web生产边界、构建、类型、契约检查。原代码在新增两项争用回归中均报 `database is locked`，原失败日志保持。没有真实模型/多账号/客户端体验验收。
 
 Git外证据：`D:/deepseek-agent/.runtime/chat-worker-interruption-20261027`；本机安装、定向、旧代码对照、全量CI日志位于其同级 `chat-worker-*-20261027.log`。服务器独立准备目录 `/opt/research-openim/ops/chat-worker-interruption-20261027`，运维包133104字节，SHA256 `30896a3b350f83b41d99cf6e6a675383052e3cbaf604a8f1cf99deb8bed9dc56`。准备与实际切换分别核对，部署结果另记。
+
+配套后台已完成更新，服务器123项/9文件隔离回归通过；详见[部署回执](../deployment/chat-worker-interruption-20261027.md)。修复无需新Windows安装包；[PR126](https://github.com/luoyan96/personal-agent/pull/126)尚未合并。原历史中断保留，新请求的实际群聊体验仍由负责人验证。

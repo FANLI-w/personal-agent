@@ -2,11 +2,13 @@
 
 更新日期：2026-10-27（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 群聊回复中断修复（独立分支，后台准备中）
+## 群聊回复中断修复（PR126 待审，后台已更新）
 
 负责人要求修复并打开后台后，现场只读确认 worker 重启29次，当天6条聊天请求在退出后进入 interrupted，未保存模型返回用量。旧日志只有 PRODUCTION_OPERATION_FAILED，不能据此断言6次异常的具体根因。真实SQLite双连接/合成请求明确复现短暂锁竞争导致回执保存抛错、流式调用取消；产品a174c17加入事务限时等待、租约维护及不含私密数据的错误位置诊断，模型请求不重复调用，旧中断记录不重放。
 
-从最新main/aaa0eea新建fix/chat-worker-interruption，保留独立clone中的PR125分支和原桌面目录。冻结安装、14项定向及完整CI826项/65文件、生产入口3项/B0/Web/类型/构建均通过。无迁移、契约或客户端版本变更；与聊天界面PR125/schema028分开。隔离服务器构建已启动，当前部署结论以随后回执为准。详见[故障证据、修复和验证边界](development/chat-worker-interruption.md)。
+从最新main/aaa0eea新建fix/chat-worker-interruption，保留独立clone中的PR125分支和原桌面目录。冻结安装、14项定向及完整CI826项/65文件、生产入口3项/B0/Web/类型/构建均通过。无迁移、契约或客户端版本变更；与聊天界面PR125/schema028分开。[PR126](https://github.com/luoyan96/personal-agent/pull/126)待审，未合main或公开Release。详见[故障证据、修复和验证边界](development/chat-worker-interruption.md)。
+
+本次后台故障修复已于**22:35:12–22:35:34（北京时间）**完成备份核验及API/worker配对切换：产品a174c17叠加原28ee6231生产镜像，新镜像**160805d4**，contract0.34/schema027保持。服务器网络隔离123项/9文件、5份增量/194份编译/568份基线及角色方法核验通过；停写备份与独立恢复逐项核对104表/8原件，27份配置和密钥输入及其他6服务保持。API healthy、worker running/restart0，公网ready200/受保护接口401。未重放旧请求、未调用真实模型或代做群聊验收，历史异常的确切错误因旧日志缺失仍未证明全部同因。[部署与同schema回退记录](deployment/chat-worker-interruption-20261027.md)。
 
 ## 0.10.60已合并并公开Latest（2026-10-27）
 
