@@ -38,6 +38,29 @@ export function ResearchTaskPanel({
     [requestedAction, setRequestedAction] = useState("");
   const [requestedMemberId, setRequestedMemberId] = useState<string>();
   const [depTitles, setDepTitles] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const value = data?.data;
+    if (!value || !("task" in value)) return;
+    const deps = value.task.dependencies || [];
+    let cancelled = false;
+    Promise.all(
+      deps.map(async (d) => {
+        try {
+          const r = await researchApi("task", { params: { id: d.taskId } });
+          const detail = r.data as { task?: { title: string }; title?: string };
+          const title = detail.task?.title ?? detail.title ?? d.taskId;
+          return [d.taskId, title] as const;
+        } catch {
+          return [d.taskId, d.taskId] as const;
+        }
+      }),
+    ).then((pairs) => {
+      if (!cancelled) setDepTitles(Object.fromEntries(pairs));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [data?.data]);
   const members = useResearchRead(
     (signal) =>
       researchApi("members", {
@@ -181,27 +204,6 @@ export function ResearchTaskPanel({
     );
   const { task, assignments, executions, deliverables, artifacts, dependencyImpacts } = value;
   const unacknowledgedImpacts = (dependencyImpacts || []).filter((i) => !i.acknowledgedBy);
-  useEffect(() => {
-    const deps = task.dependencies || [];
-    let cancelled = false;
-    Promise.all(
-      deps.map(async (d) => {
-        try {
-          const r = await researchApi("task", { params: { id: d.taskId } });
-          const detail = r.data as { task?: { title: string }; title?: string };
-          const title = detail.task?.title ?? detail.title ?? d.taskId;
-          return [d.taskId, title] as const;
-        } catch {
-          return [d.taskId, d.taskId] as const;
-        }
-      }),
-    ).then((pairs) => {
-      if (!cancelled) setDepTitles(Object.fromEntries(pairs));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [task.dependencies]);
   const allowed = (action: string) =>
     task.allowedActions.some((item) => item === action);
   const latest = deliverables.reduce<(typeof deliverables)[number] | undefined>(
