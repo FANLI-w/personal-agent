@@ -24,6 +24,7 @@ import { personalAssistantSystem,PersonalAssistantOutput,assistantCandidates,ass
 import {createWork,recordAssistantAnswerWork} from './workspace.js'
 import {recentDialogue,olderDialogue,dialogueTaskState,packDialogueLayers,saveDialogueSelection,memoryContextSources,dialogueContextSystem,type DialogueLayers} from './dialogue-context.js'
 import { modelAgentProfile } from './agent-roles.js'
+import { isDatabaseBusy, waitForWorkerDatabase } from './worker-database.js'
 
 // Local model protocol: validated JSON, no model-side tools or business authority.
 export const ChatModelOutput = z.strictObject({
@@ -53,7 +54,7 @@ export class ChatWorker {
   readonly owner = randomUUID()
   constructor(readonly db: DatabaseSync, readonly config: Config, readonly call: ModelCall = callHarness, readonly externalCall:ExternalAgentCall=callExternalAgent,readonly clock:()=>number=Date.now) {}
   async tick() {
-    const job = transaction(this.db, () => {
+    const job = await waitForWorkerDatabase(() => transaction(this.db, () => {
       reconcileChat(this.db, this.config)
       const row = this.db.prepare("SELECT * FROM chat_turns WHERE status='queued' AND (json_extract(request_json,'$.continuous.dueAt') IS NULL OR json_extract(request_json,'$.continuous.dueAt')<=?) ORDER BY rowid LIMIT 1").get(this.clock())
       if (!row) return null
@@ -201,11 +202,11 @@ export class ChatWorker {
       // File reading needs a plain reply within the existing output allowance.
       // Only this DeepSeek path changes the provider's documented default.
       return { id: turn.id, ownerId: String(row.owner_id), fence, input,externalEndpoint:external?.endpoint, modelInput: { provider:selected.provider,...(selected.provider==='deepseek'&&input.dailyChat&&input.fileSource?{reasoningEffort:'off' as const}:{}),system, prompt, model:external?.model??selected.model, maxTokens: Math.min(4096,remainingOutput), timeoutMs: input.budget.maxSeconds * 1000 }, credential: { apiKey } }
-    })
+    }))
     if (!job) return false
     const controller = new AbortController(), started = Date.now(),unregister=registerChatCall(job.id,controller)
     const lease = setInterval(() => {
-      try { transaction(this.db, () => { reconcileChat(this.db, this.config); const row = this.db.prepare('SELECT status,fence FROM chat_turns WHERE id=?').get(job.id)!; if (row.status !== 'running' || row.fence !== job.fence) controller.abort(); else this.db.prepare('UPDATE chat_turns SET lease_until=? WHERE id=?').run(Date.now() + 15000, job.id) }) } catch { controller.abort() }
+      try { transaction(this.db, () => { reconcileChat(this.db, this.config); const row = this.db.prepare('SELECT status,fence FROM chat_turns WHERE id=?').get(job.id)!; if (row.status !== 'running' || row.fence !== job.fence) controller.abort(); else this.db.prepare('UPDATE chat_turns SET lease_until=? WHERE id=?').run(Date.now() + 15000, job.id) }) } catch (error) { if (!isDatabaseBusy(error)) controller.abort() }
     }, job.input.continuous?200:3000)
     let timeout: ReturnType<typeof setTimeout> | undefined
     const expired = new Promise<ModelResult>(resolve => { timeout = setTimeout(() => { controller.abort(); resolve({ text: '', failure: 'TIMEOUT', inputTokens: null, outputTokens: null, elapsedMs: Date.now() - started }) }, job.modelInput.timeoutMs) })
@@ -216,12 +217,12 @@ export class ChatWorker {
       if(controller.signal.aborted||typeof text!=='string')return
       draft+=text
       if(draft.length>8000||/^[\s]*[\[{`]/.test(draft)||Date.now()-lastPublished<80)return
-      try{transaction(this.db,()=>{if(!saveChatDelta(service(this.db,job.ownerId,this.config,job.id),job.id,job.fence,draft))controller.abort()});lastPublished=Date.now()}catch{controller.abort()}
+      try{transaction(this.db,()=>{if(!saveChatDelta(service(this.db,job.ownerId,this.config,job.id),job.id,job.fence,draft))controller.abort()});lastPublished=Date.now()}catch(error){if(!isDatabaseBusy(error))controller.abort()}
     }:undefined
     let result: ModelResult
     try { result = await Promise.race([job.externalEndpoint?this.externalCall({endpoint:job.externalEndpoint,model:job.modelInput.model,apiKey:job.credential.apiKey,text:job.modelInput.prompt,maxTokens:job.modelInput.maxTokens,timeoutMs:job.modelInput.timeoutMs},controller.signal):this.call(job.modelInput, controller.signal, job.credential,onDelta), expired]) } catch { result = { text: '', failure: 'MODEL_FAILED', inputTokens: null, outputTokens: null, elapsedMs: Date.now() - started } }
-    finally { unregister();clearInterval(lease); if (timeout) clearTimeout(timeout) }
-    transaction(this.db, () => {
+    finally { unregister(); if (timeout) clearTimeout(timeout) }
+    try { await waitForWorkerDatabase(() => transaction(this.db, () => {
       const usage = ModelUsage.parse({ inputTokens: result.inputTokens, outputTokens: result.outputTokens, elapsedMs: result.elapsedMs, cost: null, currency: null })
       // Actual returned usage survives cancellation even when output is fenced.
       this.db.prepare('UPDATE chat_attempts SET usage_json=? WHERE turn_id=?').run(JSON.stringify(usage), job.id)
@@ -319,7 +320,7 @@ export class ChatWorker {
       }
       turn.version++; turn.updatedAt = instant(); s.saveTurn(turn)
       this.db.prepare('UPDATE chat_turns SET lease_owner=NULL,lease_until=NULL WHERE id=?').run(turn.id)
-    })
+    })) } finally { clearInterval(lease) }
     return true
   }
 }
