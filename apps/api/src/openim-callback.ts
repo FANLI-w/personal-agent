@@ -5,6 +5,7 @@ import { hash } from './auth.js'
 import { serviceFor } from './execution-worker.js'
 import { OpenImBridge } from './openim-bridge.js'
 import { fail } from './errors.js'
+import { retractMessage } from './chat-message-actions.js'
 
 type Body=Record<string,unknown>
 const unwrap=(value:unknown)=>value&&typeof value==='object'&&'value' in value?(value as {value:unknown}).value:value
@@ -110,6 +111,8 @@ export class OpenImCallbacks {
   }
   handle(command:string,body:Body,context:ImOperator){
     if(body.callbackCommand!==command)fail('FORBIDDEN')
+    // This misleading name is the pinned v3.8.3-patch.15 AFTER-revoke command.
+    if(command==='callbackBeforeAfterMsgCommand')return this.revoke(body,context)
     if(command.startsWith('callbackBefore')){try{const operator=this.operator(context);this.before(command,body,operator);if(operator.admin&&context.operationID)this.db.prepare('INSERT INTO im_callback_receipts(event_key,body_hash,received_at) VALUES (?,?,?) ON CONFLICT(event_key) DO NOTHING').run(hash(`policy:${context.operationID}`),hash(JSON.stringify(body)),new Date().toISOString());return {actionCode:0,errCode:0,errMsg:'',errDlt:'',nextCode:0}}catch{return {actionCode:0,errCode:1002,errMsg:'Research authorization required',errDlt:'',nextCode:1}}}
     let operator:ReturnType<OpenImCallbacks['operator']>
     try{operator=this.operator(context)}catch{return {errCode:0,errMsg:''}}
@@ -135,6 +138,29 @@ export class OpenImCallbacks {
     const result=chat.message(id,{senderContactId:chat.human().id,origin:'human',text,mentions:[],resources:[],actionIds:[],turnId:null})
     this.db.prepare("UPDATE im_message_outbox SET status='mirrored' WHERE message_id=?").run(result.id)
     this.db.prepare('UPDATE im_callback_receipts SET research_message_id=? WHERE event_key=?').run(result.id,key)
+    if(this.db.prepare('SELECT 1 FROM im_callback_receipts WHERE event_key=?').get(hash(`revoke:${id}:${body.sendID}:${messageID}`)))retractMessage(chat,id,result.id)
+    return {errCode:0,errMsg:''}
+  }
+  revoke(body:Body,context:ImOperator){
+    // The server patch supplies original message IDs after OpenIM validates and revokes.
+    // Do not trust a user's claimed sequence, nor import unmapped/Agent messages.
+    try{
+      const operator=this.operator(context)
+      if(operator.admin||operator.userID!==body.userID||body.sendID!==body.userID||typeof body.clientMsgID!=='string'||!body.clientMsgID||typeof body.conversationID!=='string')return {errCode:0,errMsg:''}
+      const actor=this.actor(body.userID),chat=this.bridge.chat(actor)
+      const mapped=this.db.prepare('SELECT conversation_id FROM im_conversations WHERE im_conversation_id=?').get(body.conversationID)
+      if(!mapped)return {errCode:0,errMsg:''}
+      const id=String(mapped.conversation_id);chat.conversation(id)
+      const conversation=chat.conversation(id),after=conversation.kind==='group'?'callbackAfterSendGroupMsgCommand':'callbackAfterSendSingleMsgCommand'
+      const receipt=this.db.prepare('SELECT research_message_id FROM im_callback_receipts WHERE event_key=?').get(hash(`${after}:${body.sendID}:${body.clientMsgID}`))
+      if(receipt?.research_message_id){
+        const message=chat.projectedMessage(String(receipt.research_message_id))
+        if(message.conversationId!==id||message.origin!=='human'||message.senderContactId!==chat.human().id)return {errCode:0,errMsg:''}
+        retractMessage(chat,id,message.id)
+      }
+      // A durable intent handles revoke arriving before the asynchronous send callback.
+      this.db.prepare('INSERT OR IGNORE INTO im_callback_receipts(event_key,body_hash,received_at) VALUES (?,?,?)').run(hash(`revoke:${id}:${body.sendID}:${body.clientMsgID}`),hash('native-revoke'),new Date().toISOString())
+    }catch{/* Unknown or no-longer-authorized callbacks never grant authority. */}
     return {errCode:0,errMsg:''}
   }
 }

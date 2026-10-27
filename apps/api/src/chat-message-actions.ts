@@ -37,7 +37,13 @@ export function withdrawChatMessage(s: ChatService, conversationId: string, id: 
   const detail = chatMessageDetails(s, conversationId, id)
   s.c.checkVersion(detail.version, version)
   if (!detail.allowedActions.includes('withdraw')) fail('FORBIDDEN')
-  s.db.prepare('INSERT INTO chat_message_retractions VALUES (?,?,?)').run(id, s.c.actor.id, new Date(s.clock()).toISOString())
+  retractMessage(s, conversationId, id)
+  return chatMessageDetails(s, conversationId, id)
+}
+
+// Called only after either the business action or the trusted IM callback authorizes it.
+export function retractMessage(s: ChatService, conversationId: string, id: string) {
+  s.db.prepare('INSERT OR IGNORE INTO chat_message_retractions VALUES (?,?,?)').run(id, s.c.actor.id, new Date(s.clock()).toISOString())
   // Fence every sibling and every continuous batch containing the input before acknowledging.
   for (const row of s.db.prepare("SELECT * FROM chat_turns WHERE conversation_id=? AND status IN ('queued','running','waiting_input')").all(conversationId)) {
     const turn = s.materializedTurn(row), input = JSON.parse(String(row.request_json))
@@ -45,5 +51,4 @@ export function withdrawChatMessage(s: ChatService, conversationId: string, id: 
     turn.status = 'cancelled'; turn.failure = 'INPUT_CHANGED'; turn.version++; turn.updatedAt = new Date(s.clock()).toISOString()
     s.saveTurn(turn); abortChatCall(turn.id)
   }
-  return chatMessageDetails(s, conversationId, id)
 }

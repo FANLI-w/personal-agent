@@ -86,6 +86,31 @@ async function setup(configured=true){
 }
 
 describe('OpenIM bridge with explicit synthetic management adapter, not live server verification',{timeout:20000},()=>{
+  it('reconciles native withdrawals after and before send callbacks without trusting another actor',async()=>{
+    const s=await setup(),session=(await s.request('imSession',{platformID:5})).value.data
+    await s.request('imSession',{platformID:5},{},1)
+    const operator={userID:session.user.userID,platform:'Web'},conversationID=session.coordinator.imConversationID,id=session.coordinator.researchConversationId
+    const send={sendID:operator.userID,recvID:session.coordinator.peerUserID,senderPlatformID:5,msgFrom:100,contentType:101,content:JSON.stringify({content:'撤回的普通 IM 消息'}),clientMsgID:'native-revoke-1'}
+    const revoke={userID:operator.userID,sendID:operator.userID,conversationID,seq:12,clientMsgID:send.clientMsgID}
+    await s.callback('callbackAfterSendSingleMsgCommand',send)
+    const message=JSON.parse(String(s.db.prepare('SELECT document FROM chat_messages').get()!.document))
+    for(const [body,op] of [[revoke,{userID:s.identity(s.human('member_B').id),platform:'Web'}],[{...revoke,conversationID:'unknown'},operator],[{...revoke,sendID:session.coordinator.peerUserID},operator]] as const)await s.callback('callbackBeforeAfterMsgCommand',body,undefined,op)
+    expect(s.db.prepare('SELECT count(*) n FROM chat_message_retractions').get()!.n).toBe(0)
+    for(let i=0;i<2;i++)expect((await s.callback('callbackBeforeAfterMsgCommand',revoke,undefined,operator)).value).toEqual({errCode:0,errMsg:''})
+    const detail=await s.request('chatMessageDetails',null,{id,messageId:message.id})
+    expect(detail.status,detail.raw).toBe(200);expect(detail.value.data.withdrawn).toBe(true)
+    expect(s.db.prepare('SELECT count(*) n FROM chat_message_retractions').get()!.n).toBe(1)
+    // Delivery order is independent: a successful revoke may beat asynchronous mirroring.
+    await s.callback('callbackBeforeAfterMsgCommand',{...revoke,clientMsgID:'native-revoke-2',seq:13},undefined,operator)
+    await s.callback('callbackAfterSendSingleMsgCommand',{...send,clientMsgID:'native-revoke-2'})
+    expect(s.db.prepare('SELECT count(*) n FROM chat_message_retractions').get()!.n).toBe(2)
+    await s.callback('callbackAfterSendSingleMsgCommand',{...send,clientMsgID:'native-revoke-2'})
+    expect(s.db.prepare('SELECT count(*) n FROM chat_messages').get()!.n).toBe(2)
+    // An upstream-only callback without the trusted original ID cannot retract by sequence.
+    await s.callback('callbackAfterSendSingleMsgCommand',{...send,clientMsgID:'native-keep'})
+    await s.callback('callbackBeforeAfterMsgCommand',{...revoke,clientMsgID:undefined},undefined,operator)
+    expect(s.db.prepare('SELECT count(*) n FROM chat_message_retractions').get()!.n).toBe(2)
+  })
   it('requires sessions/CSRF and returns honest unavailable without credentials',async()=>{
     const s=await setup(false),response=await s.request('imSession',{platformID:5})
     expect(response.value.data).toMatchObject({status:'unavailable',reason:'not_configured',user:null,configuration:null})
