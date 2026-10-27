@@ -1,5 +1,5 @@
 import { Alert, App, Button, Input, Select, Space } from "antd";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
@@ -37,6 +37,7 @@ export function ResearchTaskPanel({
   const [blockReason, setBlockReason] = useState(""),
     [requestedAction, setRequestedAction] = useState("");
   const [requestedMemberId, setRequestedMemberId] = useState<string>();
+  const [depTitles, setDepTitles] = useState<Record<string, string>>({});
   const members = useResearchRead(
     (signal) =>
       researchApi("members", {
@@ -178,7 +179,29 @@ export function ResearchTaskPanel({
         </Space>
       </div>
     );
-  const { task, assignments, executions, deliverables, artifacts } = value;
+  const { task, assignments, executions, deliverables, artifacts, dependencyImpacts } = value;
+  const unacknowledgedImpacts = (dependencyImpacts || []).filter((i) => !i.acknowledgedBy);
+  useEffect(() => {
+    const deps = task.dependencies || [];
+    let cancelled = false;
+    Promise.all(
+      deps.map(async (d) => {
+        try {
+          const r = await researchApi("task", { params: { id: d.taskId } });
+          const detail = r.data as { task?: { title: string }; title?: string };
+          const title = detail.task?.title ?? detail.title ?? d.taskId;
+          return [d.taskId, title] as const;
+        } catch {
+          return [d.taskId, d.taskId] as const;
+        }
+      }),
+    ).then((pairs) => {
+      if (!cancelled) setDepTitles(Object.fromEntries(pairs));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [task.dependencies]);
   const allowed = (action: string) =>
     task.allowedActions.some((item) => item === action);
   const latest = deliverables.reduce<(typeof deliverables)[number] | undefined>(
@@ -239,7 +262,7 @@ export function ResearchTaskPanel({
           {task.dependencies
             .map(
               (d) =>
-                `${d.taskId}${
+                `${depTitles[d.taskId] ?? d.taskId}${
                   d.requiredRevision ? ` · 第${d.requiredRevision}版` : ""
                 }`,
             )
@@ -384,7 +407,32 @@ export function ResearchTaskPanel({
           </Button>
         </details>
       )}
-      {allowed("resume") && (
+      {allowed("resume") && unacknowledgedImpacts.length > 0 && (
+        <Button
+          disabled={busy}
+          onClick={() =>
+            confirm({
+              title: "确认依赖影响？",
+              okText: "确认影响",
+              content: "前置任务已变更，请确认已重新核查依赖成果后再继续。",
+              onOk: () =>
+                command(() =>
+                  researchApi("acknowledgeImpacts", {
+                    params: { id: task.id },
+                    body: {
+                      expectedVersion: task.version,
+                      impactIds: unacknowledgedImpacts.map((i) => i.id),
+                      comment: "已确认依赖影响",
+                    },
+                  }),
+                ),
+            })
+          }
+        >
+          确认依赖影响
+        </Button>
+      )}
+      {allowed("resume") && unacknowledgedImpacts.length === 0 && (
         <Button
           disabled={busy}
           onClick={() =>
