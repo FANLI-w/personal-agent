@@ -2,6 +2,14 @@
 
 更新日期：2026-10-27（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 0.10.60已合并并公开Latest（2026-10-27）
+
+负责人本轮明确授权后，[PR122](https://github.com/luoyan96/personal-agent/pull/122)于 **16:32:23（北京时间）**以 **8b67e93a85dccd547abf89dc7d8a362b7519ef9d**普通merge进入main，保留同事及先前群聊/任务/资料改动。受审head **f9bacaed450c0e0bbf9e99afd76666cefa7e48ba**四项CI全部success，Windows根822项/64文件通过；本机main快进、合并树一致。首次Windows819通过/3项默认5秒超时、本机9通过/1超时及定向修正后10项通过均留存；仅这三项磁盘迁移/HTTP测试等待上限改20秒，断言和全部生产时限保持。
+
+**16:34:22（北京时间）**公开[v0.10.60](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.60)，Release **425192746**，正式版并设为Latest。tag固定实际打包源码 **fc9d51112464d72364f70ba77a6e5be47d551ecb**；EXE **88,220,838字节**，SHA256 **732261095dbb34247d2a72356f3c3e1c3356185f8566743536e2ebef2ef2bbd7**。先建唯一草稿、上传EXE/blockmap/latest.yml/SHA256SUMS四附件并核对uploaded/大小/digest，再在代码合并后公开。未登录Latest API、tag源码和两份公开小清单校验通过，旧Release及旧安装包保持。公开后仅更新README下载入口与交接记录，不重打相同产品；下方待审、未合main、未公开均保留历史批次含义。[发布回执](deployment/acceptcat-0.10.60.md)。
+
+本轮没有后台升级、重启或迁移，沿用已部署798f77c/28ee6231/contract0.34/schema027；未运行安装、产品UI、真实SDK/模型或私人图片验收。Git外 **D:/deepseek-agent/.runtime/release-0.10.60-20261027**保存CI原失败及成功、合并/草稿/公开回执、四附件摘要和匿名清单核验。后续功能从最新main另开分支，发布标签不作为后续开发起点。
+
 ## 0.10.60合并发布准备（已授权，结果待记）
 
 负责人本轮明确授权合并PR122并公开0.10.60。原head b3721b5无冲突或审阅意见，两项Linux及Windows打包均success；Windows Foundation为819通过/3个既有foundation用例超过默认5秒，实际6.6/8.7/7.2秒。本机复核9通过/HTTP一项5.7秒超时。仅为这三个真实磁盘迁移/HTTP用例设置20秒测试等待上限，保留断言和全部生产时限；修改后同文件10项通过，等待最终head检查后合并。原失败与重跑证据保留Git外D:/deepseek-agent/.runtime/release-0.10.60-20261027。
