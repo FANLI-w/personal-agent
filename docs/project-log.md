@@ -2140,3 +2140,9 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 重新fetch主仓库，main/d70cd64干净，另开fix/unified-chat-attachments。图片托盘改为缩略图和移除，主发送按钮/Enter统一提交本轮图片与正文；仅图可发送，工具栏置于输入区底部。移除独立发送图片和常驻说明，OCR结果仍从图片菜单访问，模型校对需明确勾选。普通本机Agent私聊把多图OCR和用户问题组成一个既有文件请求；真人/群聊仍为若干原图及文字SDK消息，不声明原子提交、完整视觉理解或外部附件转发。既有消息队列保留原SDK消息/回执、已识别文字及幂等请求，停止跨会话续发；内存File不写sessionStorage，刷新缺原图明确阻止只发文字，账号切换清理。
 
 新增发送管线和存储恢复检查，先30项、补图片空文字恢复后相关77项/9文件通过。首次renderer检查TS2322为新增文件请求联合类型对引用更新的影响，收紧prepareResearch实际返回类型后通过，原失败保留；最终renderer/Electron双类型通过，冻结Windows打包结果后续追加。Git外unified-chat-attachments-20261027保留日志。只改客户端及Windows CI列表，无共享契约/API/schema027变化，不需要部署；0.10.60包尚未完成、无PR合并或公开Release，未运行安装、产品UI、真实SDK/模型及私人图片验收。
+
+## 2026-10-27：图片统一发送0.10.60安装包完成，PR122待审
+
+产品fc9d51112464d72364f70ba77a6e5be47d551ecb，[PR122](https://github.com/luoyan96/personal-agent/pull/122)已创建并附加。根desktop:win冻结安装、两个共享包先build、Web构建、NSIS及既有4项入口通过，固定Electron22.3.27/electron-builder23.6.0组件一致；本地更新清单守卫通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.60.exe，88,220,838字节，SHA256 732261095dbb34247d2a72356f3c3e1c3356185f8566743536e2ebef2ef2bbd7，与原构建包一致，旧包保留。第三方use client与bundle体积提示留在构建日志，最终退出0。Git外unified-chat-attachments-20261027保存失败类型检查、最终双类型、77项相关测试、安装包回执和PR依据；本批后续仅交接文档，不重复已通过检查或重打相同产品。
+
+只改客户端及Windows CI列表，未重跑本机根822项，不把后台旧检查冒称本批；远端四项检查以PR实际head为准。没有后台/契约/schema027改动，不需要升级；继续沿用已部署798f77c/28ee6231/contract0.34。publish never，未合main、未公开Release或上传安装包；GitHub Latest再次核对仍v0.10.56/423959199。未代真实SDK/模型、安装、产品UI、原生剪贴板或私人图片验收。

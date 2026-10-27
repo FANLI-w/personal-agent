@@ -19,3 +19,5 @@
 从最新main/d70cd64新建fix/unified-chat-attachments，不沿用PR121功能分支。客户端新增发送管线及存储恢复回归，相关77项/9文件通过；首次30项通过后补图片空文字恢复与相关检查。首次renderer类型检查发现新增文件请求联合类型影响引用文字赋值，收紧prepareResearch实际返回的文字请求类型后通过；最终renderer/Electron双类型通过，打包结果另记。原失败与日志保留Git外D:/deepseek-agent/.runtime/unified-chat-attachments-20261027。
 
 本批只改客户端及其Windows CI列表，版本0.10.60；API、共享契约0.34和schema027保持，无数据库迁移，无需升级后台。安装包、PR和公开Release分别记录，未代真实SDK/模型、原生剪贴板、安装、产品UI或私人图片验收。
+
+固定产品fc9d511的Windows冻结NSIS、既有4项入口及更新清单守卫已通过，桌面0.10.60与原包SHA256一致；[PR122](https://github.com/luoyan96/personal-agent/pull/122)待审，未合main或公开发布。[安装包交付回执](../deployment/acceptcat-0.10.60.md)。

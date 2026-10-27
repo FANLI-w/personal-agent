@@ -2,11 +2,11 @@
 
 更新日期：2026-10-27（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 图片与文字统一发送（0.10.60开发完成，打包待记）
+## 图片与文字统一发送（0.10.60本机候选完成，PR122待审）
 
 从最新main/d70cd64另开fix/unified-chat-attachments。图片缩略图与正文使用主发送按钮/Enter一次提交；只有图片也可发送，移除独立发送图片按钮和常驻说明，工具栏放到输入框底部。普通本机Agent私聊将多图OCR文字和原问题合成一次既有文件请求；真人/群聊仍按SDK发送原图和文字，未新增视觉模型或外部附件转发能力。待发队列保留图片回执、原SDK标识、OCR进度和幂等请求，防重复及跨会话续发；原图仅留内存，刷新丢失必要原图时明确停止，不能悄悄只发文字。[实现与恢复边界](development/unified-chat-attachments.md)。
 
-相关77项/9文件及最终renderer/Electron双类型检查通过；首次类型检查的请求联合类型错误已修复，冻结打包结果后续追加。原失败证据在Git外D:/deepseek-agent/.runtime/unified-chat-attachments-20261027。当前产品未合main、未公开发布；安装包0.10.60尚未完成，不冒称已可安装。后台仍为已部署798f77c/28ee6231/contract0.34/schema027，无契约或数据库改动，本批无需升级。未代安装、产品UI、真实SDK/模型或私人图片验收。
+产品/打包源码 **fc9d51112464d72364f70ba77a6e5be47d551ecb**，[PR122](https://github.com/luoyan96/personal-agent/pull/122)待审。相关77项/9文件及最终renderer/Electron双类型检查通过；首次类型检查的请求联合类型错误已修复，原日志保留。根desktop:win冻结安装/共享包构建/客户端NSIS、既有4项成品入口及本地更新清单守卫通过，publish never。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.60.exe**，**88,220,838字节**，SHA256 **732261095dbb34247d2a72356f3c3e1c3356185f8566743536e2ebef2ef2bbd7**，与构建目录一致；旧包保留。仅交接文档继续提交，产品不变，未合main或公开Release；再次核对公开Latest仍v0.10.56/423959199。后台仍为已部署798f77c/28ee6231/contract0.34/schema027，无契约或数据库改动，本批无需升级。未代安装、产品UI、真实SDK/模型或私人图片验收。Git外D:/deepseek-agent/.runtime/unified-chat-attachments-20261027保存日志、回执及PR依据，[本批交付](deployment/acceptcat-0.10.60.md)。
 
 ## PR121已整合main（2026-10-27）
 
