@@ -2,11 +2,13 @@
 
 更新日期：2026-10-27（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 群聊上下文与回复额度（PR121检查通过，尚未部署）
+## 群聊上下文与回复额度（PR121配套后台已部署）
 
 从fetch后的main/30aaef4新开fix/chat-context-output-reserve，保留PR118–120全部功能。针对0.10.56反馈，已合成复现旧式群固定20条历史在调用前超预算、日常历史将回复空间挤到914 token两条路径。普通@无附加资源请求统一到按预算打包与自然回复；当前输入完整保留，条件允许时先留4096输出，再选择历史；受限/旧预算维持512/64，显式资源协作与重试账本保持。补充私有计数/阶段诊断，未重现原用户真实会话，不把引用request说成自动注入资源或整个群复用一份余额。[实现与复现](development/chat-context-output-reserve.md)。
 
-产品源码 **798f77c3cc7e7a52f9eaf61b0dbc46e99f2ba7f2**，[PR121](https://github.com/luoyan96/personal-agent/pull/121)待审。三项新增回归修复后通过；根冻结安装及完整CI **822项/64文件**、构建、类型、contract0.34导出、2项生产CLI/HTTP、B0与Web边界全部通过。相关检查首轮75通过/1失败暴露小预算历史缺失，修正后38项通过；首次完整构建发现契约输入默认字段可缺省类型错误，补空值处理后完整重跑通过。GitHub检查另看实际head，不据本机结果冒称远端通过。原失败证据保留Git外D:/deepseek-agent/.runtime/chat-context-output-reserve-20261027。本批只改后台，无契约/迁移/客户端改动，不重打安装包。0.10.59现有包可配合待升级后台；线上仍63d87995/db11a6d/contract0.34/schema027，未部署本批；公开Latest仍0.10.56。未代安装、产品UI、真实群聊或模型验收，未合main或发布。
+产品源码 **798f77c3cc7e7a52f9eaf61b0dbc46e99f2ba7f2**，[PR121](https://github.com/luoyan96/personal-agent/pull/121)待审。三项新增回归修复后通过；根冻结安装及完整CI **822项/64文件**、构建、类型、contract0.34导出、2项生产CLI/HTTP、B0与Web边界全部通过。相关检查首轮75通过/1失败暴露小预算历史缺失，修正后38项通过；首次完整构建发现契约输入默认字段可缺省类型错误，补空值处理后完整重跑通过。受审head f9e5914的三项GitHub Foundation检查均success；后续仅交接文档，检查结果另看实际head。原失败证据保留Git外D:/deepseek-agent/.runtime/chat-context-output-reserve-20261027。本批只改后台，无契约/迁移/客户端改动，不重打安装包。负责人已单独授权，**2026-10-27 11:06:13–11:06:34（北京时间）**完成API/worker配对切换，当前 **research-openim-api:chat-context-output-reserve-20261027** / **sha256:28ee6231937556fda148308d9ee8576e859e7f0595fd99b50e1cca3af6874e21**，产品798f77c，**contract0.34/schema027，无数据库迁移**。服务器隔离130项/10文件、568基线与191编译产物、备份恢复及启动前104表/8原文件、26份配置输入和其他六服务保持检查通过；API healthy、worker running、restart0，公网ready正常，广场同步仍关闭。0.10.59现有包继续使用，公开Latest仍0.10.56。本批未合main或公开发布。[实际部署与回退](deployment/chat-context-output-reserve-20261027.md)。未代安装、产品UI、真实群聊或模型验收，未合main或发布。
+
+实际备份 **/srv/research-openim-backups/chat-context-output-reserve-20261027-20261027T030616Z/research.tar.gz**，SHA256 **ee585f43f3aa3f36249e49822ad81ba84fe476cb97cf20f47313a2c85cb77866**；运维目录/opt/research-openim/ops/chat-context-output-reserve-20261027，在group-agent-mentions-20261026完整Compose链后追加images.yaml。没有回退；必要时用原63d87995配对恢复并保留当前业务数据，不回灌旧备份。回执4414字节与服务器SHA256 587fb8d6cdda4731dcd972f7d7a6780d19636b420b1735d49914a7213b42d800完全一致，Git外保存原回执、健康检查及完成截图。
 
 ## PR120已整合main（2026-10-27）
 

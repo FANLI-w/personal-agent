@@ -22,4 +22,4 @@
 
 三项新增HTTP/SQLite与合成ModelCall回归覆盖：长历史引用协助请求、旧式群中四类输入、输入超限/输出截断的无正文诊断及失败后新root预算。保留修复前914输出额度、旧群调用前失败和初轮超时证据。首轮相关检查75通过/1失败暴露小预算将全部余量预留的回归，恢复受限预算下界后38项相关检查通过。首次根构建发现契约输入默认字段仍可缺省，已补空值处理，失败日志保留；补空值处理后根冻结完整CI822项/64文件、构建/类型/契约和2项生产CLI/HTTP、B0/Web边界全部通过。
 
-Git外证据D:/deepseek-agent/.runtime/chat-context-output-reserve-20261027。本批仅后台源码，无契约或数据库迁移，无客户端改动，无需重打0.10.59安装包；公开Latest仍0.10.56，现有后台63d87995/db11a6d/contract0.34/schema027尚未包含本批。未执行真实群聊、真实模型、安装或产品UI验收。产品798f77c3cc7e7a52f9eaf61b0dbc46e99f2ba7f2，[PR121](https://github.com/luoyan96/personal-agent/pull/121)已提交待审；未合main。后台升级另获本批授权前不操作生产。
+Git外证据D:/deepseek-agent/.runtime/chat-context-output-reserve-20261027。本批仅后台源码，无契约或数据库迁移，无客户端改动，无需重打0.10.59安装包；公开Latest仍0.10.56。负责人单独授权后，2026-10-27 11:06:34（北京时间）已部署798f77c/sha256:28ee6231/contract0.34/schema027，130项服务器隔离、备份恢复与健康检查通过；详见[部署回执](../deployment/chat-context-output-reserve-20261027.md)。未执行真实群聊、真实模型、安装或产品UI验收。产品798f77c3cc7e7a52f9eaf61b0dbc46e99f2ba7f2，[PR121](https://github.com/luoyan96/personal-agent/pull/121)已提交待审；未合main。本次已按单独授权完成后台升级，PR合并与公开发布仍分别处理。

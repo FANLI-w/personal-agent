@@ -2114,3 +2114,17 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 产品798f77c3cc7e7a52f9eaf61b0dbc46e99f2ba7f2，[PR121](https://github.com/luoyan96/personal-agent/pull/121)已提交并附加。修正契约输入默认字段缺省类型后，冻结完整CI822项/64文件、所有构建与类型、contract0.34导出、2项生产CLI/HTTP、B0/Web边界通过。首轮失败与修正后38项相关检查均保留；仅后续交接文档，不重复完整CI。连接器创建PR403，使用本机已有gh登录提交成功，无需新增凭据；Git外chat-context-output-reserve-20261027保存日志与PR依据。
 
 更新current-state补明上一轮PR120已于10:13:26以30aaef4合main、PR118/119自动MERGED及受审树一致；本批PR121仍独立待审，未合main。只改API上下文机制，不改角色/共享契约/schema027/客户端，不重打安装包；.59可配合后续后台，本次尚未部署。公开Latest再次核对仍v0.10.56/423959199，无公开发布。本机检查仅合成模型与受控HTTP/SQLite，不代表已还原原用户所有空回复，不代真实模型/群聊/安装/产品UI验收。后台升级仍按负责人要求单独处理。
+
+
+## 2026-10-27：群聊上下文后台升级获授权，隔离构建启动
+
+负责人明确选择现在升级PR121。受审f9e5914三项GitHub Foundation均success；线上API/worker63d87995运行、restart0。固定产品798f77c的4文件增量运维包已生成，153301字节/SHA256 d9638885dc7facade2648b9a884218a4557c1155d066cc09937c19e26a02d1e0，含10测试/2支持文件、191编译产物及568基线文件摘要。首次旧传输会话NoSuchKey失败；刷新、同一服务器已有免密登录和新会话上传后，完整包与源码/测试摘要、LF/bash预检通过，隔离构建启动，尚未停写或切换生产。只读多行命令串接、误开反馈但未提交、filechooser初次3秒超时证据保留，改为单行压缩脚本和20秒事件等待；未通过其他权限通道绕过。预检、备份恢复、成对切换结果后续追加，无迁移/安装包/Release或合main动作。细节见deployment/chat-context-output-reserve-20261027.md。
+
+
+## 2026-10-27：PR121配套后台升级完成
+
+按负责人本轮明确授权，2026-10-27 11:06:13–11:06:34（北京时间）API/worker从63d87995成对切换到research-openim-api:chat-context-output-reserve-20261027 / sha256:28ee6231937556fda148308d9ee8576e859e7f0595fd99b50e1cca3af6874e21，产品798f77c3cc7e7a52f9eaf61b0dbc46e99f2ba7f2，contract0.34/schema027保持，无迁移、未回退。4份源码增量、568基线/191编译产物、角色与方法/生产seed核对通过；服务器130项/10文件无网络隔离回归一次通过。停写备份、独立恢复104表/8个原文件、隔离副本HTTP及复核、启动前原库复核一致；26配置/密钥输入、API/worker设置和其他六服务保持，模型/私人档案及飞书/资料范围保持，广场同步disabled。API健康、worker运行、restart0，公网ready200/0.34及受保护接口401。
+
+备份/srv/research-openim-backups/chat-context-output-reserve-20261027-20261027T030616Z/research.tar.gz，SHA256 ee585f43f3aa3f36249e49822ad81ba84fe476cb97cf20f47313a2c85cb77866。运维目录/opt/research-openim/ops/chat-context-output-reserve-20261027，在旧group-agent-mentions完整组合后追加images.yaml；如需回退保留当前业务数据，不能回灌旧备份。原回执4414字节/SHA256 587fb8d6cdda4731dcd972f7d7a6780d19636b420b1735d49914a7213b42d800与本机复制完全一致；Git外保存deployment-receipt.server.json、receipt-copy-verification/public-ready及完成截图。旧上传会话NoSuchKey及UI/只读命令失败均在停写前恢复并保留记录，无绕过核验。
+
+受审f9e5914三项Foundation均success；本轮仅部署文档更新，不重复已通过根822项或重打现有0.10.59。未执行真实模型/原用户群聊/私人材料、安装器或产品UI验收，harness仍not_verified；不能据合成与健康结果宣布原会话所有空回复均复原。PR121未合main，Latest仍0.10.56，本轮无公开Release或安装包上传。
