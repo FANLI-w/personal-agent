@@ -119,7 +119,7 @@ const SendActionBar = ({
         <Popover content={emojiContent} open={emojiMode === "desktop"} placement="topLeft" onOpenChange={open => setEmojiMode(open ? "desktop" : undefined)} trigger="click">
           <button type="button" className={toolbarClass} aria-label="表情" title="表情"><SmileOutlined />{window.electronAPI && <span>表情</span>}</button>
         </Popover>
-        <button type="button" className={toolbarClass} aria-label="发送图片" title="图片" onClick={() => chooseFile("image")}><PictureOutlined />{window.electronAPI && <span>图片</span>}</button>
+        <button type="button" className={toolbarClass} aria-label="添加图片" title="添加图片" onClick={() => chooseFile("image")}><PictureOutlined />{window.electronAPI && <span>图片</span>}</button>
         {window.electronAPI && pasteImages && <button type="button" className={toolbarClass} aria-label="粘贴图片" title="从剪贴板粘贴图片 · Ctrl+V" onClick={pasteImages}><CopyOutlined /></button>}
         <button type="button" className={toolbarClass} aria-label="发送文件" title="文件" onClick={() => chooseFile("file")}><FileOutlined />{window.electronAPI && <span>文件</span>}</button>
         <button type="button" className={toolbarClass} aria-label="打开语音面板" title="语音消息" onClick={() => { setEmojiMode(undefined); setVoiceVisible(true); }}><AudioOutlined />{window.electronAPI && <span>语音</span>}</button>

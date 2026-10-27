@@ -2134,3 +2134,9 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 负责人明确授权合并PR121。准备前工作区干净，分支fix/chat-context-output-reserve、origin为luoyan96/personal-agent；head eda4e587d919747ae8e3a2ee897aed66cbe8acad，main 30aaef48470554d1c02c3cbb89c43ca836661c0f。该head三项Foundation均success，无冲突或审阅意见。补充本批交接文档，产品798f77c保持；通过文档内容/差异检查并等待最终head的三项检查后，以固定head普通merge保留同事功能及历史。本节随PR进入main生效；实际merge SHA、时间和本机main同步凭据保存在Git外D:/deepseek-agent/.runtime/pr121-merge-20261027，合并前以GitHub状态为准。
 
 本批不重打或上传安装包、不公开Release、不重启后台；0.10.59本机包、已于11:06:34部署的798f77c/28ee6231/contract0.34/schema027及此前核对的公开Latest0.10.56各自保持。沿用根822项、服务器130项和备份恢复证据，不追加安装、产品UI、真实模型/群聊/私人材料验收。下个功能重新fetch最新main另开分支。
+
+## 2026-10-27：图片与文字统一发送开发完成，客户端0.10.60准备打包
+
+重新fetch主仓库，main/d70cd64干净，另开fix/unified-chat-attachments。图片托盘改为缩略图和移除，主发送按钮/Enter统一提交本轮图片与正文；仅图可发送，工具栏置于输入区底部。移除独立发送图片和常驻说明，OCR结果仍从图片菜单访问，模型校对需明确勾选。普通本机Agent私聊把多图OCR和用户问题组成一个既有文件请求；真人/群聊仍为若干原图及文字SDK消息，不声明原子提交、完整视觉理解或外部附件转发。既有消息队列保留原SDK消息/回执、已识别文字及幂等请求，停止跨会话续发；内存File不写sessionStorage，刷新缺原图明确阻止只发文字，账号切换清理。
+
+新增发送管线和存储恢复检查，先30项、补图片空文字恢复后相关77项/9文件通过。首次renderer检查TS2322为新增文件请求联合类型对引用更新的影响，收紧prepareResearch实际返回类型后通过，原失败保留；最终renderer/Electron双类型通过，冻结Windows打包结果后续追加。Git外unified-chat-attachments-20261027保留日志。只改客户端及Windows CI列表，无共享契约/API/schema027变化，不需要部署；0.10.60包尚未完成、无PR合并或公开Release，未运行安装、产品UI、真实SDK/模型及私人图片验收。

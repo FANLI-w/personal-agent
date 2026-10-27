@@ -2,7 +2,15 @@
 
 更新日期：2026-10-27（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## PR121整合main（本节随合并生效）
+## 图片与文字统一发送（0.10.60开发完成，打包待记）
+
+从最新main/d70cd64另开fix/unified-chat-attachments。图片缩略图与正文使用主发送按钮/Enter一次提交；只有图片也可发送，移除独立发送图片按钮和常驻说明，工具栏放到输入框底部。普通本机Agent私聊将多图OCR文字和原问题合成一次既有文件请求；真人/群聊仍按SDK发送原图和文字，未新增视觉模型或外部附件转发能力。待发队列保留图片回执、原SDK标识、OCR进度和幂等请求，防重复及跨会话续发；原图仅留内存，刷新丢失必要原图时明确停止，不能悄悄只发文字。[实现与恢复边界](development/unified-chat-attachments.md)。
+
+相关77项/9文件及最终renderer/Electron双类型检查通过；首次类型检查的请求联合类型错误已修复，冻结打包结果后续追加。原失败证据在Git外D:/deepseek-agent/.runtime/unified-chat-attachments-20261027。当前产品未合main、未公开发布；安装包0.10.60尚未完成，不冒称已可安装。后台仍为已部署798f77c/28ee6231/contract0.34/schema027，无契约或数据库改动，本批无需升级。未代安装、产品UI、真实SDK/模型或私人图片验收。
+
+## PR121已整合main（2026-10-27）
+
+实际于2026-10-27 12:35:14（北京时间）以d70cd64bb1873c68e44684ead62e4109113c68ed合入main，最终head6a9e9ec三项CI均success，合并树一致，本机已快进同步。Windows首轮819通过/3项超时，保持源码和时限原样重跑822项通过；本机对应两文件17项通过，原失败与合并回执保留Git外pr121-merge-20261027。以下保留当时合并准备记录。
 
 负责人本轮明确授权合并[PR121](https://github.com/luoyan96/personal-agent/pull/121)。本节在该PR进入main后生效，合并前以GitHub实际状态为准。合并准备前head为eda4e587d919747ae8e3a2ee897aed66cbe8acad，main为30aaef48470554d1c02c3cbb89c43ca836661c0f；三项GitHub Foundation检查均success，无冲突或审阅意见。普通merge保留PR120及此前同事功能与提交历史；本轮仅补交接文档，产品798f77c未再修改，等待最终文档head检查成功后带固定head合并。实际合并SHA、时间与本机main同步核对保存在Git外D:/deepseek-agent/.runtime/pr121-merge-20261027；下方待审、未合main均为各批次历史状态。
 

@@ -33,6 +33,11 @@ export type PreparedResearchSend =
       route: "sendChatMessage";
       conversationId: string;
       body: RequestFor<"sendChatMessage">["body"];
+    }
+  | {
+      route: "agentFileMessage";
+      conversationId: string;
+      body: RequestFor<"agentFileMessage">["body"];
     };
 
 export function useResearchComposer() {
@@ -198,7 +203,7 @@ export function useResearchComposer() {
           : [];
       }) || [], [canonical.data?.data.members, groupRoster.data]);
 
-  const prepareResearch = (text: string): PreparedResearchSend | undefined => {
+  const prepareResearch = (text: string): Exclude<PreparedResearchSend, { route: "agentFileMessage" }> | undefined => {
     const advancedRequest = advanced && mode === "ask_agent";
     if (researchMode && mapping?.kind === "group" && !advanced && text.trimStart().startsWith("@") && !groupRoster.data)
       throw new Error("群成员名单尚未读取，请稍后重试；若持续失败，请确认后台已升级。");
@@ -294,6 +299,13 @@ export function useResearchComposer() {
       result =
         prepared.route === "sendChatMessage"
           ? await researchApi("sendChatMessage", {
+              params: { id: prepared.conversationId },
+              body: prepared.body,
+              idempotencyKey,
+              signal,
+            })
+          : prepared.route === "agentFileMessage"
+          ? await researchApi("agentFileMessage", {
               params: { id: prepared.conversationId },
               body: prepared.body,
               idempotencyKey,

@@ -1,5 +1,5 @@
-import { CloseOutlined, CopyOutlined, LoadingOutlined } from "@ant-design/icons";
-import { Button, Checkbox, Input, Modal, Segmented } from "antd";
+import { CloseOutlined, CopyOutlined, LoadingOutlined, MoreOutlined } from "@ant-design/icons";
+import { Button, Checkbox, Dropdown, Input, Modal, Segmented } from "antd";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { ClipboardEvent } from "react";
 import { imagePasteLimits } from "@/types/imageClipboard";
@@ -11,6 +11,7 @@ import type { OcrTextMode } from "@/utils/ocrText";
 import { proofreadOcr } from "./ocrProofreading";
 import type { OcrProofreadingJob } from "./ocrProofreading";
 import ChatImage from "./ChatImage";
+import type { ComposerImage } from "./chat-image-submission";
 
 type ImageDraft = {
   id: string;
@@ -32,21 +33,23 @@ export type ImagePasteTrayRef = {
   paste: (event: ClipboardEvent) => void;
   readClipboard: () => void;
   stage: (files: File[]) => void;
+  snapshot: () => ComposerImage[];
+  commit: (ids: string[]) => void;
 };
 /** Images stay on this computer until the user explicitly sends them or OCR text. */
 const ImagePasteTray = forwardRef<
   ImagePasteTrayRef,
   {
-    sendFile: (file: File, kind: "image", isCurrent: () => boolean) => Promise<boolean>;
     insertText: (text: string) => void;
+    onStateChange: (state: { count: number; busy: boolean }) => void;
   }
->(({ sendFile, insertText }, ref) => {
+>(({ insertText, onStateChange }, ref) => {
   const [images, setImages] = useState<ImageDraft[]>([]),
     [notice, setNotice] = useState(""),
     [resultsOpen, setResultsOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [mode, setMode] = useState<OcrTextMode>("continuous"),
-    [agentProofreading, setAgentProofreading] = useState(true),
+    [agentProofreading, setAgentProofreading] = useState(false),
     [copied, setCopied] = useState(false),
     [saving, setSaving] = useState(false),
     [resultNotice, setResultNotice] = useState("");
@@ -56,6 +59,9 @@ const ImagePasteTray = forwardRef<
     alive = useRef(false),
     job = useRef<{ id: string; operation: AgentChatOperation }>();
   const capture = useAgentChatOperation();
+  useEffect(() => {
+    onStateChange({ count: images.length, busy });
+  }, [images.length, busy, onStateChange]);
   const update = (items: ImageDraft[]) => {
     drafts.current = items;
     setImages(items);
@@ -187,6 +193,11 @@ const ImagePasteTray = forwardRef<
   };
   useImperativeHandle(ref, () => ({
     stage,
+    snapshot: () => {
+      if (job.current || busy) throw new Error("图片正在处理，请完成或取消后再发送。");
+      return drafts.current.map(({ id, file }) => ({ id, file, name: file.name, size: file.size, mediaType: file.type }));
+    },
+    commit: (ids) => { for (const id of ids) remove(id); },
     readClipboard: () => void readClipboard(),
     paste: (event) => {
       // Capture before CKEditor's text-only clipboard plugin discards images.
@@ -311,35 +322,6 @@ const ImagePasteTray = forwardRef<
       }
     }
   };
-  const sendImages = async () => {
-    if (busy || job.current) return;
-    const operation = capture(),
-      active = { id: crypto.randomUUID(), operation };
-    job.current = active;
-    setBusy(true);
-    setNotice("");
-    try {
-      for (const item of drafts.current.slice()) {
-        if (!operation.isCurrent() || !alive.current || job.current !== active) break;
-        patch(item.id, { sending: true });
-        const sent = await sendFile(item.file, "image", operation.isCurrent);
-        if (!operation.isCurrent() || !alive.current || job.current !== active) break;
-        if (!sent) {
-          patch(item.id, { sending: false });
-          setNotice("图片发送失败，未发送的图片已保留，请重试。");
-          break;
-        }
-        remove(item.id);
-      }
-    } finally {
-      operation.dispose();
-      if (alive.current && job.current === active) {
-        job.current = undefined;
-        setBusy(false);
-        update(drafts.current.map((item) => ({ ...item, sending: false })));
-      }
-    }
-  };
   const displayedText = (item: ImageDraft) =>
     item.edits?.[mode] ??
     formatOcrText(
@@ -367,53 +349,10 @@ const ImagePasteTray = forwardRef<
       )}
       {!!images.length && (
         <section className="image-paste-tray" aria-label="待发送图片">
-          <div className="image-paste-heading">
-            <span>{images.length} 张图片 · 发送前仅保留在本机</span>
-            <div>
-              <Button size="small" disabled={busy} onClick={() => void recognize()}>
-                识别文字
-              </Button>
-              <Button size="small" disabled={busy} onClick={() => void sendImages()}>
-                发送图片
-              </Button>
-              {images.some((item) => item.text !== undefined || item.error) && (
-                <Button size="small" onClick={() => setResultsOpen(true)}>
-                  查看文字
-                </Button>
-              )}
-              {busy && (
-                <Button size="small" onClick={stop}>
-                  取消
-                </Button>
-              )}
-            </div>
-          </div>
-          {agentConversationId && (
-            <div className="image-ocr-consent">
-              <Checkbox
-                checked={agentProofreading}
-                disabled={busy}
-                onChange={(event) => setAgentProofreading(event.target.checked)}
-              >
-                Agent 校对错字
-              </Checkbox>
-              <span>
-                {agentProofreading
-                  ? "点击识别后，文字会发送给当前 Agent 校对。"
-                  : "仅本机识别并整理换行。"}
-              </span>
-            </div>
-          )}
-          {!!directImageAgent() && (
-            <p className="text-xs text-slate-500">
-              发送给此 Agent 后，会自动在本机识别文字并请求回复。
-            </p>
-          )}
           <div className="image-paste-previews">
             {images.map((item, index) => (
               <div className="image-paste-preview" key={item.id}>
                 <ChatImage src={item.url} source={{ file: item.file }} wrapperStyle={{ width: "100%", height: "100%" }} disabled={busy} alt={`图片 ${index + 1}：${item.file.name}`} />
-                <span>{index + 1}</span>
                 {item.reading || item.refining || item.sending ? (
                   <LoadingOutlined className="image-paste-remove" />
                 ) : (
@@ -430,6 +369,14 @@ const ImagePasteTray = forwardRef<
               </div>
             ))}
           </div>
+          <Dropdown trigger={["click"]} menu={{ items: [
+            { key: "extract", label: "提取文字", disabled: busy, onClick: () => void recognize() },
+            ...(images.some(item => item.text !== undefined || item.error)
+              ? [{ key: "results", label: "查看提取结果", onClick: () => setResultsOpen(true) }] : []),
+            ...(busy ? [{ key: "cancel", label: "停止提取", onClick: stop }] : []),
+          ] }}>
+            <button type="button" className="image-paste-more" aria-label="图片操作" title="图片操作"><MoreOutlined /></button>
+          </Dropdown>
         </section>
       )}
       <Modal
