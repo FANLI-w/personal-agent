@@ -2,7 +2,7 @@
 
 ## 基线与交付
 
-2026-10-27，继续独立 clone `D:/deepseek-agent/acceptcat-chat-experience`、分支 `feat/chat-conversation-experience` 和 [PR125](https://github.com/luoyan96/personal-agent/pull/125)。开始与交付前 fetch 的 main 均为 `aaa0eea`。首批代码 `6a3d62d`，本次整体扩展代码 `280f8ea0d595087a717f85070b4736d9d402f7b9`。原桌面开发目录保持原状。
+2026-10-27，继续独立 clone `D:/deepseek-agent/acceptcat-chat-experience`、分支 `feat/chat-conversation-experience` 和 [PR125](https://github.com/luoyan96/personal-agent/pull/125)。开始与交付前 fetch 的 main 均为 `aaa0eea`。首批代码 `6a3d62d`，本次整体扩展代码 `7504d0dcbdffc234e878f5e83bd3f8ffc8ad39c4（主体实现 280f8ea）`。原桌面开发目录保持原状。
 
 本次按负责人新要求完成桌面五项工程改造，手机适配后置。保留 React/Electron、OpenIM、业务后台与 DSH 执行链。没有移植微信二进制或私有协议；Agent 的参与仍由明确提及、引用接续及既有授权规则驱动。
 
@@ -83,3 +83,9 @@ Git 外证据：`D:/deepseek-agent/.runtime/chat-unified-desktop-20261027`。最
 合并、后台部署、内部安装验收和公开 Release 分开处理，Windows 更新清单/发布通道未改动。手机后置。
 
 接下来用负责人提供并操作的测试账号验收“两个人、各有一个 Agent、同一群”的四个身份：叫自己/对方的共享助手、同时叫两个、引用追问、逐助手失败恢复、切换会话、重连和权限变化。真实 OpenIM 时序、多设备同步、真实模型、长时间运行及原生安装仍未通过实际环境验收。本次没有读取真实私人资料或模型密钥。
+
+### Windows 打包前回归补充
+
+首次远端 d3ad075 在打包前的图片操作测试失败：编译夹具缺少新 timeline/roster 导入，且图片专用右键菜单仍需隔离。产品修正 `7504d0dcbdffc234e878f5e83bd3f8ffc8ad39c4` 保留图片自己的右键菜单，统一转发/多选通过独立“更多”入口使用；同时阻止旧会话异步创建的转发消息进入新操作缓存。更新夹具为按菜单 key 检查复制动作，并将新旧后台兼容测试纳入远端打包守卫。
+
+本机重跑完整 Windows 打包前测试集合：构建失败守卫9、规划/依赖41、客户端操作182，共232项通过，原有图片复制/另存/OCR/选择文字保护继续成立。记录在 `package-build-guards.log`、`package-planner-guards.log`、`package-client-guards.log`；远端原失败保存在 `remote-package-failure.log`。最终安装包仍以修正后的 PR head 构建为准。

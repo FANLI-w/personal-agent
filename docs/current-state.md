@@ -4,13 +4,13 @@
 
 ## 桌面统一聊天体验整体扩展（PR125 待审，手机后置）
 
-2026-10-27 按负责人要求继续完成五项桌面工程改造。独立 clone `D:/deepseek-agent/acceptcat-chat-experience` / `feat/chat-conversation-experience`，开始和交付前 fetch 的 main 均为 `aaa0eea`，原桌面目录保持原状。首批代码 `6a3d62d`，整体扩展代码 **280f8ea0d595087a717f85070b4736d9d402f7b9**，仍通过 [PR125](https://github.com/luoyan96/personal-agent/pull/125) 交由负责人合并。
+2026-10-27 按负责人要求继续完成五项桌面工程改造。独立 clone `D:/deepseek-agent/acceptcat-chat-experience` / `feat/chat-conversation-experience`，开始和交付前 fetch 的 main 均为 `aaa0eea`，原桌面目录保持原状。首批代码 `6a3d62d`，整体扩展代码 **7504d0dcbdffc234e878f5e83bd3f8ffc8ad39c4（主体实现 280f8ea）**，仍通过 [PR125](https://github.com/luoyan96/personal-agent/pull/125) 交由负责人合并。
 
 四类聊天共用消息操作和布局；群提及、同名归属、原问题/引用定位、逐助手状态与重试贯通。新增实际业务消息撤回、引用关系、搜索分页跳转、多选/转发/本机删除、阅读位置与引用草稿恢复、迟到消息隔离；长 Agent 回答有独立宽正文，任务/资料/助手设置移入详情，群名单分页显示归属。转发核对原 SDK 消息防止丢失回执后重复发送，业务正文重新鉴权后按署名文字转发，不复制任务权限。沿用图片/文件、群管理、免打扰、通知与既有权限。
 
 共享契约 **0.35.0 / chat 1.13.0**，新增 **028** 迁移和消息详情/撤回接口。旧 ChatMessage 响应形状不变；新客户端对旧后台有明确回退。**新业务撤回和持久回复关系需要后台单独升级**，本轮未部署。此前部署记录 `798f77c/28ee6231/contract0.34/schema027` 不因本 PR 改变，本轮未重连生产服务核验。
 
-本机根完整 CI **829/829**、OpenIM 生产流程 **2/2**、B0/Web 生产检查通过；客户端 **65/65** 定向检查、renderer/Electron 类型和 Web 构建通过；真实组件/合成服务的隔离 Edge **15+12=27 项**交互通过，含回执丢失核对、原问题定位、切换恢复、引用草稿、独立停止/重试、免打扰/置顶和权限。Git 外证据 `D:/deepseek-agent/.runtime/chat-unified-desktop-20261027`，保留过程失败与既有开发警告。[实现、兼容、复现和实际环境待验收边界](development/chat-conversation-experience.md)。
+本机根完整 CI **829/829**、OpenIM 生产流程 **2/2**、B0/Web 生产检查通过；客户端 **65/65** 定向检查；远端发现图片夹具/菜单回归后修正，并本机重跑打包前 **232/232** 项、renderer/Electron 类型和 Web 构建通过；真实组件/合成服务的隔离 Edge **15+12=27 项**交互通过，含回执丢失核对、原问题定位、切换恢复、引用草稿、独立停止/重试、免打扰/置顶和权限。Git 外证据 `D:/deepseek-agent/.runtime/chat-unified-desktop-20261027`，保留过程失败与既有开发警告。[实现、兼容、复现和实际环境待验收边界](development/chat-conversation-experience.md)。
 
 客户端版本/更新清单/发布通道未改动，本机未打安装器或 APK，未安装/操作现用客户端，未读取私人资料或模型密钥。PR 的 Windows 打包属于独立 CI artifact，以本次实际 head 为准；未合并/部署/公开发布。两人两 Agent 的真实群聊、多设备、断网重连、真实模型和原生安装仍需测试账号/设备验收，不能把合成通过写成线上完成。手机适配按新要求后置。下方第一批记录保留其历史范围，以上为本次最新范围。
 
