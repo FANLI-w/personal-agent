@@ -117,6 +117,7 @@ const { chromium } = requireClient("@playwright/test");
     assert.equal(await page.locator(".chat-reply-recipient").count(), 0);
     await page.getByRole("button", { name: "取消引用" }).click();
     checks.push("quote-only opt-out visible");
+    await page.getByRole("button", { name: "扩展功能", exact: true }).click();
     await page.getByRole("button", { name: "提及成员", exact: true }).click();
     await page.getByRole("textbox", { name: "搜索群成员或助手" }).fill("同事");
     assert.equal(
@@ -151,6 +152,7 @@ const { chromium } = requireClient("@playwright/test");
     await page.keyboard.press("Control+A");
     await page.keyboard.press("Backspace");
     await page.setViewportSize({ width: 1200, height: 900 });
+    await page.getByRole("button", { name: "扩展功能", exact: true }).click();
     await page.getByRole("button", { name: "提及成员", exact: true }).click();
     const option = page
       .locator(".chat-mention-options .chat-mention-option")
@@ -193,6 +195,7 @@ const { chromium } = requireClient("@playwright/test");
     await page.keyboard.insertText("@");
     await mine.click();
     await page.keyboard.insertText("请解释选择依据");
+    await page.getByRole("button", { name: "扩展功能", exact: true }).click();
     await page.getByRole("button").filter({ hasText: "协作设置" }).first().click();
     await page.getByTitle("普通聊天", { exact: true }).click();
     await page.getByTitle("提出协作需求", { exact: true }).click();
@@ -272,9 +275,9 @@ const { chromium } = requireClient("@playwright/test");
       "account switch clears private streams; other group members only read public receipts",
     );
     await page.evaluate(() => document.querySelector('.desktop-chat-footer').classList.add('is-native-desktop'));
-    await page.getByRole('button', { name: '提及成员', exact: true }).locator('.anticon').waitFor({state:'visible'});
-    assert.equal(await page.getByRole('button', { name: '提及成员', exact: true }).locator('.anticon').isVisible(), true);
-    checks.push('native desktop stylesheet keeps the mention icon visible');
+    await page.getByRole('button', { name: '扩展功能', exact: true }).click();
+    assert.equal(await page.getByRole('button', { name: '提及成员', exact: true }).isVisible(), true);
+    checks.push('native desktop extensions retain member selection');
     assert.deepEqual(errors, []);
     fs.writeFileSync(
       path.join(output, "ui-results.json"),
@@ -286,7 +289,7 @@ const { chromium } = requireClient("@playwright/test");
           errors,
           warnings,
           browser:
-            "isolated headless Edge via Playwright; Browser plugin not available",
+            "isolated automated regression runner via Playwright",
           boundary:
             "Synthetic API and account state; production editor/composer/receipts/progress components. No real OpenIM or model acceptance.",
         },

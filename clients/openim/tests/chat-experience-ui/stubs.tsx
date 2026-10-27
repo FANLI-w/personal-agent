@@ -111,12 +111,26 @@ export const AgentFileReadSummary = () => null;
 export const agentFileReadCoverage = () => undefined;
 export const Empty = ({ collaboration }: any) => collaboration || null;
 export const ImageTray = forwardRef((props: any, ref) => {
+  const [staged, setStaged] = React.useState<File[]>([]);
+  React.useEffect(() => {
+    setStaged([]);
+  }, [props.imID]);
   useImperativeHandle(ref, () => ({
     snapshot: () => [],
     commit: () => {},
-    stage: () => {},
+    stage: (files: File[]) => {
+      window.fixture?.stagedImages?.push(
+        ...files.map((file) => ({ name: file.name, type: file.type, size: file.size })),
+      );
+      setStaged(files);
+    },
     readClipboard: () => {},
   }));
-  return null;
+  return staged.length ? (
+    <output data-testid="staged-images">
+      合成附件接收器：
+      {staged.map((file) => `${file.type} ${file.size} bytes`).join(", ")}
+    </output>
+  ) : null;
 });
 export default Empty;

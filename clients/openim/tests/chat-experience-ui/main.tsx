@@ -26,6 +26,30 @@ window.fixture = {
   useConversationStore,
   useResearchStore,
 };
+if (location.search.includes("toolbar")) {
+  document.body.classList.add("toolbar-fixture");
+  window.fixture.stagedImages = [];
+  window.fixture.captureMode = "success";
+  // Only synthetic pixels: never capture the user's desktop in this fixture.
+  window.electronAPI = {
+    captureChatScreens: async () => {
+      if (window.fixture.captureMode === "failure")
+        throw new Error("合成测试：屏幕捕获失败");
+      if (window.fixture.captureMode === "delayed")
+        await new Promise((r) => setTimeout(r, 1500));
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 450;
+      const context = canvas.getContext("2d")!;
+      context.fillStyle = "#e6f0fc";
+      context.fillRect(0, 0, 800, 450);
+      context.fillStyle = "#263342";
+      context.font = "28px sans-serif";
+      context.fillText("合成截图 · 不含真实桌面内容", 50, 100);
+      return [{ id: "synthetic", name: "合成屏幕", dataUrl: canvas.toDataURL() }];
+    },
+  } as any;
+}
 function App() {
   const actorId = useResearchStore((s) => s.actor.member.id);
   const [tick, setTick] = useState(0);
@@ -63,6 +87,52 @@ function App() {
           <AgentReplyProgress />
         </section>
         <div className="fixture-actions">
+          {location.search.includes("toolbar") && (
+            <>
+              <button
+                onClick={() =>
+                  useConversationStore.setState({
+                    currentConversation:
+                      useConversationStore.getState().conversationList[0],
+                  })
+                }
+              >
+                切换群聊
+              </button>
+              <button
+                onClick={() =>
+                  useConversationStore.setState({
+                    currentConversation:
+                      useConversationStore.getState().conversationList[1],
+                  })
+                }
+              >
+                切换私聊
+              </button>
+            <button onClick={() => useConversationStore.setState({ currentConversation: useConversationStore.getState().conversationList[2] })}>切换助手</button>
+              <button
+                onClick={() => {
+                  window.fixture.captureMode = "failure";
+                }}
+              >
+                模拟截图失败
+              </button>
+              <button
+                onClick={() => {
+                  window.fixture.captureMode = "delayed";
+                }}
+              >
+                模拟延迟截图
+              </button>
+              <button
+                onClick={() => {
+                  window.fixture.captureMode = "success";
+                }}
+              >
+                恢复截图
+              </button>
+            </>
+          )}
           <button
             onClick={() =>
               selectChatReply(

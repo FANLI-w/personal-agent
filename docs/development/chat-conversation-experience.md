@@ -107,3 +107,13 @@ Git 外证据：`D:/deepseek-agent/.runtime/chat-unified-desktop-20261027`。最
 因此“工程可编译、Windows测试安装包已生成”已有证据；“新后台已部署、真实两人两Agent群聊、多设备和安装体验已通过”仍没有实际验收证据。原版本号0.10.60只用于内部构建，不代表新的公开版本，不能把artifact的latest.yml上传到现有更新通道。手机仍后置。
 
 最终核对：Foundation40491790829已全部成功，Linux Node22.19、Linux Node24和Windows Node24三路完整CI均通过；与Windows打包组成四项绿色检查。完整远端记录保存为 `remote-final-foundation.log`，安装器校验另存上述JSON。本次最后仅提交文档，产品和安装包受测源码保持7352c5b。
+
+### 2026-10-27 输入区工具栏纠正
+
+本节为上述7352c5b之后的产品改动。负责人提供的微信截图明确指出工具组织偏差，旧实现把图片、粘贴图片、文件、本地目录分析和群提及混排，且仍使用悬浮大圆角和箭头发送。本次桌面统一为表情、扩展、文件夹（发送文件）、剪刀及下拉（截图/粘贴）、麦克风（语音消息），右侧文字发送；接收对象不改变常用图标位置。图片选择、群成员/助手选择、本地目录分析、报告/协作入口移入扩展，原权限与输入@不变。扩展关闭销毁子弹层，选定助手后回到编辑器。
+
+`captureChatScreens` 是新增的窄 Electron IPC：可信前台窗口触发，隐藏当前窗口250ms后通过固定Electron22.3.27的desktopCapturer获取屏幕快照，15秒超时并恢复窗口。最多8屏、总dataURL64MiB；选择屏幕后框选或选整张，PNG不超过既有10MB限制，加入ImagePasteTray，仍需手动发送。截图操作绑定账号代次/会话/路由，取消或切换不注入新会话。没有常驻录屏、落盘、剪贴板读取或自动模型请求。没有微信式全屏覆盖标注、全局截图快捷键和语音转文字；不将这些能力画成可用按钮。此处麦克风沿用录制语音消息，未改成语音转文字。
+
+检查：`pnpm typecheck`、`pnpm typecheck:electron`、`pnpm build:web`通过；`node --test tests/chat-screenshot.test.mjs tests/chat-image-submission.test.mjs tests/chat-image-actions.test.mjs tests/image-paste.test.mjs tests/chat-quote-recovery.test.mjs tests/group-mentions.test.mjs` 58/58通过。截图6项覆盖可信/前台边界、成功/失败/空结果恢复、超时、并发和导航丢弃，已纳入Windows打包CI。共享业务代码未变，未重复根全量CI。
+
+UI验证改用本轮可用的IAB，`tests/chat-experience-ui/serve.cjs`新增`?toolbar`使用合成electron桥但实际ChatFooter/SendActionBar/ScreenshotAction/CKEditor和原生样式。1280×720下检查群聊/私聊固定工具栏、表情插入、菜单/输入@选择同名助手、两助手合成发送状态、语音面板、截图裁剪为PNG暂存、失败提示及切换丢弃；实际截图为合成画布，附件接收器为测试桩，未声称真实桌面捕获或上传通过。原有交互回归脚本更新了移入扩展后的选择路径，本轮未重跑整套旧脚本。对照图和检查笔记在Git外`chat-toolbar-correction-20261027`，用户原图不进入仓库。旧版可见高度不足与残留二级菜单经实际渲染发现并修正。

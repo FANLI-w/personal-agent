@@ -55,6 +55,10 @@ export const useConversationStore = create(() => ({
       showName: "测试同事",
       conversationType: 1,
     },
+    {
+      conversationID: "fixture_agent", groupID: "", userID: "im_agent_mine",
+      showName: "测试老师的助手", conversationType: 1,
+    },
   ],
   currentConversation: {
     conversationID: "fixture_group",

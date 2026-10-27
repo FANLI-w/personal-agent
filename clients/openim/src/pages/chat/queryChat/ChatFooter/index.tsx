@@ -3,7 +3,7 @@ import { Button } from "antd";
 import { t } from "i18next";
 import { memo, useEffect, useRef, useState } from "react";
 import { MessageType } from "@openim/wasm-client-sdk";
-import { ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
+import { CloseOutlined } from "@ant-design/icons";
 import {
   useChatReply,
   replyKey,
@@ -652,13 +652,13 @@ const ChatFooter = () => {
               mentionContacts={composer.mentionContacts}
               stageImages={(files) => imageTray.current?.stage(files)}
               pasteImages={() => imageTray.current?.readClipboard()}
-              moreActions={<ChatMoreActions collaboration={composer.advancedToggle} />}
+              moreActions={<ChatMoreActions collaboration={composer.advancedToggle} inline />}
             />
             <Button
               className="w-fit px-6 py-1"
               type="primary"
               aria-label="发送消息"
-              title="发送消息"
+              title="发送消息（Enter）；Shift+Enter 换行"
               disabled={
                 (!getCleanText(html) && !imageState.count) ||
                 imageState.busy ||
@@ -666,7 +666,7 @@ const ChatFooter = () => {
               }
               onClick={() => void enterToSend()}
             >
-              {window.electronAPI ? <ArrowUpOutlined /> : t("placeholder.send")}
+              {t("placeholder.send")}
             </Button>
           </div>
         </div>

@@ -72,6 +72,7 @@ main.personal-agent-desktop > header span {
 .fixture-footer {
   height: 260px;
 }
+.toolbar-fixture .fixture-footer { height: auto; }
 @media (max-width: 600px) {
   main.personal-agent-desktop {
     margin: 0;
