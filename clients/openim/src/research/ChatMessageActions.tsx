@@ -120,6 +120,7 @@ export function ChatMessageActions() {
                 throw new Error("此类协作卡片暂不支持转发，请复制可分享的文字。");
               message = (await IMSDK.createForwardMessage(entry.message)).data;
             }
+            if (!current()) return;
             pending.current.set(id, message);
           }
           if (!current() || message.sendID !== self)

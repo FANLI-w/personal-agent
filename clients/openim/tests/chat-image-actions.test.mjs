@@ -633,6 +633,12 @@ async function messageComponent(message) {
       selectChatReply: (...args) => replies.push(args),
     },
     "@/research/chat-message-copy": selection,
+    "@/research/chat-timeline": {
+      useChatTimeline: selector=>selector({scope:'3:chat',selecting:false,selected:[]}),
+      registerTimelineMessage() {},timelineScope:(generation,id)=>`${generation}:${id}`,
+      researchPointer:()=>undefined,selectTimelineMessage() {},
+    },
+    "@/research/GroupChatRoster": {useGroupChatRoster:()=>({}),groupContactDescription:()=>''},
     "@/research/ResearchAvatar": () => null,
     "@/utils/common": { feedbackToast() {} },
     "@/utils/imCommon": { formatMessageTime: () => "" },
@@ -693,7 +699,7 @@ test("text messages copy the whole actual message or a snapshot of only their ow
     textElem: { content: "完整的科研消息" },
   });
   let menu = f.render();
-  assert.equal(menu.props.menu.items[1].label, "复制消息文字");
+  assert.equal(menu.props.menu.items.find(item=>item.key==='copy').label, "复制消息文字");
   menu.props.menu.onClick({ key: "copy" });
   await flush();
   assert.equal(f.copied[0], "完整的科研消息");
@@ -707,7 +713,7 @@ test("text messages copy the whole actual message or a snapshot of only their ow
     currentTarget: { contains: (node) => node === "inside" },
   });
   menu = f.render();
-  assert.equal(menu.props.menu.items[1].label, "复制选中文字");
+  assert.equal(menu.props.menu.items.find(item=>item.key==='copy').label, "复制选中文字");
   f.selection(null); // Popup focus may clear the browser selection, but must preserve its captured text.
   menu.props.menu.onClick({ key: "copy" });
   await flush();

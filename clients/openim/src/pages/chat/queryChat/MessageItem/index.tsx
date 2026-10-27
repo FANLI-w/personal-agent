@@ -178,6 +178,7 @@ const MessageItem: FC<IMessageItemProps> = ({
 
             <Dropdown
               trigger={["contextMenu"]}
+              disabled={message.contentType === MessageType.PictureMessage}
               menu={{
                 items: [
                   {
