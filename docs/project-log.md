@@ -2152,3 +2152,11 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 负责人明确要求GitHub合并后公开Release。重新fetch核对main仍d70cd64、工作区干净、PR122 head b3721b5无冲突/无审阅意见。两项Linux及Windows package通过，Windows Foundation819通过/3项超时：foundation迁移/seed、checksum和真实HTTP分别6.6/8.7/7.2秒，超过默认5秒。保持原样触发一次失败job重跑，同时本机定向复核9通过/HTTP5.7秒超时，原日志均保留。三用例涉及27份磁盘迁移及真实HTTP，沿用同文件已有的有限20秒测试等待规则，仅修改这三项测试的等待上限和一条迁移版本注释，所有断言与生产时限保持；随后10项通过。
 
 产品fc9d511及原88,220,838字节安装包保持不变，SHA256仍732261095dbb34247d2a72356f3c3e1c3356185f8566743536e2ebef2ef2bbd7。准备同一Release草稿四附件与校验清单，等待最终head CI通过后合main再公开，不提前冒称Latest已更新。Git外release-0.10.60-20261027保存首轮CI、本机失败及通过、发布说明和附件摘要；实际合并/公开回执随后追加，无后台操作或安装/真实模型验收。
+
+## 2026-10-27：PR122已合main，v0.10.60正式公开Latest
+
+按负责人明确授权，16:32:23（北京时间）普通merge PR122到main，提交8b67e93a85dccd547abf89dc7d8a362b7519ef9d；最终head f9bacaed450c0e0bbf9e99afd76666cefa7e48ba三项Foundation及Windows package全success，Windows822项/64文件通过，合并树一致，本机main快进。此前Windows819通过/3项5秒超时、本机9通过/HTTP5.7秒超时及三个用例补有限20秒等待后的10通过均留存；全部断言与生产时限保持，产品和安装包不重建。
+
+先建唯一Release草稿425192746、上传EXE/blockmap/latest.yml/SHA256SUMS四附件并核对uploaded、字节和SHA256 digest，代码合并后于16:34:22公开v0.10.60为正式Latest。tag固定实际安装包源码fc9d51112464d72364f70ba77a6e5be47d551ecb；EXE88,220,838字节/SHA256 732261095dbb34247d2a72356f3c3e1c3356185f8566743536e2ebef2ef2bbd7。匿名Latest API、tag源码和两份小清单校验一致；旧Release与安装包保持，没有下载运行EXE追加原生验收。Git外release-0.10.60-20261027保存合并、原失败/成功、草稿/公开JSON、附件摘要和匿名核验。GitHub连接器缺少二进制上传入口及既有写权限受限，使用本机已有gh登录，没有新增凭据或对外发消息。
+
+公开后仅更新README下载入口、current-state及本批交付记录，走纯文档分支汇总，不修改产品或重打包；按文档规则执行内容/差异检查，不据文档重复完整CI或验收。无后台升级、重启或数据库迁移，继续已部署798f77c/28ee6231/contract0.34/schema027；未代真实SDK/模型、安装、产品UI或私人图片验收。后续功能重新同步最新main另开分支，不沿发布标签堆需求。

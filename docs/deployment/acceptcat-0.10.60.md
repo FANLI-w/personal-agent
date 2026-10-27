@@ -27,3 +27,18 @@ Git外D:/deepseek-agent/.runtime/unified-chat-attachments-20261027保存typechec
 ## 合并与公开发布准备
 
 负责人本轮已明确授权。原head b3721b5的Linux两项和Windows打包通过，Windows Foundation819通过/3个既有foundation磁盘迁移/HTTP用例超过默认5秒；本机复核也有HTTP一项5.7秒超时。仅这三项测试等待上限改为20秒，保留断言和生产时限，随后同文件10项通过。原失败及回执保留Git外release-0.10.60-20261027。测试/文档改动不改变安装包产品fc9d511，不重新打包；最终head CI、合并和公开结果另记，计划tag固定原包源码fc9d511。
+
+## 实际合并与公开回执
+
+2026-10-27 **16:32:23（北京时间）**，PR122以 **8b67e93a85dccd547abf89dc7d8a362b7519ef9d**合main，受审head **f9bacaed450c0e0bbf9e99afd76666cefa7e48ba**四项检查全部success，Windows根822项/64文件通过。普通merge保留提交与同事归属，合并树一致，本机main已快进。首次失败、定向复核失败与修正后10项全部通过日志保留；修改范围仅三个测试用例的有限等待上限，无运行时代码或安装包变化。
+
+**16:34:22（北京时间）**公开[v0.10.60](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.60)，Release **425192746**，非草稿/非预发布并设为Latest。tag固定实际包源码 **fc9d51112464d72364f70ba77a6e5be47d551ecb**；[安装包直链](https://github.com/luoyan96/personal-agent/releases/download/v0.10.60/AcceptCat_0.10.60.exe)。先创建唯一草稿并上传核验四附件，代码合并后才公开；没有覆盖旧版本。匿名Latest API、tag源码、公开latest.yml及SHA256SUMS逐字节摘要检查通过，没有下载运行EXE追加原生验收。发布后仅跟进下载入口和交接文档。
+
+| 附件 | 字节 | SHA256 |
+| --- | ---: | --- |
+| AcceptCat_0.10.60.exe | 88,220,838 | 732261095dbb34247d2a72356f3c3e1c3356185f8566743536e2ebef2ef2bbd7 |
+| AcceptCat_0.10.60.exe.blockmap | 92,374 | 98892b581062f3494c2143fa065fdab4160bdb62e55b84eac4fff63738aaee8c |
+| latest.yml | 340 | 86f11d136050f6684f419227f323acee2f8a7adaa1f8127849c32ed23d4b92c6 |
+| SHA256SUMS.txt | 262 | 85a5cea3007ef8e75a18ff24214893ae4cacc1d4ff59ceef0b29b075895db297 |
+
+Git外release-0.10.60-20261027保留原始CI失败及最终成功、定向10项、同一草稿/公开JSON、四附件摘要及匿名核验文件。GitHub连接器没有二进制上传入口且既有写权限受限，使用本机已有gh登录完成合并与发布；未新增凭据或权限。没有后台操作，继续798f77c/28ee6231/contract0.34/schema027；未代安装、产品UI、真实SDK/模型或私人图片验收。
