@@ -2160,3 +2160,11 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 先建唯一Release草稿425192746、上传EXE/blockmap/latest.yml/SHA256SUMS四附件并核对uploaded、字节和SHA256 digest，代码合并后于16:34:22公开v0.10.60为正式Latest。tag固定实际安装包源码fc9d51112464d72364f70ba77a6e5be47d551ecb；EXE88,220,838字节/SHA256 732261095dbb34247d2a72356f3c3e1c3356185f8566743536e2ebef2ef2bbd7。匿名Latest API、tag源码和两份小清单校验一致；旧Release与安装包保持，没有下载运行EXE追加原生验收。Git外release-0.10.60-20261027保存合并、原失败/成功、草稿/公开JSON、附件摘要和匿名核验。GitHub连接器缺少二进制上传入口及既有写权限受限，使用本机已有gh登录，没有新增凭据或对外发消息。
 
 公开后仅更新README下载入口、current-state及本批交付记录，走纯文档分支汇总，不修改产品或重打包；按文档规则执行内容/差异检查，不据文档重复完整CI或验收。无后台升级、重启或数据库迁移，继续已部署798f77c/28ee6231/contract0.34/schema027；未代真实SDK/模型、安装、产品UI或私人图片验收。后续功能重新同步最新main另开分支，不沿发布标签堆需求。
+
+## 2026-10-27：聊天体验第一批完成，独立功能分支待审
+
+负责人确认开始改进整体聊天后，从实际最新 main/aaa0eea 独立 clone 到 D:/deepseek-agent/acceptcat-chat-experience，建立 feat/chat-conversation-experience；原桌面目录当时在其他人的 docs/task-assignment-review-20261027 分支且干净，本轮未改动。首批复用现有 React/Electron/OpenIM，完成句中身份化 @、同名助手所属成员标识、多个助手独立状态/回答归属、定向追问与仅引用退出、逐助手停止与核对预算后重试；高级选项不能覆盖显式身份，草稿保留提及标记。群名单合并为会话级读取，其他成员仅公共回执，账号切换清理私有进度。
+
+根 desktop:prepare 冻结安装/共享依赖准备通过；仅客户端与文档变化，按 AGENTS 未重复本机根共享代码 CI。相关 62 项/8文件、renderer/Electron 类型及 Web 构建通过。仓库内隔离测试夹具复用实际编辑器/输入/状态/流式组件，Playwright 无头 Edge 在1200x900与390x844运行15项检查通过，无应用运行错误；账号、业务API、SDK及附件/桌面叶子能力为合成替身。保留 Router future flag、Ant Design findDOMNode及第三方构建提示。初次类型错误、测试选择器/动画等待/夹具账号订阅问题与终止记录保留；视觉检查发现并修正 CKEditor 默认样式覆盖、桌面 @ 图标隐藏/零行高。Git外 .runtime/chat-conversation-experience-20261027 保存全部过程日志、最终截图与回执。
+
+沿用 contract0.34/schema027 既有接口，没有后台或共享契约/角色变化；未操作现用客户端或真实私人账号/资料/模型，未进行真实OpenIM/模型、多设备、原生安装或移动端验收。没有版本变更、Windows清单变更、安装包/Release、部署或合并。完整范围与下一批见 docs/development/chat-conversation-experience.md；本批后续通过 PR 交由负责人决定合并。

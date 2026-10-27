@@ -45,7 +45,7 @@ const SendActionBar = ({
   sendFile: (file: File, kind: SelectedFileKind, isCurrent?: () => boolean, agentFileText?: string) => Promise<boolean>;
   getSoundMessage: (file: File, duration: number) => Promise<MessageItem>;
   insertEmoji: (emoji: string) => void;
-  insertMention: (name: string) => void;
+  insertMention: (contact: GroupMentionContact) => void;
   mentionContacts: GroupMentionContact[];
   stageImages?: (files: File[]) => void;
   pasteImages?: () => void;
@@ -135,7 +135,7 @@ const SendActionBar = ({
             mentionIntent.current = open ? captureOperation() : undefined;
             setMentionOpen(open);
           }} trigger="click" placement="top" arrow={false}>
-            <button type="button" className={toolbarClass} aria-label="提及成员" title="提及成员"><span className="font-semibold">@</span>{window.electronAPI && <span>提及</span>}</button>
+            <button type="button" className={toolbarClass} aria-label="提及成员" title="提及成员"><span className="anticon font-semibold" style={{ lineHeight: 1 }} aria-hidden="true">@</span>{window.electronAPI && <span>提及</span>}</button>
           </Popover>
         )}
         <LocalFolderAction sendFile={sendFile} />

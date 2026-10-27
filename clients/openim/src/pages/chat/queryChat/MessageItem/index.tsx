@@ -6,7 +6,7 @@ import {
 import clsx from "clsx";
 import { FC, memo, useRef, useState } from "react";
 import { Dropdown } from "antd";
-import { selectChatReply, readableMessage } from "@/research/chat-reply";
+import { selectChatReply, readableMessage, type ReplyAgent } from "@/research/chat-reply";
 import { feedbackToast } from "@/utils/common";
 import QuoteMessageRender from "./QuoteMessageRender";
 
@@ -33,6 +33,7 @@ export interface IMessageItemProps {
   conversationID?: string;
   messageUpdateFlag?: string;
   onReadableText?: (text: string) => void;
+  onReplyAgent?: (agent: ReplyAgent | undefined) => void;
   onReply?: () => void;
 }
 
@@ -54,6 +55,7 @@ const MessageItem: FC<IMessageItemProps> = ({
 }) => {
   const messageWrapRef = useRef<HTMLDivElement>(null);
   const [canonicalText, setCanonicalText] = useState("");
+  const [replyAgent, setReplyAgent] = useState<ReplyAgent>();
   const [selectionText, setSelectionText] = useState("");
   const text = readableMessage(message) || canonicalText;
   const copyText = [
@@ -126,7 +128,7 @@ const MessageItem: FC<IMessageItemProps> = ({
                 ],
                 onClick: ({ key }) => {
                   if (key === "reply" && text)
-                    selectChatReply(message, text, conversationID, generation);
+                    selectChatReply(message, text, conversationID, generation, replyAgent);
                   if (key === "copy" && copyText) {
                     if (!navigator.clipboard)
                       feedbackToast({
@@ -158,10 +160,11 @@ const MessageItem: FC<IMessageItemProps> = ({
                     isSender={isSender}
                     disabled={disabled}
                     onReadableText={setCanonicalText}
+                    onReplyAgent={setReplyAgent}
                     onReply={
                       !disabled && text
                         ? () =>
-                            selectChatReply(message, text, conversationID, generation)
+                            selectChatReply(message, text, conversationID, generation, replyAgent)
                         : undefined
                     }
                   />
@@ -181,10 +184,10 @@ const MessageItem: FC<IMessageItemProps> = ({
                 className="desktop-reply-action"
                 aria-label="引用回复"
                 onClick={() =>
-                  selectChatReply(message, text, conversationID, generation)
+                  selectChatReply(message, text, conversationID, generation, replyAgent)
                 }
               >
-                引用
+                {replyAgent ? "回复此助手" : "引用"}
               </button>
             )}
           </div>

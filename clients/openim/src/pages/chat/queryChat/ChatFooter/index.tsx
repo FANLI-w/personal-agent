@@ -4,12 +4,14 @@ import { t } from "i18next";
 import { memo, useEffect, useRef, useState } from "react";
 import { MessageType } from "@openim/wasm-client-sdk";
 import { ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
-import { useChatReply, replyKey, clearChatReply } from "@/research/chat-reply";
+import { useChatReply, replyKey, clearChatReply, clearChatReplyAgent } from "@/research/chat-reply";
+import { addressGroupReply } from "@/research/group-mentions";
 import { useResearchComposer } from "@/research/ResearchComposer";
 import { useResearchStore } from "@/research/store";
 
 import CKEditor, { type CKEditorRef } from "@/components/CKEditor";
 import { getCleanText } from "@/components/CKEditor/utils";
+import { readMentionComposer } from "@/research/mention-composer";
 import i18n from "@/i18n";
 import { IMSDK } from "@/layout/MainContentWrap";
 import { useConversationStore } from "@/store";
@@ -289,8 +291,11 @@ const ChatFooter = () => {
       if (submissions.length >= 20 || useChatOutbox.getState().items.length >= 50)
         throw new Error("还有较多消息未发送，请先处理发送记录。");
       const imageAgentId = images.length ? directImageAgent() : undefined;
-      let text = cleanText || (imageAgentId ? "请根据这些图片中可识别的文字帮我看看内容。" : "");
-      let request = text ? composer.prepareResearch(text) : undefined;
+      const selected = readMentionComposer(original);
+      let text = (selected.mentions.length ? selected.text : cleanText) || (imageAgentId ? "请根据这些图片中可识别的文字帮我看看内容。" : "");
+      const addressed = composer.isGroup ? addressGroupReply(text, selected.mentions, composer.mentionContacts, reply?.agent?.contactId) : { text, mentions: selected.mentions };
+      text = addressed.text;
+      let request = text ? composer.prepareResearch(text, addressed.mentions) : undefined;
       if (
         reply &&
         (images.length || request ||
@@ -423,6 +428,12 @@ const ChatFooter = () => {
             <div>
               <strong>回复 {reply.sender}</strong>
               <p>{reply.text}</p>
+              {composer.isGroup && reply.agent && (
+                <div className="chat-reply-recipient">
+                  <span>未另选成员时，发送给 @{reply.agent.displayName}</span>
+                  <button type="button" onClick={() => clearChatReplyAgent(activeReplyKey)}>仅引用内容</button>
+                </div>
+              )}
             </div>
             <button
               type="button"
@@ -546,7 +557,8 @@ const ChatFooter = () => {
             ref={editor}
             key={imID}
             value={html}
-            placeholder="发送消息…"
+            placeholder={composer.isGroup ? "发送消息，输入 @ 选择成员或助手" : "发送消息…"}
+            mentionContacts={composer.mentionContacts}
             onEnter={() => void enterToSend()}
             onChange={onChange}
           />
@@ -556,7 +568,7 @@ const ChatFooter = () => {
               sendFile={sendFile}
               getSoundMessage={getSoundMessage}
               insertEmoji={(emoji) => editor.current?.insertText(emoji)}
-              insertMention={(name) => editor.current?.insertText(`@${name} `)}
+              insertMention={(contact) => editor.current?.insertMention(contact)}
               mentionContacts={composer.mentionContacts}
               stageImages={(files) => imageTray.current?.stage(files)}
               pasteImages={() => imageTray.current?.readClipboard()}

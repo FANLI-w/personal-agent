@@ -13,6 +13,7 @@ import { researchMode } from "@/research/api";
 import { ResearchConversationPanel } from "@/research/ResearchConversationPanel";
 import type { ResearchChatEntry } from "@/research/useResearchChatEntry";
 import { useResearchStore } from "@/research/store";
+import { GroupChatRoster } from "@/research/GroupChatRoster";
 
 export const QueryChat = () => {
   const entry = useOutletContext<ResearchChatEntry>();
@@ -50,6 +51,7 @@ export const QueryChat = () => {
     );
 
   return (
+    <GroupChatRoster imID={currentID}>
     <Layout id="chat-container" className={`relative overflow-hidden ${window.electronAPI ? "native-chat" : ""}`}>
       {researchMode && !entry.ready && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white">
@@ -98,5 +100,6 @@ export const QueryChat = () => {
         </PanelGroup>}
       </div>
     </Layout>
+    </GroupChatRoster>
   );
 };

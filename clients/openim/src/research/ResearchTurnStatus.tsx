@@ -19,11 +19,13 @@ export function ResearchTurnStatus({
   turn,
   manager = false,
   compact = false,
+  hideLabel = false,
   onRetried,
 }: {
   turn: AgentTurn;
   manager?: boolean;
   compact?: boolean;
+  hideLabel?: boolean;
   onRetried?: (turn: AgentTurn) => void;
 }) {
   const guidance = turnGuidance(turn, manager);
@@ -48,6 +50,7 @@ export function ResearchTurnStatus({
   const [confirmation, setConfirmation] = useState<RetryConfirmation>();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const cancelIntent = useRef<{ id: string; version: number; key: string }>();
   const [failure, setFailure] = useState<{ scope: string; message: string }>();
   useEffect(() => {
     setConfirmation(undefined);
@@ -102,6 +105,24 @@ export function ResearchTurnStatus({
     } finally {
       if (isCurrent()) setBusy(false);
     }
+  };
+  const cancel = async () => {
+    if (busy || !turn.allowedActions.includes("cancel")) return;
+    if (cancelIntent.current?.id !== turn.id || cancelIntent.current.version !== turn.version)
+      cancelIntent.current = { id: turn.id, version: turn.version, key: crypto.randomUUID() };
+    const intent = cancelIntent.current;
+    setBusy(true); setFailure(undefined);
+    const current = () => mounted.current && latestScope.current === scope &&
+      useResearchStore.getState().generation === actorGeneration &&
+      useResearchStore.getState().actor?.member.id === actorId &&
+      useConversationStore.getState().currentConversation?.conversationID === imID;
+    try {
+      const result = await researchApi("cancelChatTurn", { params: { id: intent.id }, body: { expectedVersion: intent.version }, idempotencyKey: intent.key });
+      if (result.data.id !== turn.id || result.data.conversationId !== turn.conversationId) throw new Error("停止结果尚未确认，请核对状态。");
+      if (current()) onRetried?.(result.data);
+    } catch (error) {
+      if (current()) setFailure({ scope, message: error instanceof Error ? error.message : "停止结果尚未确认，请重试。" });
+    } finally { if (current()) setBusy(false); }
   };
   const alert = (
     <>
@@ -186,7 +207,7 @@ export function ResearchTurnStatus({
     <div className="min-w-0 break-words text-xs" role="status" data-ai-turn-status>
       {compact ? (
         <div className="flex min-w-0 items-center gap-2">
-          <span
+          {!hideLabel && <span
             className={`min-w-0 flex-1 truncate ${
               guidance.tone === "error"
                 ? "text-red-700"
@@ -199,7 +220,9 @@ export function ResearchTurnStatus({
             title={guidance.title}
           >
             {turn.failure === "BUDGET_EXCEEDED" ? "本次请求超出预算" : guidance.title}
-          </span>
+          </span>}
+          {turn.allowedActions.includes("cancel") && <Button size="small" type="text" disabled={busy} onClick={() => void cancel()}>停止回复</Button>}
+          {retryButton}
           <Button
             className="shrink-0"
             size="small"
@@ -215,6 +238,7 @@ export function ResearchTurnStatus({
           <div className="mt-1">{retryButton}</div>
         </>
       )}
+      {compact && failure?.scope === scope && <p className="mt-1 text-red-700" role="alert">{failure.message}</p>}
       <Modal
         title="回复详情"
         open={compact && detailsOpen}

@@ -16,7 +16,8 @@ export function readableMessage(message: MessageItem): string {
   if (message.contentType === MessageType.VoiceMessage) return "[语音]";
   return "";
 }
-export type ChatReply = { message?: MessageItem; text: string; sender: string };
+export type ReplyAgent = { contactId: string; displayName: string };
+export type ChatReply = { message?: MessageItem; text: string; sender: string; agent?: ReplyAgent };
 export const useChatReply = create<{ replies: Record<string, ChatReply> }>(() => ({
   replies: {},
 }));
@@ -26,6 +27,7 @@ export function selectChatReply(
   text = readableMessage(message),
   expectedID?: string,
   expectedGeneration?: number,
+  agent?: ReplyAgent,
 ) {
   const id = useConversationStore.getState().currentConversation?.conversationID;
   if (
@@ -53,9 +55,13 @@ export function selectChatReply(
         message: source,
         text: excerpt(text),
         sender: message.senderNickname || "成员",
+        agent,
       },
     },
   }));
+}
+export function clearChatReplyAgent(key: string) {
+  useChatReply.setState(s => s.replies[key] ? { replies: { ...s.replies, [key]: { ...s.replies[key], agent: undefined } } } : s);
 }
 export function clearChatReply(key: string) {
   useChatReply.setState((s) => {

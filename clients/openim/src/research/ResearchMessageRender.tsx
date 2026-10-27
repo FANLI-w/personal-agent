@@ -26,6 +26,7 @@ import { GroupMessageStatuses } from "./GroupMessageStatuses";
 export default function ResearchMessageRender({
   message,
   onReadableText,
+  onReplyAgent,
 }: IMessageItemProps) {
   const history = useContext(AgentProgressHistory);
   const imID = useConversationStore((s) => s.currentConversation?.conversationID);
@@ -95,6 +96,12 @@ export default function ResearchMessageRender({
   useEffect(() => {
     onReadableText?.(read.data?.fact.text || "");
   }, [read.data?.fact.text, onReadableText]);
+  useEffect(() => {
+    const fact = read.data?.fact;
+    onReplyAgent?.(isGroup && fact?.origin === "model" && fact.senderContactId
+      ? { contactId: fact.senderContactId, displayName: message.senderNickname || "助手" }
+      : undefined);
+  }, [isGroup, read.data?.fact.senderContactId, read.data?.fact.origin, message.senderNickname, onReplyAgent]);
   const turnId = currentRetry?.id || read.data?.fact.turnId;
   const turn = useResearchRead(
     (signal) => researchApi("chatTurn", { params: { id: turnId || "" }, signal }),
@@ -134,7 +141,8 @@ export default function ResearchMessageRender({
       registerAgentProgress(actorGeneration, imID, {
         id: read.data.fact.turnId,
         conversationId: read.data.fact.conversationId,
-      });
+        agentContactId: currentTurn.agentContactId,
+      }, { inputText: read.data.fact.origin === "human" ? read.data.fact.text || undefined : undefined });
     if (currentTurn?.outputMessageId === read.data.fact.id)
       acknowledgeAgentReply(actorGeneration, imID, currentTurn.id, read.data.fact.id);
   }, [
@@ -228,7 +236,7 @@ export default function ResearchMessageRender({
           )}
         </>
       )}
-      {(turn.data?.data || currentRetry) &&
+      {!isGroup && (turn.data?.data || currentRetry) &&
         (turn.data?.data || currentRetry)?.status !== "succeeded" && (
           <ResearchTurnStatus
             turn={turn.data?.data || currentRetry!}
@@ -250,7 +258,7 @@ export default function ResearchMessageRender({
             }
           />
         )}
-      {turn.error && (
+      {!isGroup && turn.error && (
         <p className="text-xs text-red-700">AI 请求状态暂时无法读取：{turn.error}</p>
       )}
       {isGroup && imID && read.data?.fact.origin === "human" && (
@@ -259,7 +267,7 @@ export default function ResearchMessageRender({
           messageId={read.data.fact.id}
           imID={imID}
           own={!!read.data.fact.turnId}
-          detailedTurnId={currentTurn?.status === "succeeded" ? undefined : currentTurn?.id}
+          inputText={read.data.fact.text || ""}
         />
       )}
       {currentTurn && currentTurn.outputMessageId === read.data?.fact.id && (

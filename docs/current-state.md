@@ -2,6 +2,12 @@
 
 更新日期：2026-10-27（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 聊天体验第一批（独立分支，待审）
+
+从最新 main/aaa0eea 独立 clone 到 `D:/deepseek-agent/acceptcat-chat-experience`，分支 `feat/chat-conversation-experience`，原桌面开发目录保持原状。实现句中身份化 @、按所属成员区分同名助手、群内多个助手各自状态/流式回答、回复指定助手与仅引用退出，以及单独停止/核对后重试。高级选项保留已选接收者；成员名单统一读取，其他群成员仅看公共回执。保留现有账号、OpenIM、DSH 与权限链路，没有共享契约/API/schema 或版本改动。[范围、检查与复现](development/chat-conversation-experience.md)。
+
+客户端相关 **62 项**回归、renderer/Electron 类型检查与 Web 构建通过；隔离 Playwright/Edge **15 项**组件交互检查通过，含 390px 菜单、同名身份、草稿、Enter 不误发、独立停止/重试和切换账号。使用实际组件与合成账号/API/SDK替身，无应用运行错误；既有 React Router/Ant Design 开发警告及构建提示保留。Git 外 `D:/deepseek-agent/.runtime/chat-conversation-experience-20261027` 保存截图、过程失败、最终检查；测试夹具入仓库可复现。未操作现用客户端、真实账号、私人资料或模型密钥，未验证真实 SDK/模型、原生安装或移动端；无本批安装包、合并、部署或公开发布。后续继续长群聊的原问题定位/引用跳转、人与人聊天基础功能及任务/资料卡片整合。
+
 ## 0.10.60已合并并公开Latest（2026-10-27）
 
 负责人本轮明确授权后，[PR122](https://github.com/luoyan96/personal-agent/pull/122)于 **16:32:23（北京时间）**以 **8b67e93a85dccd547abf89dc7d8a362b7519ef9d**普通merge进入main，保留同事及先前群聊/任务/资料改动。受审head **f9bacaed450c0e0bbf9e99afd76666cefa7e48ba**四项CI全部success，Windows根822项/64文件通过；本机main快进、合并树一致。首次Windows819通过/3项默认5秒超时、本机9通过/1超时及定向修正后10项通过均留存；仅这三项磁盘迁移/HTTP测试等待上限改20秒，断言和全部生产时限保持。
