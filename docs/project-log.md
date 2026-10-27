@@ -2146,3 +2146,9 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 产品fc9d51112464d72364f70ba77a6e5be47d551ecb，[PR122](https://github.com/luoyan96/personal-agent/pull/122)已创建并附加。根desktop:win冻结安装、两个共享包先build、Web构建、NSIS及既有4项入口通过，固定Electron22.3.27/electron-builder23.6.0组件一致；本地更新清单守卫通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.60.exe，88,220,838字节，SHA256 732261095dbb34247d2a72356f3c3e1c3356185f8566743536e2ebef2ef2bbd7，与原构建包一致，旧包保留。第三方use client与bundle体积提示留在构建日志，最终退出0。Git外unified-chat-attachments-20261027保存失败类型检查、最终双类型、77项相关测试、安装包回执和PR依据；本批后续仅交接文档，不重复已通过检查或重打相同产品。
 
 只改客户端及Windows CI列表，未重跑本机根822项，不把后台旧检查冒称本批；远端四项检查以PR实际head为准。没有后台/契约/schema027改动，不需要升级；继续沿用已部署798f77c/28ee6231/contract0.34。publish never，未合main、未公开Release或上传安装包；GitHub Latest再次核对仍v0.10.56/423959199。未代真实SDK/模型、安装、产品UI、原生剪贴板或私人图片验收。
+
+## 2026-10-27：0.10.60合并与发布获授权，修正既有Windows用例等待上限
+
+负责人明确要求GitHub合并后公开Release。重新fetch核对main仍d70cd64、工作区干净、PR122 head b3721b5无冲突/无审阅意见。两项Linux及Windows package通过，Windows Foundation819通过/3项超时：foundation迁移/seed、checksum和真实HTTP分别6.6/8.7/7.2秒，超过默认5秒。保持原样触发一次失败job重跑，同时本机定向复核9通过/HTTP5.7秒超时，原日志均保留。三用例涉及27份磁盘迁移及真实HTTP，沿用同文件已有的有限20秒测试等待规则，仅修改这三项测试的等待上限和一条迁移版本注释，所有断言与生产时限保持；随后10项通过。
+
+产品fc9d511及原88,220,838字节安装包保持不变，SHA256仍732261095dbb34247d2a72356f3c3e1c3356185f8566743536e2ebef2ef2bbd7。准备同一Release草稿四附件与校验清单，等待最终head CI通过后合main再公开，不提前冒称Latest已更新。Git外release-0.10.60-20261027保存首轮CI、本机失败及通过、发布说明和附件摘要；实际合并/公开回执随后追加，无后台操作或安装/真实模型验收。

@@ -23,3 +23,7 @@ Git外D:/deepseek-agent/.runtime/unified-chat-attachments-20261027保存typechec
 ## 后台与权限
 
 本批没有API、共享契约、角色或数据库改动，沿用已部署798f77c / sha256:28ee6231937556fda148308d9ee8576e859e7f0595fd99b50e1cca3af6874e21 / contract0.34/schema027，无迁移、无需升级后台。没有重启服务、改变文件授权或新增自动转发；原图仅在明确点击发送时交给原SDK会话。代码合并和公开发布另行处理。
+
+## 合并与公开发布准备
+
+负责人本轮已明确授权。原head b3721b5的Linux两项和Windows打包通过，Windows Foundation819通过/3个既有foundation磁盘迁移/HTTP用例超过默认5秒；本机复核也有HTTP一项5.7秒超时。仅这三项测试等待上限改为20秒，保留断言和生产时限，随后同文件10项通过。原失败及回执保留Git外release-0.10.60-20261027。测试/文档改动不改变安装包产品fc9d511，不重新打包；最终head CI、合并和公开结果另记，计划tag固定原包源码fc9d511。
