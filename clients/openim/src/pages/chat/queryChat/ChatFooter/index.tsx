@@ -4,7 +4,12 @@ import { t } from "i18next";
 import { memo, useEffect, useRef, useState } from "react";
 import { MessageType } from "@openim/wasm-client-sdk";
 import { ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
-import { useChatReply, replyKey, clearChatReply, clearChatReplyAgent } from "@/research/chat-reply";
+import {
+  useChatReply,
+  replyKey,
+  clearChatReply,
+  clearChatReplyAgent,
+} from "@/research/chat-reply";
 import { addressGroupReply } from "@/research/group-mentions";
 import { useResearchComposer } from "@/research/ResearchComposer";
 import { useResearchStore } from "@/research/store";
@@ -12,6 +17,8 @@ import { useResearchStore } from "@/research/store";
 import CKEditor, { type CKEditorRef } from "@/components/CKEditor";
 import { getCleanText } from "@/components/CKEditor/utils";
 import { readMentionComposer } from "@/research/mention-composer";
+import { researchPointer } from "@/research/chat-timeline";
+import { hasMessageDetails } from "@/research/chat-message-read";
 import i18n from "@/i18n";
 import { IMSDK } from "@/layout/MainContentWrap";
 import { useConversationStore } from "@/store";
@@ -23,8 +30,14 @@ import ChatMoreActions from "@/research/ChatMoreActions";
 import { useFileMessage } from "./SendActionBar/useFileMessage";
 import { useSendMessage } from "./useSendMessage";
 import { useAgentFileReading } from "@/research/useAgentFileReading";
-import { directImageAgent, useAgentImageReading } from "@/research/useAgentImageReading";
-import { assertImageQueueCapacity, sendSubmissionImages } from "@/research/chat-image-submission";
+import {
+  directImageAgent,
+  useAgentImageReading,
+} from "@/research/useAgentImageReading";
+import {
+  assertImageQueueCapacity,
+  sendSubmissionImages,
+} from "@/research/chat-image-submission";
 import { useScopedFileSender } from "@/research/useScopedFileSender";
 import { useAgentChatOperation } from "@/research/useAgentChatOperation";
 import type { AgentChatOperation } from "@/research/useAgentChatOperation";
@@ -56,6 +69,7 @@ const ChatFooter = () => {
   const generation = useResearchStore((s) => s.generation);
   const activeReplyKey = replyKey(generation, imID);
   const reply = useChatReply((s) => s.replies[activeReplyKey]);
+  const quoteNotice = useChatReply((s) => s.notice);
   const drafts = useRef(chatDrafts);
   const editor = useRef<CKEditorRef>(null);
   const imageTray = useRef<ImagePasteTrayRef>(null);
@@ -165,30 +179,60 @@ const ChatFooter = () => {
         try {
           let request = item.request;
           if (item.images?.length) {
-            if (item.imageAgentConversationId && directImageAgent() !== item.imageAgentConversationId)
+            if (
+              item.imageAgentConversationId &&
+              directImageAgent() !== item.imageAgentConversationId
+            )
               throw new Error("原图片助手或权限已变化，请核对原发送记录。");
             request = await sendSubmissionImages(item, {
               isCurrent: tracked.operation.isCurrent,
               save: (patch) => updateSubmission(item.id, patch),
-              makeImage: (file) => withRequestDeadline(() => getImageMessage(file), 30000, tracked.operation.signal),
-              sendImage: (message) => withRequestDeadline((signal) => sendMessage({
-                message, recvID: item.recvID, groupID: item.groupID,
-                isCurrent: () => tracked.operation.isCurrent() && !signal.aborted,
-              }), 30000, tracked.operation.signal),
-              recognize: (file) => withRequestDeadline(async (signal) => {
-                if (!window.electronAPI?.recognizeChatImage)
-                  throw new Error("图片已发送；自动识字需要新版 Windows 桌面端，尚未请求 Agent 回复。");
-                const id = crypto.randomUUID();
-                const cancel = () => { void window.electronAPI?.cancelChatImageOcr(id).catch(() => {}); };
-                signal.addEventListener("abort", cancel, { once: true });
-                try {
-                  const bytes = new Uint8Array(await file.arrayBuffer());
-                  assertRequestActive(signal);
-                  const result = await window.electronAPI.recognizeChatImage(id, bytes);
-                  assertRequestActive(signal);
-                  return result.text;
-                } finally { signal.removeEventListener("abort", cancel); }
-              }, 120000, tracked.operation.signal),
+              makeImage: (file) =>
+                withRequestDeadline(
+                  () => getImageMessage(file),
+                  30000,
+                  tracked.operation.signal,
+                ),
+              sendImage: (message) =>
+                withRequestDeadline(
+                  (signal) =>
+                    sendMessage({
+                      message,
+                      recvID: item.recvID,
+                      groupID: item.groupID,
+                      isCurrent: () => tracked.operation.isCurrent() && !signal.aborted,
+                    }),
+                  30000,
+                  tracked.operation.signal,
+                ),
+              recognize: (file) =>
+                withRequestDeadline(
+                  async (signal) => {
+                    if (!window.electronAPI?.recognizeChatImage)
+                      throw new Error(
+                        "图片已发送；自动识字需要新版 Windows 桌面端，尚未请求 Agent 回复。",
+                      );
+                    const id = crypto.randomUUID();
+                    const cancel = () => {
+                      void window.electronAPI?.cancelChatImageOcr(id).catch(() => {});
+                    };
+                    signal.addEventListener("abort", cancel, { once: true });
+                    try {
+                      const bytes = new Uint8Array(await file.arrayBuffer());
+                      assertRequestActive(signal);
+                      const result = await window.electronAPI.recognizeChatImage(
+                        id,
+                        bytes,
+                      );
+                      assertRequestActive(signal);
+                      return result.text;
+                    } finally {
+                      signal.removeEventListener("abort", cancel);
+                    }
+                  },
+                  120000,
+                  tracked.operation.signal,
+                ),
             });
           }
           if (request)
@@ -292,13 +336,34 @@ const ChatFooter = () => {
         throw new Error("还有较多消息未发送，请先处理发送记录。");
       const imageAgentId = images.length ? directImageAgent() : undefined;
       const selected = readMentionComposer(original);
-      let text = (selected.mentions.length ? selected.text : cleanText) || (imageAgentId ? "请根据这些图片中可识别的文字帮我看看内容。" : "");
-      const addressed = composer.isGroup ? addressGroupReply(text, selected.mentions, composer.mentionContacts, reply?.agent?.contactId) : { text, mentions: selected.mentions };
+      let text =
+        (selected.mentions.length ? selected.text : cleanText) ||
+        (imageAgentId ? "请根据这些图片中可识别的文字帮我看看内容。" : "");
+      const addressed = composer.isGroup
+        ? addressGroupReply(
+            text,
+            selected.mentions,
+            composer.mentionContacts,
+            reply?.agent?.contactId,
+          )
+        : { text, mentions: selected.mentions };
       text = addressed.text;
-      let request = text ? composer.prepareResearch(text, addressed.mentions) : undefined;
+      let request = text
+        ? composer.prepareResearch(text, addressed.mentions)
+        : undefined;
+      const replyPointer = reply?.message ? researchPointer(reply.message) : undefined;
+      if (request && hasMessageDetails() && (replyPointer || reply?.canonicalId))
+        request = {
+          ...request,
+          body: {
+            ...request.body,
+            replyToMessageId: replyPointer?.messageId || reply?.canonicalId,
+          },
+        };
       if (
         reply &&
-        (images.length || request ||
+        (images.length ||
+          request ||
           !reply.message ||
           reply.message.contentType === MessageType.CustomMessage)
       ) {
@@ -330,7 +395,8 @@ const ChatFooter = () => {
         text,
         request,
         images: images.length ? images : undefined,
-        imageAgentConversationId: request?.route === "agentChatMessage" ? imageAgentId : undefined,
+        imageAgentConversationId:
+          request?.route === "agentChatMessage" ? imageAgentId : undefined,
         quoteMessage:
           reply?.message &&
           !images.length &&
@@ -341,7 +407,7 @@ const ChatFooter = () => {
         state: "queued",
       };
       useChatOutbox.setState((s) => ({ items: [...s.items, item] }));
-      imageTray.current?.commit(images.map(image => image.id));
+      imageTray.current?.commit(images.map((image) => image.id));
       clearChatReply(activeReplyKey);
       saveChatDraft(conversation.conversationID, "");
       latestHtml.current = "";
@@ -423,6 +489,11 @@ const ChatFooter = () => {
           onStateChange={setImageState}
           insertText={(text) => editor.current?.insertText(text)}
         />
+        {quoteNotice && (
+          <p role="alert" className="desktop-chat-error">
+            {quoteNotice}
+          </p>
+        )}
         {reply && (
           <div className="desktop-composer-quote" data-chat-quote>
             <div>
@@ -431,7 +502,12 @@ const ChatFooter = () => {
               {composer.isGroup && reply.agent && (
                 <div className="chat-reply-recipient">
                   <span>未另选成员时，发送给 @{reply.agent.displayName}</span>
-                  <button type="button" onClick={() => clearChatReplyAgent(activeReplyKey)}>仅引用内容</button>
+                  <button
+                    type="button"
+                    onClick={() => clearChatReplyAgent(activeReplyKey)}
+                  >
+                    仅引用内容
+                  </button>
                 </div>
               )}
             </div>
@@ -457,7 +533,8 @@ const ChatFooter = () => {
             {sending && !recovery && (
               <div className="flex items-center gap-2">
                 <p className="min-w-0 flex-1 truncate" title={sending.text}>
-                  {sending.images?.length ? `${sending.images.length} 张图片 · ` : ""}{sending.text}
+                  {sending.images?.length ? `${sending.images.length} 张图片 · ` : ""}
+                  {sending.text}
                 </p>
                 <Button
                   size="small"
@@ -473,7 +550,8 @@ const ChatFooter = () => {
             {recovery && (
               <div>
                 <p className="truncate" title={recovery.text}>
-                  {recovery.images?.length ? `${recovery.images.length} 张图片 · ` : ""}{recovery.text}
+                  {recovery.images?.length ? `${recovery.images.length} 张图片 · ` : ""}
+                  {recovery.text}
                 </p>
                 <p className="desktop-send-error text-red-700" role="alert">
                   {recovery.error || "离开会话后已暂停，请核对后继续。"}
@@ -557,7 +635,9 @@ const ChatFooter = () => {
             ref={editor}
             key={imID}
             value={html}
-            placeholder={composer.isGroup ? "发送消息，输入 @ 选择成员或助手" : "发送消息…"}
+            placeholder={
+              composer.isGroup ? "发送消息，输入 @ 选择成员或助手" : "发送消息…"
+            }
             mentionContacts={composer.mentionContacts}
             onEnter={() => void enterToSend()}
             onChange={onChange}
@@ -579,7 +659,11 @@ const ChatFooter = () => {
               type="primary"
               aria-label="发送消息"
               title="发送消息"
-              disabled={(!getCleanText(html) && !imageState.count) || imageState.busy || composer.invalid}
+              disabled={
+                (!getCleanText(html) && !imageState.count) ||
+                imageState.busy ||
+                composer.invalid
+              }
               onClick={() => void enterToSend()}
             >
               {window.electronAPI ? <ArrowUpOutlined /> : t("placeholder.send")}

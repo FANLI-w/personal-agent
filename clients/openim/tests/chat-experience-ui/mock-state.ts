@@ -34,6 +34,28 @@ export const roster = [
   version: 1,
 }));
 export const useConversationStore = create(() => ({
+  updateConversationList: (items: any[]) =>
+    useConversationStore.setState((s) => ({
+      currentConversation:
+        items.find((c) => c.conversationID === s.currentConversation.conversationID) ||
+        s.currentConversation,
+    })),
+  conversationList: [
+    {
+      conversationID: "fixture_group",
+      groupID: "test_group",
+      userID: "",
+      showName: "课题讨论",
+      conversationType: 3,
+    },
+    {
+      conversationID: "fixture_peer",
+      groupID: "",
+      userID: "im_peer",
+      showName: "测试同事",
+      conversationType: 1,
+    },
+  ],
   currentConversation: {
     conversationID: "fixture_group",
     groupID: "test_group",
@@ -45,6 +67,9 @@ export const useConversationStore = create(() => ({
   currentMemberInGroup: { userID: "im_me", groupID: "test_group" },
 }));
 export const useUserStore = create(() => ({
+  isLogining: false,
+  connectState: "success",
+  syncState: "success",
   selfInfo: { userID: "im_me", nickname: "测试老师" },
   appSettings: { locale: "zh-CN" },
 }));

@@ -1,6 +1,8 @@
 import { roster, useResearchStore } from "./mock-state";
 export const researchMode = true;
-export class ResearchApiError extends Error {}
+export class ResearchApiError extends Error {
+  status = 404;
+}
 export const calls: any[] = [];
 export const turns: any[] = [];
 export const messages: any[] = [];
@@ -14,14 +16,46 @@ export async function researchApi(name: string, options: any = {}) {
   const group = {
     id: "group",
     version: 1,
+    viewerState: { version: 1, pinned: false },
     kind: "group",
     taskIds: [],
     allowedActions: ["send"],
     members: roster.map((c) => ({ contactId: c.id, status: "joined" })),
   };
   if (name === "chatConversation") return { data: group };
+  if (name === "chatActions" || name === "chatMemories")
+    return { data: [], nextCursor: null };
+  if (name === "updateChatPreferences")
+    return { data: { version: 2, pinned: options.body.pinned } };
   if (name === "chatConversationContacts") return { data: roster };
-  if (name === "chatMessages") return { data: messages, cursor: null };
+  if (name === "chatMessages") return { data: messages, nextCursor: null };
+  if (name === "chatMessageDetails" || name === "withdrawChatMessage") {
+    const message = messages.find((m) => m.id === options.params.messageId);
+    if (!message) throw new ResearchApiError("not found");
+    if (name === "withdrawChatMessage") {
+      message.text = "这条消息已撤回";
+      message.withdrawn = true;
+    }
+    const { withdrawn, ...fact } = message;
+    return {
+      data: {
+        message: fact,
+        withdrawn: !!withdrawn,
+        version: withdrawn ? 2 : 1,
+        allowedActions: !withdrawn && fact.origin === "human" ? ["withdraw"] : [],
+        replyTo:
+          fact.origin === "model"
+            ? {
+                messageId: "input",
+                sequence: 1,
+                senderContactId: "human_me",
+                text: "请比较两种实验方法",
+                withdrawn: false,
+              }
+            : null,
+      },
+    };
+  }
   if (name === "chatMessageAgentStatuses")
     return {
       data: {

@@ -69,7 +69,9 @@ export function useResearchComposer() {
       researchApi("chatConversation", {
         params: { id: mapping?.researchConversationId || "" },
       }),
-    `${mapping?.researchConversationId || ''}:${peer?.profile.version ?? 0}:${peer?.allowedActions.join(',') ?? ''}`,
+    `${mapping?.researchConversationId || ""}:${peer?.profile.version ?? 0}:${
+      peer?.allowedActions.join(",") ?? ""
+    }`,
     researchMode && !!mapping,
   );
   const [advanced, setAdvanced] = useState(false);
@@ -91,9 +93,10 @@ export function useResearchComposer() {
     canonical.data?.data.members
       .filter((m) => m.status === "joined")
       .flatMap((m) => {
-        const contact = mapping?.kind === "group"
-          ? groupRoster.data?.data.find((c) => c.id === m.contactId)
-          : contacts.find((c) => c.contact.id === m.contactId)?.contact;
+        const contact =
+          mapping?.kind === "group"
+            ? groupRoster.data?.data.find((c) => c.id === m.contactId)
+            : contacts.find((c) => c.contact.id === m.contactId)?.contact;
         return contact && contact.identity.kind !== "human" ? [contact] : [];
       }) || [];
   const isDirectAgent =
@@ -180,29 +183,59 @@ export function useResearchComposer() {
     setMode("chat");
     setCreationFailure(undefined);
   }, [imID, actorGeneration]);
-  const mentionContacts = useMemo(() =>
-    canonical.data?.data.members
-      .filter((member) => member.status === "joined")
-      .flatMap((member) => {
-        const contact = groupRoster.data?.data.find((item) => item.id === member.contactId);
-        return contact
-          ? [
-              {
-                id: contact.id,
-                displayName: contact.displayName,
-                agent: contact.identity.kind !== "human",
-                external: !!contact.agentRuntime,
-                unavailable: contact.identity.kind !== "human" && contact.availability.status !== "available",
-                ownerLabel: groupContactDescription(contact, groupRoster.data?.data || [], actorId),
-              },
-            ]
-          : [];
-      }) || [], [canonical.data?.data.members, groupRoster.data, actorId]);
+  const mentionContacts = useMemo(
+    () =>
+      canonical.data?.data.members
+        .filter((member) => member.status === "joined")
+        .flatMap((member) => {
+          const contact = groupRoster.data?.data.find(
+            (item) => item.id === member.contactId,
+          );
+          return contact
+            ? [
+                {
+                  id: contact.id,
+                  displayName: contact.displayName,
+                  agent: contact.identity.kind !== "human",
+                  external: !!contact.agentRuntime,
+                  unavailable:
+                    contact.identity.kind !== "human" &&
+                    contact.availability.status !== "available",
+                  unavailableReason: contact.availability.reason
+                    ? {
+                        platform_disabled: "平台暂未启用，请联系管理员",
+                        lab_disabled: "课题组暂未启用，请联系负责人",
+                        missing_credentials: "服务尚未配置，请联系管理员",
+                        capability_unavailable: "服务暂不可用，请稍后重试",
+                        owner_authorization_required: "需要助手主人开放使用权限",
+                        not_connected: "助手尚未连接，请联系主人",
+                      }[contact.availability.reason]
+                    : "暂不可用，请联系助手主人",
+                  ownerLabel: groupContactDescription(
+                    contact,
+                    groupRoster.data?.data || [],
+                    actorId,
+                  ),
+                },
+              ]
+            : [];
+        }) || [],
+    [canonical.data?.data.members, groupRoster.data, actorId],
+  );
 
-  const prepareResearch = (text: string, mentions?: SelectedMention[]): Exclude<PreparedResearchSend, { route: "agentFileMessage" }> | undefined => {
+  const prepareResearch = (
+    text: string,
+    mentions?: SelectedMention[],
+  ): Exclude<PreparedResearchSend, { route: "agentFileMessage" }> | undefined => {
     const advancedRequest = advanced && mode === "ask_agent";
     const useMentions = !advanced || !!mentions?.length;
-    if (researchMode && mapping?.kind === "group" && useMentions && (mentions?.length || text.trimStart().startsWith("@")) && !groupRoster.data)
+    if (
+      researchMode &&
+      mapping?.kind === "group" &&
+      useMentions &&
+      (mentions?.length || text.trimStart().startsWith("@")) &&
+      !groupRoster.data
+    )
       throw new Error("群成员名单尚未读取，请稍后重试；若持续失败，请确认后台已升级。");
     const addressed =
       researchMode && mapping?.kind === "group" && useMentions
@@ -265,7 +298,13 @@ export function useResearchComposer() {
           body: {
             text,
             ...(external ? { externalConsent: true } : { continuous: true }),
-            ...(skillChat.selection ? { skill: skillChat.selection } : !external && peer?.profile.role === "coordinator" && peerChatRequest(text) ? { peerFileRequest: peerChatRequest(text) } : {}),
+            ...(skillChat.selection
+              ? { skill: skillChat.selection }
+              : !external &&
+                peer?.profile.role === "coordinator" &&
+                peerChatRequest(text)
+              ? { peerFileRequest: peerChatRequest(text) }
+              : {}),
           },
         };
   };
@@ -340,11 +379,14 @@ export function useResearchComposer() {
       useConversationStore.getState().currentConversation?.conversationID === imID &&
       useUserStore.getState().selfInfo.userID === selfUserID
     ) {
-      const acknowledged: {turn:AgentTurn | null; turns?:AgentTurn[]} = result.data;
-      const sentTurns = acknowledged.turns ?? (acknowledged.turn ? [acknowledged.turn] : []);
+      const acknowledged: { turn: AgentTurn | null; turns?: AgentTurn[] } = result.data;
+      const sentTurns =
+        acknowledged.turns ?? (acknowledged.turn ? [acknowledged.turn] : []);
       for (const sentTurn of sentTurns)
         registerAgentProgress(generation, imID || "", sentTurn, {
-          displayName: mentionContacts.find(c => c.id === sentTurn.agentContactId)?.displayName || peer?.displayName,
+          displayName:
+            mentionContacts.find((c) => c.id === sentTurn.agentContactId)
+              ?.displayName || peer?.displayName,
           inputText: result.data.message.text || prepared.body.text,
         });
       if (intent === sendIntent.current)
@@ -440,7 +482,11 @@ export function useResearchComposer() {
                   onChange={setAgentId}
                   options={agents.map((agent) => ({
                     value: agent.id,
-                    label: `${agent.displayName} · ${groupContactDescription(agent, groupRoster.data?.data || [], actorId)}`,
+                    label: `${agent.displayName} · ${groupContactDescription(
+                      agent,
+                      groupRoster.data?.data || [],
+                      actorId,
+                    )}`,
                   }))}
                 />
                 <Button size="small" onClick={() => setOpen(true)}>
@@ -486,7 +532,8 @@ export function useResearchComposer() {
               />
             </div>
           )}
-        {mapping.kind !== "group" && (turnRead.data?.data || turn) &&
+        {mapping.kind !== "group" &&
+          (turnRead.data?.data || turn) &&
           (advanced || (turnRead.data?.data || turn)?.status !== "succeeded") &&
           !(
             turnSnapshot?.continuous &&

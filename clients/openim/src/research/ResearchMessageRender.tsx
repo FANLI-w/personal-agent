@@ -22,17 +22,22 @@ import { ContinueAgentFileReadingButton } from "./ContinueAgentFileReadingButton
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { ResearchReadSummary } from "./ResearchReadSummary";
 import { GroupMessageStatuses } from "./GroupMessageStatuses";
+import { readChatMessage } from "./chat-message-read";
+import { locateMessage, timelineScope } from "./chat-timeline";
 
 export default function ResearchMessageRender({
   message,
   onReadableText,
   onReplyAgent,
+  onDetails,
 }: IMessageItemProps) {
   const history = useContext(AgentProgressHistory);
   const imID = useConversationStore((s) => s.currentConversation?.conversationID);
   const manager = useResearchStore((s) => s.actor?.isLabManager || false);
   const actorGeneration = useResearchStore((s) => s.generation);
-  const isGroup = useResearchStore((s) => s.mappings.find(m => m.imConversationID === imID)?.kind === "group");
+  const isGroup = useResearchStore(
+    (s) => s.mappings.find((m) => m.imConversationID === imID)?.kind === "group",
+  );
   const [retried, setRetried] = useState<{
     generation: number;
     imID?: string;
@@ -52,16 +57,12 @@ export default function ResearchMessageRender({
   const read = useResearchRead(
     async (signal) => {
       if (!pointer) throw new Error("该自定义消息不是可读取的科研回执");
-      const messages = await researchApi("chatMessages", {
-        params: { id: pointer.conversationId },
-        query: { afterSequence: pointer.sequence - 1, limit: 1 },
+      return readChatMessage(
+        pointer.conversationId,
+        pointer.messageId,
+        pointer.sequence,
         signal,
-      });
-      const fact = messages.data.find(
-        (m) => m.id === pointer.messageId && m.sequence === pointer.sequence,
       );
-      if (!fact) throw new Error("暂未找到这条消息，请稍后重试。");
-      return { fact };
     },
     `${imID}:${
       pointer
@@ -96,12 +97,24 @@ export default function ResearchMessageRender({
   useEffect(() => {
     onReadableText?.(read.data?.fact.text || "");
   }, [read.data?.fact.text, onReadableText]);
+  useEffect(() => onDetails?.(read.data?.details), [read.data?.details, onDetails]);
   useEffect(() => {
     const fact = read.data?.fact;
-    onReplyAgent?.(isGroup && fact?.origin === "model" && fact.senderContactId
-      ? { contactId: fact.senderContactId, displayName: message.senderNickname || "助手" }
-      : undefined);
-  }, [isGroup, read.data?.fact.senderContactId, read.data?.fact.origin, message.senderNickname, onReplyAgent]);
+    onReplyAgent?.(
+      fact?.origin === "model" && fact.senderContactId
+        ? {
+            contactId: fact.senderContactId,
+            displayName: message.senderNickname || "助手",
+          }
+        : undefined,
+    );
+  }, [
+    isGroup,
+    read.data?.fact.senderContactId,
+    read.data?.fact.origin,
+    message.senderNickname,
+    onReplyAgent,
+  ]);
   const turnId = currentRetry?.id || read.data?.fact.turnId;
   const turn = useResearchRead(
     (signal) => researchApi("chatTurn", { params: { id: turnId || "" }, signal }),
@@ -138,11 +151,21 @@ export default function ResearchMessageRender({
           currentTurn.outputMessageId &&
           !history.messageIds.has(currentTurn.outputMessageId)))
     )
-      registerAgentProgress(actorGeneration, imID, {
-        id: read.data.fact.turnId,
-        conversationId: read.data.fact.conversationId,
-        agentContactId: currentTurn.agentContactId,
-      }, { inputText: read.data.fact.origin === "human" ? read.data.fact.text || undefined : undefined });
+      registerAgentProgress(
+        actorGeneration,
+        imID,
+        {
+          id: read.data.fact.turnId,
+          conversationId: read.data.fact.conversationId,
+          agentContactId: currentTurn.agentContactId,
+        },
+        {
+          inputText:
+            read.data.fact.origin === "human"
+              ? read.data.fact.text || undefined
+              : undefined,
+        },
+      );
     if (currentTurn?.outputMessageId === read.data.fact.id)
       acknowledgeAgentReply(actorGeneration, imID, currentTurn.id, read.data.fact.id);
   }, [
@@ -178,8 +201,26 @@ export default function ResearchMessageRender({
       )}
       {read.data && (
         <>
+          {read.data.details?.replyTo && (
+            <button
+              type="button"
+              className="chat-source-link"
+              onClick={() =>
+                locateMessage(timelineScope(actorGeneration, imID || ""), {
+                  messageId: read.data!.details!.replyTo!.messageId,
+                  sequence: read.data!.details!.replyTo!.sequence,
+                })
+              }
+            >
+              <span>{read.data.fact.origin === "human" ? "引用" : "回复的问题"}</span>
+              <p>{read.data.details.replyTo.text}</p>
+            </button>
+          )}
           {read.data.fact.text && <SafeMessageMarkdown text={read.data.fact.text} />}
-          {currentTurn?.libraryRead && currentTurn.outputMessageId === read.data.fact.id && <ResearchReadSummary read={currentTurn.libraryRead} />}
+          {currentTurn?.libraryRead &&
+            currentTurn.outputMessageId === read.data.fact.id && (
+              <ResearchReadSummary read={currentTurn.libraryRead} />
+            )}
           {read.data.fact.files?.map((file) => (
             <AgentFileReadSummary
               key={file.messageId}
@@ -236,7 +277,8 @@ export default function ResearchMessageRender({
           )}
         </>
       )}
-      {!isGroup && (turn.data?.data || currentRetry) &&
+      {!isGroup &&
+        (turn.data?.data || currentRetry) &&
         (turn.data?.data || currentRetry)?.status !== "succeeded" && (
           <ResearchTurnStatus
             turn={turn.data?.data || currentRetry!}

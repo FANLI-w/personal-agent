@@ -17,11 +17,15 @@ import SingleSetting from "../SingleSetting";
 import { researchMode } from "@/research/api";
 import { useResearchStore } from "@/research/store";
 import { PersonalAssistantPanel } from "@/research/PersonalAssistantPanel";
-import { MoreOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  MoreOutlined,
+  TeamOutlined,
+  UserOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import ChatDetailsDrawer from "./ChatDetailsDrawer";
 import HistorySearch from "./HistorySearch";
 import { WorkbenchTaskInbox } from "@/research/WorkbenchTaskInbox";
-import { AgentColleagueSettings } from "@/research/AgentColleagueSettings";
 
 const menuList = [
   {
@@ -153,6 +157,15 @@ const ChatHeader = () => {
           </div>
         </div>
         <div className="mr-2 flex items-center">
+          <button
+            type="button"
+            className="desktop-chat-header-action"
+            aria-label="查找聊天内容"
+            title="查找聊天内容"
+            onClick={() => setHistory(true)}
+          >
+            <SearchOutlined />
+          </button>
           {researchMode && isCoordinator && (
             <Button type="text" onClick={() => setWorkbenchTasks(true)}>
               工作台任务
@@ -168,9 +181,6 @@ const ChatHeader = () => {
             >
               关于我
             </Button>
-          )}
-          {researchMode && !isGroupSession && contact?.identity.kind === "personal_agent" && contact.allowedActions.includes("edit_profile") && (
-            <AgentColleagueSettings key={`${actorGeneration}:${contact.id}`} contactId={contact.id} />
           )}
           {menuList.map((menu) => {
             if (window.electronAPI && menu.idx !== 2) return null;
@@ -217,7 +227,7 @@ const ChatHeader = () => {
         {workbenchTasks && isCoordinator && <WorkbenchTaskInbox />}
       </Drawer>
       <GroupSetting ref={groupSettingRef} />
-      {window.electronAPI && (
+      {(window.electronAPI || researchMode) && (
         <>
           <ChatDetailsDrawer
             key={`details:${currentConversation?.conversationID}`}

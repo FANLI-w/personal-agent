@@ -14,7 +14,7 @@ body {
   font-size: 12px;
   text-align: center;
 }
-main {
+main.personal-agent-desktop {
   max-width: 1000px;
   margin: 18px auto;
   background: #f5f6f8;
@@ -22,14 +22,14 @@ main {
   border-radius: 12px;
   overflow: hidden;
 }
-header {
+main.personal-agent-desktop > header {
   background: white;
   padding: 18px;
   border-bottom: 1px solid #dce2eb;
   display: flex;
   gap: 16px;
 }
-header span {
+main.personal-agent-desktop > header span {
   color: #64748b;
   font-size: 13px;
 }
@@ -73,11 +73,11 @@ header span {
   height: 260px;
 }
 @media (max-width: 600px) {
-  main {
+  main.personal-agent-desktop {
     margin: 0;
     border-radius: 0;
   }
-  header {
+  main.personal-agent-desktop > header {
     flex-direction: column;
     gap: 5px;
   }

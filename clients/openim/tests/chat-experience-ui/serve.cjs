@@ -58,12 +58,12 @@ const plugin = {
       resolveDir: client,
       loader: "ts",
     }));
-    build.onLoad({ filter: /\.scss$/ }, (args) => ({
-      contents: sass.compile(args.path, {
+    build.onLoad({ filter: /\.scss$/ }, async (args) => ({
+      contents: (await requireClient('postcss')([requireClient('tailwindcss')({...requireClient(client + '/tailwind.config.js'),content:[]})]).process(sass.compile(args.path, {
         silenceDeprecations: ["legacy-js-api"],
         loadPaths: [client + "/node_modules"],
-      }).css,
-      loader: "css",
+      }).css,{from:args.path})).css,
+      loader: args.path.endsWith(".module.scss") ? "local-css" : "css",
       resolveDir: path.dirname(args.path),
     }));
   },

@@ -12,11 +12,13 @@ import { calls, messages, turns } from "./mock-api";
 import { useConversationStore, useResearchStore } from "./mock-state";
 import "./style.css";
 import "@/layout/desktop-layout.scss";
+import TimelineApp from "./timeline-app";
 i18next.init({
   lng: "zh-CN",
   resources: { "zh-CN": { translation: { placeholder: { send: "发送" } } } },
 });
 window.fixture = {
+  ...(window.fixture || {}),
   calls,
   messages,
   turns,
@@ -88,7 +90,11 @@ function App() {
   );
 }
 createRoot(document.getElementById("root")!).render(
-  <GroupChatRoster imID="fixture_group">
-    <App />
-  </GroupChatRoster>,
+  location.search.includes("timeline") ? (
+    <TimelineApp />
+  ) : (
+    <GroupChatRoster imID="fixture_group">
+      <App />
+    </GroupChatRoster>
+  ),
 );

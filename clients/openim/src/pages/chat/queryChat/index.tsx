@@ -10,18 +10,14 @@ import ChatFooter from "./ChatFooter";
 import ChatHeader from "./ChatHeader";
 import useConversationState from "./useConversationState";
 import { researchMode } from "@/research/api";
-import { ResearchConversationPanel } from "@/research/ResearchConversationPanel";
 import type { ResearchChatEntry } from "@/research/useResearchChatEntry";
-import { useResearchStore } from "@/research/store";
 import { GroupChatRoster } from "@/research/GroupChatRoster";
+import { ChatMessageActions } from "@/research/ChatMessageActions";
 
 export const QueryChat = () => {
   const entry = useOutletContext<ResearchChatEntry>();
   const { conversationID } = useParams();
   const currentID = useConversationStore((s) => s.currentConversation?.conversationID);
-  const mapping = useResearchStore((s) =>
-    s.mappings.find((c) => c.imConversationID === currentID),
-  );
   const updateCurrentConversation = useConversationStore(
     (state) => state.updateCurrentConversation,
   );
@@ -52,54 +48,65 @@ export const QueryChat = () => {
 
   return (
     <GroupChatRoster imID={currentID}>
-    <Layout id="chat-container" className={`relative overflow-hidden ${window.electronAPI ? "native-chat" : ""}`}>
-      {researchMode && !entry.ready && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white">
-          <Spin tip="正在同步当前会话…" spinning>
-            <div className="h-16 w-48" />
-          </Spin>
-        </div>
-      )}
-      <div
-        className={`flex min-h-0 flex-1 flex-col ${
-          researchMode && !entry.ready ? "invisible" : ""
+      <Layout
+        id="chat-container"
+        className={`relative overflow-hidden ${
+          window.electronAPI ? "native-chat" : ""
         }`}
-        aria-hidden={researchMode && !entry.ready}
       >
-        <ChatHeader />
-        {researchMode && entry.error && (
-          <Alert
-            type="error"
-            showIcon
-            message={entry.error}
-            action={
-              <Button size="small" onClick={entry.retry}>
-                重试
-              </Button>
-            }
-          />
+        {researchMode && !entry.ready && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white">
+            <Spin tip="正在同步当前会话…" spinning>
+              <div className="h-16 w-48" />
+            </Spin>
+          </div>
         )}
-        {researchMode && mapping?.kind === "group" && <ResearchConversationPanel />}
-        {window.electronAPI ? <div className="desktop-chat-stage">
-          <div className="desktop-chat-history"><ChatContent /></div>
-          <ChatFooter />
-        </div> : <PanelGroup direction="vertical">
-          <Panel id="chat-main" order={0}>
-            <ChatContent />
-          </Panel>
-          <PanelResizeHandle />
-          <Panel
-            id="chat-footer"
-            order={1}
-            defaultSize={window.electronAPI ? 24 : 25}
-            maxSize={60}
-            className={researchMode ? "min-h-[280px]" : "min-h-[200px]"}
-          >
-            <ChatFooter />
-          </Panel>
-        </PanelGroup>}
-      </div>
-    </Layout>
+        <div
+          className={`flex min-h-0 flex-1 flex-col ${
+            researchMode && !entry.ready ? "invisible" : ""
+          }`}
+          aria-hidden={researchMode && !entry.ready}
+        >
+          <ChatHeader />
+          <ChatMessageActions />
+          {researchMode && entry.error && (
+            <Alert
+              type="error"
+              showIcon
+              message={entry.error}
+              action={
+                <Button size="small" onClick={entry.retry}>
+                  重试
+                </Button>
+              }
+            />
+          )}
+          {window.electronAPI ? (
+            <div className="desktop-chat-stage">
+              <div className="desktop-chat-history">
+                <ChatContent key={conversationID} />
+              </div>
+              <ChatFooter />
+            </div>
+          ) : (
+            <PanelGroup direction="vertical">
+              <Panel id="chat-main" order={0}>
+                <ChatContent key={conversationID} />
+              </Panel>
+              <PanelResizeHandle />
+              <Panel
+                id="chat-footer"
+                order={1}
+                defaultSize={window.electronAPI ? 24 : 25}
+                maxSize={60}
+                className={researchMode ? "min-h-[280px]" : "min-h-[200px]"}
+              >
+                <ChatFooter />
+              </Panel>
+            </PanelGroup>
+          )}
+        </div>
+      </Layout>
     </GroupChatRoster>
   );
 };

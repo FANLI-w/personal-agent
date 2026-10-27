@@ -458,9 +458,9 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     await s.call('sendChatMessage',{text:'旧013真人聊天'},{id:direct.id});await s.call('updateChatPreferences',{expectedVersion:1,pinned:true},{id:direct.id})
     s.db.prepare('UPDATE chat_conversations SET scope_key=? WHERE id=?').run('direct:lab_synthetic:member_A:member_B',direct.id)
     const previous=s.db.prepare('SELECT document FROM chat_conversations WHERE id=?').get(direct.id)!.document
-    s.db.exec('DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DROP TABLE agent_connections; DROP INDEX chat_contact_owner; DROP TABLE personal_model_settings; DROP TABLE personal_model_configurations; DROP TABLE personal_spaces; DROP TRIGGER im_queue_research_message; DROP TABLE im_callback_receipts; DROP TABLE im_message_outbox; DROP TABLE im_token_leases; DROP TABLE im_conversations; DROP TABLE im_identities; DROP TABLE chat_memory_revisions; DROP TABLE chat_memories; DROP TABLE chat_contact_requests; DROP TABLE chat_contact_profiles; DELETE FROM schema_migrations WHERE version>=14')
+    s.db.exec('DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DROP TABLE agent_connections; DROP INDEX chat_contact_owner; DROP TABLE personal_model_settings; DROP TABLE personal_model_configurations; DROP TABLE personal_spaces; DROP TRIGGER im_queue_research_message; DROP TABLE im_callback_receipts; DROP TABLE im_message_outbox; DROP TABLE im_token_leases; DROP TABLE im_conversations; DROP TABLE im_identities; DROP TABLE chat_memory_revisions; DROP TABLE chat_memories; DROP TABLE chat_contact_requests; DROP TABLE chat_contact_profiles; DELETE FROM schema_migrations WHERE version>=14')
     migrate(s.db);migrate(s.db)
-    expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(27)
+    expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(28)
     expect(s.db.prepare('SELECT count(*) n FROM chat_contact_requests').get()!.n).toBe(1)
     expect(s.db.prepare('SELECT document FROM chat_conversations WHERE id=?').get(direct.id)!.document).toBe(previous)
     expect((await s.call('chatContact',null,{id:s.human('member_B').id})).value.data.relationship.status).toBe('accepted')
@@ -480,9 +480,9 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     const message = s.db.prepare('SELECT document FROM chat_messages WHERE conversation_id=?').get(s.personal.id)!.document
     // Reconstruct the exact 012 shape by removing only the new 013 table/history.
     // Existing applied checksums and all chat rows remain untouched.
-    s.db.exec('DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DROP TABLE agent_connections; DROP INDEX chat_contact_owner; DROP TABLE personal_model_settings; DROP TABLE personal_model_configurations; DROP TABLE personal_spaces; DROP TRIGGER im_queue_research_message; DROP TABLE im_callback_receipts; DROP TABLE im_message_outbox; DROP TABLE im_token_leases; DROP TABLE im_conversations; DROP TABLE im_identities; DROP TABLE chat_memory_revisions; DROP TABLE chat_memories; DROP TABLE chat_contact_requests; DROP TABLE chat_contact_profiles; DROP TABLE chat_viewer_states; DELETE FROM schema_migrations WHERE version>=13')
+    s.db.exec('DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DROP TABLE agent_connections; DROP INDEX chat_contact_owner; DROP TABLE personal_model_settings; DROP TABLE personal_model_configurations; DROP TABLE personal_spaces; DROP TRIGGER im_queue_research_message; DROP TABLE im_callback_receipts; DROP TABLE im_message_outbox; DROP TABLE im_token_leases; DROP TABLE im_conversations; DROP TABLE im_identities; DROP TABLE chat_memory_revisions; DROP TABLE chat_memories; DROP TABLE chat_contact_requests; DROP TABLE chat_contact_profiles; DROP TABLE chat_viewer_states; DELETE FROM schema_migrations WHERE version>=13')
     migrate(s.db); migrate(s.db)
-    expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(27)
+    expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(28)
     expect(s.db.prepare('SELECT document FROM chat_conversations WHERE id=?').get(s.personal.id)!.document).toBe(previous)
     expect(s.db.prepare('SELECT document FROM chat_messages WHERE conversation_id=?').get(s.personal.id)!.document).toBe(message)
     expect((await s.call('chatConversation', null, { id: s.personal.id })).value.data.viewerState).toEqual({ readSequence: 0, unreadCount: 0, pinned: true, version: 1 })
@@ -941,5 +941,73 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     expect((await s.call('task',null,{id:derived.tasks[0]!},1)).status).toBe(404)
     const messages=(await s.call('chatMessages',null,{id:derived.group.id},1)).value.data
     expect(messages.flatMap((m:{resources:{kind:string}[]})=>m.resources)).toEqual([])
+  })
+})
+
+describe('message relationships and withdrawal',()=>{
+  it('publishes only the authorized question link to other group members after an Agent answers',{timeout:20000},async()=>{
+    const s=await setup(),{group,agents}=await colleagueGroup(s),input=address(agents.slice(0,1))
+    const sent=await s.call('sendChatMessage',{...input,intent:'ask_agent',agentContactIds:[agents[0]!.id],budget},{id:group.id})
+    expect(sent.status,sent.raw).toBe(201)
+    await new ChatWorker(s.db,s.config,model(reply())).tick()
+    const turn=(await s.call('chatTurn',null,{id:sent.value.data.turn.id})).value.data
+    expect(turn.status).toBe('succeeded')
+    const answer=await s.call('chatMessageDetails',null,{id:group.id,messageId:turn.outputMessageId},1)
+    expect(answer.status,answer.raw).toBe(200)
+    expect(answer.value.data.replyTo.messageId).toBe(sent.value.data.message.id)
+    expect(answer.value.data.allowedActions).toEqual([])
+    expect(answer.value.data).not.toHaveProperty('budget')
+  })
+  it('does not publish a late model answer after its input was withdrawn',{timeout:20000},async()=>{
+    const s=await setup(),sent=await s.ask()
+    await new ChatWorker(s.db,s.config,async(input,signal,credential)=>{
+      const withdrawn=await s.call('withdrawChatMessage',{expectedVersion:1},{id:s.personal.id,messageId:sent.message.id})
+      expect(withdrawn.status,withdrawn.raw).toBe(200)
+      return model(reply())(input,signal,credential)
+    }).tick()
+    const turn=(await s.call('chatTurn',null,{id:sent.turn.id})).value.data
+    expect(turn.status).toBe('cancelled');expect(turn.outputMessageId).toBeNull()
+    expect(s.db.prepare("SELECT count(*) n FROM chat_messages WHERE conversation_id=? AND json_extract(document,'$.origin')='model'").get(s.personal.id)!.n).toBe(0)
+  })
+  it('keeps legacy payloads strict, authorizes reply sources, and fences retracted input',{timeout:20000},async()=>{
+    const s=await setup(),sent=await s.ask(),p={id:s.personal.id,messageId:sent.message.id}
+    const detail=await s.call('chatMessageDetails',null,p)
+    expect(detail.status,detail.raw).toBe(200)
+    expect(detail.value.data.allowedActions).toEqual(['withdraw'])
+    expect((await s.call('chatMessageDetails',null,p,1)).status).toBe(404)
+    const follow=await s.call('agentChatMessage',{text:'请继续解释',replyToMessageId:sent.message.id},{id:s.personal.id})
+    expect(follow.status,follow.raw).toBe(201)
+    const relation=await s.call('chatMessageDetails',null,{id:s.personal.id,messageId:follow.value.data.message.id})
+    expect(relation.value.data.replyTo.messageId).toBe(sent.message.id)
+    const key=randomUUID(),withdrawn=await s.call('withdrawChatMessage',{expectedVersion:1},p,0,'',key)
+    expect(withdrawn.status,withdrawn.raw).toBe(200)
+    expect(withdrawn.value.data.message.text).toBe('这条消息已撤回')
+    expect(withdrawn.value.data.message).not.toHaveProperty('withdrawn')
+    expect((await s.call('withdrawChatMessage',{expectedVersion:1},p,0,'',key)).status).toBe(200)
+    expect((await s.call('chatTurn',null,{id:sent.turn.id})).value.data.status).toBe('cancelled')
+    const source=await s.call('chatMessageDetails',null,{id:s.personal.id,messageId:follow.value.data.message.id})
+    expect(source.value.data.replyTo.withdrawn).toBe(true)
+    expect(source.value.data.replyTo.text).not.toContain('合成普通问题')
+    expect((await s.call('agentChatMessage',{text:'再次回复',replyToMessageId:sent.message.id},{id:s.personal.id})).status).toBe(400)
+  })
+  it('withdraws one group input and all its pending Agents without granting other members control',{timeout:20000},async()=>{
+    const s=await setup(),{group,agents}=await colleagueGroup(s),input=address(agents)
+    const sent=await s.call('sendChatMessage',{...input,intent:'ask_agent',agentContactIds:agents.map(a=>a.id),budget},{id:group.id})
+    expect(sent.status,sent.raw).toBe(201)
+    const p={id:group.id,messageId:sent.value.data.message.id}
+    expect((await s.call('chatMessageDetails',null,p,1)).value.data.allowedActions).toEqual([])
+    expect((await s.call('withdrawChatMessage',{expectedVersion:1},p,1)).status).toBe(403)
+    expect((await s.call('withdrawChatMessage',{expectedVersion:1},p)).status).toBe(200)
+    for(const turn of sent.value.data.turns)expect((await s.call('chatTurn',null,{id:turn.id})).value.data.status).toBe('cancelled')
+    expect((await s.call('chatMessageDetails',null,p,1)).value.data.withdrawn).toBe(true)
+  })
+  it('rejects cross-conversation reply links and expired withdrawal without writing a message',{timeout:20000},async()=>{
+    const s=await setup(),sent=await s.ask(),other=(await s.call('personalConversation',{}, {},1)).value.data.conversation
+    const before=s.db.prepare('SELECT count(*) n FROM chat_messages').get()!.n
+    expect((await s.call('agentChatMessage',{text:'不能跨会话引用',replyToMessageId:sent.message.id},{id:other.id},1)).status).toBe(404)
+    expect(s.db.prepare('SELECT count(*) n FROM chat_messages').get()!.n).toBe(before)
+    const chat=new ChatService(serviceFor(s.db,'member_A',s.config).c,s.config,()=>Date.now()+121000)
+    const detail=chat.run('chatMessageDetails',{params:{id:s.personal.id,messageId:sent.message.id},query:{},headers:{},body:null}) as any
+    expect(detail.data.allowedActions).toEqual([])
   })
 })

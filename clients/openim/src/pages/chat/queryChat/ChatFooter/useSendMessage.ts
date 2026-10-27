@@ -39,7 +39,11 @@ export function useSendMessage() {
       needPush = needPush ?? inCurrentConversation;
 
       if (needPush) {
-        pushNewMessage(message);
+        pushNewMessage({
+          ...message,
+          recvID: recvID ?? currentConversation?.userID ?? "",
+          groupID: groupID ?? currentConversation?.groupID ?? "",
+        });
         updateOneMessage({ ...message, status: MessageStatus.Sending });
         emit("CHAT_LIST_SCROLL_TO_BOTTOM");
       }

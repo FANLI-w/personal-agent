@@ -24,12 +24,26 @@ export function GroupChatRoster({
     s.mappings.find((m) => m.imConversationID === imID),
   );
   const read = useResearchRead(
-    (signal) =>
-      researchApi("chatConversationContacts", {
-        params: { id: mapping?.researchConversationId || "" },
-        query: { limit: 100 },
-        signal,
-      }),
+    async (signal) => {
+      let cursor: string | undefined;
+      let result: ResponseFor<"chatConversationContacts"> | undefined;
+      const contacts = new Map<string, Contact>();
+      do {
+        const page = await researchApi("chatConversationContacts", {
+          params: { id: mapping?.researchConversationId || "" },
+          query: { limit: 100, cursor },
+          signal,
+        });
+        result = page;
+        for (const contact of page.data) contacts.set(contact.id, contact);
+        if (page.nextCursor === cursor && cursor)
+          throw new Error("群成员名单分页未前进，请重新读取。");
+        cursor = page.nextCursor || undefined;
+      } while (cursor && contacts.size < 2000);
+      if (cursor)
+        throw new Error("群成员超过本次可读取范围，请缩小群规模后再提及助手。");
+      return { ...result!, data: [...contacts.values()] };
+    },
     `${imID}:group-roster:${mapping?.researchConversationId}`,
     mapping?.kind === "group",
   );
