@@ -13,8 +13,13 @@ import { createPlannerTasks, plannerPlanInput } from "../src/research/planner-ch
 
 // Real local HTTP and SQLite using the unchanged current API. No model, SDK,
 // personal credentials, live service or user material is involved.
-for (const lost of ["editPlan", "confirmPlan"])
-  test(`seven-step draft creates exactly one real task after a lost ${lost} receipt`, async () => {
+for (const { lost, shape, count, taskCount } of [
+  { lost: "editPlan", shape: "single", count: 7, taskCount: 1 },
+  { lost: "confirmPlan", shape: "single", count: 7, taskCount: 1 },
+  { lost: "confirmPlan", shape: "auto", count: 1, taskCount: 1 },
+  { lost: "confirmPlan", shape: "auto", count: 3, taskCount: 3 },
+])
+  test(`${shape} draft creates exactly ${taskCount} real task(s) after a lost ${lost} receipt`, async () => {
     const testRoot = realpathSync(tmpdir());
     const directory = mkdtempSync(join(testRoot, "acceptcat-single-task-"));
     const config = readConfig({
@@ -70,7 +75,7 @@ for (const lost of ["editPlan", "confirmPlan"])
       };
       await call("login", { body: { username: "synthetic_single_task", password } });
       csrf = (await call("session")).data.csrfToken;
-      const items = Array.from({ length: 7 }, (_, i) => ({
+      const items = Array.from({ length: count }, (_, i) => ({
         id: `step_${i + 1}`,
         title: `Synthetic step ${i + 1}`,
         goal: `Purpose ${i + 1}`,
@@ -101,31 +106,42 @@ for (const lost of ["editPlan", "confirmPlan"])
       const intent = {
         key: randomUUID(),
         plan,
-        taskShape: "single",
+        taskShape: shape,
         deadline: { date: "2026-11-01", target: "final" },
       };
-      const preview = plannerPlanInput(plan, intent.deadline, "single");
+      const preview = plannerPlanInput(plan, intent.deadline, shape);
       failAfterWrite = true;
       await assert.rejects(
         createPlannerTasks(call, intent, () => true),
         /response lost/,
       );
       const result = await createPlannerTasks(call, intent, () => true);
-      assert.equal(result.taskIds.length, 1);
-      assert.equal(Number(db.prepare("SELECT count(*) n FROM tasks").get().n), 1);
-      assert.equal(Number(db.prepare("SELECT count(*) n FROM assignments").get().n), 1);
-      assert.equal(calls.filter((name) => name === "editPlan").length, 1);
+      assert.equal(result.taskIds.length, taskCount);
+      assert.equal(
+        Number(db.prepare("SELECT count(*) n FROM tasks").get().n),
+        taskCount,
+      );
+      assert.equal(
+        Number(db.prepare("SELECT count(*) n FROM assignments").get().n),
+        taskCount,
+      );
+      assert.equal(
+        calls.filter((name) => name === "editPlan").length,
+        1, // All cases persist the explicitly stated final deadline before confirming.
+      );
       assert.equal(calls.filter((name) => name === "confirmPlan").length, 1);
       assert.deepEqual(result.plan.proposedItems, preview.proposedItems);
-      const detail = (await call("task", { params: { id: result.taskIds[0] } })).data
-        .task;
-      assert.equal(detail.title, plan.goal);
-      for (let i = 1; i <= 7; i++) assert(detail.goal.includes(`Purpose ${i}`));
+      const detail = (await call("task", { params: { id: result.taskIds.at(-1) } }))
+        .data.task;
+      assert.equal(detail.title, preview.proposedItems.at(-1).title);
+      if (shape === "single")
+        for (let i = 1; i <= count; i++) assert(detail.goal.includes(`Purpose ${i}`));
+      else assert.equal(detail.goal, items.at(-1).goal);
       assert.equal(detail.schedule.hardDeadline.value.date, "2026-11-01");
       assert.equal(result.plan.version, 3);
       assert.equal(
         (await call("getPlan", { params: { id: plan.id } })).data.proposedItems.length,
-        1,
+        taskCount,
       );
     } finally {
       if (app) await app.close();

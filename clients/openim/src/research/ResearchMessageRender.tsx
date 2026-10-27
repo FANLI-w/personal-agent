@@ -21,6 +21,7 @@ import { PersonalReceiptCard } from "./PersonalReceiptCard";
 import { ContinueAgentFileReadingButton } from "./ContinueAgentFileReadingButton";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { ResearchReadSummary } from "./ResearchReadSummary";
+import { GroupMessageStatuses } from "./GroupMessageStatuses";
 
 export default function ResearchMessageRender({
   message,
@@ -30,6 +31,7 @@ export default function ResearchMessageRender({
   const imID = useConversationStore((s) => s.currentConversation?.conversationID);
   const manager = useResearchStore((s) => s.actor?.isLabManager || false);
   const actorGeneration = useResearchStore((s) => s.generation);
+  const isGroup = useResearchStore((s) => s.mappings.find(m => m.imConversationID === imID)?.kind === "group");
   const [retried, setRetried] = useState<{
     generation: number;
     imID?: string;
@@ -250,6 +252,15 @@ export default function ResearchMessageRender({
         )}
       {turn.error && (
         <p className="text-xs text-red-700">AI 请求状态暂时无法读取：{turn.error}</p>
+      )}
+      {isGroup && imID && read.data?.fact.origin === "human" && (
+        <GroupMessageStatuses
+          conversationId={read.data.fact.conversationId}
+          messageId={read.data.fact.id}
+          imID={imID}
+          own={!!read.data.fact.turnId}
+          detailedTurnId={currentTurn?.status === "succeeded" ? undefined : currentTurn?.id}
+        />
       )}
       {currentTurn && currentTurn.outputMessageId === read.data?.fact.id && (
         <div className="mt-2">

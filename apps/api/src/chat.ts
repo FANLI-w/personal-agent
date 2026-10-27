@@ -1,5 +1,6 @@
 import {PeerLibraryService} from './peer-library.js'
 import {hasLabMembership} from './lab-access.js'
+import {sendGroupAgents,groupMessageStatuses} from './group-agent-message.js'
 import {skillContext,type SkillCall} from './skills.js'
 import { captureResearchSnapshot, libraryHistoryCurrent } from './research-chat-context.js'
 import { ResearchLibraryService } from './research-library.js'
@@ -34,7 +35,7 @@ import {workspaceCommands,workspaceAuthorize,workspaceHandle,workspaceReplay,isS
 export type ChatCommand = keyof typeof chatRoutes | keyof typeof agentIntegrationRoutes | keyof typeof personalAssistantRoutes | keyof typeof workspaceRoutes | 'imCreateGroup' | 'imInviteContact'
 type Resource = z.infer<typeof ChatResource>
 export type TurnInput = DialogueSelection & { librarySnapshot?:ResearchContextSnapshot; libraryRead?:ResearchReadReceipt; skill?:SkillCall; workTaskId?:string; workTaskVersion?:number; scheduledFollowupId?:string; scheduledRunId?:string; continuous?:ContinuousInput; budget: { maxTokens: number; maxSeconds: number }; context: Resource[]; conversationVersion: number; inputSequence: number; agentContextFingerprint?: string; modelSelectionFingerprint?:string; dailyChat?:boolean; personalAssistant?:boolean; assistantMode?:'coordinate'; delegatedByTurnId?:string; personalMemoryFingerprint?:string; assistantDirectoryFingerprint?:string; assistantReceipt?:AgentTurn['assistantReceipt'];memoryReceipt?:AgentTurn['memoryReceipt'];followupReceipt?:AgentTurn['followupReceipt']; externalConsent?:boolean; externalAgent?:boolean; externalConnectionVersion?:number; purpose?:'create_agent'; createdAgent?:AgentTurn['createdAgent']; creationFailure?:'AGENT_LIMIT_REACHED'; assistantFailure?:'AGENT_LIMIT_REACHED'; fileDocument?:FileDocument; fileSource?:AgentFileSelection; fileRead?:AgentTurn['fileRead']; modelOutputDiagnostic?:{stage:string;returnedTextLength:number;trimEmpty:boolean;maxOutputTokens:number;reasoningEffort:string;finishReason?:string;failure?:string;errorCategory?:string} }
-export type ChatRequest = { params: { id?: string; contactId?: string }; query: { cursor?: string; limit?: number; search?: string; afterSequence?: number; category?: 'all'|'ongoing'|'awaiting_me'|'completed'|'scheduled'; kind?: 'all'|'human'|'agent'; view?: 'directory'|'mine'|'public'; direction?: 'all'|'incoming'|'outgoing'; status?: 'all'|'pending'|'confirmed'|'candidate'|'revoked'|'active'|'paused'|'completed'|'cancelled'; scope?: 'private_agent'|'conversation'|'local'|'global'; scopeId?: string }; headers: { 'Idempotency-Key'?: string }; body: unknown }
+export type ChatRequest = { params: { id?: string; contactId?: string; messageId?: string }; query: { cursor?: string; limit?: number; search?: string; afterSequence?: number; category?: 'all'|'ongoing'|'awaiting_me'|'completed'|'scheduled'; kind?: 'all'|'human'|'agent'; view?: 'directory'|'mine'|'public'; direction?: 'all'|'incoming'|'outgoing'; status?: 'all'|'pending'|'confirmed'|'candidate'|'revoked'|'active'|'paused'|'completed'|'cancelled'; scope?: 'private_agent'|'conversation'|'local'|'global'; scopeId?: string }; headers: { 'Idempotency-Key'?: string }; body: unknown }
 type Request = ChatRequest
 const decode = (value: unknown) => JSON.parse(String(value))
 const encode = JSON.stringify
@@ -317,6 +318,9 @@ export class ChatService {
     const row = this.db.prepare('SELECT document FROM chat_messages WHERE id=?').get(id); if (!row) fail('NOT_FOUND')
     const m = ChatMessage.parse(decode(row.document)); this.conversation(m.conversationId, false)
     if (m.origin === 'model' && m.turnId) this.checkTurnInput(m.turnId, false)
+    // The message is shared; the requester's full request, private receipts and
+    // cancel/retry controls are not. Group status has its own narrow projection.
+    if (m.turnId && !this.db.prepare('SELECT 1 FROM chat_turns WHERE id=? AND owner_id=?').get(m.turnId,this.c.actor.id)) m.turnId=null
     if(m.origin==='human'){const source=this.fileDocumentForMessage(m.id,m.conversationId);if(source)m.files=[source.metadata]}
     m.resources = m.resources.filter(ref => { try { this.checkResource(ref, m.conversationId); return true } catch { return false } })
     m.actionIds = m.actionIds.filter(actionId => { try { this.action(actionId); return true } catch { return false } })
@@ -507,7 +511,7 @@ export class ChatService {
       if(personalCommands.includes(name)){if(name==='updatePersonalMemorySettings')return route.response.parse({data:memorySettings(this)});return route.response.parse({data:name.toLowerCase().includes('followup')?followup(this,previous.data.id):memory(this,previous.data.id)})}
       if(['updateAgentConnection','disconnectAgentConnection'].includes(name))return route.response.parse({data:connectionStateForReplay(this,req.params.id!)})
       const directoryReplay=this.directory.replay(name,previous);if(directoryReplay)return route.response.parse(directoryReplay)
-      if (name === 'sendChatMessage'||name==='agentChatMessage'||name==='agentFileMessage') {const message=this.projectedMessage(previous.data.message.id);return route.response.parse({ data: { message, turn: message.turnId ? this.turn(message.turnId) : null } })}
+      if (name === 'sendChatMessage'||name==='agentChatMessage'||name==='agentFileMessage') {const message=this.projectedMessage(previous.data.message.id);return route.response.parse({ data: { message, turn: message.turnId ? this.turn(message.turnId) : null,...(previous.data.turns?{turns:previous.data.turns.map((turn:{id:string})=>this.turn(turn.id))}:{}) } })}
       if (name === 'personalConversation') return { data: { conversation: this.conversation(previous.data.conversation.id), agent: this.contact(previous.data.agent.id) } }
       if (name === 'createDirectConversation' || name === 'imCreateGroup' || name === 'imInviteContact') return { data: this.conversation(previous.data.id) }
       if (name === 'markChatRead' || name === 'updateChatPreferences') return { data: this.viewerState(this.conversation(req.params.id!, false)) }
@@ -574,6 +578,14 @@ export class ChatService {
       return {data:this.newConversation('direct',contact.displayName,[contact.id],`agentdirect:${this.c.actor.id}:${contact.id}`)}
     }
     if (name === 'chatConversation') return { data: this.conversation(id) }
+    if (name === 'chatConversationContacts') {
+      const joined=this.conversation(id,false).members.filter(member=>member.status==='joined').map(member=>member.contactId)
+      return this.page(name,{...req.query,search:id},joined,contactId=>{
+        if(!this.conversation(id,false).members.some(member=>member.contactId===contactId&&member.status==='joined'))fail('NOT_FOUND')
+        return this.contact(contactId)
+      })
+    }
+    if (name === 'chatMessageAgentStatuses') return groupMessageStatuses(this,id,req.params.messageId!)
     if (name === 'markChatRead') {
       const group = this.conversation(id, false), body = b as RequestFor<'markChatRead'>['body']
       if (body.throughSequence > group.lastSequence) fail('VALIDATION_ERROR')
@@ -614,6 +626,7 @@ export class ChatService {
         if (!group.members.some(m => m.contactId === contact.id && m.status === 'joined') || input.text.slice(mention.start, mention.end) !== `@${contact.displayName}`) fail('VALIDATION_ERROR')
       }
       for (const resource of input.context) this.checkResource(resource, id, true)
+      if (input.agentContactIds) return sendGroupAgents(this,group,input)
       if (input.intent === 'ask_agent') this.joinedAgent(group, input.agentContactId!)
       const external=input.agentContactId&&connectionRow(this,input.agentContactId)?.configured===1
       if(external){if(name==='agentFileMessage'||(b as {fileSelection?:unknown}).fileSelection)fail('EXTERNAL_FILES_UNSUPPORTED');if(name!=='agentChatMessage'||group.kind!=='direct')fail('EXTERNAL_SCOPE_UNSUPPORTED');if((b as {externalConsent?:boolean}).externalConsent!==true)fail('EXTERNAL_CONSENT_REQUIRED');const contact=this.contact(input.agentContactId!);if(!contact.agentRuntime?.callerAllowed)fail('FORBIDDEN')}

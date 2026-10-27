@@ -377,7 +377,7 @@ function PlanningAgentSession({
       preview = plannerPlanInput(
         current,
         current.status === "draft" ? thread.deadline : undefined,
-        current.status !== "draft" ? "multiple" : thread.taskShape || "single",
+        current.status !== "draft" ? "multiple" : thread.taskShape || "auto",
       );
       problems = planProblems(preview);
       if (thread.deadlineQuestion)
@@ -471,7 +471,7 @@ function PlanningAgentSession({
       key: crypto.randomUUID(),
       plan: current!,
       deadline: thread.deadline,
-      taskShape: thread.taskShape || "single",
+      taskShape: thread.taskShape || "auto",
     };
     if (!intent) update((t) => ({ ...t, creating: chosen }));
     void run(async (isCurrent) => {
@@ -589,7 +589,7 @@ function PlanningAgentSession({
     const deadlineQuestion = statedDeadline
       ? false
       : needsDeadlineClarification(text) || !!thread.deadlineQuestion;
-    const taskShape = plannerTaskShape(text, thread.taskShape);
+    const taskShape = plannerTaskShape(text);
     void run(async (isCurrent) => {
       const context = planningPrompt(
         retry ? retry.messages : thread.messages,
@@ -829,29 +829,6 @@ function PlanningAgentSession({
           {thread.planId && !current && !plan.error && (
             <p role="status">正在读取当前方案…</p>
           )}
-          {current?.status === "draft" && !thread.taskIds?.length && (
-            <div className="planning-task-shape">
-              <span>
-                {thread.taskShape === "multiple"
-                  ? "按多项任务分别安排"
-                  : "按一项任务安排，步骤放在任务里"}
-              </span>
-              <Button
-                type="link"
-                size="small"
-                disabled={busy || frozen || processing}
-                onClick={() => {
-                  update((t) => ({
-                    ...t,
-                    taskShape: t.taskShape === "multiple" ? "single" : "multiple",
-                  }));
-                  setFailure("");
-                }}
-              >
-                {thread.taskShape === "multiple" ? "合为一项任务" : "改为多项任务"}
-              </Button>
-            </div>
-          )}
           {current && preview && !!preview.proposedItems.length && (
             <article className="planning-chat-plan" aria-label="当前任务方案">
               <header>
@@ -877,7 +854,7 @@ function PlanningAgentSession({
                 />
               )}
               {current.status === "draft" &&
-                thread.taskShape !== "multiple" &&
+                thread.taskShape === "single" &&
                 current.proposedItems.length > 1 && (
                   <p className="planning-agent-note">
                     原草案的 {current.proposedItems.length}{" "}

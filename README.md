@@ -66,7 +66,7 @@ AcceptCat 把这些事情放在同一个工作空间里：用聊天说清需求�
 
 ## 使用自己的科研助手与方法
 
-在“我的 → 我的 Agent”管理自己的助手、技能、模型和获准资料。0.10.34暂隐藏广场及公开能力发布入口，保留相关代码与既有后台记录，先把日常任务和资料使用做好。
+在“通讯录 → 智能体”查看与管理助手、技能和获准资料，在“我的”管理个人设置。0.10.34暂隐藏广场及公开能力发布入口，保留相关代码与既有后台记录，先把日常任务和资料使用做好。
 
 已有方法覆盖的方向包括：
 
@@ -86,7 +86,7 @@ AcceptCat 把这些事情放在同一个工作空间里：用聊天说清需求�
 | **飞书只读本人试点** | 文档快照与命名多维表格论文库代码已包含，配套后台及飞书 0.2.0 已部署；指定论文库的真实读取、私人绑定和 DSH 试读已完成。飞书应用仍仅罗岩本人可用，其他成员不会因安装客户端而自动获得权限。[试点记录与边界](docs/deployment/acceptcat-0.10.27.md) |
 | **后台模型运行层：DSH 0.2.1-rc.2** | 已部署并验证现有模型的真实短句回复，保留现有账号、资料与模型设置；已有客户端无需重装。[部署说明](docs/deployment/harness-0.2.1-rc.2-20261020.md) |
 | **历史公开版本** | 原 v0.10.52、v0.10.37、v0.10.34 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.56 |
-| **产品源码与协作基线** | [v0.10.56 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.56)固定实际构建源码；本次按要求先公开包，[PR116](https://github.com/luoyan96/personal-agent/pull/116)仍待审，未合[main](https://github.com/luoyan96/personal-agent/tree/main)。后续功能从主仓库最新main另开分支，通过PR合并，保留同事原始提交及既有功能 |
+| **产品源码与协作基线** | [v0.10.56 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.56)固定原安装包源码；[PR117](https://github.com/luoyan96/personal-agent/pull/117)已将PR113–116及同事任务流转修正整合到[main](https://github.com/luoyan96/personal-agent/tree/main)。后续功能从主仓库最新main另开分支，通过PR合并，安装包发布和后台部署分别记录 |
 
 0.10.56客户端已经公开，沿用已部署的[配套API/worker](docs/deployment/contact-agent-removal-20261026.md)，本次上传没有重新部署后台。统一角色与用户编辑、私人偏好保持；普通聊天未新增生图、脚本或PPTX导出工具，实际能力与限制见发布说明。
 

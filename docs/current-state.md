@@ -1,6 +1,40 @@
 # 新 AI 接手：当前项目状态
 
-更新日期：2026-10-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
+更新日期：2026-10-27（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
+
+## PR120整合main（本节随合并生效）
+
+负责人本轮明确授权：若同事没有新的PR，直接合并。2026-10-27重新获取远端并检查全部67个开放PR，最新仍为[PR120](https://github.com/luoyan96/personal-agent/pull/120)，未发现新的同事待处理PR；旧PR90及历史其他开放PR不在本批范围。main仍c3f7d0f，PR120原head为0d91dd6，四项GitHub检查均成功、无冲突且没有审阅意见。PR118/8172b66与PR119/7449c0d均为本分支祖先，普通merge保留图片右键、任务粒度自动安排、群聊多助手与公开状态以及同事原有功能和提交归属，不重放依赖或强推。
+
+本节在PR120进入main后生效，合并前以GitHub状态为准；实际合并SHA和时间见PR回执，Git外D:/deepseek-agent/.runtime/pr120-merge-20261027保存精确head检查、祖先关系和合并后main同步核对。本轮只补交接文档并执行内容/差异检查，等待最终文档head的GitHub检查成功后带固定head合并；沿用已通过的根819项、客户端88项、服务器93项及冻结构建证据，不追加安装或真实模型/群聊验收。
+
+安装包仍为本机0.10.59/产品db11a6d；后台仍为2026-10-26已部署63d87995/产品db11a6d/contract0.34/schema027，无迁移。本轮不重打安装包、不重启部署、不公开Release，实际Latest仍v0.10.56/423959199。下方未合、待审和旧后台描述均保留其历史批次含义；下个功能重新同步最新main另开分支。
+
+## 群聊多助手与状态读取（0.10.59候选与后台完成，PR120待审）
+
+从最新main/c3f7d0f新建fix/group-agent-mentions-and-visibility，普通merge保留PR119/7449c0d及PR118依赖。当前群已加入成员名单支持群内独有助手；开头显式@最多5位本地助手，保存一条真人消息、独立持久请求与回复。群成员读公开等待/回复/失败状态，完整请求、私人回执与重试/取消仍限发起人；正文先检查材料ACL，其他成员不再使用私有turnId读取状态。普通新请求每助手16000tokens/90秒，整批总额均分，旧显式预算和重试不提高；幂等、整批回滚及工作任务版本边界保留。[设计](development/group-agent-mentions-and-visibility.md)。
+
+本批contract0.34/schema027（无数据库迁移），客户端0.10.59需要配套后台。根冻结CI819项/64文件、共享类型、契约、2项生产CLI/HTTP、B0及Web边界通过；客户端35项/5文件、双类型通过，合成HTTP/SQLite覆盖独立回复、公开状态与私有详情拒绝、撤权、预算、容量回滚和待发恢复。首轮测试夹具/数量/SQL断言、renderer联合类型和Web旧契约版本断言失败日志已留Git外，修正后通过。
+
+产品/打包源码 **db11a6d7429db1f5a2060b2fd4293eac61719a61**，[PR120](https://github.com/luoyan96/personal-agent/pull/120)待审。根desktop:win冻结构建、NSIS、既有4项成品入口和本地更新元数据守卫通过，publish never。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.59.exe**，**88,221,597字节**，SHA256 **9bcba06540bb11256e3c097a53515e725856cbe066a6599519f240cd31c304c5**，与构建目录一致。配套后台已获本轮授权，并于**2026-10-26 19:47:04–19:47:26（北京时间）**从7720ec9b切换API/worker到 **research-openim-api:group-agent-mentions-20261026**，镜像 **sha256:63d87995f6ba84595aadf79fe44562d736685e4515beaeb2e5ed04fadee2d4bb**，产品同为db11a6d，**contract0.34/schema027**，无迁移。隔离93项/8文件通过；备份恢复及启动前104表、8个原文件一致，25份配置/密钥输入和其他6个服务保持；资料范围及广场同步关闭状态保持。当前规划角色v3、38份精确旧默认映射和本批群聊接口均已进入后台，私人编辑不覆盖。本批未合main或公开Release。Latest核对仍v0.10.56，v0.10.59未公开。未代真实模型、安装器、产品UI或私人材料验收。证据D:/deepseek-agent/.runtime/group-agent-mentions-20261026，[本批交付记录](deployment/acceptcat-0.10.59.md)。
+
+实际备份 **/srv/research-openim-backups/group-agent-mentions-20261026-20261026T114706Z/research.tar.gz**，SHA256 **6abdf06ab898eb7bb34889dae58a94fa1eb434eb6293c97c1f1300c9699b6bf2**；服务器运维目录 **/opt/research-openim/ops/group-agent-mentions-20261026**。回执5121字节与服务器摘要一致，Git外保存deployment-receipt.server.json、public-ready.json和完成截图。第一次隔离包遗漏2份测试支持文件（86通过、1个suite未加载），补齐并校验后完整重跑93项通过，原日志保留；首次上传NoSuchKey在停写前通过新会话恢复。PR120/3c1f166的三项foundation及Windows package已全绿；CI中的图片IPC测试夹具漏登记已修复，88项/13文件通过，仅测试/工作流变化，未重打产品未变的安装包。
+
+## 任务粒度自动安排（0.10.58本机候选完成，PR119待审）
+
+从fetch后的main **c3f7d0f**另开 **fix/planner-automatic-task-shape**，普通merge保留待审PR118/8172b66图片操作，未合main。去掉规划的一项/多项提示和切换按钮，普通目标默认一项，确需独立分工、分别交付/跟踪的大项目可建议多项；不因难、动作或对象多就拆。用户通过对话调整，实际数量随完整草案及明确创建确认，不靠改本机标记。保留旧预览数量，新一轮从用户消息而非旧按钮读取偏好；创建重试快照、幂等和已确认任务保持。同步canonical任务安排方法和规划角色v3，新增一份精确旧默认档案映射，保留用户编辑。[设计](development/planner-automatic-task-shape.md)。
+
+最终产品/打包源码 **d6ab6cd39a037cad6111330755a1aea23aa81e8a**，[PR119](https://github.com/luoyan96/personal-agent/pull/119)待审、未合main。根冻结CI **812项/64文件**、类型、契约、2项生产CLI/HTTP、B0及Web边界通过；客户端 **64项/7文件**、renderer/Electron双类型通过，含本机HTTP/SQLite的一项与三项合成任务、日期和回执恢复。最后客户端去除上一轮隐藏数量锁后，64项及renderer类型复查通过，共享源码未变，不重复根CI。
+
+冻结Windows最终构建、NSIS、既有4项成品入口及本地更新清单检查通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.58.exe**，**88,215,492字节**，SHA256 **b093c4aa975722f2c57b8c548f418a76db7d04eba91da5c1e20cb1954faceeb3**，旧0.10.57保留。首轮两项测试漏计明确日期的editPlan，修正测试后通过，原43/2日志保留；d090810首包因前端后续修正被最终包取代，未放桌面/安装/发布，首包留Git外。没有后台/API/契约/数据库结构变化，服务器仍为7720ec9b / contract0.33/schema027及原角色包；新客户端提示可使用既有API，默认角色v3/精确迁移尚未部署服务器。本批未合main或公开Release，Latest仍v0.10.56，未代真实模型、安装及产品UI验收。Git外 **D:/deepseek-agent/.runtime/planner-auto-shape-20261026**保存证据。[交付回执](deployment/acceptcat-0.10.58.md)。
+
+## 图片右键操作修复（本机候选0.10.57已完成，PR118待审）
+
+从fetch后的main **c3f7d0f**另开 **fix/chat-image-context-actions**，工作区原本干净，既有同事任务/通讯录改动保留。图片气泡、预览和待发送图片统一提供复制图片、另存为及Windows本机提取文字；消息可引用。复制实际图片像素，保存原图字节，取消不写入；不再复制“[图片]”。文字消息区分复制整条消息和当前消息内选中文字，文件/语音占位词不作为文字复制。提取文字只在本机展示，不自动发给Agent。[实现及边界](development/chat-image-context-actions.md)。
+
+产品/安装包源码 **0a2afb629b4315cb6c6867a2db45a40490dcba0d**，[PR118](https://github.com/luoyan96/personal-agent/pull/118)待审、未合main。客户端定向及相关回归 **61项/8文件**、renderer/Electron双类型通过；新增19项已接入Windows CI，最后小调整后19项再次通过。根冻结Windows入口、NSIS、4项既有成品守卫及本地更新元数据检查通过。桌面 **C:/Users/luo/Desktop/AcceptCat_0.10.57.exe**，**88,218,163字节**，SHA256 **7afb5b71e594dd20a5ca886fb34514c46b450edff35b2be8570dca4b2676c8b3**；旧包保留。没有公开Release或覆盖更新，公开Latest仍v0.10.56。
+
+首轮测试有1项VM Error跨realm失败，修正测试环境；随后renderer检查捕获共用TS模块TS6305，改成单一JS实现及.d.ts，双类型及61项重新通过。原失败说明和类型日志保留。无后台/契约/数据库变化，无需升级，沿用7720ec9b / contract0.33/schema027；未重跑本机根完整CI，远端检查看PR实际状态。本批未代安装、产品UI、原生剪贴板/保存窗口、真实资料或模型体验验收。Git外 **D:/deepseek-agent/.runtime/chat-image-context-20261026**保存日志与回执。[交付范围](deployment/acceptcat-0.10.57.md)。
 
 ## PR117整合到main（本节随合并生效）
 

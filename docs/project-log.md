@@ -2035,3 +2035,68 @@ Git外证据 **D:/deepseek-agent/.runtime/unified-contact-directory-20261026**�
 负责人在后台已升级后明确要求合并，当前工作目录干净；fetch后的主仓库main仍d25781d，PR117头d22f778可合并。重新读取PR113/e0e911b、PR114/769c883、PR115/8e6e2a6、PR116/26bce00，head均与已整合版本一致。普通merge保留同事提交和各批功能，不另行合并旧PR、整文件覆盖或强推。任务产品04e184f与已部署/受测代码相同；本批只更新交接/合并记录，执行内容及差异检查，等待实际PR head的GitHub检查成功，再带固定head合并。此记录在PR117进入main后生效，实际merge SHA/时间以GitHub回执为准；Git外pr117-merge-20261026保存检查、祖先关系、执行和main同步回执。
 
 沿用根812项、服务器97项和既有客户端/安装包受测证据，不无故重跑或追加真人验收。公开0.10.56/tag f45c278和16:31已部署7720ec9b/产品04e184f/contract0.33/schema027保持；本轮没有安装包/Release、后台重启/迁移或真实模型/材料/IM送达检查。下一个功能重新fetch最新main并另开分支。合并后当前事实以current-state新节和PR状态为准，旧未合记录保留其当时含义。
+## 2026-10-26：聊天图片与文字右键操作修复，准备0.10.57候选
+
+从最新main/c3f7d0f另开fix/chat-image-context-actions，原工作区干净，保留PR113–117及同事功能。参考负责人提供的微信截图，图片气泡、放大预览及本机待发送图片共用复制图片/另存为/本机提取文字，消息保持引用。修复portal触发通用文字菜单和复制“[图片]”的问题；文字区分选区与整条消息，文件/语音占位词不复制。复制PNG像素；保存系统对话框确认的原图字节；OCR结果只展示/复制，不自动发送Agent。保持文件来源/长度/窗口校验、取消与错误反馈；纯格式模块纳入Electron编译目录。
+
+客户端相关61项/8文件及双类型通过，新增19项加入Windows CI。首轮16项里1个VM Error跨realm测试失败，修正测试环境后通过，原情况留Git外notes；内容文档补丁一次标题不匹配，未写入，按真实标题修正。尚在准备Windows冻结构建，后续追加成品、PR实际状态。没有后台/契约/数据库改动，无需升级；公开Latest仍0.10.56，main未合本功能。按负责人要求未运行安装器、产品UI或原生剪贴板/真实资料验收。证据D:/deepseek-agent/.runtime/chat-image-context-20261026，实现见docs/development/chat-image-context-actions.md。
+
+## 2026-10-26：0.10.57图片右键候选安装包完成，PR118待审
+
+产品及实际打包源码0a2afb629b4315cb6c6867a2db45a40490dcba0d。根desktop:win按两个固定pnpm及冻结锁文件、共享包先build的顺序完成Web/Electron/NSIS，4项既有成品入口守卫与本地EXE/blockmap/latest.yml/SHA512检查通过，publish never。桌面C:/Users/luo/Desktop/AcceptCat_0.10.57.exe，88,218,163字节，SHA256 7afb5b71e594dd20a5ca886fb34514c46b450edff35b2be8570dca4b2676c8b3，与构建目录摘要一致，旧包保留。
+
+相关61项/8文件通过，最后小调整后19项再次通过，双类型及内容检查通过。renderer曾捕获跨TS工程共用模块TS6305，改为单一JS及.d.ts后重新通过，失败日志保留；未用force安装或放松锁文件。GitHub连接器创建PR返回403无写权限，使用本机现有gh登录成功创建并附加PR118，未合main。代码没有后台、契约、数据库或角色变化，无需升级，仍沿用7720ec9b/contract0.33/schema027。公开Latest仍0.10.56，没有公开0.10.57或覆盖更新清单。未主动运行安装器、产品UI、原生剪贴板/保存窗口、真实资料/模型或额外载荷验收；根CI未在本机重跑。细节见docs/deployment/acceptcat-0.10.57.md；Git外chat-image-context-20261026保存检查与成品回执。
+
+## 2026-10-26：规划自动判断任务粒度，移除切换按钮
+
+从fetch后main/c3f7d0f另开fix/planner-automatic-task-shape，普通merge保留待审PR118/8172b66作为桌面候选依赖，未合main。原按钮只改本机数量标记而不重写草案，当前删除提示行/切换及样式。普通工作一项、内部放步骤；确需独立分工/交付的大项目允许建议多项，不以“很难”、动作或对象数量做拆分依据。auto采用助手草案原结构，明确用户合并/拆分指令优先，预览和实际创建同一快照，仍需正式确认。旧预览数量保留，新请求忽略旧按钮标记；待重试创建快照及已有任务保持。
+
+更新task-decomposition和research-planning/work.md，角色v3加上一版精确默认档案迁移，保留私人编辑。定向45项及扩展64项/7文件通过，含4个本机HTTP/SQLite创建/回执恢复情景；首次两项新增断言漏计明确截止日期的editPlan，修正测试后通过，原43通过/2失败日志保留。根冻结CI与类型检查正在执行，安装包尚未完成。无API/契约/数据库变化，没有后台部署；旧服务器默认角色不冒称已升级，新客户端通过现有规划接口传入规则。Latest仍0.10.56，保留0.10.57候选；未代安装、真实模型或产品UI验收。实现见docs/development/planner-automatic-task-shape.md，Git外planner-auto-shape-20261026保存日志。
+
+## 2026-10-26：0.10.58自动任务粒度候选完成，PR119待审
+
+最终产品/打包源码d6ab6cd39a037cad6111330755a1aea23aa81e8a，PR119已提交并附加，保留PR118图片修复依赖，未合main。默认auto且每轮不继承旧按钮/上一轮数量锁，模型结合真实对话给普通一项或有独立分工交付价值的多项；明确表达可约束该轮，实际创建数量/内容仍由同一预览和确认快照控制。旧预览、待重试写入、已确认任务和私人档案编辑保持。
+
+根冻结安装及完整CI 812项/64文件、类型、contract0.33、2项生产CLI/HTTP、B0和Web边界通过；客户端64项/7文件及双类型通过。d090810首包成功后再去除前端上一轮数量锁，重跑64项及renderer类型，重新冻结打包最终d6ab6cd；共享源码未变，没有重复根CI。首包与日志保留在Git外superseded-d090810，未放桌面/安装/公开。最终Web/Electron/NSIS、既有4项成品入口与本地EXE/blockmap/latest.yml/SHA512守卫通过。桌面C:/Users/luo/Desktop/AcceptCat_0.10.58.exe，88,215,492字节，SHA256 b093c4aa975722f2c57b8c548f418a76db7d04eba91da5c1e20cb1954faceeb3，与构建目录一致，旧0.10.57保留。
+
+无后台API/契约/数据库结构变化或实际部署，服务器仍7720ec9b/contract0.33/schema027及原角色包；客户端新提示/方法可沿用既有API，服务器默认角色v3/新增精确默认迁移尚未部署，不能冒称已上线。公开Latest仍0.10.56，没有公开0.10.58或覆盖更新。没有真实模型语言评测、产品UI、安装、私人材料或额外载荷/原生启动验收，结构/合成回归不能冒称语言效果通过。详见docs/deployment/acceptcat-0.10.58.md，Git外planner-auto-shape-20261026保存根/客户端、首轮测试失败与两次构建证据。
+
+## 2026-10-26：群聊多助手与公开状态代码完成，0.10.59打包中
+
+新功能分支fix/group-agent-mentions-and-visibility由fetch后的main/c3f7d0f开始，普通merge保留待审PR119及PR118。修复前端单Agent限制、只从自己通讯录解析群成员及群消息使用他人私有请求接口的问题。新会话名单端点提供当前已加入成员公开档案；单条消息显式@最多5位本地助手，事务中持久化一条真人消息与多个独立请求，幂等重放不重复；默认每助手16000tokens/90秒，整批总额均分，显式/排队/重试预算保持。关联工作任务只捕获一次版本，主要结果仍由首位跟踪，不增加任务。
+
+新增群内公开状态投影，普通群成员可读每位助手状态和失败原因，不含私有预算、用量、记忆或回执。共享正文仍检查材料权限，再移除他人私有turnId；完整请求及操作保持发起人边界。contract0.34/schema027，无数据库结构变化。根冻结完整CI819项/64文件、共享类型、契约、生产CLI/HTTP两项、B0及Web边界通过；客户端35项/5文件、双类型通过。合成HTTP/SQLite覆盖双回复、状态可读、私有详情404、幂等、非法/并发部分插入回滚、显式低预算、工作版本、材料撤权；待发恢复保留全部目标及原预算，跨账号清除。
+
+保留focused-api-attempt1/2、renderer-types-attempt1及root-ci-attempt1失败证据。前两轮夹具遗漏旧实验室群需单独接受Agent邀请、SQL误列名和端点数量断言，renderer响应联合类型未显式声明turns；首轮完整CI818通过/1失败为Web旧0.33断言，同步0.34后重跑通过。安装包/PR制作中；无真实模型、安装器或产品UI验收，无合main、后台部署或Release。线上7720ec9b/04e184f/0.33/schema027、Latest0.10.56保持。证据Git外group-agent-mentions-20261026。
+
+## 2026-10-26：0.10.59群聊候选与PR120完成，后台待单独授权
+
+产品/打包源码db11a6d7429db1f5a2060b2fd4293eac61719a61。PR120已向main提交并附加，保留PR119、PR118依赖，未合main。根冻结CI819项/64文件及全部后续生产/契约边界、客户端35项/5文件和双类型通过。根desktop:win按两个固定pnpm版本冻结依赖、先build共享包再客户端install，Web/Electron/NSIS、既有4项成品入口与EXE/blockmap/latest.yml/SHA512守卫通过，publish never。
+
+桌面C:/Users/luo/Desktop/AcceptCat_0.10.59.exe，88,221,597字节，SHA256 9bcba06540bb11256e3c097a53515e725856cbe066a6599519f240cd31c304c5，摘要与构建目录一致，旧0.10.57/58保留。未运行安装器、产品UI、真实模型或私人材料验收。Git外group-agent-mentions-20261026保存构建、元数据、摘要、全部检查及首轮失败日志。
+
+contract0.34/schema027，无数据库迁移。后台固定产品提交源码归档和部署/回滚方案准备完成（镜像未在服务器构建）；没有实际备份、隔离试运行、部署、重启或配置变更。本批群聊修复需要配套后台后生效，当前线上仍7720ec9b/04e184f/contract0.33/schema027。公开Latest仍0.10.56，未公开0.10.59或上传Release资产。后续合main、公开发布与后台部署分别由负责人决定。
+
+## 2026-10-26：配套后台升级获授权，修复Windows CI夹具
+
+负责人明确同意现在升级0.10.59配套后台。只读核对线上API/worker仍为7720ec9b，原compose链包含task-flow-safe-recovery，其他服务未动。运维包acceptcat-group-agent-db11a6d-ops.tar.gz为固定产品db11a6d，129份overlay、191份编译结果摘要和8份隔离测试；191207字节，SHA256 7c2130d0b7b2d2cb3660fab444c1a9d87e2aaf6f8b55b4e169a423d88a7c27fc。首次Workbench文件上传NoSuchKey，未启动构建/停写/部署；刷新并恢复既有免密连接后重新上传成功，完整包及137份源码/测试哈希、LF和bash语法前置校验通过，已开始无网络隔离构建，生产尚未切换。
+
+核对PR120/baf2e07三项foundation为success，package失败：服务状态IPC测试夹具漏登记PR118新增chatImageActionsManage，导致5项Unexpected import；产品实现无变化。补齐该夹具，并将本批35项群聊/待发/传输检查接入Windows CI。定向5项与整组88项/13文件通过，保留ci-package-failure.log。仅测试/工作流变化，不改变db11a6d产品或现有0.10.59安装包，不重复已通过的根完整CI或额外安装验收。后续部署结果另记。
+
+
+## 2026-10-26：0.10.59配套后台升级完成，contract0.34/schema027
+
+负责人本轮明确同意升级。北京时间19:47:04–19:47:26完成API/worker成对切换，产品db11a6d7429db1f5a2060b2fd4293eac61719a61，镜像research-openim-api:group-agent-mentions-20261026 / sha256:63d87995f6ba84595aadf79fe44562d736685e4515beaeb2e5ed04fadee2d4bb，替换原7720ec9b；schema仍027，没有迁移。93项/8文件无网络隔离回归、565份原源码和191份编译对照、角色/方法目录及生产catalog seed保持检查通过。备份恢复与启动前104表/8个原文件一致，25份配置/密钥输入保持，其他6个服务及API/worker运行设置保持。API健康、worker正常、restartCount为0，服务器和本机公网ready均为0.34/ok，受保护端点401；harness未做真实探测。广场同步仍disabled，资料范围和飞书连接保持。
+
+备份/srv/research-openim-backups/group-agent-mentions-20261026-20261026T114706Z/research.tar.gz，SHA256 6abdf06ab898eb7bb34889dae58a94fa1eb434eb6293c97c1f1300c9699b6bf2；运维目录/opt/research-openim/ops/group-agent-mentions-20261026，compose在task-flow-safe-recovery之后追加本批images.yaml。未回滚；如需恢复旧镜像，保留当前schema027业务数据，不覆盖旧备份。默认规划角色v3/38份旧默认精确映射随本批后台进入线上，仍保留私人修改。
+
+首次Workbench上传NoSuchKey及一次重试失败，停写前通过刷新新连接恢复。首次运维测试包遗漏2份transitive支持文件，86项已过但1个suite未加载，补传并校验后完整8文件重跑93项通过；attempt1日志和支持包摘要全部保留。PR120/3c1f166三项foundation与Windows package全绿；此前Windows CI漏登记图片IPC夹具的5项失败已修复，88项/13文件通过，仅测试/工作流变化，db11a6d产品/本机0.10.59安装包保持，不重复已通过的根819项或额外安装验收。
+
+部署回执从Workbench文件编辑器复制并按服务器5121字节/SHA256 0d84349b9e87ff42b14e258eea6cd3f8fd8ae7c524c783652256f1df247766e2核对，连同公网ready与完成截图保留Git外group-agent-mentions-20261026。没有用户账号、真实模型、实际群聊或安装UI验收。PR120仍待审未合main，Latest重新核对仍v0.10.56，本轮未公开Release或上传Release资产。
+
+
+## 2026-10-27：PR120整合main批次（随合并生效）
+
+负责人明确同意没有同事新PR就直接合并。工作区干净，fetch后主仓库main仍c3f7d0fae6a69b06c2b9b2c7d75ec24dae492401；全部67个开放PR中最新为PR120，无新的同事待处理PR。旧PR90及其他历史开放PR不扩大处理。PR120原head0d91dd63847b7dbe4d2d7098a29959b33d6b2aaf四项GitHub检查success，mergeable/clean，审阅列表和评论为空。PR118/8172b66及PR119/7449c0d已在祖先历史，使用普通merge保留图片操作、任务粒度和群聊修复及双方已有功能，不另外重放旧PR、不强推或覆盖文件。
+
+本轮只更新交接文档，内容/差异检查及最终head的GitHub检查通过后带固定head合并；此记录随合并进入main生效，实际SHA/时间以GitHub回执为准。Git外pr120-merge-20261027保留读取、检查、祖先、执行和main同步回执。沿用根819/64、客户端88/13、服务器93/8与安装包原检查，不重复通过的完整检查或代用户体验。产品db11a6d、桌面0.10.59、2026-10-26已部署63d87995/contract0.34/schema027保持，无迁移；最新公开Release重新核对仍v0.10.56/423959199，本次不重打包、发布或部署。下个功能从fetch后的main新开分支。
