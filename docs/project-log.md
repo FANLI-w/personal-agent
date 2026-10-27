@@ -2128,3 +2128,9 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 备份/srv/research-openim-backups/chat-context-output-reserve-20261027-20261027T030616Z/research.tar.gz，SHA256 ee585f43f3aa3f36249e49822ad81ba84fe476cb97cf20f47313a2c85cb77866。运维目录/opt/research-openim/ops/chat-context-output-reserve-20261027，在旧group-agent-mentions完整组合后追加images.yaml；如需回退保留当前业务数据，不能回灌旧备份。原回执4414字节/SHA256 587fb8d6cdda4731dcd972f7d7a6780d19636b420b1735d49914a7213b42d800与本机复制完全一致；Git外保存deployment-receipt.server.json、receipt-copy-verification/public-ready及完成截图。旧上传会话NoSuchKey及UI/只读命令失败均在停写前恢复并保留记录，无绕过核验。
 
 受审f9e5914三项Foundation均success；本轮仅部署文档更新，不重复已通过根822项或重打现有0.10.59。未执行真实模型/原用户群聊/私人材料、安装器或产品UI验收，harness仍not_verified；不能据合成与健康结果宣布原会话所有空回复均复原。PR121未合main，Latest仍0.10.56，本轮无公开Release或安装包上传。
+
+## 2026-10-27：PR121整合main（本节随合并生效）
+
+负责人明确授权合并PR121。准备前工作区干净，分支fix/chat-context-output-reserve、origin为luoyan96/personal-agent；head eda4e587d919747ae8e3a2ee897aed66cbe8acad，main 30aaef48470554d1c02c3cbb89c43ca836661c0f。该head三项Foundation均success，无冲突或审阅意见。补充本批交接文档，产品798f77c保持；通过文档内容/差异检查并等待最终head的三项检查后，以固定head普通merge保留同事功能及历史。本节随PR进入main生效；实际merge SHA、时间和本机main同步凭据保存在Git外D:/deepseek-agent/.runtime/pr121-merge-20261027，合并前以GitHub状态为准。
+
+本批不重打或上传安装包、不公开Release、不重启后台；0.10.59本机包、已于11:06:34部署的798f77c/28ee6231/contract0.34/schema027及此前核对的公开Latest0.10.56各自保持。沿用根822项、服务器130项和备份恢复证据，不追加安装、产品UI、真实模型/群聊/私人材料验收。下个功能重新fetch最新main另开分支。
