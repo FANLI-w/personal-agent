@@ -2093,3 +2093,10 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 首次Workbench上传NoSuchKey及一次重试失败，停写前通过刷新新连接恢复。首次运维测试包遗漏2份transitive支持文件，86项已过但1个suite未加载，补传并校验后完整8文件重跑93项通过；attempt1日志和支持包摘要全部保留。PR120/3c1f166三项foundation与Windows package全绿；此前Windows CI漏登记图片IPC夹具的5项失败已修复，88项/13文件通过，仅测试/工作流变化，db11a6d产品/本机0.10.59安装包保持，不重复已通过的根819项或额外安装验收。
 
 部署回执从Workbench文件编辑器复制并按服务器5121字节/SHA256 0d84349b9e87ff42b14e258eea6cd3f8fd8ae7c524c783652256f1df247766e2核对，连同公网ready与完成截图保留Git外group-agent-mentions-20261026。没有用户账号、真实模型、实际群聊或安装UI验收。PR120仍待审未合main，Latest重新核对仍v0.10.56，本轮未公开Release或上传Release资产。
+
+
+## 2026-10-27：PR120整合main批次（随合并生效）
+
+负责人明确同意没有同事新PR就直接合并。工作区干净，fetch后主仓库main仍c3f7d0fae6a69b06c2b9b2c7d75ec24dae492401；全部67个开放PR中最新为PR120，无新的同事待处理PR。旧PR90及其他历史开放PR不扩大处理。PR120原head0d91dd63847b7dbe4d2d7098a29959b33d6b2aaf四项GitHub检查success，mergeable/clean，审阅列表和评论为空。PR118/8172b66及PR119/7449c0d已在祖先历史，使用普通merge保留图片操作、任务粒度和群聊修复及双方已有功能，不另外重放旧PR、不强推或覆盖文件。
+
+本轮只更新交接文档，内容/差异检查及最终head的GitHub检查通过后带固定head合并；此记录随合并进入main生效，实际SHA/时间以GitHub回执为准。Git外pr120-merge-20261027保留读取、检查、祖先、执行和main同步回执。沿用根819/64、客户端88/13、服务器93/8与安装包原检查，不重复通过的完整检查或代用户体验。产品db11a6d、桌面0.10.59、2026-10-26已部署63d87995/contract0.34/schema027保持，无迁移；最新公开Release重新核对仍v0.10.56/423959199，本次不重打包、发布或部署。下个功能从fetch后的main新开分支。
