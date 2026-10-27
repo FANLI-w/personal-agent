@@ -2160,3 +2160,9 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 先建唯一Release草稿425192746、上传EXE/blockmap/latest.yml/SHA256SUMS四附件并核对uploaded、字节和SHA256 digest，代码合并后于16:34:22公开v0.10.60为正式Latest。tag固定实际安装包源码fc9d51112464d72364f70ba77a6e5be47d551ecb；EXE88,220,838字节/SHA256 732261095dbb34247d2a72356f3c3e1c3356185f8566743536e2ebef2ef2bbd7。匿名Latest API、tag源码和两份小清单校验一致；旧Release与安装包保持，没有下载运行EXE追加原生验收。Git外release-0.10.60-20261027保存合并、原失败/成功、草稿/公开JSON、附件摘要和匿名核验。GitHub连接器缺少二进制上传入口及既有写权限受限，使用本机已有gh登录，没有新增凭据或对外发消息。
 
 公开后仅更新README下载入口、current-state及本批交付记录，走纯文档分支汇总，不修改产品或重打包；按文档规则执行内容/差异检查，不据文档重复完整CI或验收。无后台升级、重启或数据库迁移，继续已部署798f77c/28ee6231/contract0.34/schema027；未代真实SDK/模型、安装、产品UI或私人图片验收。后续功能重新同步最新main另开分支，不沿发布标签堆需求。
+# 2026-10-27：开始修复群聊回复中断与 worker 退出
+
+负责人提供群聊截图并要求立即处理、已打开后台。独立clone从实际origin/main/aaa0eea另开fix/chat-worker-interruption，既有PR125分支保持。通过已有Workbench只读查询运行元数据，worker累计29次重启，当天6条请求缺少模型返回用量，最终interrupted；没有读取正文/私人材料/模型密钥。旧日志隐藏了具体错误，历史原因不能直接断言。
+
+产品a174c17修复可复现的数据库争用路径：50ms worker忙等待与异步限时事务重试，保存已返回答复期间保持租约，暂时无法保存流式片段不立即取消；仅处理SQLITE_BUSY，其他异常保留阶段和受限位置诊断，不重复模型调用、不重放旧请求。旧代码两项新增回归失败，修复后相关14项与完整CI826项/65文件、生产入口3项/B0/Web/类型/构建均通过。服务器独立运维包已上传并逐字节/源码摘要核验，隔离准备启动，未在本记录阶段切换生产；无契约/迁移/Windows包变动。详见docs/development/chat-worker-interruption.md，Git外chat-worker-interruption-20261027保存现场和运维证据。
+
