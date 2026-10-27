@@ -47,6 +47,38 @@ async function setup(){
 }
 
 describe('layered dialogue context: actual HTTP/durable SQLite, synthetic provider only',{timeout:30000},()=>{
+ it('reserves the full reply allowance before optional recall, including a quoted support request',async()=>{
+  const s=await setup()
+  for(let i=0;i<120;i++)s.past(`上下文与任务讨论${i}：`+'这是旧记录中的普通背景，不能占满新回复额度。'.repeat(14))
+  const text='这是什么任务？\n\n> 引用 合成助手：\n> 合成同事需要你帮忙：\n> 核对实验条件。\n> 可以联系对方沟通。这条请求不会自动把任务分配给你。'
+  const sent=await s.send(text);let seen=0
+  await s.tick(async input=>{seen=input.maxTokens;const p=JSON.parse(input.prompt);expect(p.messages.flat().includes(text)).toBe(true);expect(p.context).toBeUndefined();expect(chatInputTokenBound(input.system,input.prompt)+input.maxTokens).toBeLessThanOrEqual(16000);return model('这是一条请求协助核对实验条件的通知，尚未将任务分配给你。')})
+  expect(seen).toBe(4096)
+  expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded',budget:{maxTokens:16000,maxSeconds:90}})
+  expect(s.db.prepare('SELECT count(*) n FROM personal_work_tasks').get()!.n).toBe(0)
+ })
+
+ it('records content-free input/output diagnostics and gives a new message a fresh root after failure',async()=>{
+  const s=await setup(),huge=await s.send('当前原话不可裁剪'.repeat(800))
+  let calls=0
+  expect(await s.tick(async()=>{calls++;return model('不应调用')})).toBe(false)
+  expect(calls).toBe(0)
+  expect(await s.turn(huge.turn.id)).toMatchObject({status:'failed',failure:'BUDGET_EXCEEDED'})
+  const first=s.input(huge.turn.id).modelInputDiagnostic
+  expect(first).toMatchObject({budgetMaxTokens:16000,maxOutputTokens:0})
+  expect(first.inputTokenBound).toBeGreaterThan(16000)
+  const short=await s.send('你好')
+  await s.tick(async()=>({text:'SYNTHETIC_PRIVATE_PROVIDER_TEXT',failure:'OUTPUT_LIMIT',inputTokens:100,outputTokens:4096,elapsedMs:10,finishReason:'max-tokens'}))
+  expect(await s.turn(short.turn.id)).toMatchObject({status:'failed',failure:'BUDGET_EXCEEDED',remainingBudget:{maxTokens:11804,maxSeconds:89}})
+  expect(s.input(short.turn.id).modelOutputDiagnostic).toMatchObject({stage:'output_limit',finishReason:'max-tokens',failure:'OUTPUT_LIMIT'})
+  const next=await s.send('本轮上下文是怎么算的？')
+  await s.tick(async input=>{expect(input.maxTokens).toBe(4096);return model('按本条输入和预算选取当前对话中可读的历史。')})
+  expect(await s.turn(next.turn.id)).toMatchObject({status:'succeeded',budget:{maxTokens:16000,maxSeconds:90}})
+  const roots=[huge,short,next].map(v=>String(s.db.prepare('SELECT root_id FROM chat_turns WHERE id=?').get(v.turn.id)!.root_id))
+  expect(new Set(roots).size).toBe(3)
+  expect(JSON.stringify({input:s.input(short.turn.id).modelInputDiagnostic,output:s.input(short.turn.id).modelOutputDiagnostic})).not.toMatch(/SYNTHETIC_PRIVATE_PROVIDER_TEXT|你好|synthetic-context-no-live-key/)
+ })
+
  it('recalls a relevant fact beyond640messages and keeps attributed decisions alongside lossless recent dialogue',async()=>{
   const s=await setup(),anchor=s.past('LX-71 项目的预算上限是7300元，使用三阶段方案。')
   for(let i=0;i<640;i++)s.past(`无关日常讨论${i}：今天处理日常材料。`)

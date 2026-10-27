@@ -4,6 +4,13 @@ import type { ChatService, TurnInput } from './chat.js'
 import { fail } from './errors.js'
 import { isSocialGroup, socialWorkContext, recordSocialWorkTurn } from './workspace.js'
 
+/** Plain @ chat also exists in legacy lab groups, independent of group storage. */
+export function addressedGroupChat(group: Conversation, input: SendChatMessage) {
+  const ids = input.agentContactIds ?? [input.agentContactId]
+  return group.kind === 'group' && (input.context?.length ?? 0) === 0 &&
+    ids.every(id => !!id && (input.mentions ?? []).some(mention => mention.contactId === id))
+}
+
 /** The route transaction rolls back the whole batch if any member or capacity check fails. */
 export function sendGroupAgents(s: ChatService, group: Conversation, input: SendChatMessage) {
   const ids = input.agentContactIds!
@@ -30,7 +37,7 @@ export function sendGroupAgents(s: ChatService, group: Conversation, input: Send
       ...work,
       budget:{maxTokens:tokens,maxSeconds:seconds}, context:input.context ?? [],
       conversationVersion:group.version, inputSequence:message.sequence,
-      dailyChat:isSocialGroup(s, group.id),
+      dailyChat:isSocialGroup(s, group.id) || addressedGroupChat(group, input),
     }
     const turn = s.newTurn(group, message, id, request)
     return turn

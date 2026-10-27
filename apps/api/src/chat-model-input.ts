@@ -29,3 +29,12 @@ export function chatModelSystem(options:{group:boolean;inviteContact:boolean;inv
 // UTF-8 bytes conservatively bound content tokens, plus a framing reserve.
 // This admission bound is not measured usage and never raises the user budget.
 export function chatInputTokenBound(system:string,prompt:string){return Buffer.byteLength(system+prompt,'utf8')+256}
+
+// Optional history must not consume the ordinary reply allowance. Required
+// current input stays lossless; a small explicit/retry budget is never raised.
+export function chatReplyTokenReserve(system:string,prompt:string,maxTokens:number){
+  const available=maxTokens-chatInputTokenBound(system,prompt)
+  // Constrained legacy/current/retry inputs keep their existing 512/64 floor;
+  // do not reserve every remaining token and crowd out all relevant history.
+  return available>=4096?4096:available>=512?512:64
+}

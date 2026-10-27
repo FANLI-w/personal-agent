@@ -10,7 +10,8 @@ import { openDatabase, migrate, seed, transaction } from '../src/database.js'
 import { provisionTestAccounts, passwordHash } from '../src/auth.js'
 import { createServer } from '../src/server.js'
 import { ChatWorker, reconcileChat } from '../src/chat-worker.js'
-import { ExecutionWorker } from '../src/execution-worker.js'
+import { ExecutionWorker, serviceFor } from '../src/execution-worker.js'
+import { ChatService } from '../src/chat.js'
 import type { ModelCall } from '../src/execution-worker.js'
 import { chatInputTokenBound } from '../src/chat-model-input.js'
 import { researchConversationPolicy } from '../src/conversation-policy.js'
@@ -114,6 +115,27 @@ async function setup(enabled = true, representativeMembers = 0) {
 }
 
 describe('group Agent mentions and shared status',()=>{
+  it('uses bounded plain conversation for addressed legacy groups and preserves a quoted support request across query words',{timeout:20000},async()=>{
+    const s=await setup(),{group,agents}=await colleagueGroup(s)
+    expect(s.db.prepare('SELECT 1 FROM social_groups WHERE conversation_id=?').get(group.id)).toBeUndefined()
+    const chat=new ChatService(serviceFor(s.db,'member_A',s.config).c,s.config)
+    for(let i=0;i<90;i++)chat.message(group.id,{senderContactId:s.human('member_B').id,origin:'human',text:`上下文和任务背景${i}：`+'之前的完整对话内容，需要按预算选择而不能全部挤进来。'.repeat(24),mentions:[],resources:[],actionIds:[],turnId:null})
+    const source='合成同事需要你帮忙：\n核对实验条件。\n\n可以联系对方沟通。这条请求不会自动把任务分配给你。'
+    const requests=['测试','这是什么任务','本轮上下文是怎么算的','只回复 1']
+    for(const query of requests){
+      const addressed=address([agents[0]!],query),text=addressed.text+'\n\n> 引用 合成助手：\n'+source.split('\n').map(v=>'> '+v).join('\n')
+      const sent=await s.call('sendChatMessage',{...addressed,text,intent:'ask_agent',agentContactId:agents[0]!.id,budget:{maxTokens:16000,maxSeconds:90}},{id:group.id})
+      expect(sent.status,sent.raw).toBe(201)
+      let captured:Parameters<ModelCall>[0]|undefined
+      expect(await new ChatWorker(s.db,s.config,async input=>{captured=input;return {text:'这是一条协助请求，尚未自动分配任务。',failure:null,inputTokens:100,outputTokens:80,elapsedMs:10}}).tick()).toBe(true)
+      expect(captured).toBeDefined();expect(captured!.maxTokens).toBe(4096)
+      const p=JSON.parse(captured!.prompt);expect(p.currentRequest.messageIds).toEqual([sent.value.data.message.id]);expect(modelMessages(p).at(-1)!.text).toBe(text);expect(p.context).toBeUndefined()
+      expect(chatInputTokenBound(captured!.system,captured!.prompt)+captured!.maxTokens).toBeLessThanOrEqual(16000)
+      expect((await s.call('chatTurn',null,{id:sent.value.data.turn.id})).value.data).toMatchObject({status:'succeeded',budget:{maxTokens:16000,maxSeconds:90}})
+    }
+    expect(s.db.prepare('SELECT count(*) n FROM personal_work_tasks').get()!.n).toBe(0)
+  })
+
   it('reads group-only Agents, persists one input and independent bounded replies, and replays all requests exactly once',async()=>{
     const s=await setup(),{group,agents}=await colleagueGroup(s)
     const mine=(await s.call('chatContacts',null,{},0,'?view=mine&limit=100')).value.data as Contact[]
@@ -133,7 +155,7 @@ describe('group Agent mentions and shared status',()=>{
     const pending=await s.call('chatMessageAgentStatuses',null,{id:group.id,messageId:message.id},1)
     expect(pending.status,pending.raw).toBe(200);expect(pending.value.data.requests.map((r:{status:string})=>r.status)).toEqual(['queued','queued'])
     const calls:unknown[]=[]
-    const worker=new ChatWorker(s.db,s.config,async(input,signal,credential)=>{calls.push(input);return model(reply('合成群聊回答。'))(input,signal,credential)})
+    const worker=new ChatWorker(s.db,s.config,async(input,signal,credential)=>{calls.push(input);return {text:'合成群聊回答。',failure:null,inputTokens:100,outputTokens:200,elapsedMs:20}})
     expect(await worker.tick()).toBe(true);expect(await worker.tick()).toBe(true);expect(calls).toHaveLength(2)
     const statuses=await s.call('chatMessageAgentStatuses',null,{id:group.id,messageId:message.id},1)
     expect(statuses.value.data.requests.map((r:{status:string})=>r.status)).toEqual(['succeeded','succeeded'])
