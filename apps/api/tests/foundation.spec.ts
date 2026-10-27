@@ -29,7 +29,10 @@ describe('B0 real service and persistence', () => {
     expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(27)
     expect(db.prepare('SELECT applied_at FROM schema_migrations WHERE version=1').get()!.applied_at).toBe('2026-09-21T00:00:00Z')
     checkDatabase(db)
-  }, 20000) // Actual 001→019 disk migration; bounded test harness wait, no production deadline change.
+  }, 20000) // Actual 001→027 disk migration; bounded test harness wait, no production deadline change.
+  // These fixtures traverse all 27 on-disk migrations (and real HTTP below).
+  // Slow Windows hosts can exceed Vitest's default 5s; bound only these I/O
+  // fixtures at 20s, keeping every assertion and production deadline intact.
   it('migration/seed are repeatable; reopening preserves rows; no usable dev credentials', () => {
     const { config } = setup()
     let db = openDatabase(config.databasePath, true)
@@ -43,7 +46,7 @@ describe('B0 real service and persistence', () => {
     expect(() => seed(db, 'production')).toThrow()
     checkDatabase(db)
     expect(db.prepare('SELECT count(*) n FROM health_probe').get()?.n).toBe(0)
-  })
+  }, 20000)
   it('rolls back failed writes and enforces foreign keys and unique outbox intent', () => {
     const { config } = setup(); const db = openDatabase(config.databasePath, true); cleanups.push(() => db.close()); migrate(db)
     expect(() => transaction(db, () => { db.exec("INSERT INTO labs VALUES ('rollback','synthetic')"); throw new Error('fail') })).toThrow()
@@ -65,7 +68,7 @@ describe('B0 real service and persistence', () => {
     db.exec("UPDATE schema_migrations SET checksum='changed'")
     expect(() => migrate(db)).toThrow('checksum')
     expect(() => checkDatabase(db)).toThrow('Migration')
-  })
+  }, 20000)
   it('serves real HTTP: liveness is not readiness; recovers after explicit migrate; closed DB fails', async () => {
     const { config } = setup(); const app = createServer(config); cleanups.push(() => app.close())
     const url = await app.listen({ port: 0, host: '127.0.0.1' })
@@ -79,7 +82,7 @@ describe('B0 real service and persistence', () => {
     rmSync(config.blobRoot, { recursive: true })
     response = await fetch(`${url}/api/v1/health/ready`); expect(response.status).toBe(503)
     expect(JSON.stringify(await response.json())).not.toContain(config.blobRoot)
-  })
+  }, 20000)
   it('missing schema and read-only database cannot pass readiness', async () => {
     const { config } = setup(); mkdirSync(config.blobRoot)
     const db = openDatabase(config.databasePath, true)

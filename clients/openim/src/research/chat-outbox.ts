@@ -3,6 +3,7 @@ import type { MessageItem } from "@openim/wasm-client-sdk";
 import type { PreparedResearchSend } from "./ResearchComposer";
 import { useResearchStore } from "./store";
 import { routes } from "@research-agent-platform/contracts";
+import type { ComposerImage } from "./chat-image-submission";
 
 export type ChatSubmission = {
   id: string;
@@ -13,6 +14,8 @@ export type ChatSubmission = {
   html: string;
   text: string;
   request?: PreparedResearchSend;
+  images?: ComposerImage[];
+  imageAgentConversationId?: string;
   nativeMessage?: MessageItem;
   quoteMessage?: MessageItem;
   state: "queued" | "sending" | "failed" | "paused";
@@ -59,8 +62,11 @@ function persist(actor = useResearchStore.getState()) {
       version: 1,
       memberId: hydratedActor,
       storedAt: Date.now(),
-      items: items.map(({ generation: _generation, ...item }) => ({
+      items: items.map(({ generation: _generation, images, ...item }) => ({
         ...item,
+        ...(images
+          ? { images: images.map(({ file: _file, ocrText: _ocr, ...image }) => image) }
+          : {}),
         state: "paused",
       })),
       drafts: [...chatDrafts],
@@ -123,20 +129,55 @@ function restore(actor: ReturnType<typeof useResearchStore.getState>) {
         !bounded(item.groupID, 512) ||
         !bounded(item.html, maxBytes) ||
         !bounded(item.text, maxBytes) ||
-        !item.text
+        (!item.text && !item.images?.length)
       )
         throw new Error("Invalid pending message");
       ids.add(item.id);
       if (
         item.request &&
-        (!["agentChatMessage", "sendChatMessage"].includes(item.request.route) ||
+        (!["agentChatMessage", "sendChatMessage", "agentFileMessage"].includes(
+          item.request.route,
+        ) ||
           typeof item.request.conversationId !== "string" ||
           !routes[
-            item.request.route as "agentChatMessage" | "sendChatMessage"
+            item.request.route as
+              | "agentChatMessage"
+              | "sendChatMessage"
+              | "agentFileMessage"
           ].request.shape.body.safeParse(item.request.body).success ||
-          item.request.body.text !== item.text)
+          (item.request.route !== "agentFileMessage" &&
+            item.request.body.text !== item.text))
       )
         throw new Error("Invalid stored request");
+      if (
+        item.images &&
+        (!Array.isArray(item.images) ||
+          !item.images.length ||
+          item.images.length > 20 ||
+          item.images.some(
+            (image: ComposerImage) =>
+              !bounded(image.id, 512) ||
+              !bounded(image.name, 512) ||
+              !Number.isSafeInteger(image.size) ||
+              image.size <= 0 ||
+              image.size > 10 * 1024 * 1024 ||
+              !bounded(image.mediaType, 128) ||
+              !image.mediaType.startsWith("image/") ||
+              image.file !== undefined ||
+              (image.sent !== undefined && typeof image.sent !== "boolean") ||
+              (image.message &&
+                (image.message.contentType !== 102 ||
+                  !bounded(image.message.clientMsgID, 512))),
+          ))
+      )
+        throw new Error("Invalid stored image submission");
+      if (
+        item.imageAgentConversationId &&
+        (!item.images ||
+          !bounded(item.imageAgentConversationId, 512) ||
+          item.request?.conversationId !== item.imageAgentConversationId)
+      )
+        throw new Error("Invalid image target");
       if (
         item.quoteMessage &&
         (typeof item.quoteMessage.clientMsgID !== "string" ||
