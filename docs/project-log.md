@@ -2168,3 +2168,7 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 根 desktop:prepare 冻结安装/共享依赖准备通过；仅客户端与文档变化，按 AGENTS 未重复本机根共享代码 CI。相关 62 项/8文件、renderer/Electron 类型及 Web 构建通过。仓库内隔离测试夹具复用实际编辑器/输入/状态/流式组件，Playwright 无头 Edge 在1200x900与390x844运行15项检查通过，无应用运行错误；账号、业务API、SDK及附件/桌面叶子能力为合成替身。保留 Router future flag、Ant Design findDOMNode及第三方构建提示。初次类型错误、测试选择器/动画等待/夹具账号订阅问题与终止记录保留；视觉检查发现并修正 CKEditor 默认样式覆盖、桌面 @ 图标隐藏/零行高。Git外 .runtime/chat-conversation-experience-20261027 保存全部过程日志、最终截图与回执。
 
 沿用 contract0.34/schema027 既有接口，没有后台或共享契约/角色变化；未操作现用客户端或真实私人账号/资料/模型，未进行真实OpenIM/模型、多设备、原生安装或移动端验收。没有版本变更、Windows清单变更、安装包/Release、部署或合并。完整范围与下一批见 docs/development/chat-conversation-experience.md；本批后续通过 PR 交由负责人决定合并。
+
+## 2026-10-27：聊天体验 PR125 已提交
+
+产品源码6a3d62d540c2106e109a75409d87a39813a680a1已推送，[PR125](https://github.com/luoyan96/personal-agent/pull/125) OPEN并附加当前任务；创建时四项远端检查在运行，结果以实际head为准。连接器403后使用本机已有gh身份创建，不新增凭据。新clone首次commit缺少本地身份，核对gh为luoyan96后沿用仓库提交中的既有noreply署名，仅对提交命令指定，未修改原目录或全局配置。最终代码通过62项回归、15项合成交互、双类型及Web构建；后续只补文档，未合并/部署/发布/安装。此处“本批无安装包”指本机未打包，PR的既有Windows CI可独立产生待核验构建附件，不能视为公开版本或真实安装验收。
