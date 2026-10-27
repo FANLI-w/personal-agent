@@ -21,6 +21,8 @@ export interface IElectronAPI {
   saveImageBytesToDisk: (filename: string, bytes: Uint8Array) => Promise<string>;
   readChatClipboardImages: () => Promise<import("./imageClipboard").ClipboardImages>;
   captureChatScreens: () => Promise<import("./chatScreenshot").ChatScreenCapture[]>;
+  saveChatFile: (filename: string, bytes: Uint8Array) => Promise<{ token: string } | null>;
+  revealChatFile: (token: string) => Promise<void>;
   copyChatImage: (bytes: Uint8Array) => Promise<void>;
   saveChatImage: (filename: string, bytes: Uint8Array) => Promise<boolean>;
   recognizeChatImage: (id: string, bytes: Uint8Array) => Promise<import("./imageClipboard").ImageOcrResult>;

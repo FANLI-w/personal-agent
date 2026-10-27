@@ -32,8 +32,9 @@ const output =
     await shot("timeline-01");
     await page
       .locator("#chat_canonical_answer")
-      .getByRole("button", { name: "引用回复", exact: true })
-      .click();
+      .getByLabel("消息操作：右键或按 Shift+F10", { exact: true })
+      .click({ button: "right" });
+    await page.getByRole("menuitem", { name: "引用", exact: false }).click();
     await page.locator(".ck-editor__editable").fill("引用草稿验证");
     await page.reload();
     await page.getByRole("button", { name: "取消引用", exact: true }).waitFor();
@@ -95,9 +96,9 @@ const output =
     });
     await page
       .locator("#chat_canonical_answer")
-      .getByRole("button", { name: "消息操作", exact: true })
-      .click();
-    await page.getByRole("menuitem", { name: "转发", exact: true }).click();
+      .getByLabel("消息操作：右键或按 Shift+F10", { exact: true })
+      .click({ button: "right" });
+    await page.getByRole("menuitem", { name: "转发…", exact: false }).click();
     await page.getByLabel("测试同事", { exact: true }).check();
     await page.getByRole("button", { name: /确\s*认/ }).click();
     await page.waitForFunction(() =>
@@ -125,18 +126,18 @@ const output =
       .click();
     await page
       .locator("#chat_canonical_input")
-      .getByRole("button", { name: "消息操作", exact: true })
-      .click();
-    await page.getByRole("menuitem", { name: "撤回", exact: true }).click();
+      .getByLabel("消息操作：右键或按 Shift+F10", { exact: true })
+      .click({ button: "right" });
+    await page.getByRole("menuitem", { name: "撤回", exact: false }).click();
     await page.getByRole("button", { name: /确\s*认/ }).click();
     await page.getByText("这条消息已撤回", { exact: true }).waitFor();
     checks.push("canonical withdrawal refreshes projected message");
     await page.getByRole("button", { name: "回到最新消息", exact: true }).click();
     await page
       .locator("#chat_canonical_answer")
-      .getByRole("button", { name: "消息操作", exact: true })
-      .click();
-    await page.getByRole("menuitem", { name: "多选", exact: true }).click();
+      .getByLabel("消息操作：右键或按 Shift+F10", { exact: true })
+      .click({ button: "right" });
+    await page.getByRole("menuitem", { name: "多选", exact: false }).click();
     await page
       .getByRole("toolbar", { name: "批量消息操作" })
       .getByRole("button", { name: "本机删除", exact: true })

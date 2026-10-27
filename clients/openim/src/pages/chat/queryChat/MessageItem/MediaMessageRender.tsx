@@ -14,7 +14,12 @@ import { IMessageItemProps } from ".";
 
 const min = (a: number, b: number) => (a > b ? b : a);
 
-const MediaMessageRender: FC<IMessageItemProps> = ({ message, disabled, onReply }) => {
+const MediaMessageRender: FC<IMessageItemProps> = ({
+  message,
+  disabled,
+  onReply,
+  messageMenu,
+}) => {
   const capture = useAgentChatOperation();
   const selection = useRef<AgentChatOperation>();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -64,6 +69,7 @@ const MediaMessageRender: FC<IMessageItemProps> = ({ message, disabled, onReply 
           }}
           disabled={disabled || isSending}
           onReply={onReply}
+          messageMenu={messageMenu}
           placeholder={
             <div style={minStyle} className="flex items-center justify-center">
               <Spin />

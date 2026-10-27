@@ -32,6 +32,8 @@ if (location.search.includes("toolbar")) {
   window.fixture.captureMode = "success";
   // Only synthetic pixels: never capture the user's desktop in this fixture.
   window.electronAPI = {
+    saveChatFile: async () => ({ token: "synthetic-saved-file" }),
+    revealChatFile: async () => {},
     captureChatScreens: async () => {
       if (window.fixture.captureMode === "failure")
         throw new Error("合成测试：屏幕捕获失败");

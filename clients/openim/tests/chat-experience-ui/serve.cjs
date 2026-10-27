@@ -107,6 +107,7 @@ const plugin = {
     from: undefined,
   });
   fs.writeFileSync(output + "/dist/tailwind.css", css.css);
+  fs.writeFileSync(output + "/dist/menu-attachment.txt", "Synthetic file for menu testing.");
   await ctx.rebuild();
   await ctx.watch();
   const server = await ctx.serve({

@@ -5,7 +5,15 @@ import {
 } from "@openim/wasm-client-sdk";
 import clsx from "clsx";
 import { FC, memo, useRef, useState, useEffect } from "react";
-import { Checkbox, Dropdown } from "antd";
+import { Checkbox, Dropdown, type MenuProps } from "antd";
+import {
+  CopyOutlined,
+  DeleteOutlined,
+  ExportOutlined,
+  CheckSquareOutlined,
+  CommentOutlined,
+  UndoOutlined,
+} from "@ant-design/icons";
 import type { ChatMessageDetails } from "@research-agent-platform/contracts";
 import {
   useChatTimeline,
@@ -52,6 +60,7 @@ export interface IMessageItemProps {
   onReplyAgent?: (agent: ReplyAgent | undefined) => void;
   onReply?: () => void;
   onDetails?: (details: ChatMessageDetails | undefined) => void;
+  messageMenu?: MenuProps;
 }
 
 const components: Record<number, FC<IMessageItemProps>> = {
@@ -75,6 +84,7 @@ const MessageItem: FC<IMessageItemProps> = ({
   const [replyAgent, setReplyAgent] = useState<ReplyAgent>();
   const [details, setDetails] = useState<ChatMessageDetails>();
   const [selectionText, setSelectionText] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const text = readableMessage(message) || canonicalText;
   const copyText = [
     MessageType.TextMessage,
@@ -126,6 +136,71 @@ const MessageItem: FC<IMessageItemProps> = ({
     (s) => s.currentConversation?.conversationType === SessionType.Single,
   );
   const MessageRenderComponent = components[message.contentType] || CatchMessageRender;
+  const childMenu = [MessageType.PictureMessage, MessageType.FileMessage].includes(
+    message.contentType,
+  );
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [generation, conversationID, message.clientMsgID]);
+  const messageMenu: MenuProps = {
+    items: [
+      ...(copyText
+        ? [
+            {
+              key: "copy",
+              label: selectionText ? "复制选中文字" : "复制",
+              icon: <CopyOutlined />,
+            },
+            { type: "divider" as const },
+          ]
+        : []),
+      {
+        key: "forward",
+        label: "转发…",
+        icon: <ExportOutlined />,
+        disabled: disabled || withdrawn || message.status !== 2,
+      },
+      { key: "select", label: "多选", icon: <CheckSquareOutlined />, disabled },
+      {
+        key: "reply",
+        label: "引用",
+        icon: <CommentOutlined />,
+        disabled: disabled || !text || withdrawn,
+      },
+      { type: "divider" },
+      ...(canWithdraw
+        ? [{ key: "withdraw", label: "撤回", icon: <UndoOutlined /> }]
+        : []),
+      {
+        key: "delete",
+        label: "删除",
+        icon: <DeleteOutlined />,
+        danger: true,
+        disabled,
+      },
+    ],
+    onClick: ({ key }) => {
+      setMenuOpen(false);
+      if (key === "forward" || key === "delete" || key === "withdraw") openAction(key);
+      if (key === "select") selectTimelineMessage(message.clientMsgID);
+      if (key === "reply" && text)
+        selectChatReply(message, text, conversationID, generation, replyAgent);
+      if (key === "copy" && copyText) {
+        if (!navigator.clipboard)
+          feedbackToast({
+            msg: "复制暂不可用，请选中文字复制",
+            error: new Error("剪贴板不可用"),
+          });
+        else
+          void navigator.clipboard
+            .writeText(selectionText || copyText)
+            .then(() => feedbackToast({ msg: "文字已复制" }))
+            .catch((error) =>
+              feedbackToast({ error, msg: "复制失败，请选中文字复制" }),
+            );
+      }
+    },
+  };
 
   return (
     <>
@@ -178,64 +253,27 @@ const MessageItem: FC<IMessageItemProps> = ({
 
             <Dropdown
               trigger={["contextMenu"]}
-              disabled={message.contentType === MessageType.PictureMessage}
-              menu={{
-                items: [
-                  {
-                    key: "reply",
-                    label: replyAgent ? "回复此助手" : "引用回复",
-                    disabled: disabled || !text || withdrawn,
-                  },
-                  {
-                    key: "forward",
-                    label: "转发",
-                    disabled: disabled || withdrawn || message.status !== 2,
-                  },
-                  { key: "select", label: "多选" },
-                  { key: "delete", label: "本机删除" },
-                  ...(canWithdraw
-                    ? [{ key: "withdraw", label: "撤回", danger: true }]
-                    : []),
-                  ...(copyText
-                    ? [
-                        {
-                          key: "copy",
-                          label: selectionText ? "复制选中文字" : "复制消息文字",
-                        },
-                      ]
-                    : []),
-                ],
-                onClick: ({ key }) => {
-                  if (key === "forward" || key === "delete" || key === "withdraw")
-                    openAction(key);
-                  if (key === "select") selectTimelineMessage(message.clientMsgID);
-                  if (key === "reply" && text)
-                    selectChatReply(
-                      message,
-                      text,
-                      conversationID,
-                      generation,
-                      replyAgent,
-                    );
-                  if (key === "copy" && copyText) {
-                    if (!navigator.clipboard)
-                      feedbackToast({
-                        msg: "复制暂不可用，请选中文字复制",
-                        error: new Error("剪贴板不可用"),
-                      });
-                    else
-                      void navigator.clipboard
-                        .writeText(selectionText || copyText)
-                        .then(() => feedbackToast({ msg: "文字已复制" }))
-                        .catch((error) =>
-                          feedbackToast({ error, msg: "复制失败，请选中文字复制" }),
-                        );
-                  }
-                },
-              }}
+              disabled={childMenu}
+              open={!childMenu && menuOpen}
+              onOpenChange={setMenuOpen}
+              overlayClassName="chat-message-menu"
+              menu={messageMenu}
             >
               <div
                 className={styles["menu-wrap"]}
+                tabIndex={childMenu ? undefined : 0}
+                aria-label={childMenu ? undefined : "消息操作：右键或按 Shift+F10"}
+                onKeyDown={(event) => {
+                  if (
+                    !childMenu &&
+                    (event.key === "ContextMenu" ||
+                      (event.shiftKey && event.key === "F10"))
+                  ) {
+                    event.preventDefault();
+                    setSelectionText("");
+                    setMenuOpen(true);
+                  }
+                }}
                 onContextMenu={(event) => {
                   setSelectionText(
                     selectedMessageText(event.currentTarget, window.getSelection()),
@@ -250,6 +288,7 @@ const MessageItem: FC<IMessageItemProps> = ({
                     onReadableText={setCanonicalText}
                     onReplyAgent={setReplyAgent}
                     onDetails={setDetails}
+                    messageMenu={messageMenu}
                     onReply={
                       !disabled && text
                         ? () =>
@@ -273,54 +312,6 @@ const MessageItem: FC<IMessageItemProps> = ({
                 />
               </div>
             </Dropdown>
-            {!disabled && !withdrawn && text && (
-              <button
-                type="button"
-                className="desktop-reply-action"
-                aria-label="引用回复"
-                onClick={() =>
-                  selectChatReply(message, text, conversationID, generation, replyAgent)
-                }
-              >
-                {replyAgent ? "回复此助手" : "引用"}
-              </button>
-            )}
-            {!disabled && (
-              <Dropdown
-                trigger={["click"]}
-                menu={{
-                  items: [
-                    {
-                      key: "forward",
-                      label: "转发",
-                      disabled: withdrawn || message.status !== 2,
-                    },
-                    { key: "select", label: "多选" },
-                    { key: "delete", label: "本机删除" },
-                    ...(canWithdraw
-                      ? [{ key: "withdraw", label: "撤回", danger: true }]
-                      : []),
-                  ],
-                  onClick: ({ key }) => {
-                    if (key === "select") selectTimelineMessage(message.clientMsgID);
-                    else if (
-                      key === "forward" ||
-                      key === "delete" ||
-                      key === "withdraw"
-                    )
-                      openAction(key);
-                  },
-                }}
-              >
-                <button
-                  type="button"
-                  className="desktop-reply-action"
-                  aria-label="消息操作"
-                >
-                  更多
-                </button>
-              </Dropdown>
-            )}
           </div>
         </div>
       </div>

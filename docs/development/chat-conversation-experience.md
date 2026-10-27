@@ -119,3 +119,13 @@ Git 外证据：`D:/deepseek-agent/.runtime/chat-unified-desktop-20261027`。最
 UI验证改用本轮可用的IAB，`tests/chat-experience-ui/serve.cjs`新增`?toolbar`使用合成electron桥但实际ChatFooter/SendActionBar/ScreenshotAction/CKEditor和原生样式。1280×720下检查群聊/私聊固定工具栏、表情插入、菜单/输入@选择同名助手、两助手合成发送状态、语音面板、截图裁剪为PNG暂存、失败提示及切换丢弃；实际截图为合成画布，附件接收器为测试桩，未声称真实桌面捕获或上传通过。原有交互回归脚本更新了移入扩展后的选择路径，本轮未重跑整套旧脚本。对照图和检查笔记在Git外`chat-toolbar-correction-20261027`，用户原图不进入仓库。旧版可见高度不足与残留二级菜单经实际渲染发现并修正。
 
 产品提交0619c98170ce285b320d0b65963560e24d40c7ef，本机`pnpm build:win`生成NSIS并通过包内入口守卫，`node scripts/check-windows-update.mjs`通过；另外核对包内main与preload的capture-chat-screens桥接。新的内部测试安装包保存至 `D:/deepseek-agent/.runtime/chat-toolbar-correction-20261027/windows-0619c98/AcceptCat_0.10.60.exe`，88,242,587字节，SHA256 `d20b226eb37e8eb44e3895be23d3d509114b8b3a2552c20368b41420f1e877a1`。同目录保留blockmap/latest.yml用于核对，未上传更新通道。它替代本批验收用途的旧7352c5b包，未安装或公开发布。个人助手合成会话也已复核固定工具栏，实际原生捕获及安装体验仍待负责人检查。
+
+### 2026-10-27 消息右键操作纠正
+
+负责人再次指出消息下方“引用/更多”和割裂的菜单不符合微信操作。移除重复行内按钮，MessageItem提供同一份消息动作给文字/Agent/文件/图片；图片弹层与预览保留复制原图/另存/OCR，同时接入转发、多选、引用和删除。公共菜单采用紧凑矩形、固定图标列、操作分隔线、末尾红色删除。复制在适用类型中放首项，引用Agent继续传递原contactId，普通成员引用不自动调用Agent。当前菜单没有编辑、收藏、提醒、系统打开方式和通用文件复制，这些未实现，不提供装饰性按钮。删除仍走原本机删除确认和持久隐藏逻辑。
+
+FileMessageRender右键提供原生“另存为”，双击/Enter也可保存；保存成功才出现“在文件夹中显示”。新增save-chat-file/reveal-chat-file IPC，复用authority可信窗口边界、系统保存对话框及覆盖确认，严格限制64MB字节输入，文件名去路径/非法字符并拒绝设备名。主进程仅接受自己签发的保存token定位文件，最多128记录、30分钟过期，不接受renderer指定任意磁盘路径。下载omit凭据、64MB真实流量上限、60秒取消，并沿用AgentChatOperation阻止切换后落入另一会话；renderer短期token按账号代次/IM身份/会话/消息区分，以承受虚拟列表卸载，不持久化私有文件路径。
+
+验证：renderer和Electron类型通过，`node --test tests/chat-image-actions.test.mjs tests/chat-file-actions.test.mjs tests/chat-quote-recovery.test.mjs tests/chat-message-compat.test.mjs` 32/32通过，包括7项本批新增的菜单/原生文件测试；`pnpm build:win`和`node scripts/check-windows-update.mjs`通过。此前第一次类型检查发现AntD菜单联合类型没有共同type字段，已修正并通过复查。IAB在`?timeline&toolbar&menus`运行实际虚拟消息列表与组件，验证右键文字/Agent/文件/图片菜单、文件引用、Agent引用保留追问对象、图片多选、文件保存完成后显示文件夹入口。原生保存/定位使用合成桥，Node测试使用模拟系统对话框/文件系统，未操作私人文件或正在使用的客户端。定位菜单选项时IAB语义点击未命中，依据截图坐标完成动作并验证结果；没有把无结果点击算通过。已有timeline自动化脚本已适配右键入口，本轮未整套复跑。
+
+证据：`D:/deepseek-agent/.runtime/chat-context-menu-20261027`，包含类型日志、focused-tests.log、build-win.log、installer-verification.json、真实组件截图与仅用于本机的参考对照。用户截图不提交Git。新安装器`windows/AcceptCat_0.10.60.exe`为88,251,913字节，SHA256 b75cc15779540843e467cf7361a5d87a3478eff44a5c5369334591ce45f9d2d1，未执行安装、未发布或改更新通道。未新增后台要求，仍通过PR125交付。

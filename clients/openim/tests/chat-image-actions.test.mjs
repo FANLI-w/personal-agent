@@ -290,7 +290,7 @@ async function nativeBridge() {
       },
     },
     "node:path": path,
-      "../utils/chatImageFormat": format,
+    "../utils/chatImageFormat": format,
     "./localFolderManage": {
       authority: () => {
         if (blocked) throw Error("forbidden");
@@ -522,9 +522,9 @@ test("image bubble and portal preview share image copy/save/OCR menus and stop t
   for (const menu of [bubble, preview]) {
     assert.deepEqual(Array.from(menu.props.menu.items, (i) => i.key).filter(Boolean), [
       "copy",
+      "reply",
       "save",
       "ocr",
-      "reply",
     ]);
     let stopped = false;
     menu.props.children.props.onContextMenu({
@@ -621,6 +621,7 @@ async function messageComponent(message) {
     "react/jsx-runtime": jsxRuntime,
     clsx: () => "",
     antd: { Dropdown: "dropdown" },
+    "@ant-design/icons": {},
     "@openim/wasm-client-sdk": { MessageType: types, SessionType: { Single: 1 } },
     "@/research/chat-reply": {
       readableMessage: (value) =>
@@ -634,11 +635,17 @@ async function messageComponent(message) {
     },
     "@/research/chat-message-copy": selection,
     "@/research/chat-timeline": {
-      useChatTimeline: selector=>selector({scope:'3:chat',selecting:false,selected:[]}),
-      registerTimelineMessage() {},timelineScope:(generation,id)=>`${generation}:${id}`,
-      researchPointer:()=>undefined,selectTimelineMessage() {},
+      useChatTimeline: (selector) =>
+        selector({ scope: "3:chat", selecting: false, selected: [] }),
+      registerTimelineMessage() {},
+      timelineScope: (generation, id) => `${generation}:${id}`,
+      researchPointer: () => undefined,
+      selectTimelineMessage() {},
     },
-    "@/research/GroupChatRoster": {useGroupChatRoster:()=>({}),groupContactDescription:()=>''},
+    "@/research/GroupChatRoster": {
+      useGroupChatRoster: () => ({}),
+      groupContactDescription: () => "",
+    },
     "@/research/ResearchAvatar": () => null,
     "@/utils/common": { feedbackToast() {} },
     "@/utils/imCommon": { formatMessageTime: () => "" },
@@ -679,12 +686,14 @@ async function messageComponent(message) {
           .filter(Boolean)
           .map(find)
           .find(Boolean);
-  const render = () => {
+  const tree = () => {
     h.begin();
-    return find(code.default({ message, isSender: false, conversationID: "chat" }));
+    return code.default({ message, isSender: false, conversationID: "chat" });
   };
+  const render = () => find(tree());
   return {
     render,
+    tree,
     copied,
     replies,
     selection: (value) => {
@@ -699,7 +708,7 @@ test("text messages copy the whole actual message or a snapshot of only their ow
     textElem: { content: "完整的科研消息" },
   });
   let menu = f.render();
-  assert.equal(menu.props.menu.items.find(item=>item.key==='copy').label, "复制消息文字");
+  assert.equal(menu.props.menu.items.find((item) => item.key === "copy").label, "复制");
   menu.props.menu.onClick({ key: "copy" });
   await flush();
   assert.equal(f.copied[0], "完整的科研消息");
@@ -713,7 +722,10 @@ test("text messages copy the whole actual message or a snapshot of only their ow
     currentTarget: { contains: (node) => node === "inside" },
   });
   menu = f.render();
-  assert.equal(menu.props.menu.items.find(item=>item.key==='copy').label, "复制选中文字");
+  assert.equal(
+    menu.props.menu.items.find((item) => item.key === "copy").label,
+    "复制选中文字",
+  );
   f.selection(null); // Popup focus may clear the browser selection, but must preserve its captured text.
   menu.props.menu.onClick({ key: "copy" });
   await flush();
@@ -727,8 +739,77 @@ test("image and file placeholders are never presented as copyable message text; 
       menu.props.menu.items.some((i) => i.key === "copy"),
       false,
     );
-    assert.equal(Boolean(menu.props.disabled), type === 102);
+    assert.equal(Boolean(menu.props.disabled), type === 102 || type === 104);
     menu.props.menu.onClick({ key: "copy" });
     assert.equal(f.copied.length, 0);
   }
+});
+
+test("message context menu groups actions, supports keyboard, and renders no duplicate inline action buttons", async () => {
+  const f = await messageComponent({
+    clientMsgID: "m",
+    contentType: 101,
+    status: 2,
+    textElem: { content: "实验对照" },
+  });
+  const menu = f.render();
+  assert.equal(menu.props.overlayClassName, "chat-message-menu");
+  assert.deepEqual(Array.from(menu.props.menu.items, (i) => i.key).filter(Boolean), [
+    "copy",
+    "forward",
+    "select",
+    "reply",
+    "delete",
+  ]);
+  assert.equal(menu.props.menu.items.filter((i) => i.type === "divider").length, 2);
+  assert.equal(menu.props.menu.items.at(-1).danger, true);
+  const walk = (node) =>
+    node && typeof node === "object"
+      ? [node, ...[node.props?.children].flat(Infinity).flatMap(walk)]
+      : [];
+  assert.equal(
+    walk(f.tree()).filter((n) => n.props?.className === "desktop-reply-action").length,
+    0,
+  );
+  let prevented = false;
+  menu.props.children.props.onKeyDown({
+    key: "F10",
+    shiftKey: true,
+    preventDefault: () => {
+      prevented = true;
+    },
+  });
+  assert.equal(prevented, true);
+  assert.equal(f.render().props.open, true);
+  f.render().props.menu.onClick({ key: "reply" });
+  assert.equal(f.replies[0][0].clientMsgID, "m");
+  assert.equal(f.render().props.open, false);
+});
+
+test("image and preview menus include shared message actions without reading image bytes when forwarding", async () => {
+  const f = await imageComponent(),
+    forwarded = [];
+  f.props.messageMenu = {
+    items: [
+      { key: "forward", label: "转发…" },
+      { key: "select", label: "多选" },
+      { key: "reply", label: "引用" },
+      { type: "divider" },
+      { key: "delete", label: "删除", danger: true },
+    ],
+    onClick: (info) => forwarded.push(info.key),
+  };
+  const bubble = f.render().props.children[0];
+  assert.deepEqual(Array.from(bubble.props.menu.items, (i) => i.key).filter(Boolean), [
+    "copy",
+    "forward",
+    "select",
+    "reply",
+    "save",
+    "ocr",
+    "delete",
+  ]);
+  await f.action("forward");
+  assert.deepEqual(forwarded, ["forward"]);
+  assert.equal(f.calls.length, 0);
 });

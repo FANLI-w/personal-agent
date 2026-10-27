@@ -55,6 +55,48 @@ function initialize() {
         }),
       },
     });
+  if (location.search.includes("menus")) {
+    nativeMessages.push({
+      clientMsgID: "fixture_file",
+      sendID: "im_peer",
+      senderNickname: "测试同事",
+      groupID: "test_group",
+      contentType: 105,
+      status: 2,
+      sendTime: Date.now(),
+      seq: 68,
+      fileElem: {
+        fileName: "实验记录.txt",
+        fileSize: 31,
+        sourceUrl: "http://127.0.0.1:4389/menu-attachment.txt",
+      },
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = 240;
+    canvas.height = 100;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#e5eff8";
+    ctx.fillRect(0, 0, 240, 100);
+    ctx.fillStyle = "#334155";
+    ctx.font = "18px sans-serif";
+    ctx.fillText("合成图片 · 菜单测试", 24, 55);
+    const picture = { url: canvas.toDataURL(), width: 240, height: 100, size: 0 };
+    nativeMessages.push({
+      clientMsgID: "fixture_picture",
+      sendID: "im_peer",
+      senderNickname: "测试同事",
+      groupID: "test_group",
+      contentType: 102,
+      status: 2,
+      sendTime: Date.now(),
+      seq: 69,
+      pictureElem: {
+        sourcePicture: picture,
+        snapshotPicture: picture,
+        bigPicture: picture,
+      },
+    });
+  }
   Object.assign(window.fixture, {
     nativeMessages,
     sdkCalls,
@@ -76,7 +118,11 @@ function Screen() {
       </div>
       <main
         className="personal-agent-desktop"
-        style={{ height: 790, display: "flex", flexDirection: "column" }}
+        style={{
+          height: location.search.includes("menus") ? "calc(100vh - 70px)" : 790,
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
         <header>
           <strong>{current.showName}</strong>
