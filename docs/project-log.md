@@ -2100,3 +2100,37 @@ contract0.34/schema027，无数据库迁移。后台固定产品提交源码归�
 负责人明确同意没有同事新PR就直接合并。工作区干净，fetch后主仓库main仍c3f7d0fae6a69b06c2b9b2c7d75ec24dae492401；全部67个开放PR中最新为PR120，无新的同事待处理PR。旧PR90及其他历史开放PR不扩大处理。PR120原head0d91dd63847b7dbe4d2d7098a29959b33d6b2aaf四项GitHub检查success，mergeable/clean，审阅列表和评论为空。PR118/8172b66及PR119/7449c0d已在祖先历史，使用普通merge保留图片操作、任务粒度和群聊修复及双方已有功能，不另外重放旧PR、不强推或覆盖文件。
 
 本轮只更新交接文档，内容/差异检查及最终head的GitHub检查通过后带固定head合并；此记录随合并进入main生效，实际SHA/时间以GitHub回执为准。Git外pr120-merge-20261027保留读取、检查、祖先、执行和main同步回执。沿用根819/64、客户端88/13、服务器93/8与安装包原检查，不重复通过的完整检查或代用户体验。产品db11a6d、桌面0.10.59、2026-10-26已部署63d87995/contract0.34/schema027保持，无迁移；最新公开Release重新核对仍v0.10.56/423959199，本次不重打包、发布或部署。下个功能从fetch后的main新开分支。
+
+
+## 2026-10-27：群聊上下文与输出额度修复，完整检查中
+
+负责人提供0.10.56长群聊/引用请求/超预算反馈。本机main/30aaef4干净，fetch后另开fix/chat-context-output-reserve；远端没有新的同事PR。PR120已包含.59新群聊16000入口预算，但旧式课题组群普通@仍可能走固定20条/JSON协议；新回归复现调用前失败。已打包日常聊天的长历史引用回归实测仅留914输出。统一新建普通@无附加资源请求的单/多目标路径、先预留4096再选历史，小预算512/64及显式预算/重试/现有队列保持，协作context不改。新增私有计数及失败阶段诊断，不留额外正文/返回原文/凭据。引用为当前文本，无额外任务resource或自动分配；不同检索词和整个群复用预算均未按原推测宣布根因，真实原会话仍待用户检查。
+
+新增三项合成HTTP/SQLite回归修复前失败：914额度、缺少新诊断、旧群在调用前失败；首次群测试5秒超时保留，使用该合成HTTP场景20秒测试时限重跑后得到明确业务失败。修复后三项通过；扩展五文件76项中75通过/1失败，小预算协调对话失去召回，收紧预留下界后两文件38项通过。根冻结安装成功，第一次ci构建发现SendChatMessage的context/mentions输入可缺省类型错误，补空值处理后重跑中；原证据均在Git外chat-context-output-reserve-20261027。本批后台源码无契约/数据库迁移或客户端变化，不重打安装包；PR、合并、后台升级另记，当前仍线上63d87995/0.34/schema027及公开Latest0.10.56，未发布或部署本批，也未运行安装/真实群聊/模型/产品UI验收。
+
+
+## 2026-10-27：群聊回复额度修复PR121完成，822项完整检查通过
+
+产品798f77c3cc7e7a52f9eaf61b0dbc46e99f2ba7f2，[PR121](https://github.com/luoyan96/personal-agent/pull/121)已提交并附加。修正契约输入默认字段缺省类型后，冻结完整CI822项/64文件、所有构建与类型、contract0.34导出、2项生产CLI/HTTP、B0/Web边界通过。首轮失败与修正后38项相关检查均保留；仅后续交接文档，不重复完整CI。连接器创建PR403，使用本机已有gh登录提交成功，无需新增凭据；Git外chat-context-output-reserve-20261027保存日志与PR依据。
+
+更新current-state补明上一轮PR120已于10:13:26以30aaef4合main、PR118/119自动MERGED及受审树一致；本批PR121仍独立待审，未合main。只改API上下文机制，不改角色/共享契约/schema027/客户端，不重打安装包；.59可配合后续后台，本次尚未部署。公开Latest再次核对仍v0.10.56/423959199，无公开发布。本机检查仅合成模型与受控HTTP/SQLite，不代表已还原原用户所有空回复，不代真实模型/群聊/安装/产品UI验收。后台升级仍按负责人要求单独处理。
+
+
+## 2026-10-27：群聊上下文后台升级获授权，隔离构建启动
+
+负责人明确选择现在升级PR121。受审f9e5914三项GitHub Foundation均success；线上API/worker63d87995运行、restart0。固定产品798f77c的4文件增量运维包已生成，153301字节/SHA256 d9638885dc7facade2648b9a884218a4557c1155d066cc09937c19e26a02d1e0，含10测试/2支持文件、191编译产物及568基线文件摘要。首次旧传输会话NoSuchKey失败；刷新、同一服务器已有免密登录和新会话上传后，完整包与源码/测试摘要、LF/bash预检通过，隔离构建启动，尚未停写或切换生产。只读多行命令串接、误开反馈但未提交、filechooser初次3秒超时证据保留，改为单行压缩脚本和20秒事件等待；未通过其他权限通道绕过。预检、备份恢复、成对切换结果后续追加，无迁移/安装包/Release或合main动作。细节见deployment/chat-context-output-reserve-20261027.md。
+
+
+## 2026-10-27：PR121配套后台升级完成
+
+按负责人本轮明确授权，2026-10-27 11:06:13–11:06:34（北京时间）API/worker从63d87995成对切换到research-openim-api:chat-context-output-reserve-20261027 / sha256:28ee6231937556fda148308d9ee8576e859e7f0595fd99b50e1cca3af6874e21，产品798f77c3cc7e7a52f9eaf61b0dbc46e99f2ba7f2，contract0.34/schema027保持，无迁移、未回退。4份源码增量、568基线/191编译产物、角色与方法/生产seed核对通过；服务器130项/10文件无网络隔离回归一次通过。停写备份、独立恢复104表/8个原文件、隔离副本HTTP及复核、启动前原库复核一致；26配置/密钥输入、API/worker设置和其他六服务保持，模型/私人档案及飞书/资料范围保持，广场同步disabled。API健康、worker运行、restart0，公网ready200/0.34及受保护接口401。
+
+备份/srv/research-openim-backups/chat-context-output-reserve-20261027-20261027T030616Z/research.tar.gz，SHA256 ee585f43f3aa3f36249e49822ad81ba84fe476cb97cf20f47313a2c85cb77866。运维目录/opt/research-openim/ops/chat-context-output-reserve-20261027，在旧group-agent-mentions完整组合后追加images.yaml；如需回退保留当前业务数据，不能回灌旧备份。原回执4414字节/SHA256 587fb8d6cdda4731dcd972f7d7a6780d19636b420b1735d49914a7213b42d800与本机复制完全一致；Git外保存deployment-receipt.server.json、receipt-copy-verification/public-ready及完成截图。旧上传会话NoSuchKey及UI/只读命令失败均在停写前恢复并保留记录，无绕过核验。
+
+受审f9e5914三项Foundation均success；本轮仅部署文档更新，不重复已通过根822项或重打现有0.10.59。未执行真实模型/原用户群聊/私人材料、安装器或产品UI验收，harness仍not_verified；不能据合成与健康结果宣布原会话所有空回复均复原。PR121未合main，Latest仍0.10.56，本轮无公开Release或安装包上传。
+
+## 2026-10-27：PR121整合main（本节随合并生效）
+
+负责人明确授权合并PR121。准备前工作区干净，分支fix/chat-context-output-reserve、origin为luoyan96/personal-agent；head eda4e587d919747ae8e3a2ee897aed66cbe8acad，main 30aaef48470554d1c02c3cbb89c43ca836661c0f。该head三项Foundation均success，无冲突或审阅意见。补充本批交接文档，产品798f77c保持；通过文档内容/差异检查并等待最终head的三项检查后，以固定head普通merge保留同事功能及历史。本节随PR进入main生效；实际merge SHA、时间和本机main同步凭据保存在Git外D:/deepseek-agent/.runtime/pr121-merge-20261027，合并前以GitHub状态为准。
+
+本批不重打或上传安装包、不公开Release、不重启后台；0.10.59本机包、已于11:06:34部署的798f77c/28ee6231/contract0.34/schema027及此前核对的公开Latest0.10.56各自保持。沿用根822项、服务器130项和备份恢复证据，不追加安装、产品UI、真实模型/群聊/私人材料验收。下个功能重新fetch最新main另开分支。

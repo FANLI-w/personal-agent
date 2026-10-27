@@ -13,7 +13,7 @@ import { personalModelKey, personalModelRuntime } from './personal-models.js'
 import { instant } from './ai.js'
 import type { Config } from './config.js'
 import { ApiError } from './errors.js'
-import { chatModelSystem, chatInputTokenBound, dailyChatSystem } from './chat-model-input.js'
+import { chatModelSystem, chatInputTokenBound, chatReplyTokenReserve, dailyChatSystem } from './chat-model-input.js'
 import { fileChatSystem,fileReadMetadata,selectFileExcerpts } from './agent-files.js'
 import { AgentCreationOutput, agentCreationSystem, applyAgentCreation, legacyTurnDocument } from './agent-creation.js'
 import { externalForChat } from './agent-connections.js'
@@ -81,8 +81,9 @@ export class ChatWorker {
         const candidates=rankedAssistantCandidates(s,current),shown:typeof candidates=[]
         const serialize=(selection=layers)=>JSON.stringify({currentRequest:current,requestedAgent:{id:agentContext.agent.id,displayName:agentContext.agent.displayName,profile:Object.fromEntries(Object.entries(modelAgentProfile(agentContext.agent)).filter(([key,value])=>key!=='version'&&value!==''))},...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(agentContext.memories.length?{memories:agentContext.memories}:{}),localSpecialists:shown,...(shown.length<candidates.length?{specialistsOmitted:true}:{}),...(complex?{labId:s.c.actor.labId,collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(selection.messages.some(m=>!required.has(m.id))?{recentDialogue:selection.messages.filter(m=>!required.has(m.id))}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
         prompt=serialize()
-        for(const candidate of candidates){if(shown.length>=3)break;shown.push(candidate);const trial=serialize();if(input.budget.maxTokens-chatInputTokenBound(system,trial)>=512)prompt=trial;else shown.pop()}
-        layers=packDialogueLayers(recent,required,notes,tasks,trial=>input.budget.maxTokens-chatInputTokenBound(contextSystem(trial),serialize(trial))>=512)
+        const replyReserve=chatReplyTokenReserve(system,prompt,input.budget.maxTokens)
+        for(const candidate of candidates){if(shown.length>=3)break;shown.push(candidate);const trial=serialize();if(input.budget.maxTokens-chatInputTokenBound(system,trial)>=replyReserve)prompt=trial;else shown.pop()}
+        layers=packDialogueLayers(recent,required,notes,tasks,trial=>input.budget.maxTokens-chatInputTokenBound(contextSystem(trial),serialize(trial))>=replyReserve)
         system=contextSystem(layers);prompt=serialize();input.agentContextFingerprint=agentContext.fingerprint
         saveDialogueSelection(s,turn.id,input,layers,layers.messages.length<input.inputSequence)
         this.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(input),turn.id)
@@ -149,7 +150,7 @@ export class ChatWorker {
         const required=new Set(input.continuous?.messageIds??[current.id]);const currentBatch=messages.filter(m=>required.has(m.id))
         if(currentBatch.length!==required.size){turn.status='failed';turn.failure='INPUT_CHANGED';turn.version++;turn.updatedAt=instant();s.saveTurn(turn);return null}
         const base=serialize(currentBatch,input.inputSequence>currentBatch.length)
-        const minimumOutput=input.budget.maxTokens-chatInputTokenBound(system,base)>=512?512:64
+        const minimumOutput=chatReplyTokenReserve(system,base,input.budget.maxTokens)
         let read=document?fileReadMetadata(document):undefined,excerpts:unknown[]=[],desiredOutput=minimumOutput
         if(document){
           // Select the best authorized file content with only the complete
@@ -179,8 +180,13 @@ export class ChatWorker {
         saveDialogueSelection(s,turn.id,input,layers,omitted)
       }
       }
-      const remainingOutput=input.budget.maxTokens-chatInputTokenBound(system,prompt)
-      if (prompt.length > (input.skill?256000:100000) || remainingOutput<64) {
+      const inputTokenBound=chatInputTokenBound(system,prompt),remainingOutput=input.budget.maxTokens-inputTokenBound
+      const admitted=prompt.length <= (input.skill?256000:100000) && remainingOutput>=64
+      // Counts only, private to the requester-side runtime. Never copy prompt,
+      // quoted text, model output, keys or other members' private receipts.
+      input.modelInputDiagnostic={budgetMaxTokens:input.budget.maxTokens,inputTokenBound,maxOutputTokens:admitted?Math.min(4096,remainingOutput):0,admitted}
+      this.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(input),turn.id)
+      if (!admitted) {
         turn.status = 'failed'; turn.failure = 'BUDGET_EXCEEDED'; turn.version++; turn.updatedAt = instant(); s.saveTurn(turn); return null
       }
       let apiKey: string
@@ -220,7 +226,6 @@ export class ChatWorker {
       // Actual returned usage survives cancellation even when output is fenced.
       this.db.prepare('UPDATE chat_attempts SET usage_json=? WHERE turn_id=?').run(JSON.stringify(usage), job.id)
       const diagnostic=(stage:string,errorCategory?:string)=>{
-        if(!job.input.fileSource&&!job.input.externalAgent)return
         // Private operational metadata only: never retain provider text or keys.
         const input=JSON.parse(String(this.db.prepare('SELECT request_json FROM chat_turns WHERE id=?').get(job.id)!.request_json))
         const text=typeof result.text==='string'?result.text:''
@@ -241,8 +246,8 @@ export class ChatWorker {
       const s = service(this.db, job.ownerId, this.config,job.id), { turn, group } = s.checkTurnInput(job.id)
       turn.usage = usage
       if (result.failure) { turn.status = 'failed'; turn.failure = result.failure==='OUTPUT_LIMIT'?'BUDGET_EXCEEDED':'MODEL_FAILED';diagnostic(result.failure==='OUTPUT_LIMIT'?'output_limit':'provider_error') }
-      else if (result.inputTokens===null||result.outputTokens===null) { turn.status='failed';turn.failure='MODEL_FAILED' }
-      else if (result.inputTokens + result.outputTokens > job.input.budget.maxTokens || result.outputTokens>job.modelInput.maxTokens || result.elapsedMs > job.input.budget.maxSeconds * 1000) { turn.status = 'failed'; turn.failure = 'BUDGET_EXCEEDED' }
+      else if (result.inputTokens===null||result.outputTokens===null) { turn.status='failed';turn.failure='MODEL_FAILED';diagnostic('usage_missing') }
+      else if (result.inputTokens + result.outputTokens > job.input.budget.maxTokens || result.outputTokens>job.modelInput.maxTokens || result.elapsedMs > job.input.budget.maxSeconds * 1000) { turn.status = 'failed'; turn.failure = 'BUDGET_EXCEEDED';diagnostic('usage_limit') }
       else {
         // Savepoint guarantees invalid output cannot leave partial plans/actions/messages.
         this.db.exec('SAVEPOINT chat_model_output')
