@@ -1,3 +1,4 @@
+import { TaskExecutionStatus } from './TaskExecutionStatus';
 import { TaskKnowledgePanel } from './TaskKnowledgePanel';
 import { Alert, Button, Checkbox, Input, Segmented, Select } from "antd";
 import { type ReactNode, useEffect, useRef, useState } from "react";
@@ -203,6 +204,7 @@ export function TaskWorkPage({
             : "尚未建立本机工作区"}
         </span>
       </header>
+      <TaskExecutionStatus target={target} />
       <Segmented
         aria-label="任务工作页栏目"
         value={tab}

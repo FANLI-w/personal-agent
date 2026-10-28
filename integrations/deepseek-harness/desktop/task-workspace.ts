@@ -1,3 +1,4 @@
+import { localDeviceId } from './device-identity';
 import { packWorkContext, validateHandoff, type WorkInputs, type ContextReceipt, type Handoff, type HandoffInput } from './work-memory';
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -145,10 +146,7 @@ export class DshTaskWorkspace {
             0,
             150
           )} · ${context.taskId.slice(0, 8)}`,
-          deviceId: createHash("sha256")
-            .update(this.root)
-            .digest("hex")
-            .slice(0, 24),
+          deviceId: await localDeviceId(this.root),
           directory: await realpath(directory),
           agentId: context.agentId,
           sources: [],
@@ -356,6 +354,7 @@ export class DshTaskWorkspace {
       const message=packed?.content??legacyMessage;
       if(packed&&!b.pending)b.contextReceipt=packed.receipt;
       if (!b.pending) {
+        b.agentId = context.agentId;
         b.pending = { requestId, text: message, userText:text };
         await this.save(b);
       }

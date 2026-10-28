@@ -1,3 +1,4 @@
+import { TeamWorkPanel } from '@/research/TeamWorkPanel';
 import { SessionType } from "@openim/wasm-client-sdk";
 import { Button, Drawer, Layout, Tooltip } from "antd";
 import clsx from "clsx";
@@ -157,6 +158,7 @@ const ChatHeader = () => {
           </div>
         </div>
         <div className="mr-2 flex items-center">
+          {researchMode && isGroupSession && <TeamWorkPanel imID={currentConversation?.conversationID} />}
           <button
             type="button"
             className="desktop-chat-header-action"

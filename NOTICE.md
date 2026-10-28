@@ -92,3 +92,5 @@ B3 的受限运行组合依赖官方 DeepSeek Harness `@deepseek-ai/dsh-llm` / `
 同日按负责人要求，将上述原始PNG和同修订build/icon.ico同时用于AcceptCat应用/安装器/快捷方式、窗口、标题栏、启动/登录/关于页及托盘图标，许可与署名同上；ICO原样保留16/32/48/256px四档。不引入上游桌宠运行时，不更改AcceptCat名称或appId。原Catnap橘猫记录仅描述历史版本，不再作为本机0.10.49的新应用图标；旧来源及许可历史保留。
 
 2026-10-28：第二步规则/记忆与任务工作页为AcceptCat适配代码。内置方法仍由agents/skills单一来源打包，通过research-skills解析器生成本次选用的版本副本；DSH仅使用固定发行包的官方会话接口，不复制或修改其源码。设计参考归属继续见docs/development/dsh-team-integration-plan.md。
+
+2026-10-28：第三步群文献分工、设备执行协调与群回执为 AcceptCat 自行编写的适配层；继续使用固定 DSH 发行包的官方 RPC，未迁入或修改上游源码。工作流参考来源沿用三步计划，已有许可、署名与 Skill 单一来源保持。

@@ -1,3 +1,4 @@
+import {runTeamWork, notifyTeamDecision} from './team-work.js'
 import {runWorkContext} from './work-context.js'
 import { ReuseService, reuseCommands } from './reuse.js'
 import { registerLocalDsh, type DshTransport } from './local-dsh.js'
@@ -228,6 +229,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
         collaboration = new Collaboration(connection,actor,config.blobRoot,labAi)
         reconcile(connection,config)
         reconcileChat(connection,config)
+        if(route.stage==='TEAM1')return route.response.parse(runTeamWork(new ChatService(collaboration,config),name as keyof typeof import('@research-agent-platform/contracts').teamWorkRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').teamWorkRoutes>))
         if(route.stage==='CONTEXT1')return route.response.parse(runWorkContext(new ChatService(collaboration,config),name as keyof typeof import('@research-agent-platform/contracts').workContextRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').workContextRoutes>))
         if(route.stage==='SKILL1'){const result=runSkills(new ChatService(collaboration,config),name as SkillCommand,parsed.data as RequestFor<SkillCommand>);reconcileChat(connection,config);return result}
         if(route.stage==='CHAT1'||route.stage==='IM1'){const result=new ChatService(collaboration,config).run(name as ChatCommand,parsed.data as RequestFor<ChatCommand>);reconcileChat(connection,config);return result}
@@ -235,6 +237,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
         if((aiCommands as readonly string[]).includes(name))return new AiService(collaboration,labAi.enabled,labAi.model,name==='planRequest'?planningModelRuntime(connection,actor,config):undefined,planningColleagueReader(new ChatService(collaboration,config))).run(name as AiCommand,parsed.data as RequestFor<AiCommand>)
         if (!(collaborationCommands as readonly string[]).includes(name)) fail('NOT_IMPLEMENTED')
         const result=collaboration.run(name as CollaborationCommand, parsed.data as RequestFor<CollaborationCommand>)
+        if(route.method!=='GET')notifyTeamDecision(new ChatService(collaboration,config),result)
         reconcile(connection,config)
         reconcileChat(connection,config)
         if(name==='content') {const file=collaboration.coordination.artifact((parsed.data.params as {id:string}).id).model;reply.header('Content-Type',file.mediaType);reply.header('Content-Disposition',`attachment; filename="download"; filename*=UTF-8''${encodeURIComponent(file.filename)}`);return Buffer.from(result as Uint8Array)}

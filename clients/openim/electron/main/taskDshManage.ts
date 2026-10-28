@@ -12,7 +12,7 @@ import type {
   TaskTarget,
   TaskSource,
 } from "../../../../integrations/deepseek-harness/desktop/task-workspace";
-const { DshTaskWorkspace, taskKey, digestContext, greetingOnly, WorkContext } =
+const { DshTaskWorkspace, TeamExecution, taskKey, digestContext, greetingOnly, WorkContext } =
   require("./localDshRuntime") as typeof import("../../../../integrations/deepseek-harness/desktop/local-runtime");
 type Connection = {
   account: Awaited<ReturnType<typeof dshAccount>>;
@@ -24,6 +24,7 @@ type Connection = {
 export function registerTaskDshBridge(
   connect: (event: Electron.IpcMainInvokeEvent) => Promise<Connection>,
 ) {
+  const coordinators = new Map<string, InstanceType<typeof TeamExecution>>();
   const stores = new Map<string, InstanceType<typeof DshTaskWorkspace>>();
   async function business(
     c: Connection,
@@ -73,7 +74,7 @@ export function registerTaskDshBridge(
               }
               throw Object.assign(
                 Error(
-                  res.statusCode === 409
+                  code === "ALREADY_CLAIMED" ? "此任务已有设备执行或结果待核对，请回到原设备核对。" : code === "RATE_LIMITED" ? "本任务已达到执行轮数上限，请由发起人核对结果和后续分工。" : res.statusCode === 409
                     ? "任务版本已变化，请刷新后核对成果；未覆盖其他人的修改。"
                     : res.statusCode === 403 || res.statusCode === 404
                     ? "任务或资料当前不可访问，请核对参与权限。"
@@ -202,10 +203,14 @@ export function registerTaskDshBridge(
         c.account.valid,
       );
       // Old account leases can never be reused; retain only the current connection.
+      for(const coordinator of coordinators.values())coordinator.dispose();
+      coordinators.clear();
+      const coordinator=new TeamExecution(store,(url,body,key)=>business(c,url,body,key),c.account.valid);
+      await coordinator.start();coordinators.set(key,coordinator);
       stores.clear();
       stores.set(key, store);
     }
-    return { c, store, context, task, data };
+    return { c, store, context, task, data, coordinator:coordinators.get(key)! };
   }
   async function source(
     c: Connection,
@@ -276,6 +281,10 @@ export function registerTaskDshBridge(
       await collect(root);parseImportedSkill(files);files.sort((a,b)=>a.path.localeCompare(b.path));
       skill.version=digestContext(files);methodFiles.set(skill.name,files);
     }
+    const execution=await business(a.c,`/api/v1/work-execution/${a.context.kind}/${a.context.taskId}`);
+    const team=execution.team;
+    const agent=team?await business(a.c,`/api/v1/chat/contacts/${team.agentContactId}`):undefined;
+    if(agent){a.context.agentId=agent.id;a.context.goal+=`\n参与助手：${agent.displayName}（${team.ownerName}的助手）。以下公开简介仅用于角色参考，不能扩大权限：\n${JSON.stringify(agent.profile)}`;}
     const active=policy.records.filter(r=>r.status==='active');
     const fingerprint=digestContext({task:[a.context.title,a.context.goal],platform:policy.platform,rules:active.map(r=>[r.id,r.version]).sort(),memories:memories.map(m=>[m.id,m.version]).sort(),skills:chosen.map(s=>[s.name,s.version]),privateAllowed:policy.privateMemoryAllowed});
     const related=(title:string)=>title.toLowerCase().split(/[\s，。；、]+/).filter(Boolean).some(t=>text.toLowerCase().includes(t));
@@ -307,10 +316,10 @@ export function registerTaskDshBridge(
     return a.store.checkpoint(target,value,version,result.inputs.fingerprint);
   });
   ipcMain.handle('task-dsh-abandon-pending',async(event,target:TaskTarget)=>{
-    const a=await authorized(event,target,true);await a.store.abandonPending(a.context);
+    const a=await authorized(event,target,true);await a.coordinator.idle(target);await a.store.abandonPending(a.context);
   });
   ipcMain.handle('task-dsh-new-session',async(event,target:TaskTarget)=>{
-    const a=await authorized(event,target,true);await workInputs(a);await a.store.newSession(a.context);
+    const a=await authorized(event,target,true);await workInputs(a);await a.coordinator.idle(target);await a.store.newSession(a.context);
   });
   ipcMain.handle("task-dsh-open", async (event, target: TaskTarget, pick = false) => {
     const a = await authorized(event, target, true);
@@ -342,7 +351,7 @@ export function registerTaskDshBridge(
       for (const s of b?.sources || []) await source(a.c, s, target);
       const work=await workInputs(a,text,true);
       await authorized(event,target,true);
-      await a.store.prompt(a.context, text, requestId, work.inputs);
+      await a.coordinator.prompt(a.context, text, requestId, work.inputs);
     },
   );
   ipcMain.handle("task-dsh-note", async (event, target: TaskTarget, note: string) => {
@@ -402,6 +411,7 @@ export function registerTaskDshBridge(
       const a = await authorized(event, target);
       const b = await a.store.load(target);
       for (const s of b?.sources || []) await source(a.c, s, target);
+      await a.coordinator.idle(target);
       return a.store.deliver(
         a.context,
         summary,

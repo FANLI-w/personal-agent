@@ -2319,3 +2319,13 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 第二步成品检查：首份0.10.69 NSIS虽生成，独立临时userData启动暴露contracts仅ESM导出与Electron22 CommonJS主进程不兼容。改为既有localDshRuntime bundle导出canonical WorkContext校验器，并由主进程引用；未放宽schema。新增回归后DSH定向23项与Electron类型通过，触发完整CI重跑及重打包。原packaged-smoke.log保留，首次包不交付。PR132已建立，代码合并/公开发布/部署仍未执行。
 
 最终交付：产品83c10c5，PR132（https://github.com/luoyan96/personal-agent/pull/132）。本机最终根CI844项/67文件、生产3项/B0/Web，23项DSH定向、客户端双类型、24项真实DSH合成闭环通过。22:06核对产品提交的GitHub四项检查全通过。Windows0.10.69最终NSIS/5入口/四页签与IPC/内置DSH0.2.1-rc.3/更新SHA512/成品启动通过。安装器D:\deepseek-agent\.runtime\dsh-rules-memory-20261028/windows/AcceptCat_0.10.69.exe，366891410字节，SHA256 b4347308b07910e0f16980e3fb575d942d13347ad918e3c2e35f8be66698519e。源码与测试完成，配套后台未部署、真人/真实模型未验收，未合并或公开发布；第三步未开始。 最后仅补交付文档，未重复运行已通过的产品检查。
+
+## 2026-10-28 DSH 第三步：团队文献分工与本机执行协调
+
+负责人要求继续第三步；实际origin/main93da480，独立clone acceptcat-chat-experience建立feat/dsh-team-coordination并快进保留第二步30f696a，原桌面目录未动。新增contract0.37.0/schema030：群来源消息→助手/负责人→研究任务，复用已有邀请承接、资料、交付与验收。群内右键确认分工并查看协作抽屉；服务回执引用原消息，旧聊天/@问答不自动启动本机工具。公开助手档案进入任务上下文，共享任务不加载个人记忆。
+
+本机随机持久设备ID替代目录摘要；唯一活跃执行索引保留claimed/running/uncertain，心跳过期不自动接管；稳定requestId和本机journal关联会话事件，只有新终止事件确认结束。主进程续报独立于页面；成员撤权或失联请求停止，保留不确定记录。群任务最多3轮/每轮3分钟，检测12次模型尝试请求停止；没有自治互相派单、强制跨设备接管或人民币硬费用上限。
+
+5项后台定向通过（两人分工/承接、重复确认、两设备竞争与离线、撤权、双成果提交验收、029重复迁移），28项DSH定向、客户端/原生类型通过。独立Electron22+固定DSH0.2.1-rc.3+本地SQLite/API+合成模型完成14项业务/本机闭环，最终群界面另补5项检查通过；Playwright独立无头Edge核对实际分工弹窗与已验收抽屉，0页面错误。测试没有真实私人资料/真实模型验收。首轮测试驱动在账号切换后未结束，保留证据并加超时定位；第二轮完成双成果但末尾按钮匹配漏空格，独立补验通过。原隐藏窗口抽屉截图处于动画起点，另补实际可见稳定截图，未以旧图冒充显示正常。
+
+首次根CI并行测试中两项旧用例超时，853项通过，失败保留；按仓库Windows CI=1配置复测。Windows0.10.70候选构建中，最终检查/PR/成品路径另补。Git外证据D:/deepseek-agent/.runtime/dsh-team-coordination-20261028。未合并、未部署、未公开发布。

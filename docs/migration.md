@@ -138,3 +138,5 @@ paper-framework-figure-studio-pro 固定修订仅在 Git 外测试完整包往�
 
 
 2026-10-28：DSH第二步增加contract0.36.0及029-work-context.sql，课题组/项目规则与项目记忆单独保存，沿用现有成员/任务权限。原任务和个人记忆不迁移复制；本地任务绑定新增可选字段兼容第一步文件。生产上次记录schema027，须重新核对028+029及配对API/worker并备份演练，当前未部署。新schema不能直接交给严格检查旧schema的程序使用。详见[第二步说明](development/dsh-rules-memory.md)。
+
+2026-10-28：第三步新增 contract0.37.0/schema030，群任务关联、唯一活跃设备执行和心跳表为追加迁移；原计划/任务/邀请/交付/验收不复制成第二事实源。设备标识由本机持久 UUID 替代目录摘要，原绑定/资料/会话保留。无后台部署或公开发布；参见[第三步说明](development/dsh-team-coordination.md)。
