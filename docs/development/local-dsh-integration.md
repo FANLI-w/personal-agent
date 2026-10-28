@@ -1,12 +1,12 @@
 # AcceptCat 内置 DSH 与账号接入
 
-2026-10-28，PR130 / `feat/local-dsh-page`，Windows 候选 0.10.64。继续在独立 clone `D:\deepseek-agent\acceptcat-chat-experience` 开发，实际 main 仍为 93da480。此批取代 0.10.63 的“另装 DSH、手动启动、单独填 Key”试用方式。原工作台和原聊天入口继续保留；不包含未合并的 PR129。
+2026-10-28，PR130 / `feat/local-dsh-page`，内置首批 Windows 0.10.64，关闭预览弹窗修正版 0.10.65。继续在独立 clone `D:\deepseek-agent\acceptcat-chat-experience` 开发，实际 main 仍为 93da480。此批取代 0.10.63 的“另装 DSH、手动启动、单独填 Key”试用方式。原工作台和原聊天入口继续保留；不包含未合并的 PR129。
 
 ## 使用行为
 
 安装包自带固定 Windows x64 DSH 0.2.1-rc.3 的完整发行文件，包括运行时、随发行版提供的依赖和许可。无需预装 Node、Python、pnpm 或 `D:\0cat\dsh`。首次开发构建需要联网下载，安装后的运行环境来自 AcceptCat 的 `resources/dsh`。
 
-AcceptCat 恢复或建立登录后，主进程核验真实 Cookie 与后台账号/默认模型，自动启动本地 DSH。左侧 DSH 页面直接打开工作区，默认模型显示为“模型名 · AcceptCat”。无需第二个账号或再次填写模型 Key。原有 DSH 首次预览说明仍保留。
+AcceptCat 恢复或建立登录后，主进程核验真实 Cookie 与后台账号/默认模型，自动启动本地 DSH。左侧 DSH 页面直接打开工作区，默认模型显示为“模型名 · AcceptCat”。无需第二个账号或再次填写模型 Key。0.10.65 起按负责人要求关闭内嵌 DSH 的首次预览说明：通过官方托管 overlay 设置 `ui-settings-general.welcomeNoticeVersion=2026-09-28.1`，与锁定 rc.3 的说明版本对应。新账号、已有工作区与重启均应用；不修改上游发行文件，不覆盖用户插件配置或放宽工具批准。升级 DSH 时需重新核对该版本字段。
 
 使用 `userData/local-dsh/accounts/<sha256(服务地址,成员ID)>` 保存每个账号的工作区、会话和插件。登出、账号 Cookie 改变、主文档导航/崩溃或关闭应用时停止自己的子进程与模型连接；切换普通聊天页面保持运行。用户主动停止后可以重新连接。不会迁入 0.10.63 的公共试用 home、独立 DSH 的配置或原聊天记录。
 
@@ -81,6 +81,16 @@ corepack pnpm@10.28.0 run build:win
 实际部署从原生产镜像叠加固定产品2504dff的两个新增文件及两个注册入口后重新编译，保留contract0.34/schema027，避免带入当前main尚未部署的schema028。备份恢复、新接口匿名401、隔离合成流式及取消检查通过。现有客户端继续使用旧接口；真实账号模型元数据和小请求由负责人在0.10.64候选客户端验收。
 
 远端CI复核发现Linux测试合成密钥文件未显式0600，Windows服务状态测试遗漏新DSH桥替身。仅修正这两处测试后，本机完整CI837项/66文件与5项IPC串联检查通过；服务器原138项及修正后3项DSH用例通过，原失败证据保留。产品和候选安装器不变，新head远端状态另查。
+
+## 0.10.65 关闭预览说明的验证
+
+按负责人要求去掉内嵌启动说明，仅在托管配置中指定 rc.3 的已知说明版本；官方 `ui-settings-general` README 与实际 schema 声明了该字段。完整上游运行树、权限提示、模型连接与原用户配置保留。此改动只影响 Windows 本地客户端，线上接口无需重新部署。
+
+本机根 CI 837项/66文件、生产3项/B0/Web，客户端与 Electron 类型、7项 DSH 定向测试通过。Browser plugin not available，因此使用 Playwright Electron，在隔离数据目录运行实际 Electron22 与内置 DSH；开发运行树及成品内运行树各验证首次打开、刷新、同目录重启、1024×726窄桌面和第二个工作区共5种场景。页面标题/loopback来源正确、非空、无错误遮罩、输入可编辑、没有预览说明或二次 Key 提示；没有发送模型请求。页面错误为0，仍记录开发探针的 CSP 警告，成品启动冒烟另保留既有 electron-log 初始化警告。
+
+证据保存在 Git 外 `D:\deepseek-agent\.runtime\dsh-no-notice-20261028`，含两组结果/截图、完整CI和构建日志。首次 Playwright 启动因测试环境残留 `ELECTRON_RUN_AS_NODE`（空值仍生效）失败；仅清除测试子进程变量后通过，失败日志保留。未修改或启动负责人现用客户端，未做真实账号/模型验收；仍通过 PR130 交付，不自动合并或公开发布。
+
+0.10.65 NSIS 与包内5个入口、成品启动、6项更新守卫及更新清单 SHA512 核对通过。安装器 `D:\deepseek-agent\.runtime\dsh-no-notice-20261028\windows\AcceptCat_0.10.65.exe`，366,805,432 字节，SHA256 `11ca3555b0ebcddc6ebb559e7cfcce55961e32de8d8d59e62149effb668198d1`。同目录保留 blockmap/latest.yml/SHA256SUMS.txt，未上传公开更新通道。更新守卫第一次命令在根目录找不到客户端测试文件，改为客户端目录后6项通过，错误日志保留。
 
 ## 后续
 
