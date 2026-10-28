@@ -13,6 +13,7 @@ import {
   workspaceStatusLabel,
 } from "./PersonalWorkDetail";
 import { ResearchTaskPanel } from "./ResearchTaskPanel";
+import { TaskWorkPage } from "./TaskWorkPage";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import "./workspace.scss";
 import { useWorkspaceAvailability } from "./useWorkspaceAvailability";
@@ -133,11 +134,9 @@ export function DesktopWorkbench() {
   const [params, setParams] = useSearchParams();
   const relocated = relocatedWorkspace(params);
   const tab =
-    params.get("view") === "planning" ||
-    params.get("plan") ||
-    params.get("planning")
+    params.get("view") === "planning" || params.get("plan") || params.get("planning")
       ? "planning"
-      : params.get("view") === "team" || (!params.get("view") && !params.get("task"))
+      : params.get("view") === "team"
       ? "team"
       : "tasks";
   const [planningLaunch, setPlanningLaunch] = useState(0);
@@ -268,7 +267,7 @@ export function DesktopWorkbench() {
     >
       <header className="workspace-heading">
         <div>
-          <h1>工作台</h1>
+          <h1>任务</h1>
         </div>
         <div className="workspace-heading-actions">
           {tab === "tasks" && (
@@ -287,7 +286,7 @@ export function DesktopWorkbench() {
       </header>
       <div className="workspace-toolbar">
         <Segmented
-          aria-label="工作台栏目"
+          aria-label="任务栏目"
           value={tab === "planning" ? "tasks" : tab}
           onChange={(value) => setTab(String(value))}
           options={[
@@ -475,21 +474,30 @@ export function DesktopWorkbench() {
             <main className="workspace-detail-pane">
               {requestedTask ? (
                 requestedValid ? (
-                  requestedKind === "research" ? (
-                    <div className="workspace-task-detail">
-                      <ResearchTaskPanel
-                        key={requestedTask}
-                        taskId={requestedTask}
-                        onChanged={read.refresh}
-                      />
-                    </div>
-                  ) : (
-                    <PersonalWorkDetail
-                      key={requestedTask}
-                      taskId={requestedTask}
-                      onChanged={read.refresh}
-                    />
-                  )
+                  <TaskWorkPage
+                    key={`${generation}:${requestedKind}:${requestedTask}`}
+                    taskId={requestedTask}
+                    kind={requestedKind === "research" ? "research" : "personal"}
+                    onChanged={read.refresh}
+                  >
+                    {(refreshTask) =>
+                      requestedKind === "research" ? (
+                        <div className="workspace-task-detail">
+                          <ResearchTaskPanel
+                            key={requestedTask}
+                            taskId={requestedTask}
+                            onChanged={refreshTask}
+                          />
+                        </div>
+                      ) : (
+                        <PersonalWorkDetail
+                          key={requestedTask}
+                          taskId={requestedTask}
+                          onChanged={refreshTask}
+                        />
+                      )
+                    }
+                  </TaskWorkPage>
                 ) : (
                   <Alert type="warning" message="任务链接无效，请从列表重新选择。" />
                 )

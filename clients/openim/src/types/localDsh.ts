@@ -17,4 +17,53 @@ export type LocalDshBridge = {
   start: () => Promise<LocalDshSnapshot>;
   stop: () => Promise<LocalDshSnapshot>;
   show: (bounds: DshBounds | null) => Promise<void>;
+  taskOpen: (
+    target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
+    pick?: boolean,
+  ) => Promise<
+    | import("../../../../integrations/deepseek-harness/desktop/task-workspace").DshTaskState
+    | undefined
+  >;
+  taskStatus: (
+    target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
+  ) => Promise<
+    | import("../../../../integrations/deepseek-harness/desktop/task-workspace").DshTaskState
+    | undefined
+  >;
+  taskPrompt: (
+    target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
+    text: string,
+    requestId: string,
+  ) => Promise<void>;
+  taskNote: (
+    target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
+    note: string,
+  ) => Promise<void>;
+  taskCancel: (
+    target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
+  ) => Promise<void>;
+  taskRebase: (
+    target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
+  ) => Promise<void>;
+  taskSubmit: (
+    target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
+    summary: string,
+    names: string[],
+  ) => Promise<unknown>;
+  taskImport: (
+    target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
+    source: Pick<
+      import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskSource,
+      "kind" | "id" | "version"
+    >,
+  ) => Promise<unknown>;
+  taskOutput: (
+    target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
+    name: string,
+  ) => Promise<{
+    filename: string;
+    contentBase64: string;
+    mediaType: string;
+    preview: string;
+  }>;
 };

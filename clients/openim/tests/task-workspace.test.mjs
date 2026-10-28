@@ -1,0 +1,343 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+import vm from "node:vm";
+import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { routes } from "../../../packages/contracts/dist/routes.js";
+import { buildLocalDshRuntime } from "../../../integrations/deepseek-harness/desktop/build.mjs";
+const require = createRequire(import.meta.url),
+  module = { exports: {} };
+vm.runInNewContext(
+  buildLocalDshRuntime(fileURLToPath(new URL("../", import.meta.url))).outputFiles[0]
+    .text,
+  {
+    module,
+    exports: module.exports,
+    require,
+    process,
+    Buffer,
+    URL,
+    setTimeout,
+    clearTimeout,
+  },
+);
+const { DshTaskWorkspace } = module.exports;
+const context = {
+  kind: "research",
+  taskId: "task_synthetic",
+  title: "Synthetic comparison",
+  goal: "Compare the fixture papers",
+  version: 3,
+};
+async function fixture(t) {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "acceptcat-task-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const sessions = new Map(),
+    calls = [];
+  let lose = false,
+    deny = false;
+  const rpc = async (method, args) => {
+    calls.push({ method, args });
+    if (method === "session/projections")
+      return sessions.has(args.sessionId) ? { kind: "sequenced", asOfSeq: 0 } : null;
+    if (method === "workspace/create") return { workspace: { workspaceId: args.path } };
+    if (method === "session/create") {
+      sessions.set(args.sessionId, args);
+      return { sessionId: args.sessionId };
+    }
+    if (method === "session/prompt" && lose) {
+      lose = false;
+      throw Error("response lost");
+    }
+    if (method === "session/page") return { records: [], hasMore: false };
+    if (method === "session/list")
+      return {
+        items: [...sessions.keys()].map((sessionId) => ({ sessionId, running: false })),
+      };
+    return {};
+  };
+  const valid = async () => {
+    if (deny) throw Error("session expired");
+  };
+  return {
+    root,
+    calls,
+    sessions,
+    store: new DshTaskWorkspace(root, rpc, valid),
+    restart: () => new DshTaskWorkspace(root, rpc, valid),
+    lose: () => (lose = true),
+    deny: () => (deny = true),
+  };
+}
+test("concurrent open and restart recover the exact task session; another task has a separate directory", async (t) => {
+  const f = await fixture(t);
+  const [a, b] = await Promise.all([f.store.open(context), f.store.open(context)]);
+  assert.equal(a.sessionId, b.sessionId);
+  assert.equal(f.calls.filter((c) => c.method === "session/create").length, 1);
+  assert.equal((await f.restart().open(context)).sessionId, a.sessionId);
+  const c = await f.store.open({ ...context, taskId: "other" });
+  assert.notEqual(a.directory, c.directory);
+  assert.notEqual(a.sessionId, c.sessionId);
+});
+test("ambiguous prompt survives restart and retries the exact request, blocking a different intent", async (t) => {
+  const f = await fixture(t);
+  await f.store.open(context);
+  f.lose();
+  await assert.rejects(
+    f.store.prompt(context, "read paper", "same_request_123"),
+    /response lost/,
+  );
+  const restored = f.restart();
+  await assert.rejects(
+    restored.prompt(context, "write something", "another_request_123"),
+    /上一条/,
+  );
+  await restored.prompt(
+    context,
+    "changed draft must not replace accepted content",
+    "same_request_123",
+  );
+  const calls = f.calls.filter((c) => c.method === "session/prompt");
+  assert.equal(calls.length, 2);
+  assert.equal(JSON.stringify(calls[0].args), JSON.stringify(calls[1].args));
+  await restored.prompt(context, "duplicate click", "same_request_123");
+  assert.equal(f.calls.filter((c) => c.method === "session/prompt").length, 2);
+});
+test("selected immutable source is hash checked; traversal and symlinks cannot expose another folder", async (t) => {
+  const f = await fixture(t),
+    b = await f.store.open(context),
+    bytes = Buffer.from("synthetic paper");
+  const s = {
+    kind: "artifact",
+    id: "paper_a",
+    version: 1,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    filename: "paper.txt",
+  };
+  await assert.rejects(f.store.importSource(context, s, Buffer.from("wrong")), /校验/);
+  await f.store.importSource(context, s, bytes);
+  await f.store.importSource(context, s, bytes);
+  assert.equal((await f.store.load(context)).sources.length, 1);
+  await assert.rejects(f.store.readOutput(context, "../secret.txt"), /路径/);
+  const outside = path.join(f.root, "outside");
+  await fs.mkdir(outside);
+  await fs.writeFile(path.join(outside, "secret.txt"), "private");
+  await fs.symlink(outside, path.join(b.directory, "linked"), "junction");
+  await assert.rejects(f.store.readOutput(context, "linked/secret.txt"), /链接/);
+});
+test("lost upload and submit responses retry persisted bytes and keys without a second deliverable", async (t) => {
+  const f = await fixture(t),
+    b = await f.store.open(context);
+  await fs.writeFile(path.join(b.directory, "result.md"), "synthetic comparison");
+  const accepted = new Map();
+  let lostUpload = true,
+    lostSubmit = true,
+    version = 3,
+    uploads = 0,
+    submits = 0;
+  const post = async (url, body, key) => {
+    if (accepted.has(key)) {
+      assert.equal(accepted.get(key).body, JSON.stringify(body));
+      return accepted.get(key).value;
+    }
+    assert.equal(body.expectedVersion, version);
+    const upload = url.endsWith("artifacts");
+    const value = { id: upload ? "artifact-result" : "delivery-result" };
+    accepted.set(key, { body: JSON.stringify(body), value });
+    version++;
+    if (upload) {
+      uploads++;
+      if (lostUpload) {
+        lostUpload = false;
+        throw Error("upload lost");
+      }
+    } else {
+      submits++;
+      if (lostSubmit) {
+        lostSubmit = false;
+        throw Error("submit lost");
+      }
+    }
+    return value;
+  };
+  await assert.rejects(
+    f.store.deliver(context, "Ready for review", ["result.md"], post, true),
+    /upload lost/,
+  );
+  await fs.writeFile(path.join(b.directory, "result.md"), "changed after upload");
+  await assert.rejects(
+    f
+      .restart()
+      .deliver(
+        { ...context, version: 4 },
+        "Ready for review",
+        ["result.md"],
+        post,
+        true,
+      ),
+    /submit lost/,
+  );
+  const r = await f
+    .restart()
+    .deliver(
+      { ...context, version: 5 },
+      "Ready for review",
+      ["result.md"],
+      post,
+      false,
+    );
+  assert.equal(r.id, "delivery-result");
+  assert.equal(uploads, 1);
+  assert.equal(submits, 1);
+  await f
+    .restart()
+    .deliver(
+      { ...context, version: 5 },
+      "Ready for review",
+      ["result.md"],
+      post,
+      false,
+    );
+  assert.equal(submits, 1);
+});
+test("account lease expiry blocks local receipts and all later task operations", async (t) => {
+  const f = await fixture(t);
+  await f.store.open(context);
+  f.deny();
+  await assert.rejects(f.store.status(context), /expired/);
+  await assert.rejects(f.store.prompt(context, "hello", "request_123"), /expired/);
+});
+
+test("delivery includes referenced source artifacts and obeys the actual submission contract", async (t) => {
+  const f = await fixture(t),
+    b = await f.store.open(context),
+    bytes = Buffer.from("synthetic source");
+  await f.store.importSource(
+    context,
+    {
+      kind: "artifact",
+      id: "source_a",
+      version: 1,
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+      filename: "a.txt",
+    },
+    bytes,
+  );
+  await fs.writeFile(path.join(b.directory, "result.md"), "result");
+  await f.store.deliver(
+    context,
+    "Reviewed comparison",
+    ["result.md"],
+    async (url, body) => {
+      if (url.endsWith("/artifacts")) return { id: "output_a" };
+      const parsed = routes.submit.request.shape.body.parse(body);
+      assert.deepEqual([...parsed.artifactRefs], ["output_a", "source_a"]);
+      assert.equal(parsed.sources[0].locator, "source_a");
+      return { id: "delivered_a" };
+    },
+    true,
+  );
+});
+
+test("definite version conflict can be explicitly rebased without reupload; ambiguous results cannot", async (t) => {
+  const f = await fixture(t),
+    b = await f.store.open(context);
+  await fs.writeFile(path.join(b.directory, "result.md"), "result");
+  let uploads = 0,
+    conflict = true;
+  const keys = [];
+  const post = async (url, body, key) => {
+    if (url.endsWith("/artifacts")) {
+      uploads++;
+      return { id: "out" };
+    }
+    keys.push(key);
+    if (conflict) throw Object.assign(Error("conflict"), { code: "VERSION_CONFLICT" });
+    assert.equal(body.expectedVersion, 8);
+    return { id: "done" };
+  };
+  await assert.rejects(
+    f.store.deliver(context, "summary", ["result.md"], post, true),
+    /conflict/,
+  );
+  assert.equal((await f.store.load(context)).delivery.versionConflict, true);
+  conflict = false;
+  await f.restart().rebaseDelivery({ ...context, version: 8 });
+  await f
+    .restart()
+    .deliver({ ...context, version: 8 }, "summary", ["result.md"], post, true);
+  assert.equal(uploads, 1);
+  assert.notEqual(keys[0], keys[1]);
+  await assert.rejects(f.store.rebaseDelivery({ ...context, version: 9 }), /核对/);
+});
+
+test("official turn reasons, pending approvals and hidden injected context are projected accurately", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "acceptcat-status-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  let exists = false,
+    running = true;
+  const events = [
+    { seq: 1, type: "turn/start", data: { turn: 1 } },
+    {
+      seq: 2,
+      type: "user/message",
+      data: {
+        source: { kind: "runtime-context" },
+        content: [{ type: "text", text: "hidden" }],
+      },
+    },
+    { seq: 3, type: "approval/asked", data: { id: "approve_a" } },
+    {
+      seq: 4,
+      type: "assistant/message",
+      data: {
+        message: {
+          content: [
+            { type: "thinking", thinking: "private" },
+            { type: "text", text: "visible" },
+          ],
+        },
+      },
+    },
+  ];
+  const s = new DshTaskWorkspace(
+    root,
+    async (m, a) => {
+      if (m === "session/projections")
+        return exists ? { kind: "sequenced", asOfSeq: events.length } : null;
+      if (m === "workspace/create") return { workspace: { workspaceId: "work" } };
+      if (m === "session/create") {
+        exists = true;
+        return { sessionId: a.sessionId };
+      }
+      if (m === "session/page")
+        return { records: events.map((event) => ({ event })), hasMore: false };
+      if (m === "session/list")
+        return { items: [{ sessionId: (await s.load(context)).sessionId, running }] };
+      return {};
+    },
+    async () => {},
+  );
+  await s.open(context);
+  let state = await s.status(context);
+  assert.equal(state.needsApproval, true);
+  assert.equal(
+    state.events.some((e) => e.type === "user/message"),
+    false,
+  );
+  assert.equal(state.events.at(-1).data.message.content.length, 1);
+  events.push(
+    { seq: 5, type: "approval/decided", data: { id: "approve_a" } },
+    { seq: 6, type: "turn/end", data: { reason: { kind: "completed" } } },
+  );
+  running = false;
+  state = await s.status(context);
+  assert.equal(state.phase, "finished");
+  assert.equal(state.needsApproval, false);
+  events.at(-1).data.reason.kind = "aborted";
+  assert.equal((await s.status(context)).phase, "interrupted");
+});

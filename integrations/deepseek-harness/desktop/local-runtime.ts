@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 export { dshBrowserCompatibility } from "./browser-compat";
 export { prepareAccountProfile } from "./account-profile";
+export { DshTaskWorkspace, taskKey } from './task-workspace';
 // Bundle the shared wire schemas into this CJS entry: Electron 22 cannot require the ESM contracts package.
 export { LocalDshConfiguration, localDshPaths } from "../../../packages/contracts/src/local-dsh";
 
@@ -144,7 +145,19 @@ export class LocalDshRuntime {
       await new Promise<void>((resolve, reject) => {
         execFile(path.join(process.env.SystemRoot || "C:\\Windows", "System32", "taskkill.exe"),
           ["/PID", String(child.pid), "/T", "/F"], { windowsHide: true, timeout: 15000 },
-          (error) => error && child.exitCode === null ? reject(Error("DSH 停止失败，请稍后重试。")) : resolve());
+          async (error) => {
+            // taskkill may report an already-exiting tree before Node delivers the exit event.
+            // Wait for this owned child only; a still-running process remains an actual error.
+            if (error && child.exitCode === null && child.signalCode === null) {
+              await new Promise<void>(done => {
+                const finish = () => { clearTimeout(timer); child.removeListener('exit', finish); done(); };
+                const timer = setTimeout(finish, 1000);
+                child.once('exit', finish);
+              });
+            }
+            if (error && child.exitCode === null && child.signalCode === null) reject(Error("DSH 停止失败，请稍后重试。"));
+            else resolve();
+          });
       });
     } else child.kill();
     this.child = undefined;

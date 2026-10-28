@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { authority } from "./localFolderManage";
 import { dshAccount, createDshRelay } from "./localDshAccount";
+import { registerTaskDshBridge } from './taskDshManage';
 import type { DshBounds } from "../../src/types/localDsh";
 // Built independently by vite.config.ts; the packaged module has no repository-relative imports.
 const { LocalDshRuntime, prepareAccountProfile, dshBrowserCompatibility } = require("./localDshRuntime") as typeof import("../../../../integrations/deepseek-harness/desktop/local-runtime");
@@ -141,6 +142,13 @@ export function registerLocalDshBridge() {
     return starting;
   }
   ipcMain.handle("local-dsh-status", (event) => { authorize(event); return snapshot(); });
+  registerTaskDshBridge(async (event) => {
+    authorize(event, false);
+    if (!account || !view || !pageReady || runtime.state.phase !== 'running') await start(event);
+    if (!account || !view || !pageReady || runtime.state.phase !== 'running') throw Error(pageError || '本地 DSH 尚未就绪。');
+    await account.valid();
+    return { account, session: view.webContents.session, origin: new URL(view.webContents.getURL()).origin };
+  });
   ipcMain.handle('local-dsh-connect', async (event) => { authorize(event, false); await start(event); return snapshot(); });
   ipcMain.handle('local-dsh-disconnect', async (event) => { authorize(event, false); await stop(); });
   ipcMain.handle("local-dsh-start", async (event) => { authorize(event); await start(event); return snapshot(); });

@@ -1,0 +1,610 @@
+import { createHash, randomUUID } from "node:crypto";
+import {
+  mkdir,
+  readFile,
+  writeFile,
+  rename,
+  realpath,
+  lstat,
+  readdir,
+} from "node:fs/promises";
+import path from "node:path";
+
+export type TaskTarget = { kind: "research" | "personal"; taskId: string };
+export type TaskContext = TaskTarget & {
+  title: string;
+  goal: string;
+  version: number;
+  agentId?: string;
+};
+export type TaskSource = {
+  kind: "artifact" | "library";
+  id: string;
+  version: number;
+  sha256: string;
+  filename: string;
+  localName: string;
+};
+export type TaskBinding = TaskTarget & {
+  sessionId: string;
+  sessionTitle?: string;
+  deviceId: string;
+  directory: string;
+  agentId?: string;
+  sources: TaskSource[];
+  note: string;
+  updatedAt: string;
+  pending?: { requestId: string; text: string };
+  lastRequestId?: string;
+  delivery?: {
+    id: string;
+    summary: string;
+    names: string[];
+    status: "pending" | "submitted";
+    versionConflict?: boolean;
+  };
+};
+export type DshTaskEvent = {
+  seq: number;
+  type: string;
+  time: number;
+  data: any;
+};
+export type DshTaskState = {
+  binding: TaskBinding;
+  phase: "ready" | "running" | "finished" | "interrupted" | "failed";
+  events: DshTaskEvent[];
+  hasMore: boolean;
+  needsApproval: boolean;
+  files: { name: string; size: number }[];
+};
+export type TaskRpc = (
+  method: string,
+  request: Record<string, unknown>
+) => Promise<any>;
+
+const safeId = /^[A-Za-z0-9_-]{1,128}$/;
+export function taskKey(target: TaskTarget) {
+  if (
+    !target ||
+    !["research", "personal"].includes(target.kind) ||
+    !safeId.test(target.taskId)
+  )
+    throw Error("任务标识无效。");
+  return `${target.kind}-${target.taskId}`;
+}
+/** Task bindings are local receipts, never a second source of task/review authority. */
+export class DshTaskWorkspace {
+  private queues = new Map<string, Promise<unknown>>();
+  constructor(
+    readonly root: string,
+    private rpc: TaskRpc,
+    private valid: () => Promise<void>
+  ) {}
+  private async save(binding: TaskBinding) {
+    await this.valid();
+    const file = path.join(this.root, taskKey(binding) + ".json");
+    await mkdir(this.root, { recursive: true });
+    const temp = file + "." + randomUUID() + ".tmp";
+    binding.updatedAt = new Date().toISOString();
+    await writeFile(temp, JSON.stringify(binding), { mode: 0o600 });
+    await rename(temp, file);
+  }
+  async load(target: TaskTarget): Promise<TaskBinding | undefined> {
+    await this.valid();
+    try {
+      const b = JSON.parse(
+        await readFile(path.join(this.root, taskKey(target) + ".json"), "utf8")
+      );
+      if (
+        taskKey(b) !== taskKey(target) ||
+        typeof b.sessionId !== "string" ||
+        !safeId.test(b.sessionId) ||
+        !path.isAbsolute(b.directory) ||
+        !Array.isArray(b.sources)
+      )
+        throw Error("任务工作记录损坏，请保留目录并联系维护者。");
+      return b;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+      throw error;
+    }
+  }
+  async exclusive<T>(
+    target: TaskTarget,
+    operation: () => Promise<T>
+  ): Promise<T> {
+    const key = taskKey(target),
+      previous = this.queues.get(key) ?? Promise.resolve();
+    const next = previous.catch(() => {}).then(operation);
+    this.queues.set(key, next);
+    try {
+      return await next;
+    } finally {
+      if (this.queues.get(key) === next) this.queues.delete(key);
+    }
+  }
+  async open(context: TaskContext, selectedDirectory?: string) {
+    return this.exclusive(context, async () => {
+      let b = await this.load(context);
+      if (!b) {
+        const directory =
+          selectedDirectory || path.join(this.root, "files", taskKey(context));
+        await mkdir(directory, { recursive: true });
+        b = {
+          kind: context.kind,
+          taskId: context.taskId,
+          sessionId: "acceptcat-" + randomUUID(),
+          sessionTitle: `${context.title.slice(
+            0,
+            150
+          )} · ${context.taskId.slice(0, 8)}`,
+          deviceId: createHash("sha256")
+            .update(this.root)
+            .digest("hex")
+            .slice(0, 24),
+          directory: await realpath(directory),
+          agentId: context.agentId,
+          sources: [],
+          note: "",
+          updatedAt: new Date().toISOString(),
+        };
+        // Reserve the identity before calling the host; a lost create response must not mint another session.
+        await this.save(b);
+      }
+      const projection = await this.rpc("session/projections", {
+        sessionId: b.sessionId,
+      });
+      if (!projection) {
+        const workspace = await this.rpc("workspace/create", {
+          path: b.directory,
+        });
+        const result = await this.rpc("session/create", {
+          sessionId: b.sessionId,
+          workspaceId: workspace.workspace.workspaceId,
+        });
+        if (result.sessionId !== b.sessionId)
+          throw Error("DSH 返回了另一会话，未绑定到任务，请核对历史。");
+        await this.rpc("session/rename", {
+          sessionId: b.sessionId,
+          title: b.sessionTitle || context.title,
+        });
+      }
+      await this.valid();
+      return b;
+    });
+  }
+  async status(target: TaskTarget): Promise<DshTaskState | undefined> {
+    const b = await this.load(target);
+    if (!b) return;
+    const projection = await this.rpc("session/projections", {
+      sessionId: b.sessionId,
+    });
+    if (!projection || projection.kind !== "sequenced")
+      throw Error("DSH 会话需要恢复或迁移，请重新打开任务。");
+    const page = await this.rpc("session/page", {
+      address: { kind: "session", sessionId: b.sessionId },
+      throughSeq: projection.asOfSeq,
+      maxMessages: 100,
+    });
+    const events: DshTaskEvent[] = page.records.map((r: any) => r.event);
+    let running = false,
+      found = false,
+      cursor: string | undefined;
+    for (let n = 0; n < 100; n++) {
+      const list = await this.rpc("session/list", cursor ? { cursor } : {});
+      const row = list.items.find((r: any) => r.sessionId === b.sessionId);
+      if (row) {
+        running = row.running === true;
+        found = true;
+        break;
+      }
+      cursor = list.nextCursor;
+      if (!cursor) break;
+    }
+    if (!found) throw Error("暂时无法核对 DSH 运行状态，请刷新核对。");
+    const last = [...events]
+      .reverse()
+      .find((e) => e.type === "turn/end" || e.type === "turn/start");
+    const reason = last?.data.reason?.kind;
+    const phase = running
+      ? "running"
+      : !last
+      ? "ready"
+      : last.type === "turn/start"
+      ? "interrupted"
+      : reason === "completed"
+      ? "finished"
+      : reason === "aborted" || reason === "interrupted"
+      ? "interrupted"
+      : "failed";
+    await this.valid();
+    // Keep model system context, request headers and hidden reasoning in the DSH host.
+    const approvals = new Set<string>();
+    for (const event of events) {
+      if (event.type === "approval/asked") approvals.add(event.data.id);
+      if (event.type === "approval/decided") approvals.delete(event.data.id);
+    }
+    const visible = events
+      .filter((e) =>
+        [
+          "user/message",
+          "assistant/message",
+          "assistant/attempt",
+          "tool/call",
+          "tool/result",
+          "turn/start",
+          "turn/end",
+        ].includes(e.type)
+      )
+      .filter(
+        (e) => e.type !== "user/message" || e.data.source?.kind === "user"
+      )
+      .map((e) =>
+        e.type === "assistant/message"
+          ? {
+              ...e,
+              data: {
+                message: {
+                  content: (e.data.message?.content || []).filter(
+                    (c: any) => c.type === "text"
+                  ),
+                },
+              },
+            }
+          : e
+      );
+    return {
+      binding: b,
+      phase,
+      events: visible,
+      hasMore: page.hasMore,
+      needsApproval: running && approvals.size > 0,
+      files: await this.files(b),
+    };
+  }
+  async cancel(target: TaskTarget) {
+    const b = await this.load(target);
+    if (!b) throw Error("请先打开任务。");
+    await this.rpc("session/cancel", { sessionId: b.sessionId });
+  }
+  async prompt(context: TaskContext, text: string, requestId: string) {
+    if (
+      typeof text !== "string" ||
+      !text.trim() ||
+      text.length > 16000 ||
+      !safeId.test(requestId)
+    )
+      throw Error("请输入不超过 16000 字的任务要求。");
+    return this.exclusive(context, async () => {
+      const b = await this.load(context);
+      if (!b) throw Error("请先打开任务工作区。");
+      if (b.pending && b.pending.requestId !== requestId)
+        throw Error("上一条请求结果尚待核对，请先重试原请求。");
+      if (b.lastRequestId === requestId) return;
+      const message = `任务：${context.title}\n任务 ID：${
+        context.taskId
+      }（版本 ${context.version}）\n目标：${
+        context.goal
+      }\n本任务资料清单：${JSON.stringify(b.sources)}\n\n本次要求：\n${text}`;
+      if (!b.pending) {
+        b.pending = { requestId, text: message };
+        await this.save(b);
+      }
+      await this.valid();
+      await this.rpc("session/prompt", {
+        sessionId: b.sessionId,
+        requestId,
+        mode: "queue",
+        content: [{ type: "text", text: b.pending.text }],
+      });
+      b.lastRequestId = requestId;
+      delete b.pending;
+      await this.save(b);
+    });
+  }
+  async note(target: TaskTarget, note: string) {
+    if (typeof note !== "string" || note.length > 4000)
+      throw Error("进度备注最多 4000 字。");
+    return this.exclusive(target, async () => {
+      const b = await this.load(target);
+      if (!b) throw Error("请先打开任务。");
+      b.note = note;
+      await this.save(b);
+    });
+  }
+  async importSource(
+    target: TaskTarget,
+    source: Omit<TaskSource, "localName">,
+    bytes: Buffer
+  ) {
+    return this.exclusive(target, async () => {
+      const b = await this.load(target);
+      if (!b) throw Error("请先打开任务。");
+      if (
+        b.sources.length >= 95 &&
+        !b.sources.some(
+          (s) =>
+            s.kind === source.kind &&
+            s.id === source.id &&
+            s.version === source.version
+        )
+      )
+        throw Error("每个任务最多选入 95 个资料版本。");
+      if (
+        bytes.length < 1 ||
+        bytes.length > 10485760 ||
+        createHash("sha256").update(bytes).digest("hex") !== source.sha256
+      )
+        throw Error("资料大小或校验不符。");
+      const localName = `source-${source.id}-v${source.version}${path
+        .extname(source.filename)
+        .replace(/[^.a-zA-Z0-9]/g, "")
+        .slice(0, 12)}`;
+      if (!safeId.test(source.id)) throw Error("资料标识无效。");
+      const file = await this.filePath(b, localName, true);
+      await this.valid();
+      await writeFile(file, bytes, { flag: "wx" }).catch(async (error) => {
+        if (
+          error.code !== "EEXIST" ||
+          createHash("sha256")
+            .update(await readFile(file))
+            .digest("hex") !== source.sha256
+        )
+          throw error;
+      });
+      if (
+        !b.sources.some(
+          (s) =>
+            s.kind === source.kind &&
+            s.id === source.id &&
+            s.version === source.version
+        )
+      )
+        b.sources.push({ ...source, localName });
+      await this.save(b);
+      return { ...source, localName };
+    });
+  }
+  async filePath(b: TaskBinding, name: string, create = false) {
+    if (
+      !name ||
+      name.includes("\0") ||
+      path.isAbsolute(name) ||
+      name.split(/[\\/]/).some((p) => p === ".." || p === "" || p.includes(":"))
+    )
+      throw Error("文件路径无效。");
+    const root = await realpath(b.directory),
+      candidate = path.resolve(root, name),
+      relative = path.relative(root, candidate);
+    if (relative.startsWith("..") || path.isAbsolute(relative))
+      throw Error("文件不在任务目录中。");
+    let current = root;
+    for (const part of relative.split(path.sep)) {
+      current = path.join(current, part);
+      try {
+        if ((await lstat(current)).isSymbolicLink())
+          throw Error("不读取链接指向的文件。");
+      } catch (e) {
+        if (
+          !create ||
+          current !== candidate ||
+          (e as NodeJS.ErrnoException).code !== "ENOENT"
+        )
+          throw e;
+      }
+    }
+    return candidate;
+  }
+  async readOutput(target: TaskTarget, name: string) {
+    const b = await this.load(target);
+    if (!b) throw Error("请先打开任务。");
+    const file = await this.filePath(b, name),
+      info = await lstat(file);
+    if (!info.isFile() || info.size < 1 || info.size > 10485760)
+      throw Error("成果文件须为 1 字节至 10 MiB。");
+    const bytes = await readFile(file);
+    await this.valid();
+    if (bytes.length > 10485760) throw Error("成果文件超过 10 MiB。");
+    return bytes;
+  }
+  /** Persist exact write intents before dispatch. Lost responses reuse the same server dedup keys and bytes. */
+  async deliver(
+    context: TaskContext,
+    summary: string,
+    names: string[],
+    post: (url: string, body: unknown, key: string) => Promise<any>,
+    maySubmit: boolean
+  ) {
+    if (
+      typeof summary !== "string" ||
+      !summary.trim() ||
+      summary.length > 8000 ||
+      !Array.isArray(names) ||
+      names.length > 5 ||
+      new Set(names).size !== names.length
+    )
+      throw Error("请填写成果摘要，每次最多提交 5 个文件。");
+    return this.exclusive(context, async () => {
+      const b = await this.load(context);
+      if (!b) throw Error("请先打开任务工作区。");
+      let receipt: string;
+      let delivery: any;
+      if (
+        b.delivery &&
+        b.delivery.summary === summary &&
+        JSON.stringify(b.delivery.names) === JSON.stringify(names)
+      ) {
+        receipt = path.join(
+          this.root,
+          taskKey(context) + ".delivery." + b.delivery.id + ".json"
+        );
+        delivery = JSON.parse(await readFile(receipt, "utf8"));
+        if (delivery.id !== b.delivery.id)
+          throw Error("成果记录不一致，请保留记录并核对。");
+        if (delivery.done) {
+          b.delivery.status = "submitted";
+          await this.save(b);
+          return delivery.result;
+        }
+      } else {
+        if (b.delivery?.status === "pending")
+          throw Error("有一版成果尚未确认，请先重试该版本，避免重复交付。");
+        if (!maySubmit) throw Error("当前任务不能提交成果。");
+        if (context.kind === "personal" && names.length)
+          throw Error("个人协作任务暂支持文字成果。");
+        const files = [];
+        for (const name of names) {
+          if (!/\.(txt|md|csv|tsv|json|pdf|png)$/i.test(name))
+            throw Error("成果支持 TXT/Markdown/CSV/JSON/PDF/PNG。");
+          const bytes = await this.readOutput(context, name),
+            ext = path.extname(name).toLowerCase();
+          files.push({
+            filename: path.basename(name),
+            contentBase64: bytes.toString("base64"),
+            mediaType:
+              ext === ".pdf"
+                ? "application/pdf"
+                : ext === ".png"
+                ? "image/png"
+                : "text/plain",
+          });
+        }
+        delivery = {
+          id: randomUUID(),
+          summary,
+          names,
+          files,
+          uploaded: [],
+          version: context.version,
+          sources: b.sources.map((s) => ({
+            kind: s.kind === "artifact" ? "artifact" : "note",
+            locator:
+              s.kind === "artifact"
+                ? s.id
+                : `research-library:${s.id}:v${s.version}:${s.sha256}`,
+            label: `${s.filename} v${s.version}`.slice(0, 200),
+          })),
+        };
+        receipt = path.join(
+          this.root,
+          taskKey(context) + ".delivery." + delivery.id + ".json"
+        );
+        await writeFile(receipt, JSON.stringify(delivery), { mode: 0o600 });
+        b.delivery = { id: delivery.id, summary, names, status: "pending" };
+        await this.save(b);
+      }
+      const persist = async () => {
+        await this.valid();
+        const temp = receipt + ".tmp";
+        await writeFile(temp, JSON.stringify(delivery), { mode: 0o600 });
+        await rename(temp, receipt);
+      };
+      try {
+        for (let i = delivery.uploaded.length; i < delivery.files.length; i++) {
+          const artifact = await post(
+            "/api/v1/artifacts",
+            {
+              taskId: context.taskId,
+              expectedVersion: delivery.version,
+              ...delivery.files[i],
+            },
+            `${delivery.id}_file_${i}`
+          );
+          delivery.uploaded.push(artifact.id);
+          delivery.version++;
+          await persist();
+        }
+        const result =
+          context.kind === "personal"
+            ? await post(
+                `/api/v1/work/tasks/${context.taskId}/result`,
+                { expectedVersion: delivery.version, text: delivery.summary },
+                delivery.id
+              )
+            : await post(
+                `/api/v1/tasks/${context.taskId}/deliverables`,
+                {
+                  expectedVersion: delivery.version,
+                  summary: delivery.summary,
+                  artifactRefs: [
+                    ...new Set([
+                      ...delivery.uploaded,
+                      ...delivery.sources
+                        .filter((s: any) => s.kind === "artifact")
+                        .map((s: any) => s.locator),
+                    ]),
+                  ],
+                  sources: delivery.sources,
+                },
+                delivery.id
+              );
+        delivery.done = true;
+        delivery.result = result;
+        await persist();
+        b.delivery = { id: delivery.id, summary, names, status: "submitted" };
+        await this.save(b);
+        return result;
+      } catch (error) {
+        if (
+          (error as Error & { code?: string }).code === "VERSION_CONFLICT" &&
+          b.delivery
+        ) {
+          b.delivery.versionConflict = true;
+          await this.save(b);
+        }
+        throw error;
+      }
+    });
+  }
+  /** Only a definite server rejection can replace a write intent; ambiguous writes keep their original keys. */
+  async rebaseDelivery(context: TaskContext) {
+    return this.exclusive(context, async () => {
+      const b = await this.load(context);
+      if (!b?.delivery?.versionConflict) throw Error("请先核对原提交结果。");
+      const receipt = path.join(
+        this.root,
+        taskKey(context) + ".delivery." + b.delivery.id + ".json"
+      );
+      const d = JSON.parse(await readFile(receipt, "utf8"));
+      if (d.id !== b.delivery.id || d.done)
+        throw Error("提交已变化，请刷新核对。");
+      d.version = context.version;
+      d.id = randomUUID();
+      await this.valid();
+      await writeFile(
+        path.join(this.root, taskKey(context) + ".delivery." + d.id + ".json"),
+        JSON.stringify(d),
+        { mode: 0o600 }
+      );
+      b.delivery = { ...b.delivery, id: d.id, versionConflict: false };
+      await this.save(b);
+    });
+  }
+  private async files(b: TaskBinding) {
+    const result: { name: string; size: number }[] = [];
+    const walk = async (relative: string, depth: number) => {
+      if (depth > 3 || result.length >= 100) return;
+      for (const entry of await readdir(path.join(b.directory, relative), {
+        withFileTypes: true,
+      })) {
+        if (result.length >= 100) break;
+        if (
+          entry.name.startsWith(".") ||
+          entry.name === "node_modules" ||
+          entry.isSymbolicLink()
+        )
+          continue;
+        const name = path.join(relative, entry.name);
+        if (entry.isDirectory()) await walk(name, depth + 1);
+        else if (entry.isFile())
+          result.push({
+            name,
+            size: (await lstat(await this.filePath(b, name))).size,
+          });
+      }
+    };
+    await walk("", 0);
+    return result;
+  }
+}

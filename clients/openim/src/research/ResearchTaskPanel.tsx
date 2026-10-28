@@ -191,7 +191,7 @@ export function ResearchTaskPanel({
       <div className="workspace-card-actions">
         {(params.get("task") !== task.id || params.get("taskKind") !== "research") && (
           <Button onClick={() => navigate(workbenchTaskPath(task.id, "research"))}>
-            在工作台处理
+            打开任务工作页
           </Button>
         )}
         {task.initiatorId === actor?.member.id &&

@@ -1,0 +1,100 @@
+.task-work-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 22px;
+  height: 100%;
+  overflow: auto;
+  .task-work-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    h2 {
+      font-size: 20px;
+      margin: 4px 0;
+    }
+    > span {
+      color: #64748b;
+      font-size: 13px;
+    }
+  }
+  .task-work-empty {
+    padding: 44px 20px;
+    text-align: center;
+    p {
+      color: #64748b;
+      margin: 12px 0 24px;
+    }
+    button {
+      margin: 4px;
+    }
+  }
+  .task-work-transcript {
+    min-height: 220px;
+    flex: 1;
+    overflow: auto;
+    padding: 12px 0;
+  }
+  .task-work-message {
+    padding: 14px 16px;
+    background: #f6f8fa;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow-wrap: anywhere;
+    > strong {
+      display: block;
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    &.user {
+      background: #eff6ff;
+    }
+    &.tool {
+      background: none;
+      padding: 6px 12px;
+      color: #64748b;
+      font-size: 13px;
+    }
+  }
+  .task-work-composer {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .task-work-muted {
+    color: #64748b;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .task-work-materials {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    h3 {
+      font-size: 16px;
+      margin-top: 12px;
+    }
+  }
+  .task-work-file {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px;
+    border-bottom: 1px solid #e5e7eb;
+    overflow-wrap: anywhere;
+  }
+  .task-work-preview {
+    max-height: 300px;
+    overflow: auto;
+    white-space: pre-wrap;
+    background: #f6f8fa;
+    padding: 14px;
+  }
+  .workspace-task-detail {
+    padding: 0;
+  }
+}
