@@ -2,7 +2,13 @@
 
 更新日期：2026-10-28（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 聊天整合与0.10.61发布准备（已授权，尚未发布）
+## 聊天整合与0.10.61已公开发布
+
+2026-10-28 10:41:48（北京时间），[PR127](https://github.com/luoyan96/personal-agent/pull/127)普通合并至main/c364116，PR125和PR126随之标记已合并。整合head c3bcd63的两路Linux Foundation、Windows Foundation和Windows打包全部通过；Windows首次834项中833通过、A12因默认5秒超时失败，本机定向复核及同head远端重跑通过，失败证据保留。
+
+10:43:31公开[Windows v0.10.61](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.61)，Release ID426206384，标记稳定Latest。标签固定安装包源码cc079be；EXE、blockmap、latest.yml、SHA256SUMS.txt四附件均已上传，逐一核对远端大小与SHA256；匿名Latest、公开更新清单和校验文件下载及标签指向均核验通过。原0.10.60保留。未代用户安装或做真实多账号/模型验收，本轮未部署后台；已知线上仍a174c17/160805d4/contract0.34/schema027，schema028和OpenIM撤回同步仍须单独部署。详见[发布与验证记录](deployment/acceptcat-0.10.61.md)。
+
+以下为本批准备和此前阶段记录，其中“待审/未合并/未发布”描述各自记录时状态，现以本节为准；“未部署”的新后台能力限制仍然有效。
 
 负责人要求合并此前修改并上传Release。独立release/chat-integration-20261028保留PR126/36b30bf与PR125/6e6f58c，整合447fab0；产品无冲突，交接文档保留双方记录。候选版本0.10.61避免覆盖公开0.10.60；最终版本与远端main/CI须在发布前重新核对。准备阶段GitHub直连及既有代理TLS超时，尚未完成远端合并或上传。本轮不操作生产后台，schema028及OpenIM配套更新仍单独处理。[发布准备与验证边界](deployment/acceptcat-0.10.61.md)。
 

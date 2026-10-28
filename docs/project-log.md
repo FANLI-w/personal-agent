@@ -2226,3 +2226,11 @@ d3ad075远端Windows打包前失败于图片消息编译夹具缺少新timeline/
 负责人明确要求合并此前修改并上传Release。独立release/chat-integration-20261028普通整合PR125/6e6f58c与PR126/36b30bf，产品无冲突，交接文档双方记录保持。产品/打包cc079be：版本递增0.10.61，补齐服务状态测试夹具两个新增桥，不改变权限断言。根834项/65文件、生产3项/B0/Web、客户端双类型及245项分组覆盖通过（5项夹具原失败与修后5项保留）；冻结NSIS/4入口/更新清单核验通过。EXE88,252,826字节，SHA256 f30a75fa7b0a1191a991f4f4377c4085d20b7f6f49e9022445007409a865df74，Git外release-chat-20261028/windows保存四附件。
 
 GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch确认main仍aaa0eea，Latest仍v0.10.60，整合分支已推送。此记录时尚未合并main或公开Release，后续结果另记；不覆盖旧版本。不执行后台部署、schema028迁移、原生安装或真实账号/模型验收，已知生产继续a174c17/160805d4/contract0.34/schema027。详见deployment/acceptcat-0.10.61.md。
+
+## 2026-10-28：聊天整合合并并公开Windows 0.10.61
+
+网络恢复后创建PR127，固定head c3bcd638bfe58ae6c5528b0419a2924e6fe6fde6核验。两路Linux Foundation及Windows打包通过；Windows Foundation首轮833/834通过，execution A12因默认5秒超时失败，本机定向通过，同head远端第二次完整通过，未改断言/超时。失败和复核证据保留。10:41:48（北京时间）普通合并为main/c364116f1828d544fb9950a125d456e5363996ee，PR125/126也标记MERGED，两个功能分支历史完整保留。
+
+10:43:31公开稳定Latest v0.10.61，Release ID426206384，标签固定安装包源码cc079bec07c7018c1fa28b7fa275e728dac2344d。EXE88,252,826字节/SHA256 f30a75fa7b0a1191a991f4f4377c4085d20b7f6f49e9022445007409a865df74；四附件上传后逐一核对远端大小、uploaded状态及SHA256。匿名Latest、标签源码、公开latest.yml与SHA256SUMS.txt下载/摘要核验通过。证据D:/deepseek-agent/.runtime/release-chat-20261028，含pr127-merge.json、pr127-checks-final.json、release-draft-verified.json、release-public-verified.json与release-tag-verified.json。
+
+原0.10.60保持；未代用户安装或用真实账号、资料、模型验收，未操作原桌面开发目录或部署后台。已知线上仍a174c17/160805d4/contract0.34/schema027；schema028及OpenIM撤回同步单独安排。下一步为用户安装体验与独立后台升级评估。README下载入口、current-state及deployment/acceptcat-0.10.61.md同步实际公开状态。
