@@ -71,3 +71,7 @@ Windows 候选从客户端执行 `corepack pnpm@10.28.0 run build:win`，固定�
 最终交付：产品83c10c5，PR132（https://github.com/luoyan96/personal-agent/pull/132）。本机最终根CI844项/67文件、生产3项/B0/Web，23项DSH定向、客户端双类型、24项真实DSH合成闭环通过。22:06核对产品提交的GitHub四项检查全通过。Windows0.10.69最终NSIS/5入口/四页签与IPC/内置DSH0.2.1-rc.3/更新SHA512/成品启动通过。安装器D:\deepseek-agent\.runtime\dsh-rules-memory-20261028/windows/AcceptCat_0.10.69.exe，366891410字节，SHA256 b4347308b07910e0f16980e3fb575d942d13347ad918e3c2e35f8be66698519e。源码与测试完成，配套后台未部署、真人/真实模型未验收，未合并或公开发布；第三步未开始。
 
 首个失败包已由同版本重新构建产物替换，仅归档最终通过包；失败启动日志保留。最终凭据：root-ci-package-fix.log、windows-build-final.log、packaged-smoke-final.log、package-receipt.json，以及windows/SHA256SUMS.txt。PR包含第一步待审依赖，按审阅结果对齐后合并。
+
+## 后续部署状态
+
+第三步已实现。负责人明确授权后，2026-10-28 23:38:31第二/三步配套后台一并上线至contract0.37.0/schema030，028/029/030已备份、恢复演练并迁移，API/worker同镜像3162c814。此处早期“未部署、第三步未开始”记录保留当时事实，当前以[部署回执](../deployment/dsh-team-20261028.md)和[三步计划](dsh-team-integration-plan.md)为准。后续使用0.10.70候选验证完整流程；真实账号模型和双机体验仍待验收，没有执行合并或公开发布。

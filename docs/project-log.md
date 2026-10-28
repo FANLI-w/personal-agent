@@ -2333,3 +2333,13 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 第三步交付补记：PR133（https://github.com/luoyan96/personal-agent/pull/133），产品a5534b5。CI=1根855项/68文件通过，后续旧schema029生产断言失败，e1ebb78修正为030后生产3项、B0进程、Web生产隔离补跑通过；失败完整命令和各阶段结果均保留。GitHub首次打包检查暴露消息菜单严格测试替身缺少新导入，补TeamWorkPanel替身及准确群来源/私聊排除回归，196项相关桌面回归通过；将全部28项本地DSH测试纳入Windows CI。远端新head结果以PR为准。
 
 0.10.70候选NSIS、包内5入口/执行协调与任务页、固定DSH全树、更新SHA512、隔离成品启动均通过。安装器D:/deepseek-agent/.runtime/dsh-team-coordination-20261028/windows/AcceptCat_0.10.70.exe，366896002字节，SHA256 405ecffd4e6853f279c85ab6772135d96b5933ae1d26e1e825fb43efb99a2f36。electron-log现有重复initialize警告如实保留。源码及合成闭环完成，配套后台schema030/API/worker未部署，真实双机/模型未验收，未合并、公开发布或代安装。
+
+## 2026-10-28 DSH 第二、三步后台部署
+
+负责人明确要求“后台开始吧”。重新核对main仍93da480，独立分支feat/dsh-team-coordination/head620b4e8，四项GitHub CI全成功；原桌面开发目录未动。通过已登录的Edge阿里云Workbench对实际f58bf538生产做最小增量，18文件覆盖、383原源码保留；构建research-openim-api:dsh-team-20261028以及认识030的旧业务兼容回退镜像。云端DSH0.2.1-rc.2/Cordis4.0.5保持，没有替换为Windows内置rc.3。
+
+23:38:00–23:38:31（北京时间）完成排空、静止备份、恢复副本演练、新旧API匿名检查、正式027→028→029→030迁移及API/worker同版切换。现镜像3162c814d4e6a0d3c7cfdf8276145e1a53cadfff0184b809b8a6523043e209a0，contract0.37.0/schema030。104原表/9原件逐项保全、完整性及外键通过，新增7表共111表；29配置/密钥输入、账号默认模型、飞书和资料范围不变，其余6服务不变，目录同步保持禁用。180项服务器隔离测试通过。公网ready200及新旧受保护接口匿名401；未建真实验收账号或调用真实模型。
+
+首次23:34:57部署探针用空POST体导致参数校验400，在stage=stopped、正式迁移前中止，自动恢复原f58 API/worker/schema027。修正合法请求字段与幂等头后副本复查401、重新备份并完整上线；未改产品鉴权或放宽断言，attempt1证据保留。早期只读SQL引号和末次观察脚本换行语法错误也修正重跑，没有修改业务数据。23:48:15（上线后584秒）API healthy/worker running，两者重启0、PRODUCTION_OPERATION_FAILED事件0；worker无独立Docker健康检查，ready仍标harness not_verified。
+
+最终同机备份路径、hash、兼容回退镜像与恢复步骤见docs/deployment/dsh-team-20261028.md。脱敏证据已通过Workbench下载到Git外D:/deepseek-agent/.runtime/dsh-team-deploy-20261028，归档SHA256 ecd314320c83e304f426e9a8b0cbed4b4daf3d436e04a3146c8090007b1314de，另存公网/GitHub状态及观察截图；私人数据与凭据未下载。已更新current-state、三步计划及第二/三步记录，下一步是0.10.70候选的真实双机/模型验收。未合并PR、公开Release或代安装；部署完成与真实体验验收分开记录。

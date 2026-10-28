@@ -60,3 +60,7 @@ corepack pnpm@10.28.0 run build:win
 - GitHub首次Windows打包检查因消息菜单测试夹具未提供新增TeamWorkPanel导入而失败，已补夹具及“只有业务群消息带准确来源进入分工”的回归。196项桌面聊天/联系人/资料相关测试全部通过。Windows CI改用test:local-dsh覆盖全部28项，包括本批协调与持久恢复检查；远端重跑结果以PR检查为准。
 
 候选安装器：`D:/deepseek-agent/.runtime/dsh-team-coordination-20261028/windows/AcceptCat_0.10.70.exe`，366896002字节。SHA256：`405ecffd4e6853f279c85ab6772135d96b5933ae1d26e1e825fb43efb99a2f36`。同目录保留blockmap、latest.yml与SHA256SUMS.txt；仅本地候选，未上传更新通道或公开Release，未代用户安装。检查回执见package-receipt.json、package-check.log、packaged-smoke.log及desktop-regressions-final.log。
+
+## 配套后台部署补记
+
+负责人后续明确授权，2026-10-28 23:38:31配套后台上线：API/worker同镜像3162c814，contract0.37.0/schema030；028/029/030已备份、演练并迁移。180项服务器隔离检查和原表/原件/配置保全通过，23:48:15观察无重启及生产操作失败事件。PR133产品head620b4e8四项远端CI全通过。此前本文件“未部署”仅代表代码交付时的状态；现在可用0.10.70候选进入真人双机验收，合并/发布/代安装没有执行。[部署回执、首次中止与回退方式](../deployment/dsh-team-20261028.md)。
