@@ -112,9 +112,11 @@ DSH rc.3的上下文百分比来自(projectedTokens或pressureTokens)/contextWin
 
 本机完整CI837项/66文件、生产3项/B0/Web、客户端与Electron类型、19项DSH/IPC/更新检查通过。实际Electron22+内置DSH+业务API+合成DeepSeek传输的20项集成通过，包含工具读文件、追问、切换账号、退出及重新连接；模拟模型返回约9.3K输入时实际上下文详情显示约1%/1M。该9.3K是测试夹具用量，不能当成用户真实问候的用量测量。首次集成在最后退出时失败，后续完整复测通过，原qa-results-first-stop-failed.json保留且未宣称已定位该偶发原因。
 
-额外注入页面加载失败的6项原生恢复检查通过，使用真实重连按钮重新加载原BrowserView、正文/模型可用并正常退出。首次补测发现Electron22旧视图close后未能证明及时销毁，改为重载现有页面，避免新增隐藏视图；另一次测试Vite监听隔离用户目录遇到Windows EBUSY，排除测试目录后复测通过，失败回执与日志均保留。没有将测试服务器退出当作产品异常。安装包在最终重连实现后重新构建，结果另记。
+额外注入页面加载失败的6项原生恢复检查通过，使用真实重连按钮重新加载原BrowserView、正文/模型可用并正常退出。首次补测发现Electron22旧视图close后未能证明及时销毁，改为重载现有页面，避免新增隐藏视图；另一次测试Vite监听隔离用户目录遇到Windows EBUSY，排除测试目录后复测通过，失败回执与日志均保留。没有将测试服务器退出当作产品异常。
 
 证据根目录为Git外`D:\deepseek-agent\.runtime\dsh-context-20261028`，含CI、定向、类型、原生集成回执、context-details.png及构建日志。测试只使用隔离账号和合成文本，无真实模型调用、用户客户端安装或后台操作。此次后台无需重新部署，线上仍f58bf538/contract0.34/schema027，继续通过PR130交付。
+
+最终产品b1683f5已推送PR130。安装包在最终重连实现后重新构建，NSIS、包内5入口、实际托管模型容量/移除控件/重新加载代码、DSH完整发行树、成品启动及更新SHA512校验均通过；首次构建build-before-recovery-final.log不代表最终交付。安装器`D:\deepseek-agent\.runtime\dsh-context-20261028\windows\AcceptCat_0.10.67.exe`，366,807,088字节，SHA256 `e7ac1f185173d47c379d6b64754b411029b1f5f67609fd4f86b527fa7bde01ee`。同目录保留blockmap/latest.yml/SHA256SUMS.txt，仅本地候选，未上传公开更新。保留既有electron-log初始化及构建警告；两个临时合成测试服务器已关闭。18:04核对产品head远端CI仍运行，不能将本机通过写成远端通过。
 
 ## 后续
 
