@@ -100,6 +100,8 @@ corepack pnpm@10.28.0 run build:win
 
 双类型、13项 DSH/IPC 回归、6项更新守卫、15项原生集成检查通过。实际 `read` 工具结果含测试文件原文且 `is_error=false`；两次回答在页面显示完成。证据为 Git 外 `D:\deepseek-agent\.runtime\dsh-anthropic-fix-20261028` 的 `before-fix.log`、`targeted.log`、`qa-results.json`、`model-calls.json`、`wire.json` 与 `dsh-followup.png`。首轮测试末尾因断言未处理无工具结果的首请求而失败，改测试的空值处理后复核通过，原 `qa-assertion-failure.json` 保留。没有修改共享/API代码，根837项CI沿用0.10.65批次结果，不称为本批重新执行；无生产部署、真实模型或用户安装验收。
 
+产品 `dbe2d62` 已推送 PR130。0.10.66 NSIS、包内5个入口及实际修复代码、DSH全树哈希、成品启动和更新清单SHA512校验通过。安装器 `D:\deepseek-agent\.runtime\dsh-anthropic-fix-20261028\windows\AcceptCat_0.10.66.exe`，366,808,304 字节，SHA256 `e87d732a76c3a78ccb7fc2cc703f3cb886931357dd5bbb39cd16d8bf8902e471`。同目录含 blockmap/latest.yml/SHA256SUMS.txt，未公开发布。此前0.10.64/65均不含本路由修复，应使用0.10.66重试；旧失败记录不会自动重新执行。
+
 ## 后续
 
 真实账号/模型验收、第三方插件实际安装和插件兼容性、长时间本地任务/机器休眠恢复待单独验证。Web 配置内的插件入口和原运行时保留；DSH 独立桌面的专用原生桥不因本次嵌入 Web 自动具备。现有个人助理/群聊消息路由、云任务分配、共享资料授权与本地 DSH 任务产物之间尚未整合；没有删除或替换原工作台。macOS 与手机不在本批范围。
