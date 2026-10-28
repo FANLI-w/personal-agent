@@ -17,6 +17,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { prepareWorkspaceForBuild, verifyWorkspaceLinks, verifyWorkspaceOutputs, verifyBuilderToolchain, runtimeEntryFiles, verifyArchiveEntries, sharedPackages } from './workspace-build.mjs';
+import { stageRuntime, verifyRuntime } from '../../../integrations/deepseek-harness/desktop/stage-runtime.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const packagePath = path.join(repoRoot, "package.json");
@@ -264,6 +265,7 @@ verifyWorkspaceLinks(repoRoot);
 verifyBuilderToolchain(repoRoot);
 
 if (!dryRun) {
+  if (process.platform === 'win32' && (buildAll || forwardedArgs.some(arg => arg === '--win' || arg === '-w'))) await stageRuntime(repoRoot);
   prepareWorkspaceForBuild(repoRoot);
   run(process.execPath, [
     path.join(repoRoot, "node_modules", "vite", "bin", "vite.js"),
@@ -390,6 +392,7 @@ try {
     if (args.includes('--win') || (process.platform === 'win32' && !args.some(arg => ['--mac', '--linux'].includes(arg)))) {
       const builderRequire = createRequire(resolvePackageManifestPath('electron-builder', packagePath));
       verifyArchiveEntries(path.join(repoRoot, 'release', 'Base', rootPackage.version, 'win-unpacked/resources/app.asar'), requiredEntries, builderRequire('asar'));
+      await verifyRuntime(path.join(repoRoot, 'release', 'Base', rootPackage.version, 'win-unpacked/resources/dsh'));
     }
   }
 } catch (error) {

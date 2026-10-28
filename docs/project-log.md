@@ -2246,3 +2246,9 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 本地试用包0.10.63：D:/deepseek-agent/.runtime/local-dsh-page-20261028/windows/AcceptCat_0.10.63.exe，88,306,454字节，SHA256 2e95d2807002404128be9b3aa0d41bd4def8eed263d5a97880ea064a282209f7。没有合并、公开Release、安装到负责人目录或后台部署，公开Latest仍0.10.61。本分支不包含未合并的群成员身份修复PR129；两批独立审阅。DSH数据当前按Windows用户保存，独立于AcceptCat账号；既有聊天仍走既有后台，旧工作台未移除。下一步由负责人安装、配置模型、验证真实聊天/工具/插件，再设计与AcceptCat Agent、任务和团队权限衔接。完整启动、构建、边界及证据见docs/development/local-dsh-page.md。
 
 本批交付回填：产品提交 d55375d6229a8b611c976f76ff5138eebfca1f85 已推送，PR130（https://github.com/luoyan96/personal-agent/pull/130）已创建并附到当前任务。安装包与校验文件保留在上述 windows 目录；测试专用 DSH 子进程及临时预览服务已停止。未合并、发布或部署。
+
+## 2026-10-28：PR130 内置 DSH 与账号整合
+
+负责人要求完成内置运行时、自动启动和同一账号模型接入。在 feat/local-dsh-page 独立 clone 开发，重新获取 main/93da480，保留 PR129 独立分支。Windows 候选 0.10.64 固定官方 DSH 0.2.1-rc.3 完整发行树及 SHA512；构建下载静态解包并校验，用户无需另装 DSH。Cookie/CSRF 网关沿用私人模型权限，提供方 Key 保留后台；本机工具循环、账号独立 home、退出清理与临时模型连接已实现。
+
+实际 Electron22/BrowserView、内置 DSH、当前 API 和合成模型验证自动启动、默认模型免二次 Key、回复、read 工具实际读取合成文件、页面切换、双账号隔离和退出停止。修复 Node16 连接关闭兼容和 pi-ai store:false 参数校验，失败证据保留；未用真实账号、模型 Key 或私人资料。定向桌面 16 项与双类型通过。完整 CI 与成品交付记录随后补充；当前未合并、未公开发布、未部署后台，新网关上线须核对生产已有 schema028 待部署差异。详情见 development/local-dsh-integration.md；证据在 Git 外 dsh-integrated-20261028。

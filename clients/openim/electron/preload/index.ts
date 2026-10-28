@@ -177,7 +177,8 @@ const Api: IElectronAPI = {
   getPlatform,
   localDsh: {
     status: () => ipcRenderer.invoke("local-dsh-status"),
-    choose: () => ipcRenderer.invoke("local-dsh-choose"),
+    connect: () => ipcRenderer.invoke("local-dsh-connect"),
+    disconnect: () => ipcRenderer.invoke("local-dsh-disconnect"),
     start: () => ipcRenderer.invoke("local-dsh-start"),
     stop: () => ipcRenderer.invoke("local-dsh-stop"),
     show: (bounds) => ipcRenderer.invoke("local-dsh-show", bounds),

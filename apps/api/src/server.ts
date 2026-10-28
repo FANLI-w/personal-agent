@@ -1,4 +1,5 @@
 import { ReuseService, reuseCommands } from './reuse.js'
+import { registerLocalDsh, type DshTransport } from './local-dsh.js'
 import {labMembershipCommands,runLabMembership,type LabMembershipCommand} from './lab-membership.js'
 import {teamLabId} from './lab-access.js'
 import {PeerLibraryService} from './peer-library.js'
@@ -44,7 +45,8 @@ import { OpenImClient } from './openim-client.js'
 import { OpenImCallbacks } from './openim-callback.js'
 import { readCommunityCatalog, readCommunityEntry } from './community-catalog.js'
 
-export function createServer(config: Config, options:{imClient?:OpenImClient;externalCall?:ExternalAgentCall;feishuTransport?:FeishuTransport}={}) {
+export function createServer(config: Config, options:{imClient?:OpenImClient;externalCall?:ExternalAgentCall;feishuTransport?:FeishuTransport;dshTransport?:DshTransport}={}) {
+  if(options.dshTransport&&config.mode!=='test')throw new Error('Injected DSH transport is test-only')
   if(options.imClient&&config.mode!=='test')throw new Error('Injected OpenIM clients are test-only')
   if(options.externalCall&&config.mode!=='test')throw new Error('Injected external Agent clients are test-only')
   if(options.feishuTransport&&config.mode!=='test')throw new Error('Injected Feishu transport is test-only')
@@ -62,6 +64,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
     } catch { db?.close(); db = undefined; fail('SERVICE_UNAVAILABLE') }
   }
   app.addHook('onClose', async () => { db?.close() })
+  registerLocalDsh(app, database, config, options.dshTransport)
   app.addHook('onSend', async (_request, reply) => { reply.header('Cache-Control', 'no-store'); reply.header('X-Contract-Version', contractVersion); reply.header('X-Content-Type-Options', 'nosniff') })
   const authValidationMessages={username:'用户名只能使用字母、数字、下划线或短横线，长度为 1 到 100 个字符。',password:'密码至少需要 8 个字符。',inviteCode:'请输入有效的邀请码。',displayName:'请输入 1 到 200 个字符的显示名称。'} satisfies Record<AuthValidationField,string>
   function error(code: keyof typeof errorStatus, requestId: string, field?:AuthValidationField) {

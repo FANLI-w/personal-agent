@@ -2,21 +2,24 @@ import { app, BrowserView, BrowserWindow, dialog, ipcMain, session, shell } from
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { authority } from "./localFolderManage";
-import { getStore } from "./storeManage";
+import { dshAccount, createDshRelay } from "./localDshAccount";
 import type { DshBounds } from "../../src/types/localDsh";
 // Built independently by vite.config.ts; the packaged module has no repository-relative imports.
-const { LocalDshRuntime, inspectInstallation, dshBrowserCompatibility } = require("./localDshRuntime") as typeof import("../../../../integrations/deepseek-harness/desktop/local-runtime");
+const { LocalDshRuntime, prepareAccountProfile, dshBrowserCompatibility } = require("./localDshRuntime") as typeof import("../../../../integrations/deepseek-harness/desktop/local-runtime");
 
 export function registerLocalDshBridge() {
   let view: BrowserView | undefined, owner: BrowserWindow | undefined;
   let pageReady = false, pageError = "", starting: Promise<void> | undefined;
   let quitting = false, observed: Electron.WebContents | undefined;
-  const runtime = new LocalDshRuntime(
-    String(getStore().get("localDshDirectory") || "D:\\0cat\\dsh"),
-    path.join(app.getPath("userData"), "local-dsh", "home"),
-    () => { if (runtime.state.phase !== "running") disposeView(); },
-  );
-  const snapshot = () => ({ ...runtime.state, ...(pageError ? { error: pageError } : {}), pageReady });
+  const directory = app.isPackaged ? path.join(process.resourcesPath, 'dsh') : path.resolve(app.getAppPath(), '.dsh-runtime');
+  let runtime = new LocalDshRuntime(directory, '');
+  let relay: Awaited<ReturnType<typeof createDshRelay>> | undefined;
+  let account: Awaited<ReturnType<typeof dshAccount>> | undefined;
+  let generation = 0;
+  const accountWatch = setInterval(() => { if (account) void account.valid().catch(() => stop().catch(() => {})); }, 2000);
+  accountWatch.unref();
+  const snapshot = () => ({ ...runtime.state, ...(pageError ? { error: pageError } : {}), pageReady,
+    accountId: account?.metadata.memberId, model: account?.metadata.model, bundled: true });
   const hide = () => { if (view && owner && !owner.isDestroyed()) owner.removeBrowserView(view); };
   function disposeView() {
     hide();
@@ -47,8 +50,10 @@ export function registerLocalDshBridge() {
     return auth;
   }
   async function stop() {
+    generation++;
     disposeView();
     pageError = "";
+    await relay?.close(); relay = undefined; account = undefined;
     await runtime.stop();
     await starting?.catch(() => {});
   }
@@ -61,12 +66,29 @@ export function registerLocalDshBridge() {
   }
   async function start(event: Electron.IpcMainInvokeEvent) {
     if (starting) return starting;
-    const auth = authorize(event);
+    const auth = authorize(event, false), epoch = generation;
     starting = (async () => {
       pageError = "";
+      const next = await dshAccount(event);
+      if (epoch !== generation) return;
+      if (!next.metadata.enabled) throw Error('请先在 AcceptCat「我的 → 模型设置」启用并选择默认模型，然后点击重试。');
+      if (!account || account.identity !== next.identity || account.lease !== next.lease || account.metadata.fingerprint !== next.metadata.fingerprint || runtime.state.phase !== 'running') {
+        disposeView(); await relay?.close(); relay = undefined; account = undefined;
+        await runtime.stop();
+        if (epoch !== generation) return;
+        const connection = await createDshRelay(next);
+        if (epoch !== generation) { await connection.close(); return; }
+        relay = connection; account = next;
+        const home = path.join(app.getPath('userData'), 'local-dsh', 'accounts', next.identity);
+        const patch = await prepareAccountProfile(home, { ...next.metadata, baseURL: connection.baseURL });
+        if (epoch !== generation) return;
+        runtime = new LocalDshRuntime(directory, home,
+          () => { if (runtime.state.phase !== 'running') disposeView(); }, { patch, token: connection.secret });
+      }
       const url = await runtime.start();
       // Do not mount a late startup over another conversation or a replaced document.
-      if (authority(event).owner !== auth.owner || runtime.state.phase !== "running") return;
+      if (epoch !== generation || authority(event).contents !== auth.contents || runtime.state.phase !== "running") return;
+      await next.valid();
       if (view && !view.webContents.isDestroyed()) return;
       const isolated = session.fromPartition(`acceptcat-dsh-${randomUUID()}`);
       isolated.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
@@ -104,23 +126,16 @@ export function registerLocalDshBridge() {
       } catch {
         if (view === current) { disposeView(); pageError = "DSH 页面加载失败，请停止后重新启动。"; }
       }
-    })().finally(() => { starting = undefined; });
+    })().catch(async (error) => {
+      disposeView(); await relay?.close(); relay = undefined; account = undefined;
+      await runtime.stop();
+      pageError = error instanceof Error ? error.message : '本地 DSH 连接失败，请重试。';
+    }).finally(() => { starting = undefined; });
     return starting;
   }
   ipcMain.handle("local-dsh-status", (event) => { authorize(event); return snapshot(); });
-  ipcMain.handle("local-dsh-choose", async (event) => {
-    const auth = authorize(event);
-    if (!["stopped", "error"].includes(runtime.state.phase)) throw Error("请先停止 DSH。");
-    const result = await dialog.showOpenDialog(owner!, { title: "选择 DeepSeek Harness 安装目录", properties: ["openDirectory", "dontAddToRecent"] });
-    if (authority(event).owner !== auth.owner) throw Error("页面已变化，请重试。");
-    if (!result.canceled && result.filePaths.length === 1) {
-      await inspectInstallation(result.filePaths[0]);
-      authorize(event);
-      runtime.configure(result.filePaths[0]);
-      getStore().set("localDshDirectory", result.filePaths[0]);
-    }
-    return snapshot();
-  });
+  ipcMain.handle('local-dsh-connect', async (event) => { authorize(event, false); await start(event); return snapshot(); });
+  ipcMain.handle('local-dsh-disconnect', async (event) => { authorize(event, false); await stop(); });
   ipcMain.handle("local-dsh-start", async (event) => { authorize(event); await start(event); return snapshot(); });
   ipcMain.handle("local-dsh-stop", async (event) => {
     authorize(event);

@@ -1,5 +1,7 @@
 # Windows 本地 DSH 页面（首批试用）
 
+历史批次说明：0.10.63 的独立安装/单独模型配置已由 [0.10.64 内置 DSH 与账号接入](local-dsh-integration.md) 扩展；以下保留首批实际验证记录。
+
 2026-10-28，功能分支 `feat/local-dsh-page`，从实际最新 `main/93da480` 开始，独立目录 `D:\deepseek-agent\acceptcat-chat-experience`。此分支与群成员身份修复 PR129 独立，不自动包含未合并的 PR129。Windows 候选版本为 **0.10.63**；公开 Latest 仍是 0.10.61。本批不合并、不公开发布、不部署后台。
 
 交付：[PR130](https://github.com/luoyan96/personal-agent/pull/130)，产品提交 `d55375d6229a8b611c976f76ff5138eebfca1f85`。后续仅文档回填不改变安装包源码。

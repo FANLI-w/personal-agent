@@ -47,7 +47,7 @@ export function LocalDshPage() {
     resize();
     return () => { observer.disconnect(); overlays.disconnect(); window.removeEventListener("resize", resize); void bridge.show(null).catch(() => {}); };
   }, [bridge, state?.pageReady]);
-  const run = async (action: "start" | "stop" | "choose") => {
+  const run = async (action: "start" | "stop") => {
     if (!bridge) return;
     setBusy(true); setError("");
     try { const next = await bridge[action](); if (alive.current) setState(next); }
@@ -61,9 +61,8 @@ export function LocalDshPage() {
         <p>在这台电脑上聊天、处理文件、运行工具与安装插件。</p></div>
       <div className="local-dsh-actions">
         {state && <Tag color={state.phase === "running" ? "green" : "default"}>{labels[state.phase]}</Tag>}
-        <Button disabled={!bridge || busy || active || state?.phase === "stopping"} onClick={() => void run("choose")}>安装目录</Button>
         {active ? <Button disabled={busy} onClick={() => void run("stop")}>停止 DSH</Button> :
-          <Button type="primary" loading={busy} disabled={!bridge || state?.phase === "stopping"} onClick={() => void run("start")}>{state?.phase === "error" ? "重新启动" : "启动 DSH"}</Button>}
+          <Button type="primary" loading={busy} disabled={!bridge || state?.phase === "stopping"} onClick={() => void run("start")}>重新连接</Button>}
       </div>
     </header>
     {!bridge && <Alert showIcon type="info" message="请使用支持本地 DSH 的 Windows 客户端" description="网页版及旧版客户端不能启动这台电脑上的 DSH。" />}
@@ -72,11 +71,11 @@ export function LocalDshPage() {
       {!state?.pageReady && <div className="local-dsh-welcome">
         {(busy || state?.phase === "starting" || state?.phase === "stopping") ? <><Spin size="large" /><h2>{state?.phase === "running" ? "正在打开 DSH 页面" : state ? labels[state.phase] : "正在读取状态"}</h2></> : <>
           <div className="local-dsh-monogram">DSH</div><h2>让助手在本机开始工作</h2>
-          <p>启动后将在这里打开 DeepSeek Harness 的完整 Web 界面，包含会话、工作目录、执行过程和设置。</p>
-          <div className="local-dsh-note"><strong>首次使用</strong><p>请在 DSH 内配置模型和工作目录。此工作区独立于 AcceptCat 账号，也不会自动使用平台的模型密钥或导入旧聊天。</p><p>DSH 数据保存在本机，模型调用仍需要连接你配置的服务。切换回聊天时 DSH 继续运行；停止或退出 AcceptCat 会中断本地任务。</p></div>
+          <p>登录 AcceptCat 后自动连接内置 DSH，使用当前账号的默认模型。</p>
+          <div className="local-dsh-note"><strong>本地工作区</strong><p>选择工作目录即可开始。会话、插件和文件操作保存在这台电脑，并按 AcceptCat 账号分开；模型设置沿用「我的」中的配置。</p><p>模型调用经 AcceptCat 服务发送，工具在本机执行。退出账号或关闭 AcceptCat 会停止本地任务。</p></div>
         </>}
       </div>}
     </div>
-    <footer title={state?.home}>DSH {state?.version || "0.2.1-rc.3"} · {state?.directory || "等待检测安装目录"}<span>独立本机数据 · {state?.home || "启动后创建"}</span></footer>
+    <footer title={state?.home}>内置 DSH {state?.version || "0.2.1-rc.3"}{state?.model && ` · ${state.model}`}<span>按 AcceptCat 账号保存本机工作区</span></footer>
   </section>;
 }

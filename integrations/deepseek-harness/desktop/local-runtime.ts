@@ -2,6 +2,9 @@ import { spawn, execFile, type ChildProcess } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 export { dshBrowserCompatibility } from "./browser-compat";
+export { prepareAccountProfile } from "./account-profile";
+// Bundle the shared wire schemas into this CJS entry: Electron 22 cannot require the ESM contracts package.
+export { LocalDshConfiguration, localDshPaths } from "../../../packages/contracts/src/local-dsh";
 
 export const supportedDshVersion = "0.2.1-rc.3";
 export type LocalDshState = {
@@ -52,7 +55,7 @@ export class LocalDshRuntime {
   private entryUrl?: string;
   private cancelStart?: () => void;
 
-  constructor(directory: string, home: string, private changed: () => void = () => {}) {
+  constructor(directory: string, home: string, private changed: () => void = () => {}, private connection?: { patch: string; token: string }) {
     this.state = { phase: "stopped", directory, home };
   }
 
@@ -80,10 +83,10 @@ export class LocalDshRuntime {
       this.state.version = installation.version;
       const child = spawn(installation.executable, [
         "--expose-internals", installation.entry,
-        "web", "--no-open", "--host", "127.0.0.1", "--port", "0",
+        "--profile", "web", ...(this.connection ? ["--patch", this.connection.patch] : []), "--no-open", "--host", "127.0.0.1", "--port", "0",
       ], {
         cwd: this.state.home,
-        env: runtimeEnvironment(this.state.home),
+        env: { ...runtimeEnvironment(this.state.home), ...(this.connection ? { ACCEPTCAT_DSH_TOKEN: this.connection.token } : {}) },
         windowsHide: true, shell: false, stdio: ["ignore", "pipe", "pipe"],
       });
       this.child = child;
