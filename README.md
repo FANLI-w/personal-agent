@@ -84,13 +84,13 @@ DSH 随安装包提供，登录后自动连接当前 AcceptCat 账号的模型�
 
 | 版本入口 | 当前状态 |
 | --- | --- |
-| **最新公开桌面试用版：0.10.61** | Windows x64 安装包已发布：[下载 AcceptCat_0.10.61.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.61/AcceptCat_0.10.61.exe)。统一聊天输入工具栏与消息右键菜单，改进群内助手提及、引用追问、逐助手状态及阅读位置恢复，支持文件另存与保存后定位；保留现有任务、资料和课题组功能。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.61) · [交付范围](docs/deployment/acceptcat-0.10.61.md) |
+| **最新公开桌面试用版：0.10.70** | Windows x64 安装包已发布：[下载 AcceptCat_0.10.70.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.70/AcceptCat_0.10.70.exe)，约367 MB。内置DSH，登录后连接账号模型；任务接通本机执行、资料与成果验收，增加规则记忆和群内文献分工。保留原聊天、资料和课题组功能。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.70) · [交付范围](docs/deployment/acceptcat-0.10.70.md) |
 | **飞书只读本人试点** | 文档快照与命名多维表格论文库代码已包含，配套后台及飞书 0.2.0 已部署；指定论文库的真实读取、私人绑定和 DSH 试读已完成。飞书应用仍仅罗岩本人可用，其他成员不会因安装客户端而自动获得权限。[试点记录与边界](docs/deployment/acceptcat-0.10.27.md) |
 | **后台模型运行层：DSH 0.2.1-rc.2** | 已部署并验证现有模型的真实短句回复，保留现有账号、资料与模型设置；已有客户端无需重装。[部署说明](docs/deployment/harness-0.2.1-rc.2-20261020.md) |
-| **历史公开版本** | 原 v0.10.60、v0.10.56、v0.10.52、v0.10.37、v0.10.34 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.61 |
-| **产品源码与协作基线** | [v0.10.61 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.61)固定本次安装包源码；[PR127](https://github.com/luoyan96/personal-agent/pull/127)已将聊天体验与worker中断修复整合到[main](https://github.com/luoyan96/personal-agent/tree/main)。后续功能从主仓库最新main另开分支，通过PR合并，安装包发布和后台部署分别记录 |
+| **历史公开版本** | 原 v0.10.61、v0.10.60、v0.10.56、v0.10.52 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.70 |
+| **产品源码与协作基线** | [v0.10.70 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.70)固定安装包产品源码；[PR133](https://github.com/luoyan96/personal-agent/pull/133)已将DSH接入及三步改造连同PR130–132整合到[main](https://github.com/luoyan96/personal-agent/tree/main)。后续功能从主仓库最新main另开分支，通过PR合并，安装包发布和后台部署分别记录 |
 
-0.10.61客户端已经公开，沿用已部署的[配套API/worker](docs/deployment/chat-worker-interruption-20261027.md)，本次发布没有重新部署后台。业务消息撤回、持久回复关系及OpenIM撤回同步仍需后台单独升级；旧后台继续支持基本聊天。图片问答当前基于Windows本机OCR提取的文字，实际能力与限制见发布说明。
+0.10.70客户端已经公开，配套API/worker已独立部署至contract0.37.0/schema030；[备份、迁移与回退记录](docs/deployment/dsh-team-20261028.md)单独维护，本次发布没有再次部署后台。自动化和合成任务闭环已通过，真实账号模型、双机协作与科研体验仍需使用者验收。原聊天图片问答基于Windows本机OCR提取文字，具体范围见发布说明。
 
 已有试用版的团队：登录后在“我的 → 模型设置”配置自己的模型，从一个真实课题的小任务开始。新团队如希望参与试用，可以在 [Issues](https://github.com/luoyan96/personal-agent/issues) 留下使用场景和试用意向；请不要提交账号密钥、未公开论文或学生的私人材料。
 
