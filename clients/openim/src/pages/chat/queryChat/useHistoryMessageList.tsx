@@ -5,8 +5,9 @@ import { useParams } from "react-router-dom";
 
 import { IMSDK } from "@/layout/MainContentWrap";
 import { useResearchStore } from "@/research/store";
-import { useUserStore } from "@/store";
-import { feedbackToast } from "@/utils/common";
+import { useUserStore, useConversationStore } from "@/store";
+import { matchesLocator, type MessageLocator } from "@/research/chat-timeline";
+import { withRequestDeadline } from "@/research/request-deadline";
 import emitter, { emit } from "@/utils/events";
 
 const START_INDEX = 10000;
@@ -25,6 +26,8 @@ export function useHistoryMessageList() {
   const latestConversationID = useLatest(conversationID);
   const mounted = useRef(true);
   const loadGeneration = useRef(0);
+  const loadingPage = useRef(false);
+  const [historyError, setHistoryError] = useState("");
   const sdkReady = useUserStore(
     (state) =>
       !state.isLogining &&
@@ -46,6 +49,8 @@ export function useHistoryMessageList() {
   const { loading: moreOldLoading, runAsync: getMoreOldMessages } = useRequest(
     async (loadMore = true) => {
       if (!conversationID || !latestSdkReady.current) return;
+      if (loadingPage.current) return;
+      loadingPage.current = true;
       const reqConversationID = conversationID;
       const generation = useResearchStore.getState().generation;
       const historyGeneration = loadGeneration.current;
@@ -58,16 +63,22 @@ export function useHistoryMessageList() {
         generation === useResearchStore.getState().generation &&
         userID === useUserStore.getState().selfInfo.userID;
       try {
-        const { data } = await IMSDK.getAdvancedHistoryMessageList({
-          count: SPLIT_COUNT,
-          startClientMsgID: loadMore
-            ? latestLoadState.current.messageList[0]?.clientMsgID
-            : "",
-          conversationID: reqConversationID,
-          viewType: MessageViewType.History,
-        });
+        const { data } = await withRequestDeadline(
+          () =>
+            IMSDK.getAdvancedHistoryMessageList({
+              count: SPLIT_COUNT,
+              startClientMsgID: loadMore
+                ? latestLoadState.current.messageList[0]?.clientMsgID
+                : "",
+              conversationID: reqConversationID,
+              viewType: MessageViewType.History,
+            }),
+          30000,
+        );
         if (!isCurrent()) return;
-        setLoadState((preState) => {
+        setHistoryError("");
+        const preState = latestLoadState.current;
+        const nextState = (() => {
           // SDK live events can arrive before the history promise settles.
           // Keep them, and merge overlapping locators exactly once.
           const existing = new Set(preState.messageList.map((m) => m.clientMsgID));
@@ -81,18 +92,24 @@ export function useHistoryMessageList() {
             ...preState,
             initLoading: false,
             hasMoreOld: !data.isEnd,
-            messageList: [...merged.values()],
+            messageList: [...merged.values()].sort(
+              (a, b) => a.sendTime - b.sendTime || (a.seq || 0) - (b.seq || 0),
+            ),
             firstItemIndex:
               preState.firstItemIndex -
               data.messageList.filter((m) => !existing.has(m.clientMsgID)).length,
           };
-        });
+        })();
+        latestLoadState.current = nextState;
+        setLoadState(nextState);
       } catch (error) {
         // A route reload can mount this hook before SDK login. Also consume
         // failures of requests that belonged to a closed route or prior actor.
         if (!isCurrent()) return;
         setLoadState((previous) => ({ ...previous, initLoading: false }));
-        feedbackToast({ error, msg: "历史消息读取失败，请重新打开会话后重试" });
+        setHistoryError("历史消息读取失败，可以重试；已加载内容保留。");
+      } finally {
+        if (historyGeneration === loadGeneration.current) loadingPage.current = false;
       }
     },
     { manual: true },
@@ -100,6 +117,9 @@ export function useHistoryMessageList() {
 
   const loadHistoryMessages = useCallback(() => {
     loadGeneration.current++;
+    loadingPage.current = false;
+    setHistoryError("");
+    latestLoadState.current = INITIAL_LOAD_STATE;
     setLoadState(INITIAL_LOAD_STATE);
     void getMoreOldMessages(false);
   }, [getMoreOldMessages]);
@@ -110,6 +130,15 @@ export function useHistoryMessageList() {
 
   useEffect(() => {
     const pushNewMessage = (message: MessageItem) => {
+      const current = useConversationStore.getState().currentConversation;
+      if (
+        current?.conversationID !== conversationID ||
+        (current?.groupID
+          ? message.groupID !== current.groupID
+          : !!message.groupID ||
+            ![message.sendID, message.recvID].includes(current?.userID || ""))
+      )
+        return;
       setLoadState((preState) =>
         preState.messageList.some((item) => item.clientMsgID === message.clientMsgID)
           ? preState
@@ -140,7 +169,23 @@ export function useHistoryMessageList() {
       emitter.off("PUSH_NEW_MSG", pushNewMessage);
       emitter.off("UPDATE_ONE_MSG", updateOneMessage);
     };
-  }, [latestLoadState]);
+  }, [latestLoadState, conversationID]);
+
+  const seekMessage = async (locator: MessageLocator) => {
+    const epoch = loadGeneration.current;
+    for (let page = 0; page < 100; page++) {
+      if (epoch !== loadGeneration.current || !mounted.current) return undefined;
+      const found = latestLoadState.current.messageList.find((m) =>
+        matchesLocator(m, locator),
+      );
+      if (found) return found;
+      if (!latestLoadState.current.hasMoreOld || loadingPage.current) break;
+      const before = latestLoadState.current.messageList.length;
+      await getMoreOldMessages(true);
+      if (before === latestLoadState.current.messageList.length) break;
+    }
+    return undefined;
+  };
 
   return {
     SPLIT_COUNT,
@@ -149,6 +194,8 @@ export function useHistoryMessageList() {
     conversationID,
     moreOldLoading,
     getMoreOldMessages,
+    seekMessage,
+    historyError,
   };
 }
 

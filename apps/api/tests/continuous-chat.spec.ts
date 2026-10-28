@@ -12,6 +12,7 @@ import {masterAvailable} from '../src/lab-ai-settings.js'
 import {ChatWorker,reconcileChat} from '../src/chat-worker.js'
 import {extendContinuous,startContinuous} from '../src/continuous-chat.js'
 import type {ModelCall,ModelResult} from '../src/execution-worker.js'
+import {DatabaseSync} from 'node:sqlite'
 
 const clean:(()=>unknown|Promise<unknown>)[]=[]
 afterEach(async()=>{for(const fn of clean.splice(0).reverse())await fn()})
@@ -45,6 +46,30 @@ async function setup(){
  return {db,config,call,own,send,turn,progress,tick,count,actors,restart}
 }
 describe('continuous local chat: actual HTTP/SQLite, synthetic ModelCall only',{timeout:20000},()=>{
+ it('retains a returned answer across a competing writer without calling the model twice',async()=>{
+  const s=await setup(),sent=await s.send('合成锁竞争检查')
+  s.db.exec('PRAGMA busy_timeout=1')
+  const writer=new DatabaseSync(s.config.databasePath);let unlock:ReturnType<typeof setTimeout>|undefined,calls=0
+  try {
+   await s.tick(async()=>{calls++;writer.exec('BEGIN IMMEDIATE');unlock=setTimeout(()=>writer.exec('ROLLBACK'),450);return result('这条答复只生成一次。')})
+   expect(calls).toBe(1);expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded',usage:{inputTokens:100,outputTokens:100}})
+   expect((await s.progress(sent.turn.id)).text).toBe('这条答复只生成一次。')
+   expect(s.count('chat_attempts')).toBe(1)
+  }finally{clearTimeout(unlock);writer.close()}
+ })
+ it('does not abort streaming or lease renewal on transient contention; final reply remains canonical',async()=>{
+  const s=await setup(),sent=await s.send('合成流式锁竞争检查');s.db.exec('PRAGMA busy_timeout=1')
+  const writer=new DatabaseSync(s.config.databasePath)
+  try {
+   await s.tick(async(_input,signal,_credential,onDelta)=>{
+    writer.exec('BEGIN IMMEDIATE');onDelta?.('暂未保存的片段')
+    await new Promise(resolve=>setTimeout(resolve,450));expect(signal.aborted).toBe(false)
+    writer.exec('ROLLBACK');return result('最终完整回复。')
+   })
+   expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded'})
+   expect((await s.progress(sent.turn.id)).text).toBe('最终完整回复。')
+  }finally{writer.close()}
+ })
  it('persists seven queued supplements as one batch/call/budget, replays exactly, and exposes real deltas before canonical final',async()=>{
   const s=await setup(),ids:string[]=[],keys:string[]=[],sent:any[]=[]
   for(let i=0;i<7;i++){keys.push(randomUUID());const r=await s.send(`第${i+1}条补充完整文字。`,keys[i]);ids.push(r.message.id);sent.push(r);expect(r.turn.id).toBe(sent[0].turn.id)}

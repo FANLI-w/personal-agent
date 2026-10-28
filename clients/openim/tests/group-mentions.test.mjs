@@ -10,7 +10,7 @@ const esbuild = createRequire(require.resolve('vite/package.json'))('esbuild');
 const dir = await mkdtemp(path.join(tmpdir(), 'group-mentions-'));
 const output = path.join(dir, 'mentions.cjs');
 await esbuild.build({entryPoints:[fileURLToPath(new URL('../src/research/group-mentions.ts', import.meta.url))],outfile:output,bundle:true,format:'cjs',platform:'node'});
-const { groupMentions, groupMessageBody } = require(output);
+const { groupMentions, groupMessageBody, selectedGroupMentions, addressGroupReply } = require(output);
 const statusOutput=path.join(dir,'status.cjs');
 await esbuild.build({entryPoints:[fileURLToPath(new URL('../src/research/group-agent-status.ts',import.meta.url))],outfile:statusOutput,bundle:true,format:'cjs',platform:'node'});
 const {groupAgentStatusText}=require(statusOutput);
@@ -69,4 +69,54 @@ test('shared group status distinguishes actual replies, waiting, interruption an
   assert.equal(groupAgentStatusText({status:'waiting_input',failure:null}),'等待补充信息');
   assert.match(groupAgentStatusText({status:'failed',failure:'BUDGET_EXCEEDED'}),/超出预算/);
   assert.match(groupAgentStatusText({status:'cancelled',failure:'AUTHORITY_CHANGED'}),/权限发生变化/);
+});
+
+test('selected mentions anywhere in prose keep exact identities for same-name Agents', () => {
+  const other = { ...agent, id: 'colleague-agent' };
+  const text = '请😀 @文献助手 比较方法，再请 @文献助手 检查局限';
+  const first = text.indexOf('@'), second = text.lastIndexOf('@');
+  const selected = [{contactId:agent.id,start:first,end:first+5},{contactId:other.id,start:second,end:second+5}];
+  const body = groupMessageBody(text, [agent, other], selected);
+  assert.deepEqual(body.agentContactIds, [agent.id, other.id]);
+  assert.deepEqual(body.mentions, selected);
+  assert.deepEqual(body.budget, {maxTokens:32000,maxSeconds:180});
+});
+
+test('selected identity is revalidated after removal, rename or unavailability', () => {
+  const text = '请 @文献助手 整理';
+  const mentions = [{contactId:agent.id,start:2,end:7}];
+  for (const roster of [[], [{...agent,displayName:'新名称'}], [{...agent,external:true}], [{...agent,unavailable:true}]])
+    assert.throws(() => groupMessageBody(text, roster, mentions));
+  assert.throws(() => selectedGroupMentions(text,[agent],[{...mentions[0],start:-1}]));
+  assert.throws(() => selectedGroupMentions(text,[agent],[{...mentions[0],end:8}]));
+  assert.throws(() => selectedGroupMentions(text,[agent],[{...mentions[0],end:7.5}]));
+  assert.throws(() => groupMessageBody('@文献助手 整理',[{...agent,unavailable:true}]));
+});
+
+test('selecting the same Agent twice dispatches once and does not call a quoted Agent', () => {
+  const text = '@文献助手 请对照 @文献助手 的结果\n> @小林 不要执行引文';
+  const second = text.indexOf('@', 1);
+  const result = groupMessageBody(text,[agent,human],[{contactId:agent.id,start:0,end:5},{contactId:agent.id,start:second,end:second+5}]);
+  assert.equal(result.agentContactId,agent.id);
+  assert.equal(result.mentions.length,1);
+  assert.deepEqual(result.budget,{maxTokens:16000,maxSeconds:90});
+});
+
+test('follow-up routes to the quoted Agent by ID; explicit recipients take precedence', () => {
+  const other = {...agent,id:'other',displayName:'方法助手'};
+  const result = addressGroupReply('为什么？',[],[agent,other],other.id);
+  const body = groupMessageBody(result.text,[agent,other],result.mentions);
+  assert.equal(body.agentContactId,other.id);
+  assert.equal(body.text,'@方法助手 为什么？');
+  assert.deepEqual(addressGroupReply('仅引用',[],[agent]),{text:'仅引用',mentions:[]});
+  assert.equal(addressGroupReply('@文献助手 请说明',[],[agent,other],other.id).text,'@文献助手 请说明');
+  assert.throws(() => addressGroupReply('为什么？',[],[agent],other.id),/已不在当前群/);
+});
+
+test('selected mention limits apply to the complete request without partial dispatch', () => {
+  const roster=Array.from({length:6},(_,i)=>({...agent,id:`agent_${i}`,displayName:`助手${i}`}));
+  let text='请检查：';
+  const selected=roster.map(c=>{const start=text.length;text+=`@${c.displayName} `;return {contactId:c.id,start,end:text.length-1};});
+  assert.throws(()=>groupMessageBody(text,roster,selected),/最多同时 @5/);
+  assert.throws(()=>groupMessageBody('@文献助手',[agent],[{contactId:agent.id,start:0,end:5}]),/写上/);
 });

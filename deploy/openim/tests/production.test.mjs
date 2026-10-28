@@ -9,6 +9,16 @@ import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 import { prepareProduction } from '../prepare-production.mjs';
 import { beforeCallbacks, afterCallbacks } from '../runtime-config.mjs';
+import { safeErrorDiagnostic } from '../safe-error.mjs';
+
+test('production diagnostics retain SQLite codes and source locations without private error data', () => {
+  const cause = Object.assign(new Error('SELECT private_content; sk-private'), { code: 'ERR_SQLITE_ERROR', errcode: 5 });
+  cause.stack = 'Error: sk-private\n at operation (file:///app/apps/api/dist/chat-worker.js:210:9)\n at /private/user-material.txt:2:4';
+  const diagnostic = safeErrorDiagnostic(new Error('WORKER_STAGE_CHAT', { cause }));
+  assert.equal(diagnostic[1].sqlite, 5);
+  assert.deepEqual(diagnostic[1].locations, ['apps/api/dist/chat-worker.js:210:9']);
+  assert.ok(!JSON.stringify(diagnostic).includes('private'));
+});
 
 const origin = 'https://chat.synthetic.test';
 const options = runtime => ({ runtime, origin, fileOrigin: 'https://files.chat.synthetic.test' });
@@ -65,7 +75,7 @@ test('real production CLI and HTTP: explicit 023 migration, private bootstrap, o
     assert.equal(run('migrate').status, 0); assert.equal(run('migrate').status, 0);
     let db = new DatabaseSync(databasePath);
     try {
-      assert.equal(db.prepare('SELECT max(version) v FROM schema_migrations').get().v, 27);
+      assert.equal(db.prepare('SELECT max(version) v FROM schema_migrations').get().v, 28);
       assert.equal(db.prepare('SELECT count(*) n FROM members').get().n, 0);
       assert.equal(db.prepare('SELECT count(*) n FROM labs').get().n, 0);
     } finally { db.close(); }

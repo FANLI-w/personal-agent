@@ -1,4 +1,12 @@
-import { Layout, Spin } from "antd";
+import { Alert, Button, Layout, Spin } from "antd";
+import {
+  useChatTimeline,
+  openTimeline,
+  timelineScope,
+  chatPosition,
+  saveChatPosition,
+  positionKey,
+} from "@/research/chat-timeline";
 import clsx from "clsx";
 import {
   memo,
@@ -28,8 +36,35 @@ const ChatContent = () => {
   const [dragging, setDragging] = useState(false);
   const selfUserID = useUserStore((state) => state.selfInfo.userID);
   const actorGeneration = useResearchStore((state) => state.generation);
-  const { conversationID, loadState, moreOldLoading, getMoreOldMessages } =
-    useHistoryMessageList();
+  const {
+    conversationID,
+    loadState,
+    moreOldLoading,
+    getMoreOldMessages,
+    seekMessage,
+    historyError,
+  } = useHistoryMessageList();
+  const actorId = useResearchStore((s) => s.actor?.member.id || "");
+  const viewScope = timelineScope(actorGeneration, conversationID || "");
+  const savedKey = positionKey(actorId || selfUserID, conversationID || "");
+  const hidden = useChatTimeline((s) => s.hidden);
+  const jump = useChatTimeline((s) => s.jump);
+  const navigationError = useChatTimeline((s) => s.error);
+  const [locating, setLocating] = useState(false);
+  const [restoreReady, setRestoreReady] = useState(false);
+  const [initialAnchor, setInitialAnchor] = useState<string>();
+  const [paused, setPaused] = useState(false);
+  const restored = useRef("");
+  const initialPosition = useRef(chatPosition(savedKey));
+  const visibleAnchor = useRef<string>();
+  const seek = useRef(seekMessage);
+  seek.current = seekMessage;
+  const messages = useMemo(
+    () => loadState.messageList.filter((m) => !hidden.includes(m.clientMsgID)),
+    [loadState.messageList, hidden],
+  );
+  const latestMessages = useRef(messages);
+  latestMessages.current = messages;
   const scope = JSON.stringify([actorGeneration, selfUserID, conversationID]);
   const currentScope = useRef(scope);
   currentScope.current = scope;
@@ -77,6 +112,7 @@ const ChatContent = () => {
 
   const stopFollowing = useCallback(() => {
     historyPaused.current = true;
+    setPaused(true);
     downwardIntentUntil.current = 0;
     if (frame.current !== undefined) cancelAnimationFrame(frame.current);
     frame.current = undefined;
@@ -102,18 +138,104 @@ const ChatContent = () => {
   }, [scope, actorGeneration, selfUserID, conversationID]);
 
   useLayoutEffect(() => {
+    openTimeline(viewScope);
+    const saved = chatPosition(savedKey);
+    initialPosition.current = saved;
+    setLocating(false);
+    setRestoreReady(false);
+    setInitialAnchor(undefined);
+    useChatTimeline.setState({ hidden: saved.hidden });
+    restored.current = "";
+    visibleAnchor.current = saved.anchor;
     setDragging(false);
-    historyPaused.current = false;
+    historyPaused.current = !saved.atBottom;
+    setPaused(!saved.atBottom);
     touchY.current = undefined;
     downwardIntentUntil.current = 0;
     pointerScrolling.current = false;
     lastScrollTop.current = 0;
     return () => {
+      saveChatPosition(savedKey, {
+        anchor: visibleAnchor.current,
+        atBottom: !historyPaused.current,
+      });
       if (frame.current !== undefined) cancelAnimationFrame(frame.current);
       frame.current = undefined;
       historyPaused.current = true;
     };
   }, [scope]);
+
+  useEffect(() => {
+    if (loadState.initLoading || locating) return;
+    const saved = initialPosition.current;
+    const initial = restored.current !== scope;
+    const target =
+      jump ||
+      (initial && !saved.atBottom && saved.anchor
+        ? { clientMsgID: saved.anchor }
+        : undefined);
+    restored.current = scope;
+    if (!target) {
+      setRestoreReady(true);
+      return;
+    }
+    const activeScope = scope;
+    stopFollowing();
+    setLocating(true);
+    void seek
+      .current(target)
+      .then((found) => {
+        if (currentScope.current !== activeScope) return;
+        if (!found) {
+          useChatTimeline.setState({
+            jump: undefined,
+            error:
+              "本次未定位到消息：它可能尚未同步、已删除或不在已加载范围。可继续查找或重试。",
+          });
+          return;
+        }
+        const hiddenIds = useChatTimeline
+          .getState()
+          .hidden.filter((id) => id !== found.clientMsgID);
+        useChatTimeline.setState({
+          hidden: hiddenIds,
+          jump: undefined,
+          highlighted: found.clientMsgID,
+          error: undefined,
+        });
+        saveChatPosition(savedKey, {
+          hidden: hiddenIds,
+          anchor: found.clientMsgID,
+          atBottom: false,
+        });
+        visibleAnchor.current = found.clientMsgID;
+        if (initial) setInitialAnchor(found.clientMsgID);
+        else
+          requestAnimationFrame(() => {
+            if (currentScope.current === activeScope) {
+              const index = latestMessages.current.findIndex(
+                (m) => m.clientMsgID === found.clientMsgID,
+              );
+              if (index >= 0)
+                virtuoso.current?.scrollToIndex({
+                  index,
+                  align: "center",
+                  behavior: "auto",
+                });
+            }
+          });
+      })
+      .catch(() => {
+        if (currentScope.current === activeScope)
+          useChatTimeline.setState({ jump: undefined, error: "定位失败，请重试。" });
+      })
+      .finally(() => {
+        if (currentScope.current === activeScope) {
+          setLocating(false);
+          setRestoreReady(true);
+        }
+      });
+  }, [jump, loadState.initLoading, scope, locating]);
 
   useEffect(() => {
     const followOwnSend = (
@@ -131,6 +253,7 @@ const ChatContent = () => {
       )
         return;
       historyPaused.current = false;
+      setPaused(false);
       downwardIntentUntil.current = 0;
       scrollToBottom();
     };
@@ -158,8 +281,10 @@ const ChatContent = () => {
     if (
       scroller &&
       scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop <= 4
-    )
+    ) {
       historyPaused.current = false;
+      setPaused(false);
+    }
   };
 
   const components = useMemo(
@@ -188,7 +313,7 @@ const ChatContent = () => {
 
   return (
     <Layout.Content
-      className="relative flex h-full overflow-hidden !bg-white"
+      className="relative flex h-full flex-col overflow-hidden !bg-white"
       id="chat-main"
       data-files-dragging={dragging ? "true" : undefined}
       onDragEnterCapture={(event) => {
@@ -242,6 +367,7 @@ const ChatContent = () => {
         if (["Home", "PageUp", "ArrowUp"].includes(event.key)) stopFollowing();
         if (event.key === "End") {
           historyPaused.current = false;
+          setPaused(false);
           downwardIntentUntil.current = 0;
           scrollToBottom();
         } else if (["PageDown", "ArrowDown"].includes(event.key)) markDownwardIntent();
@@ -270,12 +396,31 @@ const ChatContent = () => {
           scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop <= 4
         ) {
           historyPaused.current = false;
+          setPaused(false);
           downwardIntentUntil.current = 0;
           scrollToBottom();
         }
       }}
     >
-      {loadState.initLoading ? (
+      {(historyError || navigationError) && (
+        <Alert
+          type="warning"
+          message={historyError || navigationError}
+          closable
+          onClose={() => useChatTimeline.setState({ error: undefined })}
+          action={
+            <Button size="small" onClick={() => void getMoreOldMessages()}>
+              重新读取
+            </Button>
+          }
+        />
+      )}
+      {locating && (
+        <div role="status" className="chat-navigation-status">
+          <Spin size="small" /> 正在定位聊天记录…
+        </div>
+      )}
+      {loadState.initLoading || !restoreReady ? (
         <div className="flex h-full w-full items-center justify-center bg-white pt-1">
           <Spin spinning />
         </div>
@@ -294,10 +439,29 @@ const ChatContent = () => {
             // user is waiting at the latest message, never while reading history.
             totalListHeightChanged={scrollToBottom}
             firstItemIndex={loadState.firstItemIndex}
-            initialTopMostItemIndex={{ index: "LAST", align: "end" }}
+            rangeChanged={(range) => {
+              if (restored.current !== scope || locating) return;
+              const index = Math.max(0, range.startIndex - loadState.firstItemIndex);
+              visibleAnchor.current = messages[index]?.clientMsgID;
+              saveChatPosition(savedKey, {
+                anchor: visibleAnchor.current,
+                atBottom: !historyPaused.current,
+              });
+            }}
+            initialTopMostItemIndex={
+              initialAnchor
+                ? {
+                    index: Math.max(
+                      0,
+                      messages.findIndex((m) => m.clientMsgID === initialAnchor),
+                    ),
+                    align: "start",
+                  }
+                : { index: "LAST", align: "end" }
+            }
             startReached={loadMoreMessage}
             ref={virtuoso}
-            data={loadState.messageList}
+            data={messages}
             components={components}
             computeItemKey={(_, item) => item.clientMsgID}
             itemContent={(_, message) => {
@@ -330,6 +494,19 @@ const ChatContent = () => {
             }}
           />
         </AgentProgressHistory.Provider>
+      )}
+      {paused && (
+        <Button
+          className="chat-return-latest"
+          onClick={() => {
+            historyPaused.current = false;
+            setPaused(false);
+            useChatTimeline.setState({ highlighted: undefined });
+            scrollToBottom();
+          }}
+        >
+          回到最新消息
+        </Button>
       )}
     </Layout.Content>
   );

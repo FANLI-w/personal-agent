@@ -15,8 +15,8 @@ RUN go mod download && go mod verify
 COPY rap-auth.patch /tmp/rap-auth.patch
 RUN git apply --check /tmp/rap-auth.patch \
     && git apply /tmp/rap-auth.patch \
-    && gofmt -w internal/msggateway/message_handler.go internal/msggateway/rap_auth_test.go pkg/common/webhook/http_client.go pkg/common/webhook/rap_auth_test.go internal/rpc/user/callback.go internal/rpc/user/rap_profile_callback_test.go \
-    && go test ./internal/msggateway ./internal/rpc/user ./pkg/common/webhook \
+    && gofmt -w internal/msggateway/message_handler.go internal/msggateway/rap_auth_test.go pkg/common/webhook/http_client.go pkg/common/webhook/rap_auth_test.go internal/rpc/user/callback.go internal/rpc/user/rap_profile_callback_test.go internal/rpc/msg/callback.go internal/rpc/msg/revoke.go internal/rpc/msg/rap_revoke_callback_test.go pkg/callbackstruct/revoke.go \
+    && go test ./internal/msggateway ./internal/rpc/user ./internal/rpc/msg ./pkg/common/webhook \
     && go install github.com/magefile/mage@v1.15.0 \
     && mage build
 # Upstream `mage start` compiles its task program at container startup. Build

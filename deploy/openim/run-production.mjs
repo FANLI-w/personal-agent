@@ -1,5 +1,6 @@
 import { mkdirSync, lstatSync, readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
+import { safeErrorDiagnostic } from './safe-error.mjs';
 
 // Explicit production-only entry: never runs seed, provisions synthetic accounts
 // or implicitly migrates a database when an API/worker starts.
@@ -50,5 +51,6 @@ try {
   }
 } catch (error) {
   console.error(error instanceof Error && /^[A-Z_]+$/.test(error.message) ? error.message : 'PRODUCTION_OPERATION_FAILED');
+  console.error(JSON.stringify({ event: 'PRODUCTION_FAILURE_LOCATION', errors: safeErrorDiagnostic(error) }));
   process.exitCode = 1;
 }

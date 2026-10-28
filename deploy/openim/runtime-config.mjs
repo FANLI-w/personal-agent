@@ -12,7 +12,7 @@ export const beforeCallbacks = [
   'beforeUpdateUserInfo', 'beforeUpdateUserInfoEx',
   'beforeSetGroupInfo', 'beforeSetGroupInfoEx', 'beforeUserRegister',
 ];
-export const afterCallbacks = ['afterSendSingleMsg', 'afterSendGroupMsg',
+export const afterCallbacks = ['afterSendSingleMsg', 'afterSendGroupMsg', 'afterRevokeMsg',
   'afterQuitGroup', 'afterKickGroupMember', 'afterDismissGroup',
   'afterTransferGroupOwner', 'afterSetGroupMemberInfo',
   'afterSetGroupInfo', 'afterSetGroupInfoEx'];

@@ -19,6 +19,8 @@ import {
 import SafeMessageMarkdown from "@/research/SafeMessageMarkdown";
 import type { MessageItem } from "@openim/wasm-client-sdk";
 import { formatMessageTime } from "@/utils/imCommon";
+import { locateMessage, timelineScope } from "@/research/chat-timeline";
+import { useGroupChatRoster } from "@/research/GroupChatRoster";
 
 type Result = {
   id: string;
@@ -26,6 +28,7 @@ type Result = {
   sender: string;
   time: number;
   native?: MessageItem;
+  canonical?: ChatMessage;
 };
 export default function HistorySearch({
   open,
@@ -40,6 +43,7 @@ export default function HistorySearch({
     s.mappings.find((m) => m.imConversationID === conversation?.conversationID),
   );
   const contacts = useResearchStore((s) => s.contacts);
+  const roster = useGroupChatRoster();
   const capture = useAgentChatOperation();
   const operation = useRef<AgentChatOperation>();
   const [query, setQuery] = useState("");
@@ -93,6 +97,7 @@ export default function HistorySearch({
     id: `canonical:${message.id}`,
     text: message.text || "",
     sender:
+      roster.data?.data.find((c) => c.id === message.senderContactId)?.displayName ||
       contacts.find((c) => c.contact.id === message.senderContactId)?.contact
         .displayName ||
       (message.origin === "model"
@@ -101,6 +106,7 @@ export default function HistorySearch({
         ? "系统"
         : "成员"),
     time: Date.parse(message.createdAt),
+    canonical: message,
   });
   const search = async (more = false) => {
     const term = (more ? searched : query).trim();
@@ -286,30 +292,58 @@ export default function HistorySearch({
         open={!!selected}
         onCancel={() => setSelected(undefined)}
         footer={
-          <Button
-            type="primary"
-            onClick={() => {
-              if (!selected || !isScopeCurrent()) return;
-              if (selected.native)
-                selectChatReply(
-                  selected.native,
-                  selected.text,
-                  conversation?.conversationID,
-                  generation,
+          <>
+            <Button
+              onClick={() => {
+                if (!selected || !isScopeCurrent()) return;
+                locateMessage(
+                  timelineScope(generation, conversation?.conversationID || ""),
+                  selected.native
+                    ? { clientMsgID: selected.native.clientMsgID }
+                    : {
+                        messageId: selected.canonical?.id,
+                        sequence: selected.canonical?.sequence,
+                      },
                 );
-              else
-                selectCanonicalChatReply(
-                  selected.text,
-                  selected.sender,
-                  conversation?.conversationID,
-                  generation,
-                );
-              setSelected(undefined);
-              close();
-            }}
-          >
-            引用回复
-          </Button>
+                setSelected(undefined);
+                close();
+              }}
+            >
+              定位到聊天
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => {
+                if (!selected || !isScopeCurrent()) return;
+                if (selected.native)
+                  selectChatReply(
+                    selected.native,
+                    selected.text,
+                    conversation?.conversationID,
+                    generation,
+                  );
+                else
+                  selectCanonicalChatReply(
+                    selected.text,
+                    selected.sender,
+                    conversation?.conversationID,
+                    generation,
+                    selected.canonical?.id,
+                    selected.canonical?.origin === "model" &&
+                      selected.canonical.senderContactId
+                      ? {
+                          contactId: selected.canonical.senderContactId,
+                          displayName: selected.sender,
+                        }
+                      : undefined,
+                  );
+                setSelected(undefined);
+                close();
+              }}
+            >
+              引用回复
+            </Button>
+          </>
         }
         className="desktop-history-message"
       >

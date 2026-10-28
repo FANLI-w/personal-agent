@@ -1,5 +1,11 @@
-import { CopyOutlined, DownloadOutlined } from "@ant-design/icons";
+import {
+  CopyOutlined,
+  DownloadOutlined,
+  ScanOutlined,
+  CommentOutlined,
+} from "@ant-design/icons";
 import { Button, Dropdown, Image, Input, Modal, Space } from "antd";
+import type { MenuProps } from "antd";
 import {
   useEffect,
   useRef,
@@ -25,6 +31,7 @@ type Props = Omit<ComponentProps<typeof Image>, "preview"> & {
   originalUrl?: string;
   disabled?: boolean;
   onReply?: () => void;
+  messageMenu?: MenuProps;
 };
 
 export default function ChatImage({
@@ -32,6 +39,7 @@ export default function ChatImage({
   originalUrl,
   disabled,
   onReply,
+  messageMenu,
   ...imageProps
 }: Props) {
   const capture = useAgentChatOperation();
@@ -126,13 +134,29 @@ export default function ChatImage({
       scoped.dispose();
     }
   };
-  const items = [
+  const sharedItems = (messageMenu?.items || []).filter(
+    (item) => item && (!("type" in item) || item.type !== "divider"),
+  );
+  const items: MenuProps["items"] = [
     {
       key: "copy",
-      label: "复制图片",
+      label: "复制",
       icon: <CopyOutlined />,
       disabled: disabled || busy,
     },
+    { type: "divider" },
+    ...sharedItems.filter((item) => item?.key !== "delete" && item?.key !== "withdraw"),
+    ...(!messageMenu && onReply
+      ? [
+          {
+            key: "reply",
+            label: "引用",
+            icon: <CommentOutlined />,
+            disabled: disabled || busy,
+          },
+        ]
+      : []),
+    { type: "divider" },
     {
       key: "save",
       label: "另存为…",
@@ -140,12 +164,21 @@ export default function ChatImage({
       disabled: disabled || busy,
     },
     ...(window.electronAPI?.recognizeChatImage
-      ? [{ key: "ocr", label: "提取文字", disabled: disabled || busy }]
+      ? [
+          {
+            key: "ocr",
+            label: "提取文字",
+            icon: <ScanOutlined />,
+            disabled: disabled || busy,
+          },
+        ]
       : []),
-    ...(onReply
+    ...(messageMenu
       ? [
           { type: "divider" as const },
-          { key: "reply", label: "引用回复", disabled: disabled || busy },
+          ...sharedItems.filter(
+            (item) => item?.key === "delete" || item?.key === "withdraw",
+          ),
         ]
       : []),
   ];
@@ -154,10 +187,16 @@ export default function ChatImage({
     <Dropdown
       trigger={["contextMenu"]}
       overlayStyle={{ zIndex: 1400 }}
+      overlayClassName="chat-message-menu"
       menu={{
         items,
-        onClick: ({ key }) => {
-          void act(key);
+        onClick: (info) => {
+          if (["copy", "save", "ocr"].includes(info.key) || !messageMenu)
+            void act(info.key);
+          else {
+            setPreview(false);
+            messageMenu.onClick?.(info);
+          }
         },
       }}
     >

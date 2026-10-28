@@ -103,3 +103,25 @@
 .ck-editor__top {
   display: none;
 }
+
+.ck-content .mention { color: #2456a6; background: #edf3ff; border-radius: 4px; padding: 1px 3px; }
+.chat-mention-picker { width: min(300px, calc(100vw - 48px)); }
+.chat-mention-picker input { width: 100%; padding: 8px 10px; border: 1px solid #dce2eb; border-radius: 7px; outline-color: #557ec9; }
+.chat-mention-options { max-height: 280px; overflow-y: auto; margin-top: 6px; }
+.chat-mention-option { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 9px; text-align: left; border-radius: 6px; color: #334155; }
+button.chat-mention-option:hover { background: #f1f5fb; }
+button.chat-mention-option:disabled { opacity: .55; cursor: not-allowed; }
+.chat-mention-avatar { display: grid; place-items: center; flex: 0 0 30px; height: 30px; border-radius: 8px; background: #edf3ff; font-size: 12px; color: #3866ac; }
+.chat-mention-option strong, .chat-mention-option small { display: block; max-width: 210px; overflow: hidden; text-overflow: ellipsis; }
+.chat-mention-option strong { font-size: 13px; font-weight: 500; }
+.chat-mention-option small { font-size: 11px; color: #64748b; margin-top: 2px; }
+.chat-mention-empty { padding: 12px; color: #64748b; }
+.ck.ck-mentions { max-height: 280px; overflow-y: auto; max-width: min(320px, calc(100vw - 32px)); }
+
+// CKEditor's UI reset also targets custom feed nodes; scope above its specificity.
+.ck.ck-mentions {
+  .chat-mention-option { display: flex; align-items: center; gap: 10px; padding: 7px 9px; }
+  .chat-mention-avatar { display: grid; place-items: center; flex: 0 0 30px; height: 30px; border-radius: 8px; background: #edf3ff; font-size: 12px; color: #3866ac; }
+  .chat-mention-option strong { display: block; font-size: 13px; font-weight: 500; }
+  .chat-mention-option small { display: block; font-size: 11px; color: #64748b; margin-top: 2px; }
+}

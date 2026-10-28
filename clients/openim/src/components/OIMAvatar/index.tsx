@@ -44,7 +44,7 @@ const OIMAvatar = React.forwardRef<HTMLSpanElement, IOIMAvatarProps>((props, ref
     return isgroup ? default_group : undefined;
   }, [src, isgroup]);
 
-  const avatarProps = { ...props, isgroup: undefined, isnotification: undefined };
+  const { text: _text, color: _color, bgColor: _bgColor, isgroup: _isgroup, isnotification: _isnotification, ...avatarProps } = props;
 
   React.useEffect(() => {
     if (!isgroup) {

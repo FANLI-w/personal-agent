@@ -1,0 +1,95 @@
+/* Only the synthetic shell; production component styles are imported unchanged. */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: system-ui, "Microsoft Yahei", sans-serif;
+  color: #263342;
+  background: #e9edf2;
+}
+.fixture-banner {
+  padding: 9px;
+  background: #fff8df;
+  font-size: 12px;
+  text-align: center;
+}
+main.personal-agent-desktop {
+  max-width: 1000px;
+  margin: 18px auto;
+  background: #f5f6f8;
+  border: 1px solid #dce2eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+main.personal-agent-desktop > header {
+  background: white;
+  padding: 18px;
+  border-bottom: 1px solid #dce2eb;
+  display: flex;
+  gap: 16px;
+}
+main.personal-agent-desktop > header span {
+  color: #64748b;
+  font-size: 13px;
+}
+.fixture-history {
+  min-height: 230px;
+  max-height: 500px;
+  overflow: auto;
+  padding: 18px;
+}
+.example-peer {
+  font-size: 14px;
+}
+.example-peer p {
+  background: white;
+  padding: 14px;
+  border-radius: 10px;
+  max-width: 520px;
+}
+.fixture-message {
+  margin: 14px 0 14px auto;
+  max-width: 620px;
+  background: #e1effe;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.fixture-actions {
+  padding: 0 18px 8px;
+  display: flex;
+  gap: 8px;
+}
+.fixture-actions button {
+  background: white;
+  border: 1px solid #d6e0ed;
+  border-radius: 5px;
+  color: #3b5680;
+  padding: 6px;
+}
+.fixture-footer {
+  height: 260px;
+}
+.toolbar-fixture .fixture-footer { height: auto; }
+@media (max-width: 600px) {
+  main.personal-agent-desktop {
+    margin: 0;
+    border-radius: 0;
+  }
+  main.personal-agent-desktop > header {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .fixture-history {
+    padding: 10px;
+    max-height: 330px;
+  }
+  .fixture-banner {
+    font-size: 10px;
+  }
+  .fixture-message {
+    max-width: 100%;
+  }
+}
