@@ -2244,3 +2244,5 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 客户端/Electron 类型检查、14项定向测试、Web/NSIS构建、五个打包入口与打包程序启动冒烟通过。实际组件+实际主进程管理器+真实本地 DSH 的合成 AcceptCat 窗口身份夹具15项通过，包括页面恢复、全局覆盖层、1024×726、停止/重启/登出清理；Computer Use 只核对新建测试窗口，确认原生视图和首次配置入口可见。首次兼容失败、测试服务器监视临时文件导致 EBUSY/connection-refused 的测试设施失败均保留；修复测试监视范围后重跑通过。DSH 修复后无应用 JavaScript 错误，开发时 Ant Design findDOMNode、DSH CSP 和打包启动既有 electron-log 重复初始化警告未隐藏。未用真实账号、密钥或资料调用模型，未安装第三方插件，未验证全部 DSH 桌面原生扩展。
 
 本地试用包0.10.63：D:/deepseek-agent/.runtime/local-dsh-page-20261028/windows/AcceptCat_0.10.63.exe，88,306,454字节，SHA256 2e95d2807002404128be9b3aa0d41bd4def8eed263d5a97880ea064a282209f7。没有合并、公开Release、安装到负责人目录或后台部署，公开Latest仍0.10.61。本分支不包含未合并的群成员身份修复PR129；两批独立审阅。DSH数据当前按Windows用户保存，独立于AcceptCat账号；既有聊天仍走既有后台，旧工作台未移除。下一步由负责人安装、配置模型、验证真实聊天/工具/插件，再设计与AcceptCat Agent、任务和团队权限衔接。完整启动、构建、边界及证据见docs/development/local-dsh-page.md。
+
+本批交付回填：产品提交 d55375d6229a8b611c976f76ff5138eebfca1f85 已推送，PR130（https://github.com/luoyan96/personal-agent/pull/130）已创建并附到当前任务。安装包与校验文件保留在上述 windows 目录；测试专用 DSH 子进程及临时预览服务已停止。未合并、发布或部署。

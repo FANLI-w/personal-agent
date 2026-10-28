@@ -8,9 +8,9 @@
 
 真实本地 DSH 的工作区、插件页面和原生嵌入已验证；解决 Electron 22 缺少标准浏览器 API 导致重连/模型区域报错的问题。定向测试 14 项与客户端/Electron 类型检查通过，集成夹具验证实际 DSH 启停与窗口管理；没有真实模型调用、真实账号安装验收或第三方插件安装验收。数据按 Windows 用户保存在 AcceptCat userData/local-dsh/home，独立于 AcceptCat 账号。此分支不包含未合并 PR129；公开 Latest 仍 0.10.61，代码合并、公开发布和后台部署均未执行。[开发、构建和完整边界](development/local-dsh-page.md)。
 
-## 聊天整合与0.10.61已公开发布
+本地 DSH 试用候选补充：[PR130](https://github.com/luoyan96/personal-agent/pull/130)，产品提交 d55375d。0.10.63 的 NSIS 安装包、五个归档入口和独立数据目录的打包程序启动冒烟已通过；完整路径与 SHA256 见上述开发说明。真实账号/模型和用户安装体验仍待负责人验收。
 
-本地 DSH 试用候选补充：0.10.63 的 NSIS 安装包、五个归档入口和独立数据目录的打包程序启动冒烟已通过；完整路径与 SHA256 见上述开发说明。真实账号/模型和用户安装体验仍待负责人验收。
+## 聊天整合与0.10.61已公开发布
 
 2026-10-28 10:41:48（北京时间），[PR127](https://github.com/luoyan96/personal-agent/pull/127)普通合并至main/c364116，PR125和PR126随之标记已合并。整合head c3bcd63的两路Linux Foundation、Windows Foundation和Windows打包全部通过；Windows首次834项中833通过、A12因默认5秒超时失败，本机定向复核及同head远端重跑通过，失败证据保留。
 

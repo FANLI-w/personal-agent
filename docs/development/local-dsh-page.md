@@ -2,6 +2,8 @@
 
 2026-10-28，功能分支 `feat/local-dsh-page`，从实际最新 `main/93da480` 开始，独立目录 `D:\deepseek-agent\acceptcat-chat-experience`。此分支与群成员身份修复 PR129 独立，不自动包含未合并的 PR129。Windows 候选版本为 **0.10.63**；公开 Latest 仍是 0.10.61。本批不合并、不公开发布、不部署后台。
 
+交付：[PR130](https://github.com/luoyan96/personal-agent/pull/130)，产品提交 `d55375d6229a8b611c976f76ff5138eebfca1f85`。后续仅文档回填不改变安装包源码。
+
 ## 如何试用
 
 1. 保留已经安装的 `D:\0cat\dsh`。本批核验其 DSH 产品版本为 `0.2.1-rc.3`、构建修订 `be72761ee1a6736ebcdf4f3739363b083ae53c98`。安装根目录的 `version` 文件是 Electron 版本 `44.7.0`，不是 DSH 产品版本。
