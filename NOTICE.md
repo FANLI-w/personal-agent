@@ -1,5 +1,9 @@
 # 来源与许可说明
 
+## 2026-10-28：任务工作页
+
+0.10.68 使用上述同日固定 DSH 0.2.1-rc.3 发行包的公开 session/workspace Remote API，接口依据为该发行树中的 api-session-controller/api-workspace-controller 说明及类型元数据。AcceptCat 的任务 UI、绑定、权限与回执适配自行编写，不复制上游控制器实现、图标或 luanyujia-workbench 的代码/规则。上游完整许可随既有内置发行树保留；没有新增第三方运行依赖。[接口与验证记录](docs/development/dsh-task-workspace.md)。
+
 ## 2026-10-28：本地 DSH 页面
 
 后续 0.10.64 改为随 Windows 安装包分发固定官方 DSH 0.2.1-rc.3 发行文件，构建时下载/校验/解包；上游源码和二进制不提交 Git。完整发行树内的 DSH（包声明 MIT）、Electron、Chromium、Node、Python、文档工具和各依赖许可保留在 `resources/dsh` 及其 ASAR 中，各自适用原许可；不能将所有依赖统称为 MIT。来源 URL/SHA512 固定于 runtime-lock.json，不表示官方合作或模型/商标授权。通过官方配置 overlay 接入 AcceptCat，未修改上游源文件。
