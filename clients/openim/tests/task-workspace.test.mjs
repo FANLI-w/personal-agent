@@ -383,3 +383,12 @@ test('rules overflow fails explicitly; optional context is omitted with a visibl
  const packed=packWorkContext('work',workInput('x',[{...large,kind:'skill',content:'x'.repeat(40000)}]),{id:'t',version:1,kind:'task',title:'T',content:'G'});
  assert(packed.receipt.omitted.includes('Rule'));assert(packed.receipt.bytes<1500);
 });
+
+
+test('Electron CommonJS bundle validates canonical work context without requiring ESM contracts', () => {
+  const { WorkContext } = module.exports;
+  const policy = {platform:{version:'1',content:'Synthetic rule'},scopes:[],records:[],privateMemoryAllowed:false};
+  assert.equal(WorkContext.parse(policy).privateMemoryAllowed, false);
+  assert.equal(WorkContext.safeParse({...policy,privateMemoryAllowed:'yes'}).success, false);
+  assert.equal(WorkContext.safeParse({...policy,unexpected:'not admitted'}).success, false);
+});

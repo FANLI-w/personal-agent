@@ -53,9 +53,11 @@ Windows 候选从客户端执行 `corepack pnpm@10.28.0 run build:win`，固定�
 
 - 真实 Electron22 + 固定 DSH + 本机业务API/SQLite + 合成模型24项闭环通过，包含实际read/write产物、规则UI发布、换真实会话后交接续接、规则更新隔离旧值、方法引用落地、问候增补预算、重启、索引查询、个人记忆确认/纠正/撤回及另一账号拒绝。
 - 后台定向4项覆盖候选发布、版本冲突/幂等/历史、原任务ACL撤回、管理员权限、已有028库连续迁移两次保持旧行和旧迁移校验。
-- 客户端/Electron双类型与22项DSH定向通过。最终根CI通过：844项/67文件，生产3项、B0进程和Web生产检查通过；安装包结果见交付补录。
+- 客户端/Electron双类型与23项DSH定向通过。最终根CI通过：844项/67文件，生产3项、B0进程和Web生产检查通过；安装包结果见交付补录。
 - 按frontend-testing-debugging技能执行界面检查；Browser plugin not available，使用已有隔离Electron测试宿主和DOM自动化。URL为本机4778端口的任务页，1350×900/1040×780，实际页面非空、无框架错误遮罩、相关renderer error为0，规则编辑保存和索引操作通过，截图rules-desktop.png/rules-narrow.png。外层OpenIM导航是隔离替身，未据此宣称完整IM或双机通过。
 - 首次合成模型夹具在read工具返回后没有继续write，修正夹具的当前请求识别后复测；产品代码未绕过真实工具。旧证据phase2-results-attempt1.json保留。完整CI首次缺少契约导出，第二次暴露旧迁移测试写死schema028；更新导出及旧库重建夹具、保留旧数据断言，并新增028→029保护后复测，随后同步Web消费方契约0.36.0和CONTEXT1实现阶段断言，最终root-ci-verified.log退出0；原失败/中止日志保留。
 - 跨账号/离开任务页面的原生拒绝日志属于权限反例，renderer未出现未捕获错误。DSH的令牌数在合成模型测试中是夹具返回值，不是实际模型计费量。
 
 普通CI、合成模型/真实DSH进程、真实模型和真人安装验收分别记录。当前没有真实模型、真实账号或双机协作验收，也没有执行合并、公开发布或安装到用户客户端。
+
+构建检查发现：首份0.10.69虽然NSIS生成成功，成品启动因Electron22的CommonJS主进程直接加载仅ESM导出的contracts而失败（packaged-smoke.log）。现将同一WorkContext schema通过既有本机DSH bundle编译供主进程调用，不复制校验规则或放宽数据验证；增加CommonJS打包校验用例，23项定向及Electron类型检查通过，重新执行根CI并重建候选。失败包不作为交付产物。

@@ -185,3 +185,6 @@ export class LocalDshRuntime {
 }
 
 export * from './work-memory';
+
+// Bundle the canonical schema for Electron 22 CommonJS; the package exposes ESM only.
+export { WorkContext } from "../../../packages/contracts/src/work-context";

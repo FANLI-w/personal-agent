@@ -1,7 +1,6 @@
 import { createRequire } from 'node:module';
 import { readFile, readdir } from 'node:fs/promises';
 import { parseImportedSkill } from '@research-agent-platform/research-skills/import';
-import { WorkContext } from '@research-agent-platform/contracts';
 import type { WorkInputs, HandoffInput } from '../../../../integrations/deepseek-harness/desktop/work-memory';
 import { app, BrowserWindow, dialog, ipcMain, net } from "electron";
 import path from "node:path";
@@ -13,7 +12,7 @@ import type {
   TaskTarget,
   TaskSource,
 } from "../../../../integrations/deepseek-harness/desktop/task-workspace";
-const { DshTaskWorkspace, taskKey, digestContext, greetingOnly } =
+const { DshTaskWorkspace, taskKey, digestContext, greetingOnly, WorkContext } =
   require("./localDshRuntime") as typeof import("../../../../integrations/deepseek-harness/desktop/local-runtime");
 type Connection = {
   account: Awaited<ReturnType<typeof dshAccount>>;

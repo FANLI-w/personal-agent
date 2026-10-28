@@ -2315,3 +2315,5 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 初次原生合成夹具在read后错误跳过write，修正请求匹配后复测通过；root CI先提示契约导出过期，随后旧迁移用例仍以028为最新，保留失败日志并更新测试重建/版本预期，旧数据保持断言不放宽，补028→029重复迁移检查。证据Git外dsh-rules-memory-20261028，详情docs/development/dsh-rules-memory.md。原始共享开发目录、后台、合并和公开Release均未动。
 
 第二步检查补充：同步Web契约版本及CONTEXT1实现阶段的测试断言后，e15ee35最终根CI844项/67文件、生产3项、B0进程和Web生产检查通过（root-ci-verified.log，退出0）；原失败日志保留。此后开始Windows0.10.69候选构建，不重复已通过的完整CI。
+
+第二步成品检查：首份0.10.69 NSIS虽生成，独立临时userData启动暴露contracts仅ESM导出与Electron22 CommonJS主进程不兼容。改为既有localDshRuntime bundle导出canonical WorkContext校验器，并由主进程引用；未放宽schema。新增回归后DSH定向23项与Electron类型通过，触发完整CI重跑及重打包。原packaged-smoke.log保留，首次包不交付。PR132已建立，代码合并/公开发布/部署仍未执行。
