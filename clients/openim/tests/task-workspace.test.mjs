@@ -341,3 +341,45 @@ test("official turn reasons, pending approvals and hidden injected context are p
   events.at(-1).data.reason.kind = "aborted";
   assert.equal((await s.status(context)).phase, "interrupted");
 });
+
+const {packWorkContext}=module.exports;
+const workInput=(fingerprint='policy_v1',extra=[])=>({fingerprint,entries:[{id:'platform',version:1,kind:'platform',title:'Platform',content:'Require evidence.'},...extra],omitted:[]});
+test('a greeting does not load task archives, handoff, personal memories, or skill bodies',()=>{
+ const packed=packWorkContext('你好',workInput('v1',[{id:'secret',version:1,kind:'memory',title:'Private',content:'PRIVATE_SENTINEL'},{id:'method',version:1,kind:'skill',title:'Method',content:'SKILL_SENTINEL'}]),{id:'task',version:1,kind:'task',title:'Task',content:'ARCHIVE_SENTINEL'});
+ assert(!packed.content.includes('PRIVATE_SENTINEL'));assert(!packed.content.includes('SKILL_SENTINEL'));assert(!packed.content.includes('ARCHIVE_SENTINEL'));
+ assert.equal(packed.receipt.greeting,true);assert(packed.receipt.bytes<1500);
+});
+test('confirmed handoff follows a new session, original history and output hashes survive restart',async t=>{
+ const f=await fixture(t),b=await f.store.open(context);
+ await fs.writeFile(path.join(b.directory,'result.md'),'Synthetic result');
+ await f.store.prompt(context,'Compare papers','checkpoint_request_1',workInput());
+ const h=await f.store.checkpoint(context,{conclusion:'Compared A',evidence:'result.md',next:'Compare B',blockers:''},0,'policy_v1');
+ assert.equal(h.outputs[0].sha256,createHash('sha256').update('Synthetic result').digest('hex'));
+ await f.store.newSession(context);const next=await f.store.load(context);assert.notEqual(next.sessionId,b.sessionId);assert.equal(next.sessionHistory[0].sessionId,b.sessionId);
+ await f.restart().prompt(context,'Continue','checkpoint_request_2',workInput());
+ const message=f.calls.filter(c=>c.method==='session/prompt').at(-1).args.content[0].text;
+ assert(message.includes('Compared A'));assert(message.includes('Compare B'));assert(message.includes('result.md'));
+ await assert.rejects(f.store.checkpoint(context,{conclusion:'stale',evidence:'',next:'stale',blockers:''},0,'policy_v1'),/已更新/);
+});
+test('changed rules or corrected memories rotate the host session and exclude stale handoff',async t=>{
+ const f=await fixture(t);await f.store.open(context);await f.store.prompt(context,'Work','old_request_1',workInput());
+ const old=(await f.store.load(context)).sessionId;
+ await f.store.checkpoint(context,{conclusion:'OLD_VALUE',evidence:'',next:'old step',blockers:''},0,'policy_v1');
+ await f.store.prompt(context,'Continue','new_request_1',workInput('policy_v2',[{id:'personal',version:2,kind:'memory',title:'Preference',content:'NEW_VALUE'}]));
+ const state=await f.store.load(context),last=f.calls.filter(c=>c.method==='session/prompt').at(-1);
+ assert.notEqual(last.args.sessionId,old);assert(last.args.content[0].text.includes('NEW_VALUE'));assert(!last.args.content[0].text.includes('OLD_VALUE'));assert(state.contextReceipt.omitted.some(s=>s.includes('交接')));
+});
+test('ambiguous request freezes its context and blocks replay after memory revocation',async t=>{
+ const f=await fixture(t);await f.store.open(context);f.lose();
+ await assert.rejects(f.store.prompt(context,'Work','uncertain_request_1',workInput()),/response lost/);
+ const pending=(await f.store.load(context)).pending;assert.equal(pending.userText,'Work');
+ await assert.rejects(f.restart().prompt(context,'Work','uncertain_request_1',workInput('revoked')),/已变化/);
+ await f.restart().prompt(context,'Work','uncertain_request_1',workInput());
+ assert.equal(f.calls.filter(c=>c.method==='session/prompt').at(-1).args.content[0].text,pending.text);
+});
+test('rules overflow fails explicitly; optional context is omitted with a visible receipt',()=>{
+ const large={id:'r',version:1,kind:'rule',title:'Rule',content:'x'.repeat(13000)};
+ assert.throws(()=>packWorkContext('work',workInput('x',[large]),{id:'t',version:1,kind:'task',title:'T',content:'G'}),/预算/);
+ const packed=packWorkContext('work',workInput('x',[{...large,kind:'skill',content:'x'.repeat(40000)}]),{id:'t',version:1,kind:'task',title:'T',content:'G'});
+ assert(packed.receipt.omitted.includes('Rule'));assert(packed.receipt.bytes<1500);
+});

@@ -1,3 +1,4 @@
+import { packWorkContext, validateHandoff, type WorkInputs, type ContextReceipt, type Handoff, type HandoffInput } from './work-memory';
 import { createHash, randomUUID } from "node:crypto";
 import {
   mkdir,
@@ -28,13 +29,18 @@ export type TaskSource = {
 export type TaskBinding = TaskTarget & {
   sessionId: string;
   sessionTitle?: string;
+  sessionHistory?: {sessionId:string;title:string;at:string}[];
+  contextFingerprint?: string;
+  contextReceipt?: ContextReceipt;
+  handoffs?: Handoff[];
+  preferences?: {personalMemory:boolean;skills:string[]};
   deviceId: string;
   directory: string;
   agentId?: string;
   sources: TaskSource[];
   note: string;
   updatedAt: string;
-  pending?: { requestId: string; text: string };
+  pending?: { requestId: string; text: string; userText?: string };
   lastRequestId?: string;
   delivery?: {
     id: string;
@@ -152,6 +158,12 @@ export class DshTaskWorkspace {
         // Reserve the identity before calling the host; a lost create response must not mint another session.
         await this.save(b);
       }
+      await this.ensureSession(b, context);
+      await this.valid();
+      return b;
+    });
+  }
+  private async ensureSession(b:TaskBinding, context:TaskContext) {
       const projection = await this.rpc("session/projections", {
         sessionId: b.sessionId,
       });
@@ -170,8 +182,52 @@ export class DshTaskWorkspace {
           title: b.sessionTitle || context.title,
         });
       }
-      await this.valid();
-      return b;
+  }
+  private async rotate(b:TaskBinding, context:TaskContext) {
+    const state=await this.status(context);
+    if(b.pending || state?.phase==='running')throw Error('请先结束本轮并核对未确认请求，再切换会话。');
+    if((b.sessionHistory?.length||0)>=50)throw Error('本任务已保留 50 个历史会话，请归档任务后继续。');
+    b.sessionHistory=[...(b.sessionHistory||[]),{sessionId:b.sessionId,title:b.sessionTitle||context.title,at:new Date().toISOString()}];
+    b.sessionId='acceptcat-'+randomUUID();
+    b.sessionTitle=`${context.title.slice(0,120)} · ${context.taskId.slice(0,8)} · ${b.sessionHistory.length+1}`;
+    delete b.lastRequestId;
+    await this.save(b);
+    await this.ensureSession(b,context);
+  }
+  async newSession(context:TaskContext) {
+    return this.exclusive(context,async()=>{
+      const b=await this.load(context);if(!b)throw Error('请先打开任务。');
+      // Resume a lost create response before reserving yet another identity.
+      const projection=await this.rpc('session/projections',{sessionId:b.sessionId});
+      if(!projection){await this.ensureSession(b,context);return;}
+      await this.rotate(b,context);
+    });
+  }
+  async abandonPending(context:TaskContext) {
+    return this.exclusive(context,async()=>{
+      const state=await this.status(context),b=state?.binding;
+      if(!b?.pending)return;
+      if(state?.phase==='running')throw Error('请先停止并核对原运行。');
+      b.lastRequestId=b.pending.requestId;delete b.pending;await this.save(b);
+      await this.rotate(b,context);
+    });
+  }
+  async preferences(target:TaskTarget,value:{personalMemory:boolean;skills:string[]}) {
+    if(!value||typeof value.personalMemory!=='boolean'||!Array.isArray(value.skills)||value.skills.length>2||value.skills.some(s=>typeof s!=='string'||!safeId.test(s)))throw Error('每轮最多选择两个 Skill。');
+    return this.exclusive(target,async()=>{const b=await this.load(target);if(!b)throw Error('请先打开任务。');if(b.pending)throw Error('请先核对原请求。');b.preferences={personalMemory:value.personalMemory,skills:[...new Set(value.skills)]};await this.save(b);});
+  }
+  async checkpoint(target:TaskTarget,value:HandoffInput,expectedVersion:number,fingerprint:string) {
+    const fields=validateHandoff(value);
+    return this.exclusive(target,async()=>{
+      const state=await this.status(target),b=state?.binding;if(!state||!b)throw Error('请先打开任务。');
+      if(b.pending||state.phase==='running')throw Error('请先结束并核对本轮，再保存交接。');
+      const version=b.handoffs?.at(-1)?.version||0;
+      if(version!==expectedVersion)throw Error('交接摘要已更新，请刷新核对。');
+      if(version>=100)throw Error('本任务已保留 100 版交接摘要。');
+      const outputs=[] as Handoff['outputs'];
+      for(const file of state.files.slice(0,20)){try{const bytes=await this.readOutput(target,file.name);outputs.push({name:file.name,sha256:createHash('sha256').update(bytes).digest('hex')});}catch{/* unsupported or oversized files are not claimed as verified evidence */}}
+      const h:Handoff={...fields,version:version+1,sessionId:b.sessionId,throughSeq:state.events.at(-1)?.seq||0,createdAt:new Date().toISOString(),fingerprint,sourceRefs:b.sources.map(({id,version,sha256})=>({id,version,sha256})),outputs};
+      b.handoffs=[...(b.handoffs||[]),h];await this.save(b);return h;
     });
   }
   async status(target: TaskTarget): Promise<DshTaskState | undefined> {
@@ -268,7 +324,7 @@ export class DshTaskWorkspace {
     if (!b) throw Error("请先打开任务。");
     await this.rpc("session/cancel", { sessionId: b.sessionId });
   }
-  async prompt(context: TaskContext, text: string, requestId: string) {
+  async prompt(context: TaskContext, text: string, requestId: string, inputs?: WorkInputs) {
     if (
       typeof text !== "string" ||
       !text.trim() ||
@@ -282,13 +338,25 @@ export class DshTaskWorkspace {
       if (b.pending && b.pending.requestId !== requestId)
         throw Error("上一条请求结果尚待核对，请先重试原请求。");
       if (b.lastRequestId === requestId) return;
-      const message = `任务：${context.title}\n任务 ID：${
+      if (b.pending && inputs && b.contextFingerprint!==inputs.fingerprint)throw Error('原请求的规则或记忆已变化，请核对原会话结果并结束待确认请求后继续。');
+      if(inputs && !b.pending){
+        if(b.contextFingerprint && b.contextFingerprint!==inputs.fingerprint){
+          b.contextFingerprint=inputs.fingerprint;
+          await this.rotate(b,context);
+        }
+        b.contextFingerprint=inputs.fingerprint;
+      }
+      await this.ensureSession(b,context);
+      const packed=inputs?packWorkContext(text,inputs,{id:context.taskId,version:context.version,kind:'task',title:context.title,content:context.goal},b.handoffs?.at(-1),b.sources.map(s=>({id:s.id,version:s.version,kind:'source',title:s.filename,content:JSON.stringify(s)}))):undefined;
+      const legacyMessage = `任务：${context.title}\n任务 ID：${
         context.taskId
       }（版本 ${context.version}）\n目标：${
         context.goal
       }\n本任务资料清单：${JSON.stringify(b.sources)}\n\n本次要求：\n${text}`;
+      const message=packed?.content??legacyMessage;
+      if(packed&&!b.pending)b.contextReceipt=packed.receipt;
       if (!b.pending) {
-        b.pending = { requestId, text: message };
+        b.pending = { requestId, text: message, userText:text };
         await this.save(b);
       }
       await this.valid();
@@ -364,6 +432,22 @@ export class DshTaskWorkspace {
         b.sources.push({ ...source, localName });
       await this.save(b);
       return { ...source, localName };
+    });
+  }
+  async stageMethod(target:TaskTarget,name:string,version:string,files:{path:string;text:string}[]) {
+    if(!safeId.test(name)||!/^[a-f0-9]{64}$/.test(version)||files.length>300||files.reduce((n,f)=>n+Buffer.byteLength(f.text,'utf8'),0)>900000)throw Error('方法资料超出范围。');
+    return this.exclusive(target,async()=>{
+      const b=await this.load(target);if(!b)throw Error('请先打开任务。');
+      const relative=`.acceptcat-methods/${name}-${version.slice(0,16)}`;
+      for(const file of files){
+        if(!file.path||file.path.includes('\\')||file.path.split('/').some(p=>!p||p==='.'||p==='..'||p.includes(':')))throw Error('方法资料路径无效。');
+        const parts=(relative+'/'+file.path).split('/');
+        for(let i=1;i<parts.length;i++)await mkdir(await this.filePath(b,parts.slice(0,i).join('/'),true)).catch(e=>{if(e.code!=='EEXIST')throw e;});
+        const destination=await this.filePath(b,relative+'/'+file.path,true);
+        await this.valid();
+        await writeFile(destination,file.text,{flag:'wx'}).catch(async e=>{if(e.code!=='EEXIST'||await readFile(destination,'utf8')!==file.text)throw Error('本地方法副本已改变，请核对后移走该副本再重试。');});
+      }
+      return relative;
     });
   }
   async filePath(b: TaskBinding, name: string, create = false) {

@@ -178,6 +178,11 @@ const Api: IElectronAPI = {
   localDsh: {
       taskOpen: (target, pick) => ipcRenderer.invoke('task-dsh-open', target, pick),
       taskStatus: (target) => ipcRenderer.invoke('task-dsh-status', target),
+      taskAbandonPending: target => ipcRenderer.invoke('task-dsh-abandon-pending',target),
+      taskKnowledge: target => ipcRenderer.invoke('task-dsh-knowledge',target),
+      taskPreferences: (target,value) => ipcRenderer.invoke('task-dsh-preferences',target,value),
+      taskCheckpoint: (target,value,version) => ipcRenderer.invoke('task-dsh-checkpoint',target,value,version),
+      taskNewSession: target => ipcRenderer.invoke('task-dsh-new-session',target),
       taskPrompt: (target, text, requestId) => ipcRenderer.invoke('task-dsh-prompt', target, text, requestId),
       taskNote: (target, note) => ipcRenderer.invoke('task-dsh-note', target, note),
       taskSubmit: (target, summary, names) => ipcRenderer.invoke('task-dsh-submit', target, summary, names),

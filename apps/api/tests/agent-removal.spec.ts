@@ -52,14 +52,14 @@ describe('owner Agent deletion and contact removal: actual HTTP/SQLite, syntheti
   it('migrates populated schema026 twice with every existing row, blob and checksum intact', async () => {
     const s = await setup(); await s.create()
     const blob = join(s.config.blobRoot, 'synthetic-retained.blob'); writeFileSync(blob, 'retained synthetic material')
-    s.db.exec('DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DELETE FROM schema_migrations WHERE version=27')
+    s.db.exec('DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DELETE FROM schema_migrations WHERE version=27')
     const tables = s.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(row => String(row.name))
     const snapshot = () => Object.fromEntries(tables.map(table => [table, createHash('sha256').update(JSON.stringify(s.db.prepare('SELECT * FROM "' + table + '" ORDER BY rowid').all())).digest('hex')]))
     const before = snapshot(); migrate(s.db); migrate(s.db)
     const after = snapshot(); expect(after.schema_migrations).not.toEqual(before.schema_migrations)
     delete after.schema_migrations; delete before.schema_migrations; expect(after).toEqual(before)
     expect(readFileSync(blob, 'utf8')).toBe('retained synthetic material')
-    expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(28)
+    expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(29)
     expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
   })
   it('requires owner and exact reviewed version, rejects human/system deletion and reauthorizes cached receipts', async () => {

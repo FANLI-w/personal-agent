@@ -1,3 +1,4 @@
+import { TaskKnowledgePanel } from './TaskKnowledgePanel';
 import { Alert, Button, Checkbox, Input, Segmented, Select } from "antd";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type {
@@ -162,7 +163,7 @@ export function TaskWorkPage({
     command(async () => {
       const pending = state?.binding.pending;
       const attempt = pending
-        ? { id: pending.requestId, text: pending.text }
+        ? { id: pending.requestId, text: pending.userText || pending.text }
         : request.current || { id: crypto.randomUUID(), text };
       request.current = attempt;
       await bridge!.taskPrompt(target, attempt.text, attempt.id);
@@ -210,6 +211,7 @@ export function TaskWorkPage({
           { value: "execute", label: "执行" },
           { value: "materials", label: "资料与成果" },
           { value: "details", label: "安排与验收" },
+          { value: "knowledge", label: "规则与记忆" },
         ]}
       />
       {(error || detail.error || connectionError) && (
@@ -229,6 +231,7 @@ export function TaskWorkPage({
         </details>
       )}
       {notice && <Alert type="success" message={notice} />}
+      {tab === 'knowledge' && <TaskKnowledgePanel key={kind+':'+taskId} target={target} state={state} canWork={canWork} busy={busy} command={command} />}
       {tab === "details" ? (
         children(async () => {
           setNotice("");

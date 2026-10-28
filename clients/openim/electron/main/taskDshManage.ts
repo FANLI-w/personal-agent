@@ -1,3 +1,8 @@
+import { createRequire } from 'node:module';
+import { readFile, readdir } from 'node:fs/promises';
+import { parseImportedSkill } from '@research-agent-platform/research-skills/import';
+import { WorkContext } from '@research-agent-platform/contracts';
+import type { WorkInputs, HandoffInput } from '../../../../integrations/deepseek-harness/desktop/work-memory';
 import { app, BrowserWindow, dialog, ipcMain, net } from "electron";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -8,7 +13,7 @@ import type {
   TaskTarget,
   TaskSource,
 } from "../../../../integrations/deepseek-harness/desktop/task-workspace";
-const { DshTaskWorkspace, taskKey } =
+const { DshTaskWorkspace, taskKey, digestContext, greetingOnly } =
   require("./localDshRuntime") as typeof import("../../../../integrations/deepseek-harness/desktop/local-runtime");
 type Connection = {
   account: Awaited<ReturnType<typeof dshAccount>>;
@@ -235,6 +240,79 @@ export function registerTaskDshBridge(
       url: `/api/v1/research-library/files/${selected.id}/content?version=${selected.version}`,
     };
   }
+  async function builtinSkills() {
+    const root=path.join(path.dirname(createRequire(path.join(app.getAppPath(),'package.json')).resolve('@research-agent-platform/research-skills/import')),'skills');
+    const entries=await readdir(root,{withFileTypes:true});
+    return Promise.all(entries.filter(e=>e.isDirectory()).map(async e=>{
+      const text=await readFile(path.join(root,e.name,'SKILL.md'),'utf8');
+      const match=/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/.exec(text);
+      if(!match)throw Error('内置 Skill 元数据不完整。');
+      const meta=parseImportedSkill([{path:'SKILL.md',text}]);
+      if(meta.name!==e.name)throw Error('内置 Skill 名称不一致。');
+      return {name:e.name,description:String(meta.description),content:meta.instructions,version:digestContext(text)};
+    }));
+  }
+  async function workInputs(a:Awaited<ReturnType<typeof authorized>>,text='',prepare=false) {
+    let policy;
+    try{policy=WorkContext.parse(await business(a.c,`/api/v1/work-context/${a.context.kind}/${a.context.taskId}`));}
+    catch{throw Error('无法读取任务规则与记忆。请检查权限、网络及第二步配套后台；未使用旧缓存继续执行。');}
+    const b=await a.store.load(a.context), prefs=b?.preferences;
+    let memories:any[]=[];
+    if(prefs?.personalMemory&&policy.privateMemoryAllowed){
+      const response=await business(a.c,'/api/v1/me/memories?status=confirmed&limit=100');
+      // business() unwraps data; the paginated data is the record array.
+      memories=Array.isArray(response)?response:response.items||[];
+    }
+    const skills=await builtinSkills(), chosen=skills.filter(s=>prefs?.skills.includes(s.name));
+    if((prefs?.skills.length||0)!==chosen.length)throw Error('选定的 Skill 已不可用，请重新选择。');
+    const methodFiles=new Map<string,{path:string;text:string}[]>();
+    for(const skill of chosen){
+      const root=path.join(path.dirname(createRequire(path.join(app.getAppPath(),'package.json')).resolve('@research-agent-platform/research-skills/import')),'skills',skill.name);
+      const files:{path:string;text:string}[]=[];
+      const collect=async(directory:string,prefix='')=>{for(const e of await readdir(directory,{withFileTypes:true})){
+        if(e.isDirectory())await collect(path.join(directory,e.name),prefix+e.name+'/');
+        else if(e.isFile()&&/\.(md|ya?ml|json|txt|csv|bib)$/i.test(e.name))files.push({path:prefix+e.name,text:await readFile(path.join(directory,e.name),'utf8')});
+        else throw Error('内置方法包含不支持的文件。');
+      }};
+      await collect(root);parseImportedSkill(files);files.sort((a,b)=>a.path.localeCompare(b.path));
+      skill.version=digestContext(files);methodFiles.set(skill.name,files);
+    }
+    const active=policy.records.filter(r=>r.status==='active');
+    const fingerprint=digestContext({task:[a.context.title,a.context.goal],platform:policy.platform,rules:active.map(r=>[r.id,r.version]).sort(),memories:memories.map(m=>[m.id,m.version]).sort(),skills:chosen.map(s=>[s.name,s.version]),privateAllowed:policy.privateMemoryAllowed});
+    const related=(title:string)=>title.toLowerCase().split(/[\s，。；、]+/).filter(Boolean).some(t=>text.toLowerCase().includes(t));
+    const relevantMemories=memories.filter(m=>m.status==='confirmed'&&(m.scope==='general'||related(m.topic)));
+    const entries:WorkInputs['entries']=[{id:'platform',version:policy.platform.version,kind:'platform',title:'平台基本规则',content:policy.platform.content},
+      ...active.filter(r=>r.kind==='rule'||r.sourceTaskId===a.context.taskId||related(r.title)).map(r=>({id:r.id,version:r.version,kind:r.kind, title:`${r.scope==='lab'?'课题组':'项目'} · ${r.title}`,content:r.content})),
+      ...relevantMemories.map(m=>({id:m.id,version:m.version,kind:'memory' as const,title:`个人偏好 · ${m.topic}`,content:m.content})),
+      ...chosen.map(s=>({id:s.name,version:s.version,kind:'skill' as const,title:s.name,content:s.content}))];
+    if(prepare&&!greetingOnly(text))for(const skill of chosen){
+      const directory=await a.store.stageMethod(a.context,skill.name,skill.version,methodFiles.get(skill.name)!);
+      const entry=entries.find(e=>e.kind==='skill'&&e.id===skill.name)!;
+      entry.content=`方法目录：${directory}；引用文件按需使用 read 工具读取，不执行任何打包脚本。\n`+entry.content;
+    }
+    return {policy,skills:skills.map(({content:_content,...s})=>s),inputs:{fingerprint,entries,omitted:active.filter(r=>r.kind==='memory'&&r.sourceTaskId!==a.context.taskId&&!related(r.title)).map(r=>r.title)} satisfies WorkInputs};
+  }
+  ipcMain.handle('task-dsh-knowledge',async(event,target:TaskTarget)=>{
+    const a=await authorized(event,target), result=await workInputs(a);
+    return {policy:result.policy,skills:result.skills};
+  });
+  ipcMain.handle('task-dsh-preferences',async(event,target:TaskTarget,value:{personalMemory:boolean;skills:string[]})=>{
+    const a=await authorized(event,target,true),result=await workInputs(a);
+    if(value.personalMemory&&!result.policy.privateMemoryAllowed)throw Error('共享任务不读取私人记忆。');
+    if(!Array.isArray(value.skills)||value.skills.some(name=>!result.skills.some(s=>s.name===name)))throw Error('请选择可用的内置 Skill。');
+    await a.store.preferences(target,value);
+  });
+  ipcMain.handle('task-dsh-checkpoint',async(event,target:TaskTarget,value:HandoffInput,version:number)=>{
+    const a=await authorized(event,target,true),result=await workInputs(a);
+    const b=await a.store.load(target);for(const s of b?.sources||[])await source(a.c,s,target);
+    return a.store.checkpoint(target,value,version,result.inputs.fingerprint);
+  });
+  ipcMain.handle('task-dsh-abandon-pending',async(event,target:TaskTarget)=>{
+    const a=await authorized(event,target,true);await a.store.abandonPending(a.context);
+  });
+  ipcMain.handle('task-dsh-new-session',async(event,target:TaskTarget)=>{
+    const a=await authorized(event,target,true);await workInputs(a);await a.store.newSession(a.context);
+  });
   ipcMain.handle("task-dsh-open", async (event, target: TaskTarget, pick = false) => {
     const a = await authorized(event, target, true);
     let directory: string | undefined;
@@ -263,7 +341,9 @@ export function registerTaskDshBridge(
       const a = await authorized(event, target, true),
         b = await a.store.load(target);
       for (const s of b?.sources || []) await source(a.c, s, target);
-      await a.store.prompt(a.context, text, requestId);
+      const work=await workInputs(a,text,true);
+      await authorized(event,target,true);
+      await a.store.prompt(a.context, text, requestId, work.inputs);
     },
   );
   ipcMain.handle("task-dsh-note", async (event, target: TaskTarget, note: string) => {

@@ -30,6 +30,11 @@ export type LocalDshBridge = {
     | import("../../../../integrations/deepseek-harness/desktop/task-workspace").DshTaskState
     | undefined
   >;
+  taskAbandonPending: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget)=>Promise<void>;
+  taskKnowledge: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget) => Promise<{policy: import('@research-agent-platform/contracts').WorkContext; skills:{name:string;description:string;version:string}[]}>;
+  taskPreferences: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget, value:{personalMemory:boolean;skills:string[]})=>Promise<void>;
+  taskCheckpoint: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget, value:import('../../../../integrations/deepseek-harness/desktop/work-memory').HandoffInput, expectedVersion:number)=>Promise<unknown>;
+  taskNewSession: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget)=>Promise<void>;
   taskPrompt: (
     target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
     text: string,

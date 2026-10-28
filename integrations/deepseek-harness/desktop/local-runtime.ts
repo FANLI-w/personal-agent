@@ -183,3 +183,5 @@ export class LocalDshRuntime {
     return this.stopping;
   }
 }
+
+export * from './work-memory';

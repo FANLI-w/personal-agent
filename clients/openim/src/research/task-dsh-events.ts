@@ -20,7 +20,7 @@ export function taskEventRows(
       if (e.type === "user/message" && data.source?.kind !== "user") return [];
       if (
         e.type === "user/message" &&
-        text.startsWith("任务：") &&
+        (text.startsWith("任务：") || text.startsWith("以下为 AcceptCat 当前工作上下文。")) &&
         text.includes("\n\n本次要求：\n")
       )
         text = text.split("\n\n本次要求：\n").slice(1).join("\n\n本次要求：\n");

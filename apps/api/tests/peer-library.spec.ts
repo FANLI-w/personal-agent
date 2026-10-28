@@ -51,13 +51,13 @@ async function get(s:Awaited<ReturnType<typeof pair>>,name:'peerRequests'|'peerS
 describe('peer local-library coordination (real HTTP/SQLite, no file relay)',()=>{
  it('upgrades populated schema025 twice without changing old rows, blob bytes or migration checksums',async()=>{
   const s=await setup();writeFileSync(join(s.config.blobRoot,'synthetic-retained.blob'),'synthetic immutable original')
-  s.db.exec('DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DELETE FROM schema_migrations WHERE version=27; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DELETE FROM schema_migrations WHERE version=26')
+  s.db.exec('DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DELETE FROM schema_migrations WHERE version=27; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DELETE FROM schema_migrations WHERE version=26')
   const tables=(s.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name!='schema_migrations' ORDER BY name").all()).map(r=>String(r.name))
   const snapshot=()=>Object.fromEntries(tables.map(table=>[table,createHash('sha256').update(JSON.stringify(s.db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all())).digest('hex')]))
   const before=snapshot(),history=s.db.prepare('SELECT * FROM schema_migrations').all();migrate(s.db);migrate(s.db)
   expect(readFileSync(join(s.config.blobRoot,'synthetic-retained.blob'),'utf8')).toBe('synthetic immutable original');expect(snapshot()).toEqual(before);expect(s.db.prepare('SELECT * FROM schema_migrations WHERE version<=25').all()).toEqual(history)
   expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);expect(s.db.prepare('PRAGMA integrity_check').get()!.integrity_check).toBe('ok')
-  expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(28)
+  expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(29)
  })
  it('queues while provider offline, returns only approved metadata and binds the selected attempt to both devices',async()=>{
   const s=await pair(),key=randomUUID(),request=await s.ok('createPeerRequest',{deviceId:'device_A',providerId:'B',query:'record'},{},'A',key)
