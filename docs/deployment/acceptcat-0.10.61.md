@@ -1,4 +1,12 @@
-# AcceptCat 0.10.61 合并发布准备
+# AcceptCat 0.10.61 合并与公开发布
+
+## 实际发布结果
+
+2026-10-28 10:41:48（北京时间），[PR127](https://github.com/luoyan96/personal-agent/pull/127)普通合并至main/c364116f1828d544fb9950a125d456e5363996ee，保留PR125和PR126历史，两者也已标记合并。PR127/c3bcd63的Linux Node22.19、Linux Node24、Windows Node24 Foundation及Windows打包全部通过。Windows首轮A12超过默认5秒时限（833/834通过）；本机该项复核通过，同head远端第二次完整检查通过，未修改断言或放宽超时。日志保留在下述证据目录。
+
+10:43:31公开[稳定Latest v0.10.61](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.61)，Release ID426206384；标签固定实际安装包源码cc079bec07c7018c1fa28b7fa275e728dac2344d。四附件远端state=uploaded、字节数及SHA256与本机逐一一致；匿名API Latest和标签、公开latest.yml/SHA256SUMS.txt下载及摘要均核验通过。未覆盖0.10.60，未运行安装器或操作用户客户端，未部署任何后台或迁移。
+
+下一步由使用者安装并验收真实群聊、Agent、原生文件/截图交互；后台contract0.35/schema028与OpenIM撤回回调升级单独安排。以下准备记录保留当时的网络失败及本机检查边界。
 
 2026-10-28，负责人明确要求合并此前修改并上传 Release。独立工作副本 release/chat-integration-20261028 从 PR126/36b30bf 保留后台修复，再普通合并 PR125/6e6f58c；整合提交447fab0，产品代码无冲突，current-state/project-log 两份文档保留双方记录。
 
