@@ -2343,3 +2343,11 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 首次23:34:57部署探针用空POST体导致参数校验400，在stage=stopped、正式迁移前中止，自动恢复原f58 API/worker/schema027。修正合法请求字段与幂等头后副本复查401、重新备份并完整上线；未改产品鉴权或放宽断言，attempt1证据保留。早期只读SQL引号和末次观察脚本换行语法错误也修正重跑，没有修改业务数据。23:48:15（上线后584秒）API healthy/worker running，两者重启0、PRODUCTION_OPERATION_FAILED事件0；worker无独立Docker健康检查，ready仍标harness not_verified。
 
 最终同机备份路径、hash、兼容回退镜像与恢复步骤见docs/deployment/dsh-team-20261028.md。脱敏证据已通过Workbench下载到Git外D:/deepseek-agent/.runtime/dsh-team-deploy-20261028，归档SHA256 ecd314320c83e304f426e9a8b0cbed4b4daf3d436e04a3146c8090007b1314de，另存公网/GitHub状态及观察截图；私人数据与凭据未下载。已更新current-state、三步计划及第二/三步记录，下一步是0.10.70候选的真实双机/模型验收。未合并PR、公开Release或代安装；部署完成与真实体验验收分开记录。
+
+## 2026-10-29 合并 DSH 三步首版并公开 Windows 0.10.70
+
+负责人明确授权“可以合并并发布新的release版本”。核对main仍93da480、工作树干净、PR133完整包含PR130/131/132，未带入其他待审PR。head2341933的Linux Node22.19、Linux Node24、Windows Node24 Foundation与Windows打包四项CI全成功。GitHub连接器合并403（集成权限不足），改本机已登录gh按固定head普通合并；00:04:00（北京时间）main为dcffcd01cf4f9542899ba9f8c3a81aec9b2cb409，合并树与受审head一致，PR130–132于00:04:02一并MERGED。原桌面开发目录及用户客户端保持。
+
+00:35:21公开稳定Latest v0.10.70，Release426880701，标签固定实际安装器产品a5534b59511abe453587f9878d5d9dea5663808e；后续仅测试/CI覆盖/文档变化，运行代码一致。安装器366896002字节、SHA256 405ecffd4e6853f279c85ab6772135d96b5933ae1d26e1e825fb43efb99a2f36。四附件远端state=uploaded、大小与SHA256逐一一致，匿名Latest、公开latest.yml/SHA256SUMS下载及标签解析核验通过，旧版0.10.61保留。此次不重复部署后台，保持3162c814/contract0.37.0/schema030。
+
+代理上传大文件缓慢，停止该未完成传输后确认草稿仅三个小附件，改直连完成安装器；未公开半成品。草稿按未公开tag路径读取出现404，改认证Release列表定位原ID后核验通过；没有重复上传成品或放宽摘要断言。证据在Git外D:/deepseek-agent/.runtime/release-dsh-0.10.70-20261028，含proxy-upload-stopped、merged-pr133、draft/published-receipt、公开小文件及tag-source。README、产品状态、路线图、三步计划、current-state和发布记录通过独立PR134交接；纯文档check:content及git diff --check通过，未把自动化/合成检查说成真人双机与真实模型验收。
