@@ -24,6 +24,7 @@ import { registerChatImageActionsBridge } from "./chatImageActionsManage";
 import { registerChatScreenshotBridge } from "./chatScreenshotManage";
 import { registerChatFileActionsBridge } from "./chatFileActionsManage";
 import { registerDesktopWorkBridge } from "./desktopWorkManage";
+import { registerLocalDshBridge } from "./localDshManage";
 import { registerDesktopUpdateBridge } from "./updateManage";
 import { registerMessageNotificationBridge } from "./messageNotificationManage";
 import { registerFeishuAuthorizationBridge, registerFeishuLibraryBridge } from "./feishuManage";
@@ -69,6 +70,7 @@ const readPreference = (key: unknown) => {
 };
 
 export const setIpcMainListener = () => {
+  registerLocalDshBridge();
   registerLocalFolderBridge();
   registerPeerLibraryBridge();
   registerImageClipboardBridge();

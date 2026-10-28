@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react";
 import electron from "vite-electron-plugin";
 import { customStart, loadViteEnv } from "vite-electron-plugin/plugin";
 import pkg from "./package.json";
+import { buildLocalDshRuntime } from "../../integrations/deepseek-harness/desktop/build.mjs";
 import legacy from "@vitejs/plugin-legacy";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
@@ -36,6 +37,12 @@ export default defineConfig(({ command, mode }) => {
       },
     },
     plugins: [
+      {
+        name: "acceptcat-local-dsh-runtime",
+        async buildStart() {
+          buildLocalDshRuntime(clientRoot, path.join(electronOutput, "main/localDshRuntime.js"));
+        },
+      },
       react(),
       electron({
         include: ["electron"],

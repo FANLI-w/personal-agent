@@ -2234,3 +2234,13 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 10:43:31公开稳定Latest v0.10.61，Release ID426206384，标签固定安装包源码cc079bec07c7018c1fa28b7fa275e728dac2344d。EXE88,252,826字节/SHA256 f30a75fa7b0a1191a991f4f4377c4085d20b7f6f49e9022445007409a865df74；四附件上传后逐一核对远端大小、uploaded状态及SHA256。匿名Latest、标签源码、公开latest.yml与SHA256SUMS.txt下载/摘要核验通过。证据D:/deepseek-agent/.runtime/release-chat-20261028，含pr127-merge.json、pr127-checks-final.json、release-draft-verified.json、release-public-verified.json与release-tag-verified.json。
 
 原0.10.60保持；未代用户安装或用真实账号、资料、模型验收，未操作原桌面开发目录或部署后台。已知线上仍a174c17/160805d4/contract0.34/schema027；schema028及OpenIM撤回同步单独安排。下一步为用户安装体验与独立后台升级评估。README下载入口、current-state及deployment/acceptcat-0.10.61.md同步实际公开状态。
+
+## 2026-10-28 Windows 本地 DSH 独立页面试做
+
+负责人明确要求先将安装在 D:\0cat\dsh 的 Windows DeepSeek Harness 接入 AcceptCat，作为独立页面，保留旧工作台待后续评估替换。在独立 clone acceptcat-chat-experience 从实际 main/93da480 创建 feat/local-dsh-page，未改原桌面目录和负责人运行中的客户端。核验安装的 DSH 产品版本0.2.1-rc.3/构建be72761ee1a6736ebcdf4f3739363b083ae53c98，采用官方 CLI Web 入口、随机 loopback 端口和独立 DSH_HOME。未抽取上游源码，未复制现有 DSH 配置或平台密钥。
+
+新增 DSH 导航、启动/停止/目录选择、真实状态与沙箱 BrowserView；切换聊天隐藏后恢复，覆盖层展开时隐藏，退出登录/主文档重载/退出应用时仅清理自有子进程树。适配实现位于 integrations/deepseek-harness/desktop，经构建进入独立安装包。保持 Electron22和 OpenIM ABI；真实原生测试发现 Promise.withResolvers、AbortSignal.any、Array.toSorted 缺口，采用已有锁文件 core-js3.49.0及局部 DOM API 兼容层修复，不修改聊天页面和上游 DSH 源码。完整许可随适配模块保留。
+
+客户端/Electron 类型检查、14项定向测试、Web/NSIS构建、五个打包入口与打包程序启动冒烟通过。实际组件+实际主进程管理器+真实本地 DSH 的合成 AcceptCat 窗口身份夹具15项通过，包括页面恢复、全局覆盖层、1024×726、停止/重启/登出清理；Computer Use 只核对新建测试窗口，确认原生视图和首次配置入口可见。首次兼容失败、测试服务器监视临时文件导致 EBUSY/connection-refused 的测试设施失败均保留；修复测试监视范围后重跑通过。DSH 修复后无应用 JavaScript 错误，开发时 Ant Design findDOMNode、DSH CSP 和打包启动既有 electron-log 重复初始化警告未隐藏。未用真实账号、密钥或资料调用模型，未安装第三方插件，未验证全部 DSH 桌面原生扩展。
+
+本地试用包0.10.63：D:/deepseek-agent/.runtime/local-dsh-page-20261028/windows/AcceptCat_0.10.63.exe，88,306,454字节，SHA256 2e95d2807002404128be9b3aa0d41bd4def8eed263d5a97880ea064a282209f7。没有合并、公开Release、安装到负责人目录或后台部署，公开Latest仍0.10.61。本分支不包含未合并的群成员身份修复PR129；两批独立审阅。DSH数据当前按Windows用户保存，独立于AcceptCat账号；既有聊天仍走既有后台，旧工作台未移除。下一步由负责人安装、配置模型、验证真实聊天/工具/插件，再设计与AcceptCat Agent、任务和团队权限衔接。完整启动、构建、边界及证据见docs/development/local-dsh-page.md。

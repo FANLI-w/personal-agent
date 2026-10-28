@@ -175,6 +175,13 @@ const Api: IElectronAPI = {
   getDataPath,
   getVersion: () => process.version,
   getPlatform,
+  localDsh: {
+    status: () => ipcRenderer.invoke("local-dsh-status"),
+    choose: () => ipcRenderer.invoke("local-dsh-choose"),
+    start: () => ipcRenderer.invoke("local-dsh-start"),
+    stop: () => ipcRenderer.invoke("local-dsh-stop"),
+    show: (bounds) => ipcRenderer.invoke("local-dsh-show", bounds),
+  },
   setMessageUnreadCount: (count) => ipcRenderer.invoke("set-message-unread-count", count),
   getSystemVersion: process.getSystemVersion,
   subscribe,

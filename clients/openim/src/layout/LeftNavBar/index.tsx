@@ -1,5 +1,6 @@
 import {
   BookOutlined,
+  CodeOutlined,
   CompassOutlined,
   ContactsOutlined,
   FolderOpenOutlined,
@@ -61,6 +62,7 @@ const NavList = [
     title: "工作台",
     path: "/workbench",
   },
+  ...(window.electronAPI ? [{ icon: contact_icon, icon_active: contact_icon_active, title: "DSH", path: "/dsh" }] : []),
   {
     icon: contact_icon,
     icon_active: contact_icon_active,
@@ -162,6 +164,8 @@ const NavItem = ({
             <MessageOutlined />
           ) : path === "/contact" ? (
             <ContactsOutlined />
+          ) : path === "/dsh" ? (
+            <CodeOutlined />
           ) : path === "/workbench" ? (
             <FolderOpenOutlined />
           ) : path === "/library" ? (
