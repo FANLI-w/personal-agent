@@ -2252,3 +2252,5 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 负责人要求完成内置运行时、自动启动和同一账号模型接入。在 feat/local-dsh-page 独立 clone 开发，重新获取 main/93da480，保留 PR129 独立分支。Windows 候选 0.10.64 固定官方 DSH 0.2.1-rc.3 完整发行树及 SHA512；构建下载静态解包并校验，用户无需另装 DSH。Cookie/CSRF 网关沿用私人模型权限，提供方 Key 保留后台；本机工具循环、账号独立 home、退出清理与临时模型连接已实现。
 
 实际 Electron22/BrowserView、内置 DSH、当前 API 和合成模型验证自动启动、默认模型免二次 Key、回复、read 工具实际读取合成文件、页面切换、双账号隔离和退出停止。修复 Node16 连接关闭兼容和 pi-ai store:false 参数校验，失败证据保留；未用真实账号、模型 Key 或私人资料。定向桌面 16 项与双类型通过。完整 CI 与成品交付记录随后补充；当前未合并、未公开发布、未部署后台，新网关上线须核对生产已有 schema028 待部署差异。详情见 development/local-dsh-integration.md；证据在 Git 外 dsh-integrated-20261028。
+
+本批最终交付补充：产品 2504dff60f5eddd638e58eca03a3ecb60e588ccb 已推送 PR130 并更新描述。最终根 CI837项/66文件、生产3项/B0/Web、双类型、16项桌面定向和11项真实原生集成通过。成品NSIS/五个入口/DSH完整树/更新清单、打包客户端启动与成品内DSH启动通过。安装包 Git外 dsh-integrated-20261028/windows/AcceptCat_0.10.64.exe，366806984字节，SHA256 880cffe8e41d7f6f14f6622ad450d6b49cfc3be807725616d8a073b0b18900aa。CJS/ESM边界修正已在最终包核验；旧构建和首次失败日志保留。仍未执行用户安装、真实模型、合并、公开发布或后台部署，Latest核对仍v0.10.61。后续仅文档回填不改变本安装器源码。

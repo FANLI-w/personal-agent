@@ -68,7 +68,15 @@ corepack pnpm@10.28.0 run build:win
 
 原生测试使用隔离 Electron 测试窗口与实际 BrowserView；Browser 插件不在本会话技能列表，普通网页截图无法包含原生嵌入视图。保留 `qa-results.json`、`model-calls.json`、`dsh-account.png`、首次失败记录和构建日志。首次发现关闭 API 兼容问题及 `store:false` 请求兼容问题，均已修复并复核，不删除失败记录。
 
-完整 CI、最终安装包路径/校验及打包后验证结果在本批交付记录补充。代码合并、公开 Release 与后台部署尚未执行。当前线上后台缺少这两个接口，不能仅安装客户端就宣称真实账号已打通。
+产品提交 **2504dff60f5eddd638e58eca03a3ecb60e588ccb** 已推送 PR130。最终完整 CI **837 项/66 文件**、生产 3 项/B0/Web、16 项桌面定向与双类型通过。实际原生集成 11 项通过，覆盖窄桌面窗口和账号 A→B→A。修正 CJS 打包边界，共享模型契约随独立 runtime 打包，避免 Electron22 直接 require 仅 ESM 的 contracts 包；最终包启动冒烟返回 `OPENIM_ELECTRON_READY`，另从成品 `resources/dsh` 成功启动真实 DSH，不依赖开发目录或原外部安装。保留既有 electron-log 重复初始化警告及 DSH 开发探针 CSP 警告，没有把它们称为无警告运行。
+
+最终 NSIS、包内五个入口、DSH 完整发行树哈希和更新清单校验通过：
+
+- `D:\deepseek-agent\.runtime\dsh-integrated-20261028\windows\AcceptCat_0.10.64.exe`
+- **366,806,984 字节**，SHA256 **880cffe8e41d7f6f14f6622ad450d6b49cfc3be807725616d8a073b0b18900aa**。
+- 同目录含 blockmap、候选 latest.yml 和 SHA256SUMS.txt，均未上传公开更新通道。先前构建日志 `build-before-cjs-fix.log` 不代表该最终安装器。
+
+代码合并、公开 Release 与后台部署尚未执行，公开 Latest 重新核对仍为 v0.10.61。当前线上后台缺少这两个接口，不能仅安装客户端就宣称真实账号已打通。远端 CI 状态另行查询，以上为本机最终检查结果。未运行安装器覆盖负责人客户端。
 
 后台上线应从包含当前 main 的固定 PR 提交构建并通过既有部署备份/回退流程，确认实际生产 schema；本批没有新迁移，但当前 main 含此前尚未部署的 schema028，不能默认直接覆盖生产镜像。现有客户端继续使用旧接口。验证新接口匿名 401、真实账号模型元数据及可取消的小请求后，再由负责人在客户端验收。
 
