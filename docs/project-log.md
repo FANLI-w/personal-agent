@@ -2234,3 +2234,11 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 10:43:31公开稳定Latest v0.10.61，Release ID426206384，标签固定安装包源码cc079bec07c7018c1fa28b7fa275e728dac2344d。EXE88,252,826字节/SHA256 f30a75fa7b0a1191a991f4f4377c4085d20b7f6f49e9022445007409a865df74；四附件上传后逐一核对远端大小、uploaded状态及SHA256。匿名Latest、标签源码、公开latest.yml与SHA256SUMS.txt下载/摘要核验通过。证据D:/deepseek-agent/.runtime/release-chat-20261028，含pr127-merge.json、pr127-checks-final.json、release-draft-verified.json、release-public-verified.json与release-tag-verified.json。
 
 原0.10.60保持；未代用户安装或用真实账号、资料、模型验收，未操作原桌面开发目录或部署后台。已知线上仍a174c17/160805d4/contract0.34/schema027；schema028及OpenIM撤回同步单独安排。下一步为用户安装体验与独立后台升级评估。README下载入口、current-state及deployment/acceptcat-0.10.61.md同步实际公开状态。
+
+## 2026-10-28：建群分类、真实群主与待接受成员
+
+负责人反馈0.10.61建群把人和智能体混在“我的好友”，群详情出现imAdmin且选中的同事不见。独立clone从main/93da480新建fix/group-member-identities。代码核对发现业务群主本就是创建者，受邀同事尚待接受，错误在前端使用SDK技术名单且省略待接受状态。保留OpenIM技术群主和后台授权边界，不强行转移原生角色。
+
+建群/邀请按联系人和智能体分类、归属搜索、业务contactId提交，完整分页去重；群详情/人数/管理改用业务会话和成员记录，真人群主与待接受明确显示。未接受身份不进入@名单，已加入/待接受不可重复邀请。同步失败保持业务群ID并仅重试同步，账号/会话切换隔离迟到操作。真实群主沿用既有版本校验接口移除成员/取消邀请；后台、契约与数据库未改。客户端候选0.10.62，公开0.10.61未变。
+
+45项定向检查、renderer/Electron类型和Web构建通过。实际React组件+合成账号/服务的隔离Edge10项交互通过，零应用错误，既有Antd弃用警告和早期两个定位失败日志保留。证据D:/deepseek-agent/.runtime/group-identities-20261028；说明见development/group-member-identities.md。尚未进行真实账号邀请/安装/模型验收，未合并、部署或公开发布；安装包生成结果另补。

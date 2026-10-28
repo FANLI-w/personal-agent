@@ -7,6 +7,8 @@ import { OverlayVisibleHandle, useOverlayVisible } from "@/hooks/useOverlayVisib
 import GroupMemberList from "./GroupMemberList";
 import GroupMemberListHeader from "./GroupMemberListHeader";
 import GroupSettings from "./GroupSettings";
+import { researchMode } from "@/research/api";
+import { ResearchGroupMembers } from "@/research/ResearchGroupMembers";
 
 const GroupSetting: ForwardRefRenderFunction<OverlayVisibleHandle, unknown> = (
   _,
@@ -46,7 +48,9 @@ const GroupSetting: ForwardRefRenderFunction<OverlayVisibleHandle, unknown> = (
       width={460}
       getContainer={"#chat-container"}
     >
-      {!isPreviewMembers ? (
+      {researchMode ? (
+        <ResearchGroupMembers manage onInvite={closeOverlay} />
+      ) : !isPreviewMembers ? (
         <GroupSettings
           closeOverlay={closeOverlay}
           updateTravel={() => setIsPreviewMembers(true)}

@@ -26,6 +26,7 @@ import {
 import ChatDetailsDrawer from "./ChatDetailsDrawer";
 import HistorySearch from "./HistorySearch";
 import { WorkbenchTaskInbox } from "@/research/WorkbenchTaskInbox";
+import { useGroupChatRoster } from "@/research/GroupChatRoster";
 
 const menuList = [
   {
@@ -52,6 +53,7 @@ i18n.on("languageChanged", () => {
 });
 
 const ChatHeader = () => {
+  const roster = useGroupChatRoster();
   const [aboutMe, setAboutMe] = useState(false);
   const [details, setDetails] = useState(false);
   const [history, setHistory] = useState(false);
@@ -105,7 +107,7 @@ const ChatHeader = () => {
         });
         break;
       case 2:
-        if (window.electronAPI) {
+        if (window.electronAPI || (researchMode && isGroupSession)) {
           setDetails(true);
           break;
         }
@@ -151,7 +153,27 @@ const ChatHeader = () => {
             {isGroupSession && currentUserIsInGroup && (
               <div className="flex items-center text-xs text-[var(--sub-text)]">
                 <img width={20} src={group_member} alt="member" />
-                <span>{currentGroupInfo?.memberCount}</span>
+                <span>
+                  {researchMode
+                    ? roster.conversation
+                      ? `${
+                          roster.conversation.members.filter(
+                            (m) => m.status === "joined",
+                          ).length
+                        } 位已加入${
+                          roster.conversation.members.some(
+                            (m) => m.status === "invited",
+                          )
+                            ? ` · ${
+                                roster.conversation.members.filter(
+                                  (m) => m.status === "invited",
+                                ).length
+                              } 位待接受`
+                            : ""
+                        }`
+                      : "正在读取成员"
+                    : currentGroupInfo?.memberCount}
+                </span>
               </div>
             )}
           </div>

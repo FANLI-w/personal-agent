@@ -1,5 +1,9 @@
 import { createContext, useContext, type ReactNode } from "react";
-import type { Contact, ResponseFor } from "@research-agent-platform/contracts";
+import type {
+  Contact,
+  Conversation,
+  ResponseFor,
+} from "@research-agent-platform/contracts";
 import { useResearchRead } from "./useResearchRead";
 import { researchApi } from "./api";
 import { useResearchStore } from "./store";
@@ -8,6 +12,9 @@ type RosterRead = {
   data?: ResponseFor<"chatConversationContacts">;
   error: string;
   loading: boolean;
+  conversation?: Conversation;
+  memberContacts?: Contact[];
+  refresh?: () => Promise<void>;
 };
 const RosterContext = createContext<RosterRead>({ error: "", loading: false });
 export const useGroupChatRoster = () => useContext(RosterContext);
@@ -25,6 +32,12 @@ export function GroupChatRoster({
   );
   const read = useResearchRead(
     async (signal) => {
+      const conversation = (
+        await researchApi("chatConversation", {
+          params: { id: mapping?.researchConversationId || "" },
+          signal,
+        })
+      ).data;
       let cursor: string | undefined;
       let result: ResponseFor<"chatConversationContacts"> | undefined;
       const contacts = new Map<string, Contact>();
@@ -42,12 +55,50 @@ export function GroupChatRoster({
       } while (cursor && contacts.size < 2000);
       if (cursor)
         throw new Error("群成员超过本次可读取范围，请缩小群规模后再提及助手。");
-      return { ...result!, data: [...contacts.values()] };
+      const joinedContacts = [...contacts.values()];
+      // Invitations are not joined roster entries. Read only profiles this actor
+      // is allowed to see, and never make them mentionable before acceptance.
+      const pendingContacts = await Promise.all(
+        conversation.members
+          .filter((m) => m.status === "invited")
+          .map(async (m) => {
+            try {
+              return (
+                await researchApi("chatContact", {
+                  params: { id: m.contactId },
+                  signal,
+                })
+              ).data;
+            } catch (error) {
+              if (signal.aborted) throw error;
+              return undefined;
+            }
+          }),
+      );
+      return {
+        ...result!,
+        data: joinedContacts,
+        conversation,
+        memberContacts: [
+          ...joinedContacts,
+          ...pendingContacts.filter((c): c is Contact => !!c),
+        ],
+      };
     },
     `${imID}:group-roster:${mapping?.researchConversationId}`,
     mapping?.kind === "group",
   );
-  return <RosterContext.Provider value={read}>{children}</RosterContext.Provider>;
+  return (
+    <RosterContext.Provider
+      value={{
+        ...read,
+        conversation: read.data?.conversation,
+        memberContacts: read.data?.memberContacts,
+      }}
+    >
+      {children}
+    </RosterContext.Provider>
+  );
 }
 
 export function groupContactDescription(
