@@ -135,3 +135,6 @@ paper-framework-figure-studio-pro 固定修订仅在 Git 外测试完整包往�
 2026-10-28，PR130 后续 0.10.64 用固定校验的官方 DSH Windows 发行树替代用户外部安装路径；只在被忽略的构建目录与安装包分发，不迁入上游源码到 Git。新增主进程账号连接与后台模型网关，沿用既有 Cookie/CSRF 和私人模型权限；DSH_HOME 按服务/账号隔离，不自动迁移首批公共试用 home 或独立 DSH 的私人配置。无本批数据库迁移、无部署/合并/发布。详见 [内置 DSH 接入](development/local-dsh-integration.md)。
 
 同日第一步任务整合在独立分支复用该固定运行树及公开 session/workspace RPC，自行编写任务绑定、UI 和授权适配。旧“工作台”入口改名“任务”，旧链接/任务/验收及独立 DSH 保留，不删除或重写历史。新增本机按服务/账号/任务保存的会话关联与提交回执；没有新增服务端数据库表、API、角色/Skill 正文或运行依赖。上游接口说明只在 Git 外核对，没有迁入上游源文件。[实现与边界](development/dsh-task-workspace.md)。
+
+
+2026-10-28：DSH第二步增加contract0.36.0及029-work-context.sql，课题组/项目规则与项目记忆单独保存，沿用现有成员/任务权限。原任务和个人记忆不迁移复制；本地任务绑定新增可选字段兼容第一步文件。生产上次记录schema027，须重新核对028+029及配对API/worker并备份演练，当前未部署。新schema不能直接交给严格检查旧schema的程序使用。详见[第二步说明](development/dsh-rules-memory.md)。

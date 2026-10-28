@@ -1,6 +1,6 @@
 # 开发路线图
 
-2026-10-28：DSH与聊天、任务、资料的近期改造收敛为[三步实施计划](development/dsh-team-integration-plan.md)。第一步[任务工作页首版](development/dsh-task-workspace.md)已实现并通过合成闭环，待负责人真实验收；规则/记忆与团队协作两步仍未开始。后续以该文档的状态和验收条件接续，不扩大为长期功能清单。
+2026-10-28：DSH与聊天、任务、资料的近期改造收敛为[三步实施计划](development/dsh-team-integration-plan.md)。第一步[任务工作页首版](development/dsh-task-workspace.md)已实现并通过合成闭环，待负责人真实验收；[第二步规则/记忆](development/dsh-rules-memory.md)首版已实现并通过合成闭环，配套后台未部署；第三步团队协作仍未开始。后续以该文档的状态和验收条件接续，不扩大为长期功能清单。
 
 2026-10-26：[0.10.58本机候选](deployment/acceptcat-0.10.58.md)移除一项/多项切换，普通工作一项、确需独立分工/交付的大项目可自动建议多项，结合对话修改，保留正式确认。含PR118图片修复；角色v3/任务方法同步源码并保留私人编辑，根812及客户端64项、双类型、冻结NSIS/更新守卫通过。[PR119](https://github.com/luoyan96/personal-agent/pull/119)待审、未合main/未公开；后台未部署，默认角色新包留待单独升级，Latest仍0.10.56。安装与真实语言效果由负责人检查。
 

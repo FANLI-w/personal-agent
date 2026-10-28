@@ -90,3 +90,5 @@ B3 的受限运行组合依赖官方 DeepSeek Harness `@deepseek-ai/dsh-llm` / `
 作者：YunYueSama；仓库：[YunYueSama/codex-deepseek-pet](https://github.com/YunYueSama/codex-deepseek-pet)。按负责人要求采用DeepSeek鲸鱼娘社区二创「大肥鱼」的独立头像，取固定修订7661c8b304c5400701f91da01b1a643a207331de的build/icon.png，像素原样保留，不引入上游代码或角色台词。适用“大肥鱼项目署名许可1.0”（自定义许可，非MIT），完整许可、上游素材边界和来源随客户端public/third-party/dafeiyu进入安装包，关于页提供署名。该许可仅覆盖上游有权授权的贡献，不改变既有第三方权利，不表示官方认可。详见[头像来源](clients/openim/public/third-party/dafeiyu/ORIGIN.md)。
 
 同日按负责人要求，将上述原始PNG和同修订build/icon.ico同时用于AcceptCat应用/安装器/快捷方式、窗口、标题栏、启动/登录/关于页及托盘图标，许可与署名同上；ICO原样保留16/32/48/256px四档。不引入上游桌宠运行时，不更改AcceptCat名称或appId。原Catnap橘猫记录仅描述历史版本，不再作为本机0.10.49的新应用图标；旧来源及许可历史保留。
+
+2026-10-28：第二步规则/记忆与任务工作页为AcceptCat适配代码。内置方法仍由agents/skills单一来源打包，通过research-skills解析器生成本次选用的版本副本；DSH仅使用固定发行包的官方会话接口，不复制或修改其源码。设计参考归属继续见docs/development/dsh-team-integration-plan.md。
