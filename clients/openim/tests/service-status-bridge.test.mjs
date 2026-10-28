@@ -60,6 +60,8 @@ async function fixture() {
     ["peerLibraryManage", ["registerPeerLibraryBridge"]],
     ["imageClipboardManage", ["registerImageClipboardBridge"]],
     ["chatImageActionsManage", ["registerChatImageActionsBridge"]],
+    ["chatScreenshotManage", ["registerChatScreenshotBridge"]],
+    ["chatFileActionsManage", ["registerChatFileActionsBridge"]],
     ["desktopWorkManage", ["registerDesktopWorkBridge"]],
     ["updateManage", ["registerDesktopUpdateBridge"]],
     ["messageNotificationManage", ["registerMessageNotificationBridge"]],
