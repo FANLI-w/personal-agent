@@ -56,7 +56,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:build
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node --test tests/local-dsh.test.mjs tests/local-dsh-account.test.mjs
+          corepack pnpm@10.28.0 run test:local-dsh
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:planner-chat
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

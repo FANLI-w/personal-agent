@@ -47,4 +47,16 @@ $env:ACCEPTCAT_DSH_INSTALLER = '<已核验的官方 DSH 安装器路径>'
 corepack pnpm@10.28.0 run build:win
 ```
 
-工程证据保存在 Git 外 `D:/deepseek-agent/.runtime/dsh-team-coordination-20261028`。测试使用合成账号/文献/模型响应，真实 DSH 负责本机工具执行。真实双机、真实账号模型与实际科研资料验收由负责人完成；不能将合成闭环等同实际科研效果。最终检查数、候选路径与 PR 在交付后补记。
+工程证据保存在 Git 外 `D:/deepseek-agent/.runtime/dsh-team-coordination-20261028`。测试使用合成账号/文献/模型响应，真实 DSH 负责本机工具执行。真实双机、真实账号模型与实际科研资料验收由负责人完成；不能将合成闭环等同实际科研效果。检查数、候选路径与 PR 见下面的交付记录。
+
+## 交付验证记录
+
+- 功能 PR：[133](https://github.com/luoyan96/personal-agent/pull/133)。产品提交 `a5534b5`，生产迁移测试版本预期修正 `e1ebb78`；三步依赖 PR130/131/132 均未在本批合并。
+- 根检查构建/类型/契约导出通过；`CI=1` 下 855 测试、68 文件通过。随后生产检查的旧 schema029 断言失败，修正为030后单独补跑生产3项、B0真实进程、Web生产隔离全部通过。没有把失败的完整命令写成退出0；各阶段日志分别保留。
+- 客户端类型、Electron类型及28项DSH定向通过。测试覆盖排队确认/旧终止事件不得释放占用、原请求丢失回执与重启、撤权/截止停止、不同本机身份、已有自由会话执行不得抢占新任务槽。
+- 原生双成员合成闭环14项通过，最终群UI另5项通过；两位成员各用真实DSH的read/write工具生成comparison.md，离开任务页后本轮完成回执仍同步，重复请求不再调用模型，独立提交后由发起人验收。使用同一测试电脑切换两个合成账号；真正两台电脑并行仍需真人验收，服务端设备竞争用定向测试验证。
+- Browser插件不可用；独立Electron窗口检查本机IPC/DSH，Playwright无头Edge检查1350×900分工弹窗和协作抽屉。页面无应用异常；初次驱动按钮定位失败的记录保留，补验未重复执行任务。截图 `team-assignment-visible.png`、`team-accepted-visible.png`、`task-owner-0.png`、`task-owner-1.png`。这是实际React组件配合合成业务后台的隔离入口，不是线上OpenIM客户端联调。
+- Windows0.10.70解包程序使用独立临时用户目录启动通过。日志包含现有electron-log重复initialize警告，但有OPENIM_ELECTRON_READY并正常退出；没有操作用户正在使用的客户端。NSIS、包内5入口、任务/执行协调代码、内置DSH及更新SHA512检查通过。
+- GitHub首次Windows打包检查因消息菜单测试夹具未提供新增TeamWorkPanel导入而失败，已补夹具及“只有业务群消息带准确来源进入分工”的回归。196项桌面聊天/联系人/资料相关测试全部通过。Windows CI改用test:local-dsh覆盖全部28项，包括本批协调与持久恢复检查；远端重跑结果以PR检查为准。
+
+候选安装器：`D:/deepseek-agent/.runtime/dsh-team-coordination-20261028/windows/AcceptCat_0.10.70.exe`，366896002字节。SHA256：`405ecffd4e6853f279c85ab6772135d96b5933ae1d26e1e825fb43efb99a2f36`。同目录保留blockmap、latest.yml与SHA256SUMS.txt；仅本地候选，未上传更新通道或公开Release，未代用户安装。检查回执见package-receipt.json、package-check.log、packaged-smoke.log及desktop-regressions-final.log。

@@ -602,10 +602,11 @@ test("text selection must belong wholly to the clicked message, including both r
     assert.equal(selection.selectedMessageText(root, other), "");
 });
 
-async function messageComponent(message) {
+async function messageComponent(message, { group = false, pointer } = {}) {
   const h = hooks(),
     copied = [],
-    replies = [];
+    replies = [],
+    teamDrafts = [];
   let selected = null;
   const types = {
     TextMessage: 101,
@@ -639,7 +640,7 @@ async function messageComponent(message) {
         selector({ scope: "3:chat", selecting: false, selected: [] }),
       registerTimelineMessage() {},
       timelineScope: (generation, id) => `${generation}:${id}`,
-      researchPointer: () => undefined,
+      researchPointer: () => pointer,
       selectTimelineMessage() {},
     },
     "@/research/GroupChatRoster": {
@@ -647,11 +648,14 @@ async function messageComponent(message) {
       groupContactDescription: () => "",
     },
     "@/research/ResearchAvatar": () => null,
+    "@/research/TeamWorkPanel": {
+      useTeamWorkDraft: { getState: () => ({ choose: (value) => teamDrafts.push(value) }) },
+    },
     "@/utils/common": { feedbackToast() {} },
     "@/utils/imCommon": { formatMessageTime: () => "" },
     "@/store": {
       useConversationStore: (selector) =>
-        selector({ currentConversation: { conversationType: 1 } }),
+        selector({ currentConversation: { conversationType: group ? 3 : 1 } }),
     },
     "@/research/store": { useResearchStore: (selector) => selector({ generation: 3 }) },
     "./message-item.module.scss": {},
@@ -696,11 +700,25 @@ async function messageComponent(message) {
     tree,
     copied,
     replies,
+    teamDrafts,
     selection: (value) => {
       selected = value;
     },
   };
 }
+test("only canonical group messages open a team task draft with their exact source and account generation", async () => {
+  const message = { clientMsgID: "im-message", contentType: 101, status: 2, textElem: { content: "比较这两篇文献" } };
+  const pointer = { conversationId: "group-business-id", messageId: "source-business-id" };
+  for (const options of [{}, { group: true }, { pointer }]) {
+    const f = await messageComponent(message, options);
+    assert.equal(f.render().props.menu.items.some((item) => item.key === "team-work"), false);
+  }
+  const f = await messageComponent(message, { group: true, pointer });
+  const menu = f.render();
+  assert.equal(menu.props.menu.items.find((item) => item.key === "team-work").label, "安排文献任务…");
+  menu.props.menu.onClick({ key: "team-work" });
+  assert.deepEqual(JSON.parse(JSON.stringify(f.teamDrafts)), [{ ...pointer, generation: 3 }]);
+});
 test("text messages copy the whole actual message or a snapshot of only their own selected words", async () => {
   const f = await messageComponent({
     clientMsgID: "m",
