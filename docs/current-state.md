@@ -8,6 +8,8 @@
 
 客户端候选版本 0.10.62。不修改后台、契约或技术群主权限，兼容当前服务；已有群不需迁移。建群同步失败保留业务群 ID，重试同步不会重复创建；成员管理沿用已有版本校验和权限接口。45 项定向测试、renderer/Electron 类型检查及实际组件的 10 项合成交互通过。安装包及 PR 结果见[开发记录](development/group-member-identities.md)。本机尚未安装或进行真实多账号验收，公开最新版仍是 0.10.61；不得把本批源码当成已发布客户端。
 
+产品 `a60072f` 已提交 [PR129](https://github.com/luoyan96/personal-agent/pull/129)。本机 Windows 0.10.62 安装包生成、四入口和更新元数据校验通过，Git 外 `group-identities-20261028/windows-a60072f/AcceptCat_0.10.62.exe`，88,249,693 字节，SHA256 `e11512e2ff52a27dab6eead0460e633e48a50a07f3132cfb388e0fafc2add875`。补充账号切换迟到创建结果检查通过（合成交互共 10+1）；11:24 核对远端 CI 仍在运行，未用本机结果代替。后续仅补文档；未合并、安装、部署或公开发布。
+
 ## 聊天整合与0.10.61已公开发布
 
 2026-10-28 10:41:48（北京时间），[PR127](https://github.com/luoyan96/personal-agent/pull/127)普通合并至main/c364116，PR125和PR126随之标记已合并。整合head c3bcd63的两路Linux Foundation、Windows Foundation和Windows打包全部通过；Windows首次834项中833通过、A12因默认5秒超时失败，本机定向复核及同head远端重跑通过，失败证据保留。

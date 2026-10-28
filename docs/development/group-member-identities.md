@@ -39,7 +39,17 @@ corepack pnpm@11.21.0 run desktop:win
 node clients/openim/scripts/check-windows-update.mjs
 ```
 
-产物默认生成于 `clients/openim/release/Base/0.10.62`（Git 忽略）。本批不合并、不公开发布、不部署后台；安装包完成后的路径和摘要另补。
+产物默认生成于 `clients/openim/release/Base/0.10.62`（Git 忽略）。本批不合并、不公开发布、不部署后台。
+
+## 交付结果
+
+产品提交 `a60072fdae246bc64638a02b23b320b804b9ef85` 已推送 [PR129](https://github.com/luoyan96/personal-agent/pull/129)。本机冻结依赖安装、Web/NSIS 构建、app.asar 四个必需入口及安装器/更新元数据校验通过。安装器另存：
+
+`D:/deepseek-agent/.runtime/group-identities-20261028/windows-a60072f/AcceptCat_0.10.62.exe`
+
+大小 **88,249,693 字节**；SHA256 **e11512e2ff52a27dab6eead0460e633e48a50a07f3132cfb388e0fafc2add875**。同目录保留 blockmap/latest.yml，均为内部候选，未上传 Release。`windows-build.log` 与 `windows-verification.json` 保留完整检查结果。依赖既有 Antd 构建提示、canvas 脚本忽略提示未改变本轮成功结果。
+
+额外实际组件检查 `ui-scope.log` 通过：创建请求未返回时切换账号代次，清空已选/群名/忙碌状态，迟到创建结果不继续同步或跳转，新会话生命周期可重新提交。本机为 **10+1 项合成交互**；未执行安装器或连接真实账号。11:24（北京时间）核对产品 head 的远端 Foundation 三路与 Windows package 均仍在运行，不能宣称已通过。后续文档提交不改变受测产品或本机安装包来源。
 
 ## 下一步
 
