@@ -2,6 +2,7 @@ import { GroupAgentStatus } from '@research-agent-platform/contracts'
 import type { Conversation, SendChatMessage } from '@research-agent-platform/contracts'
 import type { ChatService, TurnInput } from './chat.js'
 import { fail } from './errors.js'
+import {linkMessageReply} from './chat-message-actions.js'
 import { isSocialGroup, socialWorkContext, recordSocialWorkTurn } from './workspace.js'
 
 /** Plain @ chat also exists in legacy lab groups, independent of group storage. */
@@ -32,6 +33,7 @@ export function sendGroupAgents(s: ChatService, group: Conversation, input: Send
     senderContactId:s.human().id, origin:'human', text:input.text,
     mentions:input.mentions ?? [], resources:input.context ?? [], actionIds:[], turnId:null,
   })
+  linkMessageReply(s,message.id,input.replyToMessageId)
   const turns = ids.map(id => {
     const request: TurnInput = {
       ...work,

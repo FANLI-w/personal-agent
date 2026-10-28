@@ -274,3 +274,85 @@ index 0000000..8bd765d
 +		})
 +	}
 +}
+diff --git a/internal/rpc/msg/callback.go b/internal/rpc/msg/callback.go
+index c66dd6c..913a22d 100644
+--- a/internal/rpc/msg/callback.go
++++ b/internal/rpc/msg/callback.go
+@@ -183,12 +183,18 @@ func (m *msgServer) webhookAfterSingleMsgRead(ctx context.Context, after *config
+ 
+ }
+ 
+-func (m *msgServer) webhookAfterRevokeMsg(ctx context.Context, after *config.AfterConfig, req *pbchat.RevokeMsgReq) {
+-	callbackReq := &cbapi.CallbackAfterRevokeMsgReq{
++func (m *msgServer) webhookAfterRevokeMsg(ctx context.Context, after *config.AfterConfig, req *pbchat.RevokeMsgReq, original *sdkws.MsgData) {
++	callbackReq := rapRevokeCallback(req, original)
++	m.webhookClient.AsyncPost(ctx, callbackReq.GetCallbackCommand(), callbackReq, &cbapi.CallbackAfterRevokeMsgResp{}, after)
++}
++
++func rapRevokeCallback(req *pbchat.RevokeMsgReq, original *sdkws.MsgData) *cbapi.CallbackAfterRevokeMsgReq {
++	return &cbapi.CallbackAfterRevokeMsgReq{
+ 		CallbackCommand: cbapi.CallbackAfterRevokeMsgCommand,
+ 		ConversationID:  req.ConversationID,
+ 		Seq:             req.Seq,
+ 		UserID:          req.UserID,
++		SendID:          original.SendID,
++		ClientMsgID:     original.ClientMsgID,
+ 	}
+-	m.webhookClient.AsyncPost(ctx, callbackReq.GetCallbackCommand(), callbackReq, &cbapi.CallbackAfterRevokeMsgResp{}, after)
+ }
+diff --git a/internal/rpc/msg/rap_revoke_callback_test.go b/internal/rpc/msg/rap_revoke_callback_test.go
+new file mode 100644
+index 0000000..49cfb3c
+--- /dev/null
++++ b/internal/rpc/msg/rap_revoke_callback_test.go
+@@ -0,0 +1,25 @@
++package msg
++
++import (
++	"encoding/json"
++	pbchat "github.com/openimsdk/protocol/msg"
++	"github.com/openimsdk/protocol/sdkws"
++	"testing"
++)
++
++func TestRAPRevokeCallbackOriginalIdentity(t *testing.T) {
++	callback := rapRevokeCallback(&pbchat.RevokeMsgReq{ConversationID: "sg_synthetic", Seq: 12, UserID: "operator"}, &sdkws.MsgData{SendID: "original-sender", ClientMsgID: "original-client-id"})
++	raw, err := json.Marshal(callback)
++	if err != nil {
++		t.Fatal(err)
++	}
++	var value map[string]interface{}
++	if err := json.Unmarshal(raw, &value); err != nil {
++		t.Fatal(err)
++	}
++	for key, expected := range map[string]interface{}{"callbackCommand": "callbackBeforeAfterMsgCommand", "conversationID": "sg_synthetic", "seq": float64(12), "userID": "operator", "sendID": "original-sender", "clientMsgID": "original-client-id"} {
++		if value[key] != expected {
++			t.Fatalf("incorrect %s: %v", key, value[key])
++		}
++	}
++}
+diff --git a/internal/rpc/msg/revoke.go b/internal/rpc/msg/revoke.go
+index c2fb583..3180354 100644
+--- a/internal/rpc/msg/revoke.go
++++ b/internal/rpc/msg/revoke.go
+@@ -128,6 +128,6 @@ func (m *msgServer) RevokeMsg(ctx context.Context, req *msg.RevokeMsgReq) (*msg.
+ 		recvID = msgs[0].RecvID
+ 	}
+ 	m.notificationSender.NotificationWithSessionType(ctx, req.UserID, recvID, constant.MsgRevokeNotification, msgs[0].SessionType, &tips)
+-	m.webhookAfterRevokeMsg(ctx, &m.config.WebhooksConfig.AfterRevokeMsg, req)
++	m.webhookAfterRevokeMsg(ctx, &m.config.WebhooksConfig.AfterRevokeMsg, req, msgs[0])
+ 	return &msg.RevokeMsgResp{}, nil
+ }
+diff --git a/pkg/callbackstruct/revoke.go b/pkg/callbackstruct/revoke.go
+index b36985e..b93c4fb 100644
+--- a/pkg/callbackstruct/revoke.go
++++ b/pkg/callbackstruct/revoke.go
+@@ -19,6 +19,8 @@ type CallbackAfterRevokeMsgReq struct {
+ 	ConversationID  string `json:"conversationID"`
+ 	Seq             int64  `json:"seq"`
+ 	UserID          string `json:"userID"`
++	SendID          string `json:"sendID"`
++	ClientMsgID     string `json:"clientMsgID"`
+ }
+ 
+ type CallbackAfterRevokeMsgResp struct {

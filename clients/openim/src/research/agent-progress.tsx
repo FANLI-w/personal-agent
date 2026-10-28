@@ -7,12 +7,16 @@ import { useResearchStore } from "./store";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import OIMAvatar from "@/research/ResearchAvatar";
 import DesktopWorkCard from "./DesktopWorkCard";
+import { useGroupChatRoster, groupContactDescription } from "./GroupChatRoster";
 
 type Entry = {
   generation: number;
   imID: string;
   conversationId: string;
   turnId: string;
+  agentContactId?: string;
+  displayName?: string;
+  inputText?: string;
   progress?: AgentTurnProgress;
   error?: string;
   canonicalSeen?: string;
@@ -27,7 +31,8 @@ export const AgentProgressHistory = createContext<{
 export function registerAgentProgress(
   generation: number,
   imID: string,
-  turn: Pick<AgentTurn, "id" | "conversationId">,
+  turn: Pick<AgentTurn, "id" | "conversationId"> & Partial<Pick<AgentTurn, "agentContactId">>,
+  presentation?: { displayName?: string; inputText?: string },
 ) {
   const actor = useResearchStore.getState();
   if (
@@ -36,18 +41,17 @@ export function registerAgentProgress(
       turn.conversationId
   )
     return;
-  useProgress.setState((s) =>
-    s.entries.some(
-      (e) => e.generation === generation && e.imID === imID && e.turnId === turn.id,
-    )
-      ? s
-      : {
-          entries: [
-            ...s.entries,
-            { generation, imID, conversationId: turn.conversationId, turnId: turn.id },
-          ].slice(-100),
-        },
-  );
+  useProgress.setState((s) => {
+    const entry = s.entries.find(e => e.generation === generation && e.imID === imID && e.turnId === turn.id);
+    const agentContactId = turn.agentContactId || entry?.agentContactId;
+    const displayName = presentation?.displayName || entry?.displayName;
+    const inputText = presentation?.inputText?.slice(0, 180) || entry?.inputText;
+    if (entry) {
+      if (entry.agentContactId === agentContactId && entry.displayName === displayName && entry.inputText === inputText) return s;
+      return { entries: s.entries.map(e => e === entry ? { ...e, agentContactId, displayName, inputText } : e) };
+    }
+    return { entries: [...s.entries, { generation, imID, conversationId: turn.conversationId, turnId: turn.id, agentContactId, displayName, inputText }].slice(-100) };
+  });
 }
 export function acknowledgeAgentReply(
   generation: number,
@@ -83,6 +87,8 @@ export function AgentReplyProgress({ onResize }: { onResize?: () => void }) {
   const actorId = useResearchStore((s) => s.actor?.member.id);
   const mapping = useResearchStore((s) => s.mappings.find(m => m.imConversationID === imID));
   const entries = useProgress((s) => s.entries);
+  const contacts = useResearchStore(s => s.contacts);
+  const roster = useGroupChatRoster();
   const scope = `${generation}:${imID}`;
   const validation = useRef({ scope, token: crypto.randomUUID() });
   if (validation.current.scope !== scope)
@@ -212,17 +218,23 @@ export function AgentReplyProgress({ onResize }: { onResize?: () => void }) {
         e.validation === token &&
         (e.error || (e.progress && e.progress.phase !== "superseded")),
     )
-    .slice(-3);
+    .slice(-8);
   return (
     <div ref={container} data-agent-progress className="desktop-agent-progress space-y-2 px-5 pb-4">
-      {visible.map(({ turnId, progress: p, error }) => (
+      {visible.map(({ turnId, progress: p, error, agentContactId, displayName, inputText }) => {
+        const contact = contacts.find(c => c.contact.id === agentContactId);
+        const groupContact = roster.data?.data.find(c => c.id === agentContactId);
+        const name = groupContact?.displayName || displayName || contact?.contact.displayName || (mapping?.kind === "group" ? "助手" : conversation?.showName);
+        return (
         <div
           key={turnId}
           data-progress-turn={turnId}
           className="desktop-streaming-row text-sm"
         >
-          <OIMAvatar userID={conversation?.userID} size={36} src={conversation?.faceURL} text={conversation?.showName} />
+          <OIMAvatar contact={groupContact || contact?.contact} userID={mapping?.kind === "group" ? contact?.userID : conversation?.userID} size={36} src={mapping?.kind === "group" ? undefined : conversation?.faceURL} text={name} />
           <div className="desktop-streaming-content">
+          <div className="chat-agent-identity"><strong>{name}</strong><span>{groupContact ? groupContactDescription(groupContact, roster.data?.data || [], actorId) : "助手"}</span></div>
+          {mapping?.kind === "group" && inputText && <p className="chat-agent-question" title={inputText}>回复：{inputText}</p>}
           {error ? (
             <div className="text-xs text-slate-600">
               回复状态暂时无法读取。
@@ -247,7 +259,7 @@ export function AgentReplyProgress({ onResize }: { onResize?: () => void }) {
             <>
               <p className="desktop-streaming-status mb-1 text-xs text-slate-500" role="status">
                 {p!.phase === "queued"
-                  ? "等待回复 · 可以继续补充"
+                  ? "等待回复"
                   : p!.phase === "streaming"
                   ? "正在回复 · 尚未结束"
                   : p!.phase === "final"
@@ -259,7 +271,7 @@ export function AgentReplyProgress({ onResize }: { onResize?: () => void }) {
           )}
           </div>
         </div>
-      ))}
+      ); })}
       {window.electronAPI && actorId && mapping && typeof window.electronAPI.listDesktopReports === "function" && <div className="desktop-work-in-chat"><DesktopWorkCard key={`${generation}:${mapping.researchConversationId}`} scope={{ actorId, conversationId: mapping.researchConversationId }} variant="chat" /></div>}
     </div>
   );

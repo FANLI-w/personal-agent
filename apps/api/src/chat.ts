@@ -1,4 +1,5 @@
 import {PeerLibraryService} from './peer-library.js'
+import {chatMessageDetails,withdrawChatMessage,isMessageRetracted,linkMessageReply} from './chat-message-actions.js'
 import {hasLabMembership} from './lab-access.js'
 import {sendGroupAgents,groupMessageStatuses,addressedGroupChat} from './group-agent-message.js'
 import {skillContext,type SkillCall} from './skills.js'
@@ -217,6 +218,7 @@ export class ChatService {
   checkTurnInput(turnId: string, exact = true) {
     const row = this.db.prepare('SELECT * FROM chat_turns WHERE id=?').get(turnId); if (!row) fail('NOT_FOUND')
     const input = decode(row.request_json) as TurnInput, turn = this.materializedTurn(row)
+    if(exact && (input.continuous?.messageIds ?? [turn.inputMessageId]).some(id=>isMessageRetracted(this,id)))fail('VERSION_CONFLICT')
     const group = this.conversation(turn.conversationId, false); this.joinedAgent(group, turn.agentContactId)
     // Explicit instruction Skills must never reuse an assistant/creation route,
     // including inconsistent batches persisted by an older merge implementation.
@@ -317,6 +319,7 @@ export class ChatService {
   projectedMessage(id: string): ChatMessage {
     const row = this.db.prepare('SELECT document FROM chat_messages WHERE id=?').get(id); if (!row) fail('NOT_FOUND')
     const m = ChatMessage.parse(decode(row.document)); this.conversation(m.conversationId, false)
+    if(isMessageRetracted(this,id))return {...m,text:'这条消息已撤回',mentions:[],resources:[],actionIds:[],turnId:null,files:undefined}
     if (m.origin === 'model' && m.turnId) this.checkTurnInput(m.turnId, false)
     // The message is shared; the requester's full request, private receipts and
     // cancel/retry controls are not. Group status has its own narrow projection.
@@ -334,6 +337,7 @@ export class ChatService {
   }
   fileDocumentForMessage(messageId:string,conversationId:string):FileDocument|undefined{
     this.conversation(conversationId,false)
+    if(isMessageRetracted(this,messageId))return undefined
     const message=this.db.prepare('SELECT document FROM chat_messages WHERE id=? AND conversation_id=?').get(messageId,conversationId)
     if(!message)return undefined
     const raw=ChatMessage.parse(decode(message.document))
@@ -360,6 +364,7 @@ export class ChatService {
       const named=text.toLocaleLowerCase().includes(name.toLocaleLowerCase())
       if(!documentReference&&!named&&!continuation)continue
       const messageId=continuation&&!documentReference&&!named?latest!.fileSource!.messageId:document.metadata.messageId
+      if(isMessageRetracted(this,messageId))continue
       this.fileDocument(messageId,conversationId);return {messageId}
     }
     return undefined
@@ -507,6 +512,7 @@ export class ChatService {
     if (cached) {
       if (cached.request_hash !== fingerprint) fail('IDEMPOTENCY_CONFLICT')
       const previous = decode(cached.response_json)
+      if(name==='withdrawChatMessage')return {data:chatMessageDetails(this,req.params.id!,req.params.messageId!)}
       const workspaceResponse=workspaceReplay(this,name,previous);if(workspaceResponse)return route.response.parse(workspaceResponse)
       if(personalCommands.includes(name)){if(name==='updatePersonalMemorySettings')return route.response.parse({data:memorySettings(this)});return route.response.parse({data:name.toLowerCase().includes('followup')?followup(this,previous.data.id):memory(this,previous.data.id)})}
       if(['updateAgentConnection','disconnectAgentConnection'].includes(name))return route.response.parse({data:connectionStateForReplay(this,req.params.id!)})
@@ -526,6 +532,8 @@ export class ChatService {
   }
   handle(name: ChatCommand, req: Request, parsedFile?:ParsedAgentFile): unknown {
     const id = req.params.id!, b = req.body
+    if(name==='chatMessageDetails')return {data:chatMessageDetails(this,id,req.params.messageId!)}
+    if(name==='withdrawChatMessage')return {data:withdrawChatMessage(this,id,req.params.messageId!,(b as RequestFor<'withdrawChatMessage'>['body']).expectedVersion)}
     if(workspaceCommands.includes(name))return workspaceHandle(this,name,req)
     if(personalCommands.includes(name))return handleMemory(this,name,req)??handleFollowup(this,name,req)
     if((directoryCommands as readonly string[]).includes(name))return this.directory.handle(name,req)
@@ -637,6 +645,7 @@ export class ChatService {
       let pending=continuous&&!external?active.find(row=>row.status==='queued'&&(decode(row.request_json) as TurnInput).continuous&&this.clock()<=(decode(row.request_json) as TurnInput).continuous!.dueAt&&(decode(row.request_json) as TurnInput).continuous!.messageIds.length<100):undefined
       for(const row of active)if(row!==pending)supersedeTurn(this,String(row.id))
       const message = this.message(id, { senderContactId: this.human().id, origin: 'human', text: input.text, mentions: input.mentions, resources: input.context, actionIds: [], turnId: null })
+      linkMessageReply(this,message.id,(b as {replyToMessageId?:string}).replyToMessageId)
       const agent=input.agentContactId?this.contact(input.agentContactId):null
       const peerFileRequest=name==='agentChatMessage'?(b as RequestFor<'agentChatMessage'>['body']).peerFileRequest:undefined
       if(peerFileRequest){

@@ -26,11 +26,11 @@ describe('B0 real service and persistence', () => {
     db.prepare('INSERT INTO schema_migrations VALUES (1,?,?)').run(createHash('sha256').update(sql).digest('hex'), '2026-09-21T00:00:00Z')
     seed(db, 'test'); migrate(db); migrate(db)
     expect(db.prepare('SELECT count(*) n FROM members').get()!.n).toBe(3)
-    expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(27)
+    expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(28)
     expect(db.prepare('SELECT applied_at FROM schema_migrations WHERE version=1').get()!.applied_at).toBe('2026-09-21T00:00:00Z')
     checkDatabase(db)
-  }, 20000) // Actual 001→027 disk migration; bounded test harness wait, no production deadline change.
-  // These fixtures traverse all 27 on-disk migrations (and real HTTP below).
+  }, 20000) // Actual 001→028 disk migration; bounded test harness wait, no production deadline change.
+  // These fixtures traverse all 28 on-disk migrations (and real HTTP below).
   // Slow Windows hosts can exceed Vitest's default 5s; bound only these I/O
   // fixtures at 20s, keeping every assertion and production deadline intact.
   it('migration/seed are repeatable; reopening preserves rows; no usable dev credentials', () => {

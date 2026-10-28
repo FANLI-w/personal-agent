@@ -20,7 +20,8 @@ import { CreatedAgentChatButton } from "./CreatedAgentChatButton";
 import { PersonalReceiptCard } from "./PersonalReceiptCard";
 import { peerChatRequest } from "./peer-library-runtime";
 import { registerAgentProgress } from "./agent-progress";
-import { groupMessageBody } from "./group-mentions";
+import { groupMessageBody, type SelectedMention } from "./group-mentions";
+import { useGroupChatRoster, groupContactDescription } from "./GroupChatRoster";
 
 import { useSkillChatSelection } from "./SkillLibrary";
 export type PreparedResearchSend =
@@ -60,6 +61,7 @@ export function useResearchComposer() {
   );
   const contacts = useResearchStore((s) => s.contacts);
   const actorGeneration = useResearchStore((s) => s.generation);
+  const actorId = useResearchStore((s) => s.actor?.member.id);
   const peer = contacts.find((c) => c.userID === conversation?.userID)?.contact;
   const manager = useResearchStore((s) => s.actor?.isLabManager || false);
   const canonical = useResearchRead(
@@ -67,19 +69,13 @@ export function useResearchComposer() {
       researchApi("chatConversation", {
         params: { id: mapping?.researchConversationId || "" },
       }),
-    `${mapping?.researchConversationId || ''}:${peer?.profile.version ?? 0}:${peer?.allowedActions.join(',') ?? ''}`,
+    `${mapping?.researchConversationId || ""}:${peer?.profile.version ?? 0}:${
+      peer?.allowedActions.join(",") ?? ""
+    }`,
     researchMode && !!mapping,
   );
   const [advanced, setAdvanced] = useState(false);
-  const groupRoster = useResearchRead(
-    (signal) => researchApi("chatConversationContacts", {
-      params: { id: mapping?.researchConversationId || "" },
-      query: { limit: 100 },
-      signal,
-    }),
-    `${mapping?.researchConversationId}:members:${canonical.data?.data.version}`,
-    researchMode && mapping?.kind === "group" && !!canonical.data,
-  );
+  const groupRoster = useGroupChatRoster();
   const [externalConsent, setExternalConsent] = useState(false);
   const [mode, setMode] = useState<"chat" | "ask_agent">("chat"),
     [agentId, setAgentId] = useState(""),
@@ -97,9 +93,10 @@ export function useResearchComposer() {
     canonical.data?.data.members
       .filter((m) => m.status === "joined")
       .flatMap((m) => {
-        const contact = mapping?.kind === "group"
-          ? groupRoster.data?.data.find((c) => c.id === m.contactId)
-          : contacts.find((c) => c.contact.id === m.contactId)?.contact;
+        const contact =
+          mapping?.kind === "group"
+            ? groupRoster.data?.data.find((c) => c.id === m.contactId)
+            : contacts.find((c) => c.contact.id === m.contactId)?.contact;
         return contact && contact.identity.kind !== "human" ? [contact] : [];
       }) || [];
   const isDirectAgent =
@@ -186,30 +183,63 @@ export function useResearchComposer() {
     setMode("chat");
     setCreationFailure(undefined);
   }, [imID, actorGeneration]);
-  const mentionContacts = useMemo(() =>
-    canonical.data?.data.members
-      .filter((member) => member.status === "joined")
-      .flatMap((member) => {
-        const contact = groupRoster.data?.data.find((item) => item.id === member.contactId);
-        return contact
-          ? [
-              {
-                id: contact.id,
-                displayName: contact.displayName,
-                agent: contact.identity.kind !== "human",
-                external: !!contact.agentRuntime,
-              },
-            ]
-          : [];
-      }) || [], [canonical.data?.data.members, groupRoster.data]);
+  const mentionContacts = useMemo(
+    () =>
+      canonical.data?.data.members
+        .filter((member) => member.status === "joined")
+        .flatMap((member) => {
+          const contact = groupRoster.data?.data.find(
+            (item) => item.id === member.contactId,
+          );
+          return contact
+            ? [
+                {
+                  id: contact.id,
+                  displayName: contact.displayName,
+                  agent: contact.identity.kind !== "human",
+                  external: !!contact.agentRuntime,
+                  unavailable:
+                    contact.identity.kind !== "human" &&
+                    contact.availability.status !== "available",
+                  unavailableReason: contact.availability.reason
+                    ? {
+                        platform_disabled: "平台暂未启用，请联系管理员",
+                        lab_disabled: "课题组暂未启用，请联系负责人",
+                        missing_credentials: "服务尚未配置，请联系管理员",
+                        capability_unavailable: "服务暂不可用，请稍后重试",
+                        owner_authorization_required: "需要助手主人开放使用权限",
+                        not_connected: "助手尚未连接，请联系主人",
+                      }[contact.availability.reason]
+                    : "暂不可用，请联系助手主人",
+                  ownerLabel: groupContactDescription(
+                    contact,
+                    groupRoster.data?.data || [],
+                    actorId,
+                  ),
+                },
+              ]
+            : [];
+        }) || [],
+    [canonical.data?.data.members, groupRoster.data, actorId],
+  );
 
-  const prepareResearch = (text: string): Exclude<PreparedResearchSend, { route: "agentFileMessage" }> | undefined => {
+  const prepareResearch = (
+    text: string,
+    mentions?: SelectedMention[],
+  ): Exclude<PreparedResearchSend, { route: "agentFileMessage" }> | undefined => {
     const advancedRequest = advanced && mode === "ask_agent";
-    if (researchMode && mapping?.kind === "group" && !advanced && text.trimStart().startsWith("@") && !groupRoster.data)
+    const useMentions = !advanced || !!mentions?.length;
+    if (
+      researchMode &&
+      mapping?.kind === "group" &&
+      useMentions &&
+      (mentions?.length || text.trimStart().startsWith("@")) &&
+      !groupRoster.data
+    )
       throw new Error("群成员名单尚未读取，请稍后重试；若持续失败，请确认后台已升级。");
     const addressed =
-      researchMode && mapping?.kind === "group" && !advanced
-        ? groupMessageBody(text, mentionContacts)
+      researchMode && mapping?.kind === "group" && useMentions
+        ? groupMessageBody(text, mentionContacts, mentions)
         : undefined;
     if (addressed) {
       if (!mapping || !canonical.data?.data.allowedActions.includes("send"))
@@ -217,7 +247,12 @@ export function useResearchComposer() {
       return {
         route: "sendChatMessage",
         conversationId: mapping.researchConversationId,
-        body: addressed,
+        body: {
+          ...addressed,
+          ...(advancedRequest && addressed.intent === "ask_agent"
+            ? { budget: { maxTokens, maxSeconds }, context: [...context] }
+            : {}),
+        },
       };
     }
     if (external && (!external.callerAllowed || !consentAvailable.current))
@@ -263,7 +298,13 @@ export function useResearchComposer() {
           body: {
             text,
             ...(external ? { externalConsent: true } : { continuous: true }),
-            ...(skillChat.selection ? { skill: skillChat.selection } : !external && peer?.profile.role === "coordinator" && peerChatRequest(text) ? { peerFileRequest: peerChatRequest(text) } : {}),
+            ...(skillChat.selection
+              ? { skill: skillChat.selection }
+              : !external &&
+                peer?.profile.role === "coordinator" &&
+                peerChatRequest(text)
+              ? { peerFileRequest: peerChatRequest(text) }
+              : {}),
           },
         };
   };
@@ -338,10 +379,16 @@ export function useResearchComposer() {
       useConversationStore.getState().currentConversation?.conversationID === imID &&
       useUserStore.getState().selfInfo.userID === selfUserID
     ) {
-      const acknowledged: {turn:AgentTurn | null; turns?:AgentTurn[]} = result.data;
-      const sentTurns = acknowledged.turns ?? (acknowledged.turn ? [acknowledged.turn] : []);
+      const acknowledged: { turn: AgentTurn | null; turns?: AgentTurn[] } = result.data;
+      const sentTurns =
+        acknowledged.turns ?? (acknowledged.turn ? [acknowledged.turn] : []);
       for (const sentTurn of sentTurns)
-        registerAgentProgress(generation, imID || "", sentTurn);
+        registerAgentProgress(generation, imID || "", sentTurn, {
+          displayName:
+            mentionContacts.find((c) => c.id === sentTurn.agentContactId)
+              ?.displayName || peer?.displayName,
+          inputText: result.data.message.text || prepared.body.text,
+        });
       if (intent === sendIntent.current)
         setTurn(
           result.data.turn
@@ -381,11 +428,6 @@ export function useResearchComposer() {
   const controls =
     researchMode && mapping ? (
       <>
-        {mapping.kind === "group" && !advanced && (
-          <p className="px-3 py-1 text-xs text-slate-500">
-            @群成员名 后空格写消息；@Agent 可分配任务。
-          </p>
-        )}
         {external && (
           <div className="px-3 py-2 text-xs leading-5 text-slate-600">
             <p className="truncate" title={external.serviceOrigin}>
@@ -440,7 +482,11 @@ export function useResearchComposer() {
                   onChange={setAgentId}
                   options={agents.map((agent) => ({
                     value: agent.id,
-                    label: agent.displayName,
+                    label: `${agent.displayName} · ${groupContactDescription(
+                      agent,
+                      groupRoster.data?.data || [],
+                      actorId,
+                    )}`,
                   }))}
                 />
                 <Button size="small" onClick={() => setOpen(true)}>
@@ -449,7 +495,7 @@ export function useResearchComposer() {
               </>
             )}
             <span className="text-slate-500">
-              选择实际群成员安排协作；建群和邀请需要确认。
+              正文中选中的 @成员优先；材料与预算用于本次协作请求。
             </span>
           </div>
         )}
@@ -486,7 +532,8 @@ export function useResearchComposer() {
               />
             </div>
           )}
-        {(turnRead.data?.data || turn) &&
+        {mapping.kind !== "group" &&
+          (turnRead.data?.data || turn) &&
           (advanced || (turnRead.data?.data || turn)?.status !== "succeeded") &&
           !(
             turnSnapshot?.continuous &&
@@ -562,6 +609,7 @@ export function useResearchComposer() {
     acceptSendIntent,
     controls,
     mentionContacts,
+    isGroup: mapping?.kind === "group",
     isCoordinator: mapping?.kind === "personal",
     advanced,
     advancedToggle:
@@ -584,9 +632,7 @@ export function useResearchComposer() {
         ((!!external &&
           (!external.callerAllowed || !externalReady || !externalConsent)) ||
           !canonical.data?.data.allowedActions.includes("send") ||
-          (advanced && mode === "ask_agent"
-            ? !agents.some((a) => a.id === agentId)
-            : agents.length !== 1))),
+          (!advanced && agents.length !== 1))),
   };
 }
 function ContextTask({

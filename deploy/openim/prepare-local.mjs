@@ -40,7 +40,7 @@ const before = [
   'beforeUpdateUserInfo', 'beforeUpdateUserInfoEx',
   'beforeSetGroupInfo', 'beforeSetGroupInfoEx', 'beforeUserRegister',
 ];
-const after = ['afterSendSingleMsg', 'afterSendGroupMsg', 'afterQuitGroup',
+const after = ['afterSendSingleMsg', 'afterSendGroupMsg', 'afterRevokeMsg', 'afterQuitGroup',
   'afterKickGroupMember', 'afterDismissGroup', 'afterTransferGroupOwner',
   'afterSetGroupMemberInfo', 'afterSetGroupInfo', 'afterSetGroupInfoEx'];
 const url = `http://research-api:3217/api/v1/im/callback/${callbackKey}`;

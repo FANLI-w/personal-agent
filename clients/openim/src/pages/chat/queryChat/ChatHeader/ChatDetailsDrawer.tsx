@@ -17,6 +17,8 @@ import {
 } from "@/research/useAgentChatOperation";
 import { withRequestDeadline } from "@/research/request-deadline";
 import { emit } from "@/utils/events";
+import { ResearchConversationPanel } from "@/research/ResearchConversationPanel";
+import { AgentColleagueSettings } from "@/research/AgentColleagueSettings";
 
 type Props = {
   open: boolean;
@@ -34,6 +36,7 @@ export default function ChatDetailsDrawer({
 }: Props) {
   const conversation = useConversationStore((s) => s.currentConversation);
   const generation = useResearchStore((s) => s.generation);
+  const actor = useResearchStore((s) => s.actor?.member.id);
   const group = useConversationStore((s) => s.currentGroupInfo);
   const inGroup = useConversationStore((s) =>
     Boolean(
@@ -226,7 +229,12 @@ export default function ChatDetailsDrawer({
                 onClick={() => profile(member.userID)}
                 title={member.nickname}
               >
-                <OIMAvatar userID={member.userID} size={42} src={member.faceURL} text={member.nickname} />
+                <OIMAvatar
+                  userID={member.userID}
+                  size={42}
+                  src={member.faceURL}
+                  text={member.nickname}
+                />
                 <span>{member.nickname}</span>
               </button>
             ))
@@ -286,6 +294,10 @@ export default function ChatDetailsDrawer({
         </Button>
       )}
       <div className="desktop-chat-detail-section">
+        {mapping?.kind === "group" && open && <ResearchConversationPanel compact />}
+        {contact?.identity.kind === "personal_agent" &&
+          contact.allowedActions.includes("edit_profile") &&
+          open && <AgentColleagueSettings contactId={contact.id} />}
         <button
           type="button"
           className="desktop-chat-detail-link"
@@ -300,6 +312,19 @@ export default function ChatDetailsDrawer({
         {contact?.profile.introduction && (
           <p className="desktop-chat-introduction">{contact.profile.introduction}</p>
         )}
+        {contact &&
+          contact.identity.kind !== "human" &&
+          contact.availability.status !== "available" && (
+            <p role="status" className="desktop-chat-error">
+              {contact.availability.status === "disabled"
+                ? "助手已停用"
+                : "助手暂不可用"}
+              。
+              {contact.identity.ownerMemberId === actor
+                ? "请在助手设置中检查模型连接或启用状态。"
+                : "请联系助手所属成员检查模型连接与群内使用授权。"}
+            </p>
+          )}
       </div>
       <div className="desktop-chat-detail-section">
         <label className="desktop-chat-detail-setting">
