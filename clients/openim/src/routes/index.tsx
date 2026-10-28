@@ -45,6 +45,13 @@ const router = createHashRouter([
             children: contactRoutes,
           },
           {
+            path: "dsh",
+            async lazy() {
+              const { LocalDshPage } = await import("@/research/LocalDshPage");
+              return { Component: LocalDshPage };
+            },
+          },
+          {
             path: "workbench",
             async lazy() {
               const { DesktopWorkbench } = await import("@/research/DesktopWorkbench");

@@ -1,5 +1,15 @@
 # 来源与许可说明
 
+## 2026-10-28：本地 DSH 页面
+
+后续 0.10.64 改为随 Windows 安装包分发固定官方 DSH 0.2.1-rc.3 发行文件，构建时下载/校验/解包；上游源码和二进制不提交 Git。完整发行树内的 DSH（包声明 MIT）、Electron、Chromium、Node、Python、文档工具和各依赖许可保留在 `resources/dsh` 及其 ASAR 中，各自适用原许可；不能将所有依赖统称为 MIT。来源 URL/SHA512 固定于 runtime-lock.json，不表示官方合作或模型/商标授权。通过官方配置 overlay 接入 AcceptCat，未修改上游源文件。
+
+以下为 0.10.63 的历史首批记录：
+
+通过 [DeepSeek Harness 官方 Desktop CLI](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md#bundled-command-runtime) 连接用户另行安装的 Windows DSH 0.2.1-rc.3（受测安装构建 be72761ee1a6736ebcdf4f3739363b083ae53c98）。没有将上游 DSH 源码或安装文件复制到本仓库/AcceptCat 安装包；嵌入页面的品牌和内容由本地 DSH 提供，不表示双方官方合作。适配层自行实现，见 integrations/deepseek-harness/desktop。
+
+独立 DSH 文档的浏览器兼容层复用现有锁文件中的 [core-js 3.49.0](https://github.com/zloirock/core-js)，MIT 许可，版权 Denis Pushkarev 与 CoreJS Company。完整许可在构建的 localDshRuntime.js 头部保留并随安装包分发。未迁入 luanyujia-workbench 的实现、个人规则或模板。
+
 ## 2026-10-16：AcceptCat产品介绍资产
 
 GitHub首页展示既有蜷睡橘猫图标和实际开发界面的合成科研流程截图，来源、受测版本及原件核对见[展示素材说明](docs/assets/README.md)。截图为产品示例，不包含用户真实研究资料；图标沿用用户此前指定的Catnap Desktop已有像素，其独立许可尚未追溯，不新增未核实的作者或MIT声明。较新集成版的OpenMuse主题/布局及其许可见展示素材说明中的固定来源；本次文档发布不迁入应用实现或改变OpenIM派生部分许可。

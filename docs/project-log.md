@@ -2234,3 +2234,61 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 10:43:31公开稳定Latest v0.10.61，Release ID426206384，标签固定安装包源码cc079bec07c7018c1fa28b7fa275e728dac2344d。EXE88,252,826字节/SHA256 f30a75fa7b0a1191a991f4f4377c4085d20b7f6f49e9022445007409a865df74；四附件上传后逐一核对远端大小、uploaded状态及SHA256。匿名Latest、标签源码、公开latest.yml与SHA256SUMS.txt下载/摘要核验通过。证据D:/deepseek-agent/.runtime/release-chat-20261028，含pr127-merge.json、pr127-checks-final.json、release-draft-verified.json、release-public-verified.json与release-tag-verified.json。
 
 原0.10.60保持；未代用户安装或用真实账号、资料、模型验收，未操作原桌面开发目录或部署后台。已知线上仍a174c17/160805d4/contract0.34/schema027；schema028及OpenIM撤回同步单独安排。下一步为用户安装体验与独立后台升级评估。README下载入口、current-state及deployment/acceptcat-0.10.61.md同步实际公开状态。
+
+## 2026-10-28 Windows 本地 DSH 独立页面试做
+
+负责人明确要求先将安装在 D:\0cat\dsh 的 Windows DeepSeek Harness 接入 AcceptCat，作为独立页面，保留旧工作台待后续评估替换。在独立 clone acceptcat-chat-experience 从实际 main/93da480 创建 feat/local-dsh-page，未改原桌面目录和负责人运行中的客户端。核验安装的 DSH 产品版本0.2.1-rc.3/构建be72761ee1a6736ebcdf4f3739363b083ae53c98，采用官方 CLI Web 入口、随机 loopback 端口和独立 DSH_HOME。未抽取上游源码，未复制现有 DSH 配置或平台密钥。
+
+新增 DSH 导航、启动/停止/目录选择、真实状态与沙箱 BrowserView；切换聊天隐藏后恢复，覆盖层展开时隐藏，退出登录/主文档重载/退出应用时仅清理自有子进程树。适配实现位于 integrations/deepseek-harness/desktop，经构建进入独立安装包。保持 Electron22和 OpenIM ABI；真实原生测试发现 Promise.withResolvers、AbortSignal.any、Array.toSorted 缺口，采用已有锁文件 core-js3.49.0及局部 DOM API 兼容层修复，不修改聊天页面和上游 DSH 源码。完整许可随适配模块保留。
+
+客户端/Electron 类型检查、14项定向测试、Web/NSIS构建、五个打包入口与打包程序启动冒烟通过。实际组件+实际主进程管理器+真实本地 DSH 的合成 AcceptCat 窗口身份夹具15项通过，包括页面恢复、全局覆盖层、1024×726、停止/重启/登出清理；Computer Use 只核对新建测试窗口，确认原生视图和首次配置入口可见。首次兼容失败、测试服务器监视临时文件导致 EBUSY/connection-refused 的测试设施失败均保留；修复测试监视范围后重跑通过。DSH 修复后无应用 JavaScript 错误，开发时 Ant Design findDOMNode、DSH CSP 和打包启动既有 electron-log 重复初始化警告未隐藏。未用真实账号、密钥或资料调用模型，未安装第三方插件，未验证全部 DSH 桌面原生扩展。
+
+本地试用包0.10.63：D:/deepseek-agent/.runtime/local-dsh-page-20261028/windows/AcceptCat_0.10.63.exe，88,306,454字节，SHA256 2e95d2807002404128be9b3aa0d41bd4def8eed263d5a97880ea064a282209f7。没有合并、公开Release、安装到负责人目录或后台部署，公开Latest仍0.10.61。本分支不包含未合并的群成员身份修复PR129；两批独立审阅。DSH数据当前按Windows用户保存，独立于AcceptCat账号；既有聊天仍走既有后台，旧工作台未移除。下一步由负责人安装、配置模型、验证真实聊天/工具/插件，再设计与AcceptCat Agent、任务和团队权限衔接。完整启动、构建、边界及证据见docs/development/local-dsh-page.md。
+
+本批交付回填：产品提交 d55375d6229a8b611c976f76ff5138eebfca1f85 已推送，PR130（https://github.com/luoyan96/personal-agent/pull/130）已创建并附到当前任务。安装包与校验文件保留在上述 windows 目录；测试专用 DSH 子进程及临时预览服务已停止。未合并、发布或部署。
+
+## 2026-10-28：PR130 内置 DSH 与账号整合
+
+负责人要求完成内置运行时、自动启动和同一账号模型接入。在 feat/local-dsh-page 独立 clone 开发，重新获取 main/93da480，保留 PR129 独立分支。Windows 候选 0.10.64 固定官方 DSH 0.2.1-rc.3 完整发行树及 SHA512；构建下载静态解包并校验，用户无需另装 DSH。Cookie/CSRF 网关沿用私人模型权限，提供方 Key 保留后台；本机工具循环、账号独立 home、退出清理与临时模型连接已实现。
+
+实际 Electron22/BrowserView、内置 DSH、当前 API 和合成模型验证自动启动、默认模型免二次 Key、回复、read 工具实际读取合成文件、页面切换、双账号隔离和退出停止。修复 Node16 连接关闭兼容和 pi-ai store:false 参数校验，失败证据保留；未用真实账号、模型 Key 或私人资料。定向桌面 16 项与双类型通过。完整 CI 与成品交付记录随后补充；当前未合并、未公开发布、未部署后台，新网关上线须核对生产已有 schema028 待部署差异。详情见 development/local-dsh-integration.md；证据在 Git 外 dsh-integrated-20261028。
+
+本批最终交付补充：产品 2504dff60f5eddd638e58eca03a3ecb60e588ccb 已推送 PR130 并更新描述。最终根 CI837项/66文件、生产3项/B0/Web、双类型、16项桌面定向和11项真实原生集成通过。成品NSIS/五个入口/DSH完整树/更新清单、打包客户端启动与成品内DSH启动通过。安装包 Git外 dsh-integrated-20261028/windows/AcceptCat_0.10.64.exe，366806984字节，SHA256 880cffe8e41d7f6f14f6622ad450d6b49cfc3be807725616d8a073b0b18900aa。CJS/ESM边界修正已在最终包核验；旧构建和首次失败日志保留。仍未执行用户安装、真实模型、合并、公开发布或后台部署，Latest核对仍v0.10.61。后续仅文档回填不改变本安装器源码。
+
+## 2026-10-28 本地 DSH 账号模型接口上线
+
+负责人明确授权更新后台，并重新登录 Workbench 后，于16:58:24–16:58:47（北京时间）完成备份核验及API/worker配对切换。固定产品2504dff最小增量叠加原160805d4，新镜像f58bf538a099a383b35993bf73eeb2a4ca66c5a2c11b4c529af61f8dd862ec52；contract0.34/schema027保持，无迁移，未带入main的schema028。配置/模型转发接口沿用Cookie/CSRF和账号权限，真实Key保留后台。
+
+服务器隔离首轮138项通过，3项DSH用例因合成密钥默认文件权限失败；补0600后三项通过，未改变产品代码或放松权限。568份既有文件、104表/9原件备份与恢复、28份配置密钥输入及其他6服务保持。公网ready200、新接口匿名401，上线4分14秒复核重启和生产失败事件均0。备份SHA256 a2b935236d6a238e4f99fa46b63bf7bbd8a7c53ab9118317d8d32991fbc3fa77；完整路径/回退和证据见deployment/local-dsh-20261028.md。
+
+同时修正PR130远端Linux的同一合成密钥权限问题、Windows服务状态测试缺DSH桥替身问题，本机完整CI837项/66文件、生产3项/B0/Web及5项IPC串联检查通过。原远端与服务器失败日志保留，不能把本机结果写成新head远端已通过。候选0.10.64产品/安装器不变；未合main、未公开Release、未代安装、未调用真实模型或私人材料，真实账号体验仍由负责人验收。Git外local-dsh-deploy-20261028保存回执、验证截图、脚本和下载校验一致的服务器证据；两次工具浏览器地址识别中断和首次未执行多行输入均记录为准备阶段问题。
+
+## 2026-10-28 内置 DSH 预览弹窗关闭 / 0.10.65
+
+负责人要求去掉截图中的预览版说明。在 PR130 的同一分支继续修正，核对 main 仍93da480，原工作目录未动。使用 DSH 官方 `ui-settings-general.welcomeNoticeVersion` 配置字段，在 AcceptCat 托管 overlay 设为锁定 rc.3 的说明版本2026-09-28.1。新工作区、刷新、已有目录重启均直接进入聊天，不更改上游发行包或用户插件配置，工具批准保持。
+
+本机完整CI837项/66文件、生产3项/B0/Web、双类型、7项DSH定向、6项更新守卫通过；实际Electron22+内置DSH开发/成品运行树各5场景通过，含首次、刷新、重启、1024×726与第二个工作区，输入可用、无说明弹窗、无页面错误。仅合成配置，不发送模型请求。成品启动及NSIS/包内5入口/更新SHA512通过。安装器Git外 `dsh-no-notice-20261028/windows/AcceptCat_0.10.65.exe`，366805432字节，SHA256 `11ca3555b0ebcddc6ebb559e7cfcce55961e32de8d8d59e62149effb668198d1`。证据、原测试启动环境失败、测试路径错误、CSP及electron-log既有警告保留，详见development/local-dsh-integration.md。
+
+这次仅本机客户端修正，无后台改动，线上仍f58bf538/contract0.34/schema027。代码交付PR130，未合并/公开Release/代安装，真实账号与模型体验由负责人验证。
+
+## 2026-10-28 本地 DSH DeepSeek 404 修复 / 0.10.66
+
+负责人截图中的 `Unsupported model operation` 来自客户端 loopback 网关；原精确路径拒绝了内置 Anthropic SDK 的 `/v1/messages?beta=true`。新增回归在原产品稳定复现404，现只放行这个固定 Messages 形式，仍拒绝未知/重复参数、计数/批处理、错误协议路径与无效令牌。后台固定完成接口和Cookie/CSRF/模型权限保持；无需后台部署。在PR130同分支继续，实际main仍93da480。
+
+双类型、13项DSH/IPC、6项更新守卫和15项真实Electron22+内置DSH+业务API的合成模型集成通过，覆盖DeepSeek协议流式回答、本机read读合成文件并回传、连续追问、窄桌面、页面切换、双账号恢复和退出。首轮末尾测试断言对无tool_result的请求取includes失败，补空值处理后通过，旧回执保留。此前OpenAI链路通过不能证明Anthropic链路；本批补齐此缺口，但没有调用用户Key/真实模型。无共享/API变更，未重复上批已通过的837项根CI。完整证据在Git外dsh-anthropic-fix-20261028，构建结果完成后补记；代码未合并/公开，未代安装。详见development/local-dsh-integration.md。
+
+交付补充：产品dbe2d62已推送PR130，0.10.66 NSIS/包内5入口/实际路由修复、DSH全树、成品启动及更新SHA512核验通过。Git外 `dsh-anthropic-fix-20261028/windows/AcceptCat_0.10.66.exe`，366808304字节，SHA256 `e87d732a76c3a78ccb7fc2cc703f3cb886931357dd5bbb39cd16d8bf8902e471`。无本批后台变更，安装后重新发送/重试由负责人验证，旧失败消息不自动重放。所有验证用独立合成数据，两个临时测试服务器已关闭。
+
+## 2026-10-28 DSH 常驻控件移除与容量修正 / 0.10.67
+
+按负责人反馈去掉右上角运行标签和停止按钮，保留自动连接/退出清理，异常时可重新连接并重新加载失败页面。截图“你好”后14%来自托管配置统一65,536窗口；根据当日DeepSeek官方模型列表，对DeepSeek提供方的deepseek-flash/deepseek-v4-pro设为1,048,576，其他模型保守回退。实际请求仍包含系统提示/工具定义，本批不减少token开销或宣称14%是账号额度；输出8192和网关字节上限不变。
+
+本机完整CI837项/66文件、生产3项/B0/Web、双类型和19项DSH/IPC/更新检查通过；20项实际Electron22+DSH+业务API的合成集成通过，约9.3K上下文显示约1%/1M。首次最后退出发生停止失败，复测未复现，原回执保留，不视为已定位修复。证据在Git外dsh-context-20261028，原生测试不调用真实模型或用户资料。PR130分支继续，main仍93da480，无生产部署/合并/公开Release/代安装。
+
+交付补充：产品b1683f5已推送，追加6项页面故障恢复通过；旧Electron视图关闭不可靠改用原页面重载，测试Vite监听新用户目录EBUSY通过排除该测试目录修正，失败记录保留。最终重建NSIS、包内5入口和实际修改、DSH全树/更新SHA512及成品启动均通过。`dsh-context-20261028/windows/AcceptCat_0.10.67.exe`，366807088字节，SHA256 e7ac1f185173d47c379d6b64754b411029b1f5f67609fd4f86b527fa7bde01ee。未公开上传或代安装；无需更新后台。合成服务器已关闭，18:04产品head远端CI仍运行，详见开发说明。
+
+## 2026-10-28 DSH 团队整合三步规划（仅文档）
+
+按负责人要求新增docs/development/dsh-team-integration-plan.md，收敛为任务工作页、规则/记忆、团队协作三个可用阶段；各阶段列功能、验收与边界，状态均为未开始，下一次只实施第一步。说明场景/Agent/任务区别、规则管理范围、共享权威数据与本地执行分工，避免把已内置DSH当作业务已经接通。补当前状态与路线图入口，沿PR130现有分支记录后续计划，原开发目录未动。
+
+核对工作副本77cfb7e、main仍93da480；本批无产品代码、依赖、数据库、安装包、发布或后台部署变化。check:content通过（449份Markdown/19个Skill定义），git diff --check通过；未为纯文档变更重复运行产品CI或真实账号验收。
