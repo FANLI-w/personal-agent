@@ -1,3 +1,4 @@
+import { useTeamWorkDraft } from '@/research/TeamWorkPanel';
 import {
   MessageItem as MessageItemType,
   MessageType,
@@ -167,6 +168,7 @@ const MessageItem: FC<IMessageItemProps> = ({
         icon: <CommentOutlined />,
         disabled: disabled || !text || withdrawn,
       },
+      ...(!isDirectChat && researchPointer(message) && !withdrawn && details?.message.origin !== "service" ? [{key:"team-work",label:"安排文献任务…",disabled}] : []),
       { type: "divider" },
       ...(canWithdraw
         ? [{ key: "withdraw", label: "撤回", icon: <UndoOutlined /> }]
@@ -181,6 +183,7 @@ const MessageItem: FC<IMessageItemProps> = ({
     ],
     onClick: ({ key }) => {
       setMenuOpen(false);
+      if(key === "team-work"){ const p=researchPointer(message);if(p)useTeamWorkDraft.getState().choose({conversationId:p.conversationId,messageId:p.messageId,generation}); }
       if (key === "forward" || key === "delete" || key === "withdraw") openAction(key);
       if (key === "select") selectTimelineMessage(message.clientMsgID);
       if (key === "reply" && text)

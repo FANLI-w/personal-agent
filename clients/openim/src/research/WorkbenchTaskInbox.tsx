@@ -60,7 +60,7 @@ export function WorkbenchTaskInbox({
           action={<Button onClick={read.refresh}>重试读取任务</Button>}
         />
       ) : !read.data ? (
-        <p role="status">正在读取工作台任务…</p>
+        <p role="status">正在读取任务…</p>
       ) : !read.data.data.length ? (
         overview ? (
           <div className="workbench-focus-empty">
@@ -121,7 +121,7 @@ export function WorkbenchTaskInbox({
         </div>
       )}
       {read.data?.nextCursor && (
-        <p className="workspace-muted">这里只展示最近 3 项，完整列表请打开工作台。</p>
+        <p className="workspace-muted">这里只展示最近 3 项，完整列表请打开任务。</p>
       )}
     </section>
   );

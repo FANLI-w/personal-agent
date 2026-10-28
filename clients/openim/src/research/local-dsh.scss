@@ -1,0 +1,18 @@
+.local-dsh-page {
+  display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0;
+  background: #fafbfc; color: #253746; overflow: hidden;
+  .local-dsh-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 18px 22px; border-bottom: 1px solid #e8edf2; background: white; }
+  h1 { margin: 0; font-size: 22px; font-weight: 600; }
+  h1 span { font-size: 12px; font-weight: 400; color: #748392; margin-left: 10px; }
+  .local-dsh-header p { margin: 5px 0 0; color: #748392; font-size: 12px; }
+  .ant-alert { margin: 10px 20px 0; }
+  .local-dsh-seat { flex: 1; min-height: 180px; overflow: hidden; position: relative; }
+  .local-dsh-welcome { max-width: 640px; padding: 36px 28px; margin: auto; text-align: center; }
+  .local-dsh-monogram { background: #eaf1ff; color: #426ce8; font-weight: 600; font-size: 22px; border-radius: 18px; width: 74px; height: 74px; display: grid; place-items: center; margin: 0 auto 22px; }
+  h2 { font-size: 22px; font-weight: 600; margin: 18px 0 12px; }
+  p { line-height: 1.8; color: #677787; }
+  .local-dsh-note { text-align: left; padding: 20px 24px; background: white; border: 1px solid #e8edf2; border-radius: 10px; margin-top: 24px; font-size: 13px; }
+  .local-dsh-note p { margin: 8px 0 0; }
+  footer { padding: 8px 20px; border-top: 1px solid #e8edf2; background: white; font-size: 11px; color: #748392; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  footer span { margin-left: 18px; }
+}

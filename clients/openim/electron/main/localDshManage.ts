@@ -1,0 +1,186 @@
+import { app, BrowserView, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
+import { authority } from "./localFolderManage";
+import { dshAccount, createDshRelay } from "./localDshAccount";
+import { registerTaskDshBridge } from './taskDshManage';
+import type { DshBounds } from "../../src/types/localDsh";
+// Built independently by vite.config.ts; the packaged module has no repository-relative imports.
+const { LocalDshRuntime, prepareAccountProfile, dshBrowserCompatibility } = require("./localDshRuntime") as typeof import("../../../../integrations/deepseek-harness/desktop/local-runtime");
+
+export function registerLocalDshBridge() {
+  let view: BrowserView | undefined, owner: BrowserWindow | undefined;
+  let pageReady = false, pageError = "", starting: Promise<void> | undefined;
+  let quitting = false, observed: Electron.WebContents | undefined;
+  const directory = app.isPackaged ? path.join(process.resourcesPath, 'dsh') : path.resolve(app.getAppPath(), '.dsh-runtime');
+  let runtime = new LocalDshRuntime(directory, '');
+  let relay: Awaited<ReturnType<typeof createDshRelay>> | undefined;
+  let account: Awaited<ReturnType<typeof dshAccount>> | undefined;
+  let generation = 0;
+  const accountWatch = setInterval(() => { if (account) void account.valid().catch(() => stop().catch(() => {})); }, 2000);
+  accountWatch.unref();
+  const snapshot = () => ({ ...runtime.state, ...(pageError ? { error: pageError } : {}), pageReady,
+    accountId: account?.metadata.memberId, model: account?.metadata.model, bundled: true });
+  const hide = () => { if (view && owner && !owner.isDestroyed()) owner.removeBrowserView(view); };
+  function disposeView() {
+    hide();
+    if (view && !view.webContents.isDestroyed()) view.webContents.close();
+    view = undefined;
+    pageReady = false;
+  }
+  const isPage = (url: string) => { try { return new URL(url).hash.split("?")[0] === "#/dsh"; } catch { return false; } };
+  function authorize(event: Electron.IpcMainInvokeEvent, requirePage = true) {
+    const auth = authority(event);
+    if (requirePage && !isPage(auth.contents.getURL())) throw Error("请在 DSH 页面操作。");
+    const window = BrowserWindow.fromWebContents(auth.contents);
+    if (!window) throw Error("应用窗口已关闭。");
+    owner = window;
+    if (observed !== auth.contents) {
+      observed = auth.contents;
+      auth.contents.on("did-navigate-in-page", (_e, url, main) => {
+        if (!main) return;
+        if (!isPage(url)) hide();
+        if (new URL(url).hash.startsWith("#/login")) void stop().catch(() => {});
+      });
+      auth.contents.on("did-start-navigation", (_e, _url, inPlace, main) => {
+        if (main && !inPlace) void stop().catch(() => {});
+      });
+      auth.contents.on("destroyed", () => { void stop().catch(() => {}); });
+      auth.contents.on("render-process-gone", () => { void stop().catch(() => {}); });
+    }
+    return auth;
+  }
+  async function stop() {
+    generation++;
+    disposeView();
+    pageError = "";
+    await relay?.close(); relay = undefined; account = undefined;
+    await runtime.stop();
+    await starting?.catch(() => {});
+  }
+  function openExternal(url: string) {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === "https:" && !parsed.username && !parsed.password)
+        void shell.openExternal(parsed.href);
+    } catch { /* Ignore non-web schemes. */ }
+  }
+  async function start(event: Electron.IpcMainInvokeEvent) {
+    if (starting) return starting;
+    const auth = authorize(event, false), epoch = generation;
+    starting = (async () => {
+      pageError = "";
+      const next = await dshAccount(event);
+      if (epoch !== generation) return;
+      if (!next.metadata.enabled) throw Error('请先在 AcceptCat「我的 → 模型设置」启用并选择默认模型，然后点击重试。');
+      if (!account || account.identity !== next.identity || account.lease !== next.lease || account.metadata.fingerprint !== next.metadata.fingerprint || runtime.state.phase !== 'running') {
+        disposeView(); await relay?.close(); relay = undefined; account = undefined;
+        await runtime.stop();
+        if (epoch !== generation) return;
+        const connection = await createDshRelay(next);
+        if (epoch !== generation) { await connection.close(); return; }
+        relay = connection; account = next;
+        const home = path.join(app.getPath('userData'), 'local-dsh', 'accounts', next.identity);
+        const patch = await prepareAccountProfile(home, { ...next.metadata, baseURL: connection.baseURL });
+        if (epoch !== generation) return;
+        runtime = new LocalDshRuntime(directory, home,
+          () => { if (runtime.state.phase !== 'running') disposeView(); }, { patch, token: connection.secret });
+      }
+      const url = await runtime.start();
+      // Do not mount a late startup over another conversation or a replaced document.
+      if (epoch !== generation || authority(event).contents !== auth.contents || runtime.state.phase !== "running") return;
+      await next.valid();
+      if (view && !view.webContents.isDestroyed()) {
+        if (!pageReady) {
+          const current = view;
+          await current.webContents.loadURL(url);
+          if (epoch === generation && view === current && runtime.state.phase === 'running') pageReady = true;
+        }
+        return;
+      }
+      const isolated = session.fromPartition(`acceptcat-dsh-${randomUUID()}`);
+      isolated.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+      isolated.setPermissionCheckHandler(() => false);
+      const current = new BrowserView({ webPreferences: {
+        session: isolated, nodeIntegration: false, contextIsolation: true,
+        sandbox: true, webSecurity: true, spellcheck: false,
+      } });
+      view = current;
+      const origin = new URL(url).origin;
+      current.webContents.setWindowOpenHandler(({ url: target }) => {
+        openExternal(target);
+        return { action: "deny" };
+      });
+      current.webContents.on("will-navigate", (e, target) => {
+        if (new URL(target).origin !== origin) { e.preventDefault(); openExternal(target); }
+      });
+      current.webContents.on("will-redirect", (e, target) => {
+        if (new URL(target).origin !== origin) e.preventDefault();
+      });
+      current.webContents.on("render-process-gone", () => {
+        pageError = "DSH 页面意外退出，请点击重新连接。";
+        disposeView();
+      });
+      current.webContents.on("did-fail-load", (_e, code, _description, _url, main) => {
+        if (main && code !== -3) { pageReady = false; hide(); pageError = "DSH 页面加载失败，请点击重新连接。"; }
+      });
+      try {
+        await current.webContents.loadURL("about:blank");
+        current.webContents.debugger.attach("1.3");
+        await current.webContents.debugger.sendCommand("Page.enable");
+        await current.webContents.debugger.sendCommand("Page.addScriptToEvaluateOnNewDocument", { source: dshBrowserCompatibility });
+        await current.webContents.loadURL(url);
+        if (view === current && runtime.state.phase === "running") pageReady = true;
+      } catch {
+        if (view === current) { disposeView(); pageError = "DSH 页面加载失败，请点击重新连接。"; }
+      }
+    })().catch(async (error) => {
+      disposeView(); await relay?.close(); relay = undefined; account = undefined;
+      await runtime.stop();
+      pageError = error instanceof Error ? error.message : '本地 DSH 连接失败，请重试。';
+    }).finally(() => { starting = undefined; });
+    return starting;
+  }
+  ipcMain.handle("local-dsh-status", (event) => { authorize(event); return snapshot(); });
+  registerTaskDshBridge(async (event) => {
+    authorize(event, false);
+    if (!account || !view || !pageReady || runtime.state.phase !== 'running') await start(event);
+    if (!account || !view || !pageReady || runtime.state.phase !== 'running') throw Error(pageError || '本地 DSH 尚未就绪。');
+    await account.valid();
+    return { account, session: view.webContents.session, origin: new URL(view.webContents.getURL()).origin };
+  });
+  ipcMain.handle('local-dsh-connect', async (event) => { authorize(event, false); await start(event); return snapshot(); });
+  ipcMain.handle('local-dsh-disconnect', async (event) => { authorize(event, false); await stop(); });
+  ipcMain.handle("local-dsh-start", async (event) => { authorize(event); await start(event); return snapshot(); });
+  ipcMain.handle("local-dsh-stop", async (event) => {
+    authorize(event);
+    const result = await dialog.showMessageBox(owner!, {
+      type: "question", message: "停止本地 DSH？", detail: "进行中的本地任务会中断，已保存的历史和配置会保留。",
+      buttons: ["继续运行", "停止 DSH"], defaultId: 0, cancelId: 0,
+    });
+    authorize(event);
+    if (result.response === 1) await stop();
+    return snapshot();
+  });
+  ipcMain.handle("local-dsh-show", (event, bounds: DshBounds | null) => {
+    authorize(event, bounds !== null);
+    if (!bounds) { hide(); return; }
+    if (!pageReady || !view) return;
+    const zoom = event.sender.getZoomFactor();
+    const size = owner!.getContentBounds();
+    if (![bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite)) throw Error("页面尺寸无效。");
+    const x = Math.max(72, Math.round(bounds.x * zoom)), y = Math.max(80, Math.round(bounds.y * zoom));
+    const width = Math.min(Math.round(bounds.width * zoom), size.width - x);
+    const height = Math.min(Math.round(bounds.height * zoom), size.height - y);
+    if (width < 1 || height < 1) { hide(); return; }
+    owner!.addBrowserView(view);
+    view.setBounds({ x, y, width, height });
+  });
+  app.on("before-quit", (event) => {
+    if (quitting || runtime.state.phase === "stopped") return;
+    event.preventDefault();
+    void stop().then(() => { quitting = true; app.quit(); }).catch(() => {
+      void dialog.showMessageBox({ type: "error", message: "本地任务进程尚未退出，请稍后再次退出 AcceptCat。" });
+    });
+  });
+}

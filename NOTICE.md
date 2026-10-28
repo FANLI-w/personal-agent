@@ -1,5 +1,19 @@
 # 来源与许可说明
 
+## 2026-10-28：任务工作页
+
+0.10.68 使用上述同日固定 DSH 0.2.1-rc.3 发行包的公开 session/workspace Remote API，接口依据为该发行树中的 api-session-controller/api-workspace-controller 说明及类型元数据。AcceptCat 的任务 UI、绑定、权限与回执适配自行编写，不复制上游控制器实现、图标或 luanyujia-workbench 的代码/规则。上游完整许可随既有内置发行树保留；没有新增第三方运行依赖。[接口与验证记录](docs/development/dsh-task-workspace.md)。
+
+## 2026-10-28：本地 DSH 页面
+
+后续 0.10.64 改为随 Windows 安装包分发固定官方 DSH 0.2.1-rc.3 发行文件，构建时下载/校验/解包；上游源码和二进制不提交 Git。完整发行树内的 DSH（包声明 MIT）、Electron、Chromium、Node、Python、文档工具和各依赖许可保留在 `resources/dsh` 及其 ASAR 中，各自适用原许可；不能将所有依赖统称为 MIT。来源 URL/SHA512 固定于 runtime-lock.json，不表示官方合作或模型/商标授权。通过官方配置 overlay 接入 AcceptCat，未修改上游源文件。
+
+以下为 0.10.63 的历史首批记录：
+
+通过 [DeepSeek Harness 官方 Desktop CLI](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md#bundled-command-runtime) 连接用户另行安装的 Windows DSH 0.2.1-rc.3（受测安装构建 be72761ee1a6736ebcdf4f3739363b083ae53c98）。没有将上游 DSH 源码或安装文件复制到本仓库/AcceptCat 安装包；嵌入页面的品牌和内容由本地 DSH 提供，不表示双方官方合作。适配层自行实现，见 integrations/deepseek-harness/desktop。
+
+独立 DSH 文档的浏览器兼容层复用现有锁文件中的 [core-js 3.49.0](https://github.com/zloirock/core-js)，MIT 许可，版权 Denis Pushkarev 与 CoreJS Company。完整许可在构建的 localDshRuntime.js 头部保留并随安装包分发。未迁入 luanyujia-workbench 的实现、个人规则或模板。
+
 ## 2026-10-16：AcceptCat产品介绍资产
 
 GitHub首页展示既有蜷睡橘猫图标和实际开发界面的合成科研流程截图，来源、受测版本及原件核对见[展示素材说明](docs/assets/README.md)。截图为产品示例，不包含用户真实研究资料；图标沿用用户此前指定的Catnap Desktop已有像素，其独立许可尚未追溯，不新增未核实的作者或MIT声明。较新集成版的OpenMuse主题/布局及其许可见展示素材说明中的固定来源；本次文档发布不迁入应用实现或改变OpenIM派生部分许可。
@@ -76,3 +90,7 @@ B3 的受限运行组合依赖官方 DeepSeek Harness `@deepseek-ai/dsh-llm` / `
 作者：YunYueSama；仓库：[YunYueSama/codex-deepseek-pet](https://github.com/YunYueSama/codex-deepseek-pet)。按负责人要求采用DeepSeek鲸鱼娘社区二创「大肥鱼」的独立头像，取固定修订7661c8b304c5400701f91da01b1a643a207331de的build/icon.png，像素原样保留，不引入上游代码或角色台词。适用“大肥鱼项目署名许可1.0”（自定义许可，非MIT），完整许可、上游素材边界和来源随客户端public/third-party/dafeiyu进入安装包，关于页提供署名。该许可仅覆盖上游有权授权的贡献，不改变既有第三方权利，不表示官方认可。详见[头像来源](clients/openim/public/third-party/dafeiyu/ORIGIN.md)。
 
 同日按负责人要求，将上述原始PNG和同修订build/icon.ico同时用于AcceptCat应用/安装器/快捷方式、窗口、标题栏、启动/登录/关于页及托盘图标，许可与署名同上；ICO原样保留16/32/48/256px四档。不引入上游桌宠运行时，不更改AcceptCat名称或appId。原Catnap橘猫记录仅描述历史版本，不再作为本机0.10.49的新应用图标；旧来源及许可历史保留。
+
+2026-10-28：第二步规则/记忆与任务工作页为AcceptCat适配代码。内置方法仍由agents/skills单一来源打包，通过research-skills解析器生成本次选用的版本副本；DSH仅使用固定发行包的官方会话接口，不复制或修改其源码。设计参考归属继续见docs/development/dsh-team-integration-plan.md。
+
+2026-10-28：第三步群文献分工、设备执行协调与群回执为 AcceptCat 自行编写的适配层；继续使用固定 DSH 发行包的官方 RPC，未迁入或修改上游源码。工作流参考来源沿用三步计划，已有许可、署名与 Skill 单一来源保持。

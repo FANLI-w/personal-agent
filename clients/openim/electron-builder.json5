@@ -54,6 +54,8 @@
     artifactName: "${productName}_${version}.${ext}",
     icon: "./dist/icons/icon.ico",
     extraResources: [
+      // electron-build.mjs builds from .electron-runtime; the verified vendor tree is its sibling.
+      { from: "../.dsh-runtime", to: "dsh", filter: ["**/*", "**/.*"] },
       {
         from: "node_modules/@openim/electron-client-sdk/assets/win_${arch}/",
         to: "app.asar.unpacked/node_modules/@openim/electron-client-sdk/assets/win_${arch}",

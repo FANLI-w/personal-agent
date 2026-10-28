@@ -117,6 +117,7 @@ export function runtimeEntryFiles(staging) {
   const paths = [path.join(staging, 'dist/index.html'), path.join(staging, 'dist-electron/main/bootstrap.js'), require.resolve('@research-agent-platform/research-skills/import')];
   if (!paths[2].endsWith('.cjs')) throw Error('Skill import must resolve to its CommonJS entry');
   paths.push(createRequire(path.join(staging, 'node_modules/@research-agent-platform/research-skills/package.json')).resolve('yaml'));
+  paths.push(path.join(staging, 'dist-electron/main/localDshRuntime.js'));
   for (const file of paths) {
     nonempty(file);
     const relative = path.relative(realpathSync(staging), realpathSync(file));

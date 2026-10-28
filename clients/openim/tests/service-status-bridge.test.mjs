@@ -57,6 +57,7 @@ async function fixture() {
     ["skillManage", ["registerSkillBridge"]],
     ["zoteroManage", ["registerZoteroBridge"]],
     ["localFolderManage", ["registerLocalFolderBridge"]],
+    ["localDshManage", ["registerLocalDshBridge"]],
     ["peerLibraryManage", ["registerPeerLibraryBridge"]],
     ["imageClipboardManage", ["registerImageClipboardBridge"]],
     ["chatImageActionsManage", ["registerChatImageActionsBridge"]],

@@ -32,7 +32,8 @@ export const useResearchStore = create<State>((set) => ({
   mappings: [],
   coordinatorPinPending: false,
   error: "",
-  setSession: (session, actor) =>
+  setSession: (session, actor) => {
+    void window.electronAPI?.localDsh?.connect().catch(() => {});
     set((state) => ({
       session,
       actor,
@@ -41,7 +42,8 @@ export const useResearchStore = create<State>((set) => ({
       coordinatorConversation: undefined,
       coordinatorPinPending: false,
       generation: state.generation + 1,
-    })),
+    }));
+  },
   refreshActor: async () => {
     const generation = useResearchStore.getState().generation;
     const actor = await researchApi("session");
@@ -86,7 +88,8 @@ export const useResearchStore = create<State>((set) => ({
       throw error;
     }
   },
-  clear: () =>
+  clear: () => {
+    void window.electronAPI?.localDsh?.disconnect().catch(() => {});
     set((state) => ({
       generation: state.generation + 1,
       session: undefined,
@@ -97,5 +100,6 @@ export const useResearchStore = create<State>((set) => ({
       coordinatorConversation: undefined,
       coordinatorPinPending: false,
       error: "",
-    })),
+    }));
+  },
 }));
