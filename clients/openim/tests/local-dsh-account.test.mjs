@@ -64,3 +64,37 @@ test('managed account overlay preserves user plugins and contains only a credent
   assert.equal(entries[1].config.provider, 'acceptcat');
   assert.equal(readFileSync(path.join(home, 'cordis.patch.yml'), 'utf8'), 'synthetic user plugin settings');
 });
+
+test('Anthropic relay accepts the bundled SDK beta messages route without allowing other operations or queries', async t => {
+  const received = [];
+  const upstream = createServer((req, res) => {
+    assert.equal(req.url, '/api/v1/local-dsh/completion');
+    assert.equal(req.headers['x-csrf-token'], 'synthetic-csrf');
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => {
+      received.push(JSON.parse(Buffer.concat(chunks)));
+      res.writeHead(200, { 'content-type': 'text/event-stream' });
+      res.end('event: message_stop\ndata: {"type":"message_stop"}\n\n');
+    });
+  });
+  await new Promise(r => upstream.listen(0, '127.0.0.1', r));
+  t.after(() => new Promise(r => upstream.close(r)));
+  const relay = await createDshRelay({ metadata: { protocol: 'anthropic-messages', fingerprint: 'synthetic-version' }, csrf: 'synthetic-csrf',
+    valid: async () => {}, request: (url, method) => request({ host: '127.0.0.1', port: upstream.address().port, path: url, method }),
+  });
+  t.after(() => relay.close());
+  const body = { model: 'deepseek-flash', messages: [{ role: 'user', content: 'Synthetic greeting' }], stream: true, max_tokens: 8192 };
+  const call = (route, key = relay.secret) => fetch(relay.baseURL + route, { method: 'POST', headers: { 'x-api-key': key, 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  assert.equal((await call('/v1/messages?beta=true', 'wrong')).status, 401);
+  for (const route of ['/v1/messages/count_tokens?beta=true', '/v1/messages/batches', '/v1/chat/completions', '/v1/messages?beta=false', '/v1/messages?beta=true&url=https://example.com', '/v1/messages?beta=true&beta=true'])
+    assert.equal((await call(route)).status, 404, route);
+  assert.equal(received.length, 0);
+  for (const route of ['/v1/messages', '/v1/messages?beta=true']) {
+    const response = await call(route);
+    assert.equal(response.status, 200, route);
+    assert.match(await response.text(), /message_stop/);
+  }
+  assert.equal(received.length, 2);
+  for (const envelope of received) assert.deepEqual(envelope, { fingerprint: 'synthetic-version', protocol: 'anthropic-messages', request: body });
+});

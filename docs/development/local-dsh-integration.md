@@ -92,6 +92,14 @@ corepack pnpm@10.28.0 run build:win
 
 0.10.65 NSIS 与包内5个入口、成品启动、6项更新守卫及更新清单 SHA512 核对通过。安装器 `D:\deepseek-agent\.runtime\dsh-no-notice-20261028\windows\AcceptCat_0.10.65.exe`，366,805,432 字节，SHA256 `11ca3555b0ebcddc6ebb559e7cfcce55961e32de8d8d59e62149effb668198d1`。同目录保留 blockmap/latest.yml/SHA256SUMS.txt，未上传公开更新通道。更新守卫第一次命令在根目录找不到客户端测试文件，改为客户端目录后6项通过，错误日志保留。
 
+## 0.10.66 DeepSeek 请求路径修复
+
+截图中的 `404 Unsupported model operation` 明确来自客户端 `createDshRelay`。内置 `@anthropic-ai/sdk/resources/beta/messages/messages.mjs` 的创建消息操作使用 `/v1/messages?beta=true`，旧网关仅允许 `/v1/messages`。补充精确白名单，查询参数不传给后台；原固定 completion 接口、Cookie/CSRF、模型权限与限流保持。其他 URL、批处理、计数、OpenAI 路由混用、未知或重复参数仍拒绝。仅客户端改动，不需要重新部署云端。
+
+新增回归先在原代码复现404，修复后通过，错误令牌401和禁止路由404均覆盖。此前端到端使用 Qwen/OpenAI 协议，未覆盖这条真实 SDK 的 Anthropic 路径，这是原验证缺口。补用实际 Electron22、内置 DSH、原生 IPC/转发与实际业务API，以合成账号和 DeepSeek 协议流式响应检查正文、工具读合成文件并回传、连续追问和账号隔离；不调用用户真实 Key 或模型。
+
+双类型、13项 DSH/IPC 回归、6项更新守卫、15项原生集成检查通过。实际 `read` 工具结果含测试文件原文且 `is_error=false`；两次回答在页面显示完成。证据为 Git 外 `D:\deepseek-agent\.runtime\dsh-anthropic-fix-20261028` 的 `before-fix.log`、`targeted.log`、`qa-results.json`、`model-calls.json`、`wire.json` 与 `dsh-followup.png`。首轮测试末尾因断言未处理无工具结果的首请求而失败，改测试的空值处理后复核通过，原 `qa-assertion-failure.json` 保留。没有修改共享/API代码，根837项CI沿用0.10.65批次结果，不称为本批重新执行；无生产部署、真实模型或用户安装验收。
+
 ## 后续
 
 真实账号/模型验收、第三方插件实际安装和插件兼容性、长时间本地任务/机器休眠恢复待单独验证。Web 配置内的插件入口和原运行时保留；DSH 独立桌面的专用原生桥不因本次嵌入 Web 自动具备。现有个人助理/群聊消息路由、云任务分配、共享资料授权与本地 DSH 任务产物之间尚未整合；没有删除或替换原工作台。macOS 与手机不在本批范围。

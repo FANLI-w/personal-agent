@@ -2270,3 +2270,9 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 本机完整CI837项/66文件、生产3项/B0/Web、双类型、7项DSH定向、6项更新守卫通过；实际Electron22+内置DSH开发/成品运行树各5场景通过，含首次、刷新、重启、1024×726与第二个工作区，输入可用、无说明弹窗、无页面错误。仅合成配置，不发送模型请求。成品启动及NSIS/包内5入口/更新SHA512通过。安装器Git外 `dsh-no-notice-20261028/windows/AcceptCat_0.10.65.exe`，366805432字节，SHA256 `11ca3555b0ebcddc6ebb559e7cfcce55961e32de8d8d59e62149effb668198d1`。证据、原测试启动环境失败、测试路径错误、CSP及electron-log既有警告保留，详见development/local-dsh-integration.md。
 
 这次仅本机客户端修正，无后台改动，线上仍f58bf538/contract0.34/schema027。代码交付PR130，未合并/公开Release/代安装，真实账号与模型体验由负责人验证。
+
+## 2026-10-28 本地 DSH DeepSeek 404 修复 / 0.10.66
+
+负责人截图中的 `Unsupported model operation` 来自客户端 loopback 网关；原精确路径拒绝了内置 Anthropic SDK 的 `/v1/messages?beta=true`。新增回归在原产品稳定复现404，现只放行这个固定 Messages 形式，仍拒绝未知/重复参数、计数/批处理、错误协议路径与无效令牌。后台固定完成接口和Cookie/CSRF/模型权限保持；无需后台部署。在PR130同分支继续，实际main仍93da480。
+
+双类型、13项DSH/IPC、6项更新守卫和15项真实Electron22+内置DSH+业务API的合成模型集成通过，覆盖DeepSeek协议流式回答、本机read读合成文件并回传、连续追问、窄桌面、页面切换、双账号恢复和退出。首轮末尾测试断言对无tool_result的请求取includes失败，补空值处理后通过，旧回执保留。此前OpenAI链路通过不能证明Anthropic链路；本批补齐此缺口，但没有调用用户Key/真实模型。无共享/API变更，未重复上批已通过的837项根CI。完整证据在Git外dsh-anthropic-fix-20261028，构建结果完成后补记；代码未合并/公开，未代安装。详见development/local-dsh-integration.md。

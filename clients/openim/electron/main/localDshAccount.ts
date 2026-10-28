@@ -64,7 +64,10 @@ export async function createDshRelay(account: Awaited<ReturnType<typeof dshAccou
     const key = req.headers.authorization?.replace(/^Bearer /, '') || req.headers['x-api-key'];
     if (closed || req.headers.origin || typeof key !== 'string' || !/^[a-f0-9]{64}$/.test(key) || !timingSafeEqual(Buffer.from(key), Buffer.from(secret))) { failure(401, 'AcceptCat session required'); return; }
     const suffix = account.metadata.protocol === 'anthropic-messages' ? '/v1/messages' : '/v1/chat/completions';
-    if (req.method !== 'POST' || req.url !== suffix) { failure(404, 'Unsupported model operation'); return; }
+    // The bundled Anthropic SDK uses beta.messages.create(), which adds this
+    // fixed query. It is the same completion operation, not an arbitrary route.
+    const supported = req.url === suffix || (account.metadata.protocol === 'anthropic-messages' && req.url === '/v1/messages?beta=true');
+    if (req.method !== 'POST' || !supported) { failure(404, 'Unsupported model operation'); return; }
     if (pending.size >= 2) { failure(429, 'Too many model calls'); return; }
     let upstream: Electron.ClientRequest | undefined;
     try {

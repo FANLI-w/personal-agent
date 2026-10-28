@@ -2,6 +2,10 @@
 
 更新日期：2026-10-28（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 本地 DSH DeepSeek 请求 404 修复（0.10.66 候选）
+
+负责人实际使用出现 `404 Unsupported model operation`。错误来自客户端 loopback 网关的精确路径判断：内置 Anthropic SDK 的 Messages 请求带 `?beta=true`，旧网关仅接受无查询参数的路径。现仅额外允许这一个固定 Messages 路由；仍拒绝其他接口、未知/重复查询参数和无效令牌。修复在 PR130，后台无需改动；此前 OpenAI 合成流程通过不能代替 DeepSeek 分支验收。验证与候选包见 [接入说明](development/local-dsh-integration.md)。
+
 ## 内置 DSH 预览说明关闭（0.10.65 候选）
 
 根据负责人截图反馈，在同一 PR130 中通过 DSH 官方配置 overlay 关闭锁定 rc.3 的首次预览说明，新工作区与重启直接进入聊天。保留工具权限、插件配置和上游发行文件；无需后台变更。实际 Electron22 加内置 DSH 的首次打开、刷新、重启、窄桌面及第二个隔离工作区均已通过无弹窗与可输入验证，未发送模型请求。成品与检查结果见 [接入说明](development/local-dsh-integration.md)。
