@@ -63,6 +63,16 @@ test('managed account overlay preserves user plugins and contains only a credent
   assert.equal(entries[0].config.providers.acceptcat.retryPolicy.maxRetries, 0);
   assert.equal(entries[1].config.provider, 'acceptcat');
   assert.equal(readFileSync(path.join(home, 'cordis.patch.yml'), 'utf8'), 'synthetic user plugin settings');
+  for (const [provider, model, contextWindow] of [
+    ['deepseek', 'deepseek-flash', 1048576], ['deepseek', 'deepseek-v4-pro', 1048576],
+    ['qwen', 'deepseek-flash', 65536], ['deepseek', 'unknown-future-model', 65536],
+  ]) {
+    await runtime.exports.prepareAccountProfile(home, { provider, model, baseURL: 'http://127.0.0.1:4321', protocol: 'anthropic-messages', maxTokens: 8192 });
+    const configured = JSON.parse(readFileSync(file, 'utf8'))[0].config.providers.acceptcat;
+    assert.equal(configured.defaultContextWindow, contextWindow);
+    assert.equal(configured.models[0].contextWindow, contextWindow);
+    assert.equal(configured.models[0].maxTokens, 8192);
+  }
 });
 
 test('Anthropic relay accepts the bundled SDK beta messages route without allowing other operations or queries', async t => {

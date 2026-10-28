@@ -89,7 +89,14 @@ export function registerLocalDshBridge() {
       // Do not mount a late startup over another conversation or a replaced document.
       if (epoch !== generation || authority(event).contents !== auth.contents || runtime.state.phase !== "running") return;
       await next.valid();
-      if (view && !view.webContents.isDestroyed()) return;
+      if (view && !view.webContents.isDestroyed()) {
+        if (!pageReady) {
+          const current = view;
+          await current.webContents.loadURL(url);
+          if (epoch === generation && view === current && runtime.state.phase === 'running') pageReady = true;
+        }
+        return;
+      }
       const isolated = session.fromPartition(`acceptcat-dsh-${randomUUID()}`);
       isolated.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
       isolated.setPermissionCheckHandler(() => false);
@@ -110,11 +117,11 @@ export function registerLocalDshBridge() {
         if (new URL(target).origin !== origin) e.preventDefault();
       });
       current.webContents.on("render-process-gone", () => {
-        pageError = "DSH 页面意外退出，请停止后重新启动。";
+        pageError = "DSH 页面意外退出，请点击重新连接。";
         disposeView();
       });
       current.webContents.on("did-fail-load", (_e, code, _description, _url, main) => {
-        if (main && code !== -3) { pageReady = false; hide(); pageError = "DSH 页面加载失败，请停止后重新启动。"; }
+        if (main && code !== -3) { pageReady = false; hide(); pageError = "DSH 页面加载失败，请点击重新连接。"; }
       });
       try {
         await current.webContents.loadURL("about:blank");
@@ -124,7 +131,7 @@ export function registerLocalDshBridge() {
         await current.webContents.loadURL(url);
         if (view === current && runtime.state.phase === "running") pageReady = true;
       } catch {
-        if (view === current) { disposeView(); pageError = "DSH 页面加载失败，请停止后重新启动。"; }
+        if (view === current) { disposeView(); pageError = "DSH 页面加载失败，请点击重新连接。"; }
       }
     })().catch(async (error) => {
       disposeView(); await relay?.close(); relay = undefined; account = undefined;
@@ -165,7 +172,7 @@ export function registerLocalDshBridge() {
     if (quitting || runtime.state.phase === "stopped") return;
     event.preventDefault();
     void stop().then(() => { quitting = true; app.quit(); }).catch(() => {
-      void dialog.showMessageBox({ type: "error", message: "DSH 尚未停止，请在 DSH 页面停止后再退出 AcceptCat。" });
+      void dialog.showMessageBox({ type: "error", message: "本地任务进程尚未退出，请稍后再次退出 AcceptCat。" });
     });
   });
 }
