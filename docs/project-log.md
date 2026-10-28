@@ -2302,3 +2302,5 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 初测发现交付来源未加入artifactRefs，已修。测试脚本Node16 fetch、代理Origin、同名附件定位及根构建触发夹具重载的失败分别修正/重测，旧日志保留。一次退出报停止失败，补有界等待Node exit事件，仍存活不吞错；最终正常退出通过，不能称全部退出异常已消除。构建最终NSIS、5入口、任务代码/IPC、固定DSH包与更新SHA512及成品启动通过；既有AntD/findDOMNode和electron-log告警记录。完整证据在Git外dsh-task-workspace-20261028。
 
 安装器：D:\deepseek-agent\.runtime\dsh-task-workspace-20261028\windows\AcceptCat_0.10.68.exe，366868820字节，SHA256 8ec3d67cbc911acebeaf237cc76fa9f20251be31860705574cb82b7ca7ee4b8f。无本批API/数据库变更、后台部署、代码合并、公开Release或代安装；后台仍以已记录f58bf538/contract0.34/schema027为准。第一步待负责人真实体验验收后进入第二步。开发、恢复、构建和限制见docs/development/dsh-task-workspace.md，三步计划及当前状态已更新。
+
+交付补充：PR131已创建并附加，产品97e8720/首份交接72b2139已推送；20:27核对可合并，远端Foundation与Windows打包尚在运行，本地检查通过。测试结束归档EXE后夹具Vite监听新文件出现EBUSY，保留日志并将windows输出排除后续监听；不影响已完成的原生/成品检查。合成API和测试窗口已清理，原客户端未操作。

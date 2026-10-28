@@ -78,6 +78,8 @@ corepack pnpm@10.28.0 run electron:smoke
 
 候选安装器（未公开发布）：`D:\deepseek-agent\.runtime\dsh-task-workspace-20261028\windows\AcceptCat_0.10.68.exe`，366,868,820 字节，SHA256 `8ec3d67cbc911acebeaf237cc76fa9f20251be31860705574cb82b7ca7ee4b8f`。同目录保留 blockmap、latest.yml 和 SHA256SUMS；这些更新文件仅归档，未上传更新通道。纯 Node 的包检查首次不能按 Electron 虚拟目录读取 ASAR，改为 asar.extractFile 后通过；不涉及产品代码修改。
 
-交付仅为功能分支/PR和候选安装包，没有合并、公开 Release、后台部署或代用户安装。先前中止的打包日志保留；以上校验针对最终 `windows-build-release.log` 的成品。
+交付：[PR131](https://github.com/luoyan96/personal-agent/pull/131) 和候选安装包。20:27核对 PR 可合并，远端 Foundation/Windows 打包仍在运行；本地上述检查已通过。没有合并、公开 Release、后台部署或代用户安装。先前中止的打包日志保留；以上校验针对最终 `windows-build-release.log` 的成品。
+
+测试结束后归档安装器触发测试 Vite 对新 EXE 的 EBUSY 监听错误，未影响已完成的原生测试或安装包；后续夹具忽略 windows 构建输出目录。合成 API 与测试窗口已清理，不操作用户客户端。
 
 下一步：先验收这个任务闭环，再进入三步计划的第二步（规则与记忆）。不并行扩大到手机和多 Agent 调度。
