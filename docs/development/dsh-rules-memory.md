@@ -61,3 +61,13 @@ Windows 候选从客户端执行 `corepack pnpm@10.28.0 run build:win`，固定�
 普通CI、合成模型/真实DSH进程、真实模型和真人安装验收分别记录。当前没有真实模型、真实账号或双机协作验收，也没有执行合并、公开发布或安装到用户客户端。
 
 构建检查发现：首份0.10.69虽然NSIS生成成功，成品启动因Electron22的CommonJS主进程直接加载仅ESM导出的contracts而失败（packaged-smoke.log）。现将同一WorkContext schema通过既有本机DSH bundle编译供主进程调用，不复制校验规则或放宽数据验证；增加CommonJS打包校验用例，23项定向及Electron类型检查通过，重新执行根CI并重建候选。失败包不作为交付产物。
+
+修复打包后的83c10c5再次通过完整根CI（root-ci-package-fix.log，退出0）：844项/67文件、生产3项、B0和Web生产检查。正在据此生成最终候选。
+
+真实Electron22.3.27/Node16.17.1的canonical schema加载与有效/无效数据校验通过（electron-schema.log）。最终win-unpacked使用独立临时userData启动通过（packaged-smoke-final.log，OPENIM_ELECTRON_READY/退出0），既有electron-log重复initialize告警仍记录，不影响本次就绪检查；没有登录生产或操作用户安装客户端。
+
+## 最终交付记录
+
+最终交付：产品83c10c5，PR132（https://github.com/luoyan96/personal-agent/pull/132）。本机最终根CI844项/67文件、生产3项/B0/Web，23项DSH定向、客户端双类型、24项真实DSH合成闭环通过。22:06核对产品提交的GitHub四项检查全通过。Windows0.10.69最终NSIS/5入口/四页签与IPC/内置DSH0.2.1-rc.3/更新SHA512/成品启动通过。安装器D:\deepseek-agent\.runtime\dsh-rules-memory-20261028/windows/AcceptCat_0.10.69.exe，366891410字节，SHA256 b4347308b07910e0f16980e3fb575d942d13347ad918e3c2e35f8be66698519e。源码与测试完成，配套后台未部署、真人/真实模型未验收，未合并或公开发布；第三步未开始。
+
+首个失败包已由同版本重新构建产物替换，仅归档最终通过包；失败启动日志保留。最终凭据：root-ci-package-fix.log、windows-build-final.log、packaged-smoke-final.log、package-receipt.json，以及windows/SHA256SUMS.txt。PR包含第一步待审依赖，按审阅结果对齐后合并。

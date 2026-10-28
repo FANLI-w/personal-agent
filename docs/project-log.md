@@ -2317,3 +2317,5 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 第二步检查补充：同步Web契约版本及CONTEXT1实现阶段的测试断言后，e15ee35最终根CI844项/67文件、生产3项、B0进程和Web生产检查通过（root-ci-verified.log，退出0）；原失败日志保留。此后开始Windows0.10.69候选构建，不重复已通过的完整CI。
 
 第二步成品检查：首份0.10.69 NSIS虽生成，独立临时userData启动暴露contracts仅ESM导出与Electron22 CommonJS主进程不兼容。改为既有localDshRuntime bundle导出canonical WorkContext校验器，并由主进程引用；未放宽schema。新增回归后DSH定向23项与Electron类型通过，触发完整CI重跑及重打包。原packaged-smoke.log保留，首次包不交付。PR132已建立，代码合并/公开发布/部署仍未执行。
+
+最终交付：产品83c10c5，PR132（https://github.com/luoyan96/personal-agent/pull/132）。本机最终根CI844项/67文件、生产3项/B0/Web，23项DSH定向、客户端双类型、24项真实DSH合成闭环通过。22:06核对产品提交的GitHub四项检查全通过。Windows0.10.69最终NSIS/5入口/四页签与IPC/内置DSH0.2.1-rc.3/更新SHA512/成品启动通过。安装器D:\deepseek-agent\.runtime\dsh-rules-memory-20261028/windows/AcceptCat_0.10.69.exe，366891410字节，SHA256 b4347308b07910e0f16980e3fb575d942d13347ad918e3c2e35f8be66698519e。源码与测试完成，配套后台未部署、真人/真实模型未验收，未合并或公开发布；第三步未开始。 最后仅补交付文档，未重复运行已通过的产品检查。
