@@ -202,8 +202,7 @@ export function ResearchTaskPanel({
         </Space>
       </div>
     );
-  const { task, assignments, executions, deliverables, artifacts, dependencyImpacts } = value;
-  const unacknowledgedImpacts = (dependencyImpacts || []).filter((i) => !i.acknowledgedBy);
+  const { task, assignments, executions, deliverables, artifacts } = value;
   const allowed = (action: string) =>
     task.allowedActions.some((item) => item === action);
   const latest = deliverables.reduce<(typeof deliverables)[number] | undefined>(
@@ -409,32 +408,7 @@ export function ResearchTaskPanel({
           </Button>
         </details>
       )}
-      {allowed("resume") && unacknowledgedImpacts.length > 0 && (
-        <Button
-          disabled={busy}
-          onClick={() =>
-            confirm({
-              title: "确认依赖影响？",
-              okText: "确认影响",
-              content: "前置任务已变更，请确认已重新核查依赖成果后再继续。",
-              onOk: () =>
-                command(() =>
-                  researchApi("acknowledgeImpacts", {
-                    params: { id: task.id },
-                    body: {
-                      expectedVersion: task.version,
-                      impactIds: unacknowledgedImpacts.map((i) => i.id),
-                      comment: "已确认依赖影响",
-                    },
-                  }),
-                ),
-            })
-          }
-        >
-          确认依赖影响
-        </Button>
-      )}
-      {allowed("resume") && unacknowledgedImpacts.length === 0 && (
+      {allowed("resume") && (
         <Button
           disabled={busy}
           onClick={() =>
