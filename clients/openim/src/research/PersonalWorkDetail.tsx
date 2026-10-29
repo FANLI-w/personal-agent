@@ -14,9 +14,12 @@ export { workspaceStatusLabel, workspaceMemberLabel } from './workspace-labels';
 export function PersonalWorkDetail({
   taskId,
   onChanged,
+  embedded,
 }: {
   taskId: string;
   onChanged: () => Promise<void>;
+  /** Inside the task work page the title and status already sit above. */
+  embedded?: boolean;
 }) {
   const actor = useResearchStore((s) => s.actor);
   const read = useResearchRead(
@@ -111,22 +114,25 @@ export function PersonalWorkDetail({
   );
   return (
     <section className="workspace-task-detail" aria-label="任务详情">
-      <header>
-        <span className="workspace-eyebrow">个人协作任务</span>
-        <h2>{task.title}</h2>
-        <span className="workspace-status">
-          {workspaceStatusLabel[task.status] || "查看当前状态"}
-        </span>
-      </header>
-      {task.summaryOnly ? (
-        <p className="workspace-task-goal">
-          接受任务后可查看获准目标与结果；群聊邀请独立处理。
-        </p>
-      ) : (
-        <div className="workspace-task-goal">
-          <SafeMessageMarkdown text={task.goal || "尚未填写目标"} />
-        </div>
+      {!embedded && (
+        <header>
+          <span className="workspace-eyebrow">个人协作任务</span>
+          <h2>{task.title}</h2>
+          <span className="workspace-status">
+            {workspaceStatusLabel[task.status] || "查看当前状态"}
+          </span>
+        </header>
       )}
+      {!embedded &&
+        (task.summaryOnly ? (
+          <p className="workspace-task-goal">
+            接受任务后可查看获准目标与结果；群聊邀请独立处理。
+          </p>
+        ) : (
+          <div className="workspace-task-goal">
+            <SafeMessageMarkdown text={task.goal || "尚未填写目标"} />
+          </div>
+        ))}
       <h3>负责人和成员</h3>
       <div className="workspace-member-list">
         <p>

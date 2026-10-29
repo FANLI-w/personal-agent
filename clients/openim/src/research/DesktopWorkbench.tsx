@@ -405,36 +405,42 @@ export function DesktopWorkbench() {
                       {group.label}
                       {partial ? "" : ` · ${group.items.length}`}
                     </h2>
-                    {group.items.map((card) => (
-                      <button
-                        className="workspace-task-row"
-                        key={`${card.source}:${card.id}`}
-                        aria-pressed={
-                          requestedTask
-                            ? card.taskId === requestedTask &&
-                              (card.source === "research_task"
-                                ? "research"
-                                : "personal") === requestedKind
-                            : activeCard?.id === card.id
-                        }
-                        onClick={() => select(card)}
-                      >
-                        <span className="workspace-task-row-title">{card.title}</span>
-                        <span className="workspace-status">
-                          {workspaceStatusLabel[card.status] ||
-                            card.progress.label ||
-                            "查看状态"}
-                        </span>
-                        <p>{card.goal || "接受后可查看获准目标"}</p>
-                        <footer>
-                          {card.owner.displayName}
-                          <span>
-                            {workspaceStatusLabel[card.progress.label] ||
-                              card.progress.label}
+                    {group.items.map((card) => {
+                      // One status per row: the footer only adds the progress step
+                      // when it says something the badge does not.
+                      const badge =
+                          workspaceStatusLabel[card.status] ||
+                          card.progress.label ||
+                          "查看状态",
+                        step =
+                          workspaceStatusLabel[card.progress.label] ||
+                          card.progress.label;
+                      return (
+                        <button
+                          className="workspace-task-row"
+                          key={`${card.source}:${card.id}`}
+                          aria-pressed={
+                            requestedTask
+                              ? card.taskId === requestedTask &&
+                                (card.source === "research_task"
+                                  ? "research"
+                                  : "personal") === requestedKind
+                              : activeCard?.id === card.id
+                          }
+                          onClick={() => select(card)}
+                        >
+                          <span className="workspace-task-row-title">
+                            {card.title}
                           </span>
-                        </footer>
-                      </button>
-                    ))}
+                          <span className="workspace-status">{badge}</span>
+                          <p>{card.goal || "接受后可查看获准目标"}</p>
+                          <footer>
+                            {card.owner.displayName}
+                            {step && step !== badge && <span>{step}</span>}
+                          </footer>
+                        </button>
+                      );
+                    })}
                   </section>
                 ));
               })()}
@@ -504,6 +510,7 @@ export function DesktopWorkbench() {
                             key={requestedTask}
                             taskId={requestedTask}
                             onChanged={refreshTask}
+                            embedded
                           />
                         </div>
                       ) : (
@@ -511,6 +518,7 @@ export function DesktopWorkbench() {
                           key={requestedTask}
                           taskId={requestedTask}
                           onChanged={refreshTask}
+                          embedded
                         />
                       )
                     }

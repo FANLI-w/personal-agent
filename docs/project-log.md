@@ -2456,3 +2456,11 @@ typecheck、typecheck:electron、build:web 通过；隔离预览在 1440 与 102
 隔离预览此前只引 `index.scss`，缺 `.personal-agent-desktop` 外壳样式：主按钮显示为绿色（真实为浅蓝胶囊）、底部输入框被内容挤到视口外，前几批截图因此不代表真实外观。本批补 `desktop-layout.scss`、`desktop-workspace.scss`、`planning-agent.scss` 与规划历史替身，并把预览缓存目录改到 Git 外，避免 vite 重建时清理客户端 `node_modules/.vite`。重新核对 1440 与 1024：分组标题、折叠区、底部输入框、成果区块滚动定位均正常。
 
 typecheck、typecheck:electron、build:web、workbench-links 7 项、local-dsh 39 项通过；改动文件 lint 仅剩基线同类告警（非空断言、隐式布尔、prettier 格式），未新增类型或运行时错误。未合并、未打包、未部署；详情里“进度备注”和“成果摘要”两个文本框仍从空白开始，应由助手回复预填，列为后续。
+
+## 2026-10-29 任务页去重：列表状态、安排与验收
+
+任务卡原本同一状态出现两次：标题下的状态徽标和底部右侧的进度文案（“准备开始”与“准备开始”）。改为只在徽标显示，底部仅在两者不同时才补进度（如“等审阅”），列表因此每行只读一次状态。
+
+“安排与验收”在任务详情里重复了上方内容：目标、验收要求、另一份“下一步”和第二个“开始这一步”主按钮。给 `ResearchTaskPanel` 与 `PersonalWorkDetail` 各加 `embedded` 开关，只在任务详情这一处传入：隐藏目标/验收要求、面板自带的下一步与开始按钮；个人任务面板还隐藏了重复的标题、状态和目标任务块（任务页顶部已有标题与本轮状态）。其他四处调用（聊天内任务面板、邀请、团队工作台、计划）不传该开关，行为不变。
+
+typecheck、typecheck:electron、build:web、local-dsh 39 项、workbench-links 7 项、planning 4 项、desktop-work 3 项通过。隔离预览核对：研究任务与个人任务详情在 1440/1024 下无重复标题与重复主按钮，列表每行只显示一次状态。未合并、未打包、未部署。

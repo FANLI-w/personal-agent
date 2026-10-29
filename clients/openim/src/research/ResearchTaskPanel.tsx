@@ -15,9 +15,12 @@ import { workbenchTaskPath } from "./workbench-links";
 export function ResearchTaskPanel({
   taskId,
   onChanged,
+  embedded,
 }: {
   taskId: string;
   onChanged?: () => Promise<void>;
+  /** Inside the task work page the goal and the next step already sit above. */
+  embedded?: boolean;
 }) {
   const { modal } = App.useApp();
   const navigate = useNavigate(),
@@ -229,12 +232,16 @@ export function ResearchTaskPanel({
           : taskStateLabels[task.status]}{" "}
         · 任务版本 {task.version}
       </p>
-      <p className="whitespace-pre-wrap">目标：{task.goal}</p>
-      <p className="whitespace-pre-wrap">验收要求：{task.acceptanceCriteria}</p>
-      <div className="research-task-next">
-        <strong>下一步</strong>
-        <p>{teamNextStep(task, actor?.member.id)}</p>
-      </div>
+      {!embedded && (
+        <>
+          <p className="whitespace-pre-wrap">目标：{task.goal}</p>
+          <p className="whitespace-pre-wrap">验收要求：{task.acceptanceCriteria}</p>
+          <div className="research-task-next">
+            <strong>下一步</strong>
+            <p>{teamNextStep(task, actor?.member.id)}</p>
+          </div>
+        </>
+      )}
       <p>
         负责人：{name(task.leadId)} · 审阅人：{name(task.reviewerId)}
       </p>
@@ -415,7 +422,7 @@ export function ResearchTaskPanel({
         </details>
       )}
       {failure && <Alert type="error" message={failure} />}
-      {allowed("start") && (
+      {allowed("start") && !embedded && (
         <Button
           loading={busy}
           onClick={() =>
