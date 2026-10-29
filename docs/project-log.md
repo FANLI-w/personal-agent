@@ -2351,3 +2351,11 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 00:35:21公开稳定Latest v0.10.70，Release426880701，标签固定实际安装器产品a5534b59511abe453587f9878d5d9dea5663808e；后续仅测试/CI覆盖/文档变化，运行代码一致。安装器366896002字节、SHA256 405ecffd4e6853f279c85ab6772135d96b5933ae1d26e1e825fb43efb99a2f36。四附件远端state=uploaded、大小与SHA256逐一一致，匿名Latest、公开latest.yml/SHA256SUMS下载及标签解析核验通过，旧版0.10.61保留。此次不重复部署后台，保持3162c814/contract0.37.0/schema030。
 
 代理上传大文件缓慢，停止该未完成传输后确认草稿仅三个小附件，改直连完成安装器；未公开半成品。草稿按未公开tag路径读取出现404，改认证Release列表定位原ID后核验通过；没有重复上传成品或放宽摘要断言。证据在Git外D:/deepseek-agent/.runtime/release-dsh-0.10.70-20261028，含proxy-upload-stopped、merged-pr133、draft/published-receipt、公开小文件及tag-source。README、产品状态、路线图、三步计划、current-state和发布记录通过独立PR134交接；纯文档check:content及git diff --check通过，未把自动化/合成检查说成真人双机与真实模型验收。
+
+## 2026-10-29 工作台命名与 DSH 原生模型设置恢复
+
+负责人要求DSH入口改工作台，并保留官方模型及推理等级菜单。核对main仍7f8775f、独立副本干净后新建fix/workbench-model-settings，原PR135/ce4d826保留。导航与页面命名更新；DeepSeek账号使用官方rc.3原生适配器和账号中继，支持Flash/Pro、Off/Low/High/Max，旧acceptcat路由兼容历史，其他提供方保持。后台严格允许两个已知模型和output_config.effort；关闭原生额外会话日志/插件清单上传，模型密钥留服务端。
+
+根冻结安装/最终CI856项68文件、生产3项/B0/Web、客户端28项定向、双类型、Web/Electron编译通过。隔离真实Electron/DSH/本地API配合合成模型，菜单、四档真实参数、刷新恢复及Flash/Pro实际请求通过。额外截图超时、旧编译API及计数/标题请求等测试环境失败保留，原生附加字段拒绝已通过官方配置修正。证据Git外workbench-model-settings-20261029，详见docs/development/workbench-model-settings.md。
+
+需先配套部署后台再发客户端；contract0.37/schema030无迁移，与PR135的0.38分块接口整合时须保留双方。生产3162c814、公开Windows0.10.70保持，未合并、部署或打包发布，真实模型及用户客户端未操作。

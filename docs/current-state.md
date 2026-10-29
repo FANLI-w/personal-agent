@@ -2,6 +2,12 @@
 
 更新日期：2026-10-29（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 工作台命名与原生模型设置（待审、未发布）
+
+2026-10-29，从 main/7f8775f 建立 fix/workbench-model-settings，DSH入口/标题改为工作台，任务保持。已知DeepSeek账号改接官方原生适配器，恢复Flash/Pro和Off/Low/High/Max菜单，沿用AcceptCat账号；旧会话兼容路由保留。后台补严格模型名单及output_config.effort转发，须先更新后台再发布客户端。详见[实现与验收](development/workbench-model-settings.md)。
+
+根CI856项/68文件、生产3项/B0/Web、客户端28项定向、双类型及Web/Electron编译通过；真实DSH和本地API配合合成模型验证四档推理、模型切换及刷新恢复。末次额外截图超时保留，真实模型未验收。生产3162c814/contract0.37/schema030、公开Windows0.10.70未变；未部署、合并或生成安装器。PR135本地材料/512MiB共享仍在独立分支，未混入。
+
 ## DSH 三步首版已合并，Windows 0.10.70 已公开
 
 负责人明确批准合并与发布。00:04:00（北京时间）PR133普通合入main/dcffcd01，PR130/131/132随之标记MERGED；合并树与受审head2341933一致，四项GitHub CI全成功。00:35:21公开[稳定Latest v0.10.70](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.70)，Release426880701，标签固定安装器产品a5534b5；四附件远端大小/摘要、未登录Latest、公开更新清单/校验文件及标签指向核验通过。完整安装器366896002字节，SHA256 405ecffd4e6853f279c85ab6772135d96b5933ae1d26e1e825fb43efb99a2f36。
