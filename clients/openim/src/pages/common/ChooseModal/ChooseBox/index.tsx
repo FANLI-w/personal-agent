@@ -26,6 +26,8 @@ import { feedbackToast } from "@/utils/common";
 
 import CheckItem, { CheckListItem } from "./CheckItem";
 import MenuItem from "./MenuItem";
+import { ResearchGroupPicker } from "@/research/ResearchGroupPicker";
+import { useResearchStore } from "@/research/store";
 
 const menuList = [
   {
@@ -47,6 +49,9 @@ interface IChooseBoxProps {
   showGroupMember?: boolean;
   chooseOneOnly?: boolean;
   checkMemberRole?: boolean;
+  researchGroupPick?: boolean;
+  groupID?: string;
+  disabled?: boolean;
 }
 
 export interface ChooseBoxHandle {
@@ -65,6 +70,9 @@ const ChooseBox: ForwardRefRenderFunction<ChooseBoxHandle, IChooseBoxProps> = (
     showGroupMember = false,
     chooseOneOnly,
     checkMemberRole,
+    researchGroupPick,
+    groupID,
+    disabled,
   } = props;
 
   const [checkedList, setCheckedList] = useState<CheckListItem[]>([]);
@@ -72,8 +80,10 @@ const ChooseBox: ForwardRefRenderFunction<ChooseBoxHandle, IChooseBoxProps> = (
 
   const checkClick = useCallback(
     (data: CheckListItem) => {
+      if (disabled) return;
       const idx = latestCheckedList.current.findIndex(
         (item) =>
+          (item.contactId && item.contactId === data.contactId) ||
           (item.userID && item.userID === data.userID) ||
           (item.groupID && item.groupID === data.groupID && !showGroupMember),
       );
@@ -95,13 +105,14 @@ const ChooseBox: ForwardRefRenderFunction<ChooseBoxHandle, IChooseBoxProps> = (
         setCheckedList((state) => [...state, data]);
       }
     },
-    [chooseOneOnly, latestCheckedList, showGroupMember],
+    [chooseOneOnly, latestCheckedList, showGroupMember, disabled],
   );
 
   const isChecked = useCallback(
     (data: CheckListItem) =>
       checkedList.some(
         (item) =>
+          (item.contactId && item.contactId === data.contactId) ||
           (item.userID && item.userID === data.userID) ||
           (item.groupID && item.groupID === data.groupID && !showGroupMember),
       ),
@@ -113,7 +124,20 @@ const ChooseBox: ForwardRefRenderFunction<ChooseBoxHandle, IChooseBoxProps> = (
   };
 
   const updatePrevCheckList = (data: CheckListItem[]) => {
-    setCheckedList([...data]);
+    setCheckedList(
+      data.map((item) =>
+        researchGroupPick
+          ? {
+              ...item,
+              contactId:
+                item.contactId ||
+                useResearchStore
+                  .getState()
+                  .contacts.find((c) => c.userID === item.userID)?.contact.id,
+            }
+          : item,
+      ),
+    );
   };
 
   useImperativeHandle(ref, () => ({
@@ -132,7 +156,13 @@ const ChooseBox: ForwardRefRenderFunction<ChooseBoxHandle, IChooseBoxProps> = (
       <div className="flex flex-1 flex-col border-r border-[var(--gap-text)]">
         <div className="py-3 pb-3" />
 
-        {showGroupMember ? (
+        {researchGroupPick ? (
+          <ResearchGroupPicker
+            groupID={groupID}
+            isChecked={isChecked}
+            checkClick={checkClick}
+          />
+        ) : showGroupMember ? (
           <ForwardMemberList
             isChecked={isChecked}
             checkClick={checkClick}
@@ -155,7 +185,7 @@ const ChooseBox: ForwardRefRenderFunction<ChooseBoxHandle, IChooseBoxProps> = (
           {checkedList.map((item) => (
             <CheckItem
               data={item}
-              key={item.userID || item.groupID}
+              key={item.contactId || item.userID || item.groupID}
               cancelClick={checkClick}
             />
           ))}

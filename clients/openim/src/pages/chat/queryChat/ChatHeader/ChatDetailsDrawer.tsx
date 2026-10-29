@@ -10,7 +10,9 @@ import { IMSDK } from "@/layout/MainContentWrap";
 import OIMAvatar from "@/research/ResearchAvatar";
 import { useConversationStore } from "@/store";
 import { useResearchStore } from "@/research/store";
-import { researchApi } from "@/research/api";
+import { researchApi, researchMode } from "@/research/api";
+import { ResearchGroupMembers } from "@/research/ResearchGroupMembers";
+import { useGroupChatRoster } from "@/research/GroupChatRoster";
 import {
   useAgentChatOperation,
   type AgentChatOperation,
@@ -35,6 +37,8 @@ export default function ChatDetailsDrawer({
   onAboutMe,
 }: Props) {
   const conversation = useConversationStore((s) => s.currentConversation);
+  const roster = useGroupChatRoster();
+  const canonicalGroup = researchMode && !!conversation?.groupID;
   const generation = useResearchStore((s) => s.generation);
   const actor = useResearchStore((s) => s.actor?.member.id);
   const group = useConversationStore((s) => s.currentGroupInfo);
@@ -83,7 +87,7 @@ export default function ChatDetailsDrawer({
     setError("");
     setMemberError("");
     setBusy(false);
-    if (open && conversation?.groupID) void loadMembers(0);
+    if (open && conversation?.groupID && !researchMode) void loadMembers(0);
     return () => {
       epoch.current++;
       active.current?.dispose();
@@ -220,57 +224,61 @@ export default function ChatDetailsDrawer({
       rootClassName="desktop-chat-drawer"
       mask={false}
     >
-      <div className="desktop-chat-members">
-        {conversation?.groupID
-          ? members.map((member) => (
-              <button
-                type="button"
-                key={member.userID}
-                onClick={() => profile(member.userID)}
-                title={member.nickname}
-              >
-                <OIMAvatar
-                  userID={member.userID}
-                  size={42}
-                  src={member.faceURL}
-                  text={member.nickname}
-                />
-                <span>{member.nickname}</span>
-              </button>
-            ))
-          : conversation?.userID && (
-              <button type="button" onClick={() => profile(conversation.userID)}>
-                <OIMAvatar
-                  size={42}
-                  userID={conversation.userID}
-                  src={conversation.faceURL}
-                  text={contact?.displayName || conversation.showName}
-                />
-                <span>{contact?.displayName || conversation.showName}</span>
-              </button>
-            )}
-        {(!conversation?.groupID || inGroup) && (
-          <button
-            type="button"
-            aria-label={conversation?.groupID ? "邀请成员" : "发起群聊"}
-            onClick={() => {
-              if (!isScopeCurrent()) return;
-              if (conversation?.groupID && !isCurrentMember()) return;
-              leave(onClose);
-              emit("OPEN_CHOOSE_MODAL", {
-                type: conversation?.groupID ? "INVITE_TO_GROUP" : "CRATE_GROUP",
-                extraData: conversation?.groupID || [{ ...conversation }],
-              });
-            }}
-          >
-            <span className="desktop-chat-member-add">
-              <PlusOutlined />
-            </span>
-            <span>{conversation?.groupID ? "邀请" : "群聊"}</span>
-          </button>
-        )}
-      </div>
-      {conversation?.groupID && (
+      {canonicalGroup ? (
+        <ResearchGroupMembers onInvite={() => leave(onClose)} />
+      ) : (
+        <div className="desktop-chat-members">
+          {conversation?.groupID
+            ? members.map((member) => (
+                <button
+                  type="button"
+                  key={member.userID}
+                  onClick={() => profile(member.userID)}
+                  title={member.nickname}
+                >
+                  <OIMAvatar
+                    userID={member.userID}
+                    size={42}
+                    src={member.faceURL}
+                    text={member.nickname}
+                  />
+                  <span>{member.nickname}</span>
+                </button>
+              ))
+            : conversation?.userID && (
+                <button type="button" onClick={() => profile(conversation.userID)}>
+                  <OIMAvatar
+                    size={42}
+                    userID={conversation.userID}
+                    src={conversation.faceURL}
+                    text={contact?.displayName || conversation.showName}
+                  />
+                  <span>{contact?.displayName || conversation.showName}</span>
+                </button>
+              )}
+          {(!conversation?.groupID || inGroup) && (
+            <button
+              type="button"
+              aria-label={conversation?.groupID ? "邀请成员" : "发起群聊"}
+              onClick={() => {
+                if (!isScopeCurrent()) return;
+                if (conversation?.groupID && !isCurrentMember()) return;
+                leave(onClose);
+                emit("OPEN_CHOOSE_MODAL", {
+                  type: conversation?.groupID ? "INVITE_TO_GROUP" : "CRATE_GROUP",
+                  extraData: conversation?.groupID || [{ ...conversation }],
+                });
+              }}
+            >
+              <span className="desktop-chat-member-add">
+                <PlusOutlined />
+              </span>
+              <span>{conversation?.groupID ? "邀请" : "群聊"}</span>
+            </button>
+          )}
+        </div>
+      )}
+      {conversation?.groupID && !canonicalGroup && (
         <p className="desktop-history-scope">
           {group?.memberCount ? `${group.memberCount} 位成员` : "群聊成员"}
         </p>
@@ -366,18 +374,27 @@ export default function ChatDetailsDrawer({
           <RightOutlined />
         </button>
       )}
-      {conversation?.groupID && inGroup && (
-        <button
-          type="button"
-          className="desktop-chat-detail-link"
-          onClick={() => {
-            if (isScopeCurrent() && isCurrentMember()) leave(onManage);
-          }}
-        >
-          <span>群管理</span>
-          <RightOutlined />
-        </button>
-      )}
+      {conversation?.groupID &&
+        (canonicalGroup
+          ? !!roster.conversation?.allowedActions.includes("manage")
+          : inGroup) && (
+          <button
+            type="button"
+            className="desktop-chat-detail-link"
+            onClick={() => {
+              if (
+                isScopeCurrent() &&
+                (canonicalGroup
+                  ? roster.conversation?.allowedActions.includes("manage")
+                  : isCurrentMember())
+              )
+                leave(onManage);
+            }}
+          >
+            <span>群管理</span>
+            <RightOutlined />
+          </button>
+        )}
     </Drawer>
   );
 }
