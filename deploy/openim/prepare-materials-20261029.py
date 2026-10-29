@@ -24,10 +24,10 @@ baseline = json.loads((old/'baseline-manifest.json').read_text())
 baseline['files'].update(json.loads((old/'source-final.json').read_text())['sourceHashes'])
 # Earlier receipts retain pre-build dist hashes. Snapshot compiled output from
 # the exact immutable base image, while keeping audited source hashes unchanged.
-dist_probe = '''import{readdirSync,readFileSync}from'node:fs';import{createHash}from'node:crypto';
+dist_probe = r'''import{readdirSync,readFileSync}from'node:fs';import{createHash}from'node:crypto';
 const out={};for(const root of ['apps/api/dist','packages/contracts/dist']){
 for(const f of readdirSync('/app/'+root,{recursive:true,withFileTypes:true}))if(f.isFile()){
-const p=f.parentPath+'/'+f.name;out[p.slice(5)]=createHash('sha256').update(readFileSync(p)).digest('hex');}}
+const p=f.parentPath+'/'+f.name;out[p.slice(5)]=createHash('sha256').update(readFileSync(p,'utf8').replaceAll('\r\n','\n')).digest('hex');}}
 console.log(JSON.stringify(out));'''
 baseline['files'].update(json.loads(subprocess.check_output(['docker','run','--rm','--network','none',base,'node','--input-type=module','-e',dist_probe],text=True)))
 overlay = {}
