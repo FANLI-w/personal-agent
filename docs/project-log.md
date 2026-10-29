@@ -2405,3 +2405,5 @@ Git外证据D:/deepseek-agent/.runtime/large-originals-20261029。首次Electron
 工作台复用现有待办/进行中及资料入口，任务往返保留ID和kind；关闭抽屉恢复原视图。Mimir/SciencePrism/AgentTeams未安装，不宣称全套科研工作台已完成。根862项/68文件、生产3项/B0/Web、39项DSH、34项桌面回归、双类型与追加16项通过；13项真实DSH+合成账号本地API串联验证PDF、任务抽屉、返回链接、原生目录IPC及退出。真实模型、私人材料和多人体验未测。证据Git外dsh-native-files-20261029，初次探针/旧内核/夹具失败保留；无后台变更、部署或公开发布。详见docs/development/dsh-native-files-workbench.md，安装包与PR回执另补。
 
 交付回执：产品f160ee7，PR141已创建。0.10.72最终安装器405060395字节、SHA256 8b73d92d661f12ed720578f8ef5ac33ea02b3e3cf82825b1655d6044c087c7a7，Git外dsh-native-files-20261029/windows。最终NSIS/六入口/ASAR桥接与更新校验、隔离成品和OpenIM SDK初始化通过；4项原生预览、13项账号原生界面、5项Playwright外壳检查通过。中间旧来源包主动停止压缩，最终重建留证；PNG夹具和服务退出的失败另留。远端f160两Linux及Windows包通过，Windows Foundation待PR状态。无合并、部署、公开Release或代安装。
+
+CI复查：f160首轮Windows Foundation两组未修改的后台测试5项超过5秒，无断言错误；同组本机7项通过。产品源码相同的文档提交9fbd7fb三项远端Foundation全通过（run40843065222），未调整测试时限或后台代码。失败日志remote-foundation-first-failed.log和复查记录留在同一Git外证据目录。安装器仍对应f160ee7；后续文档head检查以PR为准。隔离界面/API夹具已清理，用户客户端未动。

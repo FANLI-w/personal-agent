@@ -8,6 +8,8 @@
 
 根862项、客户端39项DSH及34项桌面回归、最终双类型与追加16项检查通过；真实官方DSH渲染合成PDF/文本/图片、原生模型菜单及13项账号/业务API/嵌入界面串联通过。最终0.10.72 NSIS、ASAR桥接/更新校验与隔离成品/OpenIM SDK初始化通过；405060395字节，SHA256 8b73d92d661f12ed720578f8ef5ac33ea02b3e3cf82825b1655d6044c087c7a7。产品f160ee7交付[PR141](https://github.com/luoyan96/personal-agent/pull/141)，候选路径和失败记录见说明。另5项Playwright外壳检查通过；真实私人资料/模型和已用账号升级未验收。本批无需后台改动；未合并或发布，公开仍0.10.71，生产contract0.38/schema030。
 
+远端首轮Windows Foundation有5项既有后台测试超过5秒；本机同组7项与相同产品源码9fbd7fb的三项远端Foundation复查通过，未放宽超时。f160ee7的Windows打包通过，最新文档head检查以PR为准；原失败证据已保留。
+
 ## 两批修改已合并、后台0.38上线、Windows0.10.71已公开
 
 2026-10-29，负责人明确授权整合PR135/136、更新后台并发布。12:03:05，PR137合入main/081f418，两原PR均MERGED；受审head a5746c6四项远端CI全通过。12:03:21–46，API/worker更新至eccc1d9d镜像、contract0.38/schema030，无迁移；111表、9原件、30配置输入及其他服务保全。12:04:46公开稳定Latest [v0.10.71](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.71)，四附件及匿名更新入口核验通过。[完整合并、后台、备份与发布回执](deployment/acceptcat-0.10.71.md)。
