@@ -62,7 +62,7 @@ const NavList = [
     title: "任务",
     path: "/workbench",
   },
-  ...(window.electronAPI ? [{ icon: contact_icon, icon_active: contact_icon_active, title: "DSH", path: "/dsh" }] : []),
+  ...(window.electronAPI ? [{ icon: contact_icon, icon_active: contact_icon_active, title: "工作台", path: "/dsh" }] : []),
   {
     icon: contact_icon,
     icon_active: contact_icon_active,

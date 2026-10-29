@@ -15,6 +15,11 @@
 按负责人“本地文件为主，资料板块做轻量共享”授权，从实际 main/7f8775f 创建独立分支 `feat/local-material-workflow`，产品5b09af7交付[PR135](https://github.com/luoyan96/personal-agent/pull/135)。任务工作页以本地目录为入口，支持原生添加本地素材、按版本取用共享原件、查看工作文件、明确范围后归档选中成果，并从回执定位资料。内容相同且未修改的已有材料复用，归档丢响应可沿原快照/幂等键恢复；归档、任务提交、验收保持独立。详见[功能、使用和验收边界](development/local-material-workflow.md)。
 
 根 CI 855项/68文件、生产3项/B0/Web、客户端46项定向、双类型及Web/Electron编译通过；隔离Edge15项流程检查连接真实本地资料API，但选择器和DSH RPC为合成替身，未验收真实模型或PPT生成。无后台接口/数据库迁移，不需本批部署；未合并、发布或生成安装器，客户端版本及公开0.10.70不变。归档最多5份/单份10MiB，Office仅保存原件，完整限制和Git外证据见说明。原共享开发目录未改动。
+## 工作台命名与原生模型设置（待审、未发布）
+
+2026-10-29，从 main/7f8775f 建立 fix/workbench-model-settings，产品ea364d6交付[PR136](https://github.com/luoyan96/personal-agent/pull/136)，DSH入口/标题改为工作台，任务保持。已知DeepSeek账号改接官方原生适配器，恢复Flash/Pro和Off/Low/High/Max菜单，沿用AcceptCat账号；旧会话兼容路由保留。后台补严格模型名单及output_config.effort转发，须先更新后台再发布客户端。详见[实现与验收](development/workbench-model-settings.md)。
+
+根CI856项/68文件、生产3项/B0/Web、客户端28项定向、双类型及Web/Electron编译通过；真实DSH和本地API配合合成模型验证四档推理、模型切换及刷新恢复。末次额外截图超时保留，真实模型未验收。生产3162c814/contract0.37/schema030、公开Windows0.10.70未变；未部署、合并或生成安装器。PR135本地材料/512MiB共享仍在独立分支，未混入。
 
 ## DSH 三步首版已合并，Windows 0.10.70 已公开
 

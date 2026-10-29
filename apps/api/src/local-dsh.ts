@@ -38,10 +38,22 @@ export function registerLocalDsh(app: FastifyInstance, database: () => DatabaseS
     const { metadata, actor } = initial, body = input.data.request
     if (!metadata.enabled) fail('MODEL_UNAVAILABLE')
     if (metadata.fingerprint !== input.data.fingerprint || metadata.protocol !== input.data.protocol) fail('VERSION_CONFLICT')
-    if (body.model !== metadata.model || !Array.isArray(body.messages) || !body.messages.length || body.messages.length > 2000 || typeof body.stream !== 'boolean') fail('VALIDATION_ERROR')
+    // The native menu may select either supported DeepSeek model under the same
+    // owned provider credential. Never cross providers or accept arbitrary IDs.
+    const models = metadata.provider === 'deepseek' && ['deepseek-flash', 'deepseek-v4-pro'].includes(metadata.model)
+      ? ['deepseek-flash', 'deepseek-v4-pro'] : [metadata.model]
+    if (typeof body.model !== 'string' || !models.includes(body.model) || !Array.isArray(body.messages) || !body.messages.length || body.messages.length > 2000 || typeof body.stream !== 'boolean') fail('VALIDATION_ERROR')
     // Whitelist inference fields. No arbitrary endpoint, batch, file-fetch, or provider-native server tools.
-    const allowed = ['model','messages','system','tools','tool_choice','stream','stream_options','store','max_tokens','max_completion_tokens','temperature','top_p','top_k','stop','stop_sequences','thinking','reasoning_effort','parallel_tool_calls']
+    const allowed = ['model','messages','system','tools','tool_choice','stream','stream_options','store','max_tokens','max_completion_tokens','temperature','top_p','top_k','stop','stop_sequences','thinking','reasoning_effort','output_config','parallel_tool_calls']
     if (Object.keys(body).some(key => !allowed.includes(key))) fail('VALIDATION_ERROR')
+    // DSH's native DeepSeek adapter sends the selected effort here; accept only
+    // that documented field, not arbitrary provider options or other protocols.
+    if (body.output_config !== undefined) {
+      const output = body.output_config as Record<string, unknown> | null
+      if (metadata.provider !== 'deepseek' || metadata.protocol !== 'anthropic-messages'
+        || !output || Array.isArray(output) || typeof output !== 'object'
+        || Object.keys(output).length !== 1 || typeof output.effort !== 'string' || !['low', 'high', 'max'].includes(output.effort)) fail('VALIDATION_ERROR')
+    }
     if (body.store !== undefined && body.store !== false) fail('VALIDATION_ERROR')
     if (body.tools !== undefined && (!Array.isArray(body.tools) || body.tools.length > 128 || body.tools.some((t: any) => !t || (metadata.protocol === 'anthropic-messages' ? t.type !== undefined && t.type !== 'custom' : t.type !== 'function')))) fail('VALIDATION_ERROR')
     const cap = body.max_tokens ?? body.max_completion_tokens

@@ -55,9 +55,9 @@ export function LocalDshPage() {
     catch (e) { if (alive.current) setError(e instanceof Error ? e.message : "操作失败，请重试。"); }
     finally { if (alive.current) setBusy(false); }
   };
-  return <section className="local-dsh-page" aria-label="本地 DSH">
+  return <section className="local-dsh-page" aria-label="工作台">
     <header className="local-dsh-header">
-      <div><h1>DSH <span>本地工作区 · 试用</span></h1>
+      <div><h1>工作台 <span>本地工作区 · 试用</span></h1>
         <p>在这台电脑上聊天、处理文件、运行工具与安装插件。</p></div>
       <Link to="/workbench?view=tasks">进入任务，取用共享资料与归档成果</Link>
     </header>
@@ -65,11 +65,11 @@ export function LocalDshPage() {
     {(error || state?.error) && <Alert showIcon type="error" message={error || state?.error} />}
     <div ref={seat} className="local-dsh-seat">
       {!state?.pageReady && <div className="local-dsh-welcome">
-        {(busy || state?.phase === "starting" || state?.phase === "stopping") ? <><Spin size="large" /><h2>{state?.phase === "running" ? "正在打开 DSH 页面" : state ? labels[state.phase] : "正在读取状态"}</h2></> : <>
+        {(busy || state?.phase === "starting" || state?.phase === "stopping") ? <><Spin size="large" /><h2>{state?.phase === "running" ? "正在打开工作台" : state ? labels[state.phase] : "正在读取状态"}</h2></> : <>
           <div className="local-dsh-monogram">DSH</div><h2>让助手在本机开始工作</h2>
           <p>登录 AcceptCat 后自动连接内置 DSH，使用当前账号的默认模型。</p>
           {bridge && state && <Button type="primary" loading={busy} onClick={() => void reconnect()}>重新连接</Button>}
-          <div className="local-dsh-note"><strong>本地工作区</strong><p>选择工作目录即可开始。会话、插件和文件操作保存在这台电脑，并按 AcceptCat 账号分开；模型设置沿用「我的」中的配置。</p><p>模型调用经 AcceptCat 服务发送，工具在本机执行。退出账号或关闭 AcceptCat 会停止本地任务。</p></div>
+          <div className="local-dsh-note"><strong>本地工作区</strong><p>选择工作目录即可开始。会话、插件和文件操作保存在这台电脑，并按 AcceptCat 账号分开。账号模型沿用「我的」中的配置，推理等级在输入框的模型菜单中选择。</p><p>模型调用经 AcceptCat 服务发送，工具在本机执行。退出账号或关闭 AcceptCat 会停止本地任务。</p></div>
         </>}
       </div>}
     </div>

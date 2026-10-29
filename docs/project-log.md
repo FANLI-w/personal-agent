@@ -2377,3 +2377,12 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 Git外证据D:/deepseek-agent/.runtime/large-originals-20261029。首次Electron22非Readable类型、VM跨上下文对象断言、测试关闭连接超时、旧Web contract0.37断言及UI含图标的按钮定位问题已修正并保留失败日志。上传暂存/磁盘预算、旧客户端可见性、前滚回退条件及实际边界见docs/development/large-originals.md。继续通过PR135交付，后台升级、客户端打包、合并与公开发布分开处理。
 
 大文件交付回执：产品bb1dd55已推送同一PR135，PR标题和说明已按最终本地材料/大文件共享范围重写。最终Web/Electron编译通过（client-build-final2.log），495份Markdown内容检查通过；隔离QA服务已关闭。代码合并、0.38后台部署与新安装包仍待分别安排，未改变正在运行的客户端。
+## 2026-10-29 工作台命名与 DSH 原生模型设置恢复
+
+负责人要求DSH入口改工作台，并保留官方模型及推理等级菜单。核对main仍7f8775f、独立副本干净后新建fix/workbench-model-settings，原PR135/ce4d826保留。导航与页面命名更新；DeepSeek账号使用官方rc.3原生适配器和账号中继，支持Flash/Pro、Off/Low/High/Max，旧acceptcat路由兼容历史，其他提供方保持。后台严格允许两个已知模型和output_config.effort；关闭原生额外会话日志/插件清单上传，模型密钥留服务端。
+
+根冻结安装/最终CI856项68文件、生产3项/B0/Web、客户端28项定向、双类型、Web/Electron编译通过。隔离真实Electron/DSH/本地API配合合成模型，菜单、四档真实参数、刷新恢复及Flash/Pro实际请求通过。额外截图超时、旧编译API及计数/标题请求等测试环境失败保留，原生附加字段拒绝已通过官方配置修正。证据Git外workbench-model-settings-20261029，详见docs/development/workbench-model-settings.md。
+
+需先配套部署后台再发客户端；contract0.37/schema030无迁移，与PR135的0.38分块接口整合时须保留双方。生产3162c814、公开Windows0.10.70保持，未合并、部署或打包发布，真实模型及用户客户端未操作。
+
+交付回执：产品ea364d6已推送fix/workbench-model-settings并创建PR136（https://github.com/luoyan96/personal-agent/pull/136）。再次fetch确认main仍7f8775f；最终根CI及客户端编译/双类型退出0、494份Markdown检查通过。隔离API/Vite/DSH已停止，原用户客户端未动；远端CI以PR状态为准。
