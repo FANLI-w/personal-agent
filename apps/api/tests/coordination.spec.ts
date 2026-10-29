@@ -124,80 +124,12 @@ async function upload(taskId:string, client=clients.B, text='Synthetic attachmen
 async function download(id:string,client:Client) {return fetch(new URL(routes.content.path.replace('{id}',id),address),{headers:{cookie:client.cookie}})}
 
 describe('B2b A6–A9: transaction database and two actual HTTP processes',()=>{
-  it('A6 rejects self/indirect dependency cycles and gates exact accepted revisions, not mere submission',async()=>{
+  it('A6 rejects self/indirect dependency cycles and unsupported dependency kinds',async()=>{
     const {taskIds}=await createConfirmed([item('self','up'),item('self','down')]);const [up,down]=taskIds as [string,string]
     expect((await propose(down,{dependencies:[{taskId:down,kind:'accepted_deliverable',requiredRevision:1}]})).status).toBe(400)
     const dependent=await propose(down,{dependencies:[{taskId:up,kind:'accepted_deliverable',requiredRevision:2}]});expect(dependent.status).toBe(201);expect(dependent.value.data.status).toBe('accepted')
     expect((await propose(up,{dependencies:[{taskId:down,kind:'accepted_deliverable',requiredRevision:null}]})).status).toBe(400)
-    expect((await command('start',down,clients.A)).value.error?.code).toBe('DEPENDENCY_BLOCKED')
-    await finish(up)
-    expect((await command('start',down,clients.A)).value.error?.code).toBe('DEPENDENCY_BLOCKED')
-    const bind=await propose(down,{dependencies:[{taskId:up,kind:'accepted_deliverable',requiredRevision:1}]});expect(bind.status).toBe(201)
-    expect((await command('start',down,clients.A)).status).toBe(200)
-    expect(db.prepare('SELECT revision FROM dependency_bindings WHERE task_id=?').get(down)!.revision).toBe(1)
     expect((await propose(down,{dependencies:[{taskId:up,kind:'confirmed_decision',requiredRevision:null}]})).status).toBe(501)
-  })
-
-  it('A6 block/resume preserves state; upstream changes pause downstream and preserve delivery/review history until reassessment',async()=>{
-    const u=item('self','u'),d=item('invitation','d');d.dependencies=['u']
-    const {taskIds}=await createConfirmed([u,d]);const [up,down]=taskIds as [string,string];await accept(down)
-    const block=await command('block',up,clients.A,{reason:'Synthetic missing input',requestedMemberId:'member_A',requestedAction:'Supply synthetic evidence'});expect(block.status).toBe(200)
-    expect((await detail(down,clients.B)).task.status).toBe('blocked')
-    expect((await command('resume',down,clients.B)).value.error?.code).toBe('DEPENDENCY_BLOCKED')
-    expect((await command('resume',up,clients.A)).status).toBe(200);await finish(up)
-    let value=await detail(down,clients.B)
-    expect(value.task.status).toBe('blocked')
-    expect((await command('acknowledgeImpacts',down,clients.B,{impactIds:value.dependencyImpacts!.filter(i=>!i.acknowledgedBy).map(i=>i.id),comment:'Rechecked the upstream block'})).status).toBe(200)
-    expect((await command('resume',down,clients.B)).status).toBe(200)
-    await command('start',down,clients.B)
-    const delivery=await command('submit',down,clients.B,{summary:'Retain this downstream work',artifactRefs:[],sources:[]});expect(delivery.status).toBe(201)
-    const changed=await propose(up,{goal:'Changed upstream scope'});expect(changed.status).toBe(201)
-    value=await detail(down,clients.B);expect(value.task.status).toBe('blocked');expect(value.task.blocker!.resumeStatus).toBe('in_review');expect(value.deliverables[0]!.summary).toBe('Retain this downstream work')
-    expect(value.dependencyImpacts!.some(i=>i.affectedRevisions.includes(1))).toBe(true)
-    expect(value.dependencyImpacts!.every(i=>i.upstreamTaskId===null && i.upstreamVersion===null)).toBe(true)
-    expect((await command('resume',down,clients.B)).status).toBe(409)
-    await finish(up)
-    expect((await command('acknowledgeImpacts',down,clients.B,{impactIds:value.dependencyImpacts!.filter(i=>!i.acknowledgedBy).map(i=>i.id),comment:'Cannot silently rebind old evidence'})).status).toBe(409)
-    const repin=await propose(down,{dependencies:[{taskId:up,kind:'accepted_deliverable',requiredRevision:2}]});expect(repin.status).toBe(201)
-    expect((await decide(repin.value.data.id,repin.value.data.version,'accepted')).status).toBe(200)
-    value=await detail(down,clients.B)
-    expect((await command('acknowledgeImpacts',down,clients.B,{impactIds:value.dependencyImpacts!.filter(i=>!i.acknowledgedBy).map(i=>i.id),comment:'Explicitly rechecked v2'})).status).toBe(200)
-    expect((await command('resume',down,clients.B)).value.data.status).toBe('in_review')
-    expect((await detail(down)).deliverables).toHaveLength(1)
-    expect(db.prepare('SELECT count(*) n FROM reviews WHERE deliverable_id IN (SELECT id FROM deliverables WHERE task_id=?)').get(up)!.n).toBe(2)
-  })
-
-  it('A6 block can request support from a member without full access',async()=>{
-    const u=item('self','u')
-    const {taskIds}=await createConfirmed([u]);const [up]=taskIds as [string]
-    const block=await command('block',up,clients.A,{reason:'Synthetic need help',requestedMemberId:'member_C',requestedAction:'Please help'})
-    expect(block.status).toBe(200)
-  })
-
-  it('A6 accepting an upstream review retains review-returned impacts until human reassessment',async()=>{
-    const u=item('self','u'),d=item('invitation','d');d.dependencies=['u']
-    const {taskIds}=await createConfirmed([u,d]);const [up,down]=taskIds as [string,string];await accept(down)
-    await command('start',up,clients.A)
-    const sub1=await command('submit',up,clients.A,{summary:'Synthetic v1',artifactRefs:[],sources:[]})
-    const t1=(await detail(up)).task
-    const rev1=await request('review',{client:clients.A,params:{id:sub1.value.data.id},body:{expectedVersion:1,expectedTaskVersion:t1.version,revision:sub1.value.data.revision,decision:'changes_requested',comment:'Redo'}});expect(rev1.status).toBe(200)
-    expect((await detail(down,clients.B)).task.status).toBe('blocked')
-    const sub2=await command('submit',up,clients.A,{summary:'Synthetic v2',artifactRefs:[],sources:[]})
-    const t2=(await detail(up)).task
-    const rev2=await request('review',{client:clients.A,params:{id:sub2.value.data.id},body:{expectedVersion:1,expectedTaskVersion:t2.version,revision:sub2.value.data.revision,decision:'accepted',comment:'Approved'}});expect(rev2.status).toBe(200)
-    const value=await detail(down,clients.B)
-    expect(value.task.status).toBe('blocked')
-    expect(value.dependencyImpacts!.some(i=>i.kind==='review_returned'&&!i.acknowledgedBy)).toBe(true)
-    expect((await command('acknowledgeImpacts',down,clients.B,{impactIds:value.dependencyImpacts!.filter(i=>!i.acknowledgedBy).map(i=>i.id),comment:'Rechecked returned evidence'})).status).toBe(200)
-    expect((await command('resume',down,clients.B)).status).toBe(200)
-  })
-
-  it('A6 claiming a task with unfinished dependency waits and auto-resumes',async()=>{
-    const u=item('self','u'),d=item('invitation','d');d.dependencies=['u']
-    const {taskIds}=await createConfirmed([u,d]);const [up,down]=taskIds as [string,string];await accept(down)
-    expect((await detail(down,clients.B)).task.status).toBe('blocked')
-    await finish(up)
-    expect((await detail(down,clients.B)).task.status).toBe('ready')
   })
 
   it('A7 refusal preserves scope/time; only unanimous acceptance changes commitment; members, actions and overview share one snapshot',async()=>{

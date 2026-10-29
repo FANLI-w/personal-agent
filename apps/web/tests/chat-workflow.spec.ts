@@ -15,7 +15,7 @@ const group = Conversation.parse({
 });
 const members = [{ id: 'member_B', displayName: '合成承接者' }];
 function detail(status: TaskModel['status'], id = base.id): Detail {
-  return { task: Task.parse({ ...base, id, status, blocker: status === 'blocked' ? base.blocker : null }),
+  return { task: Task.parse({ ...base, id, status, blocker: null }),
     assignments: [], deliverables: [], executions: [] };
 }
 function project(data: Detail) { return projectConversationWorkflow(group, new Map([[base.id, data]]), [], members)!; }
@@ -50,10 +50,7 @@ describe('authorized conversation workflow facts', () => {
     expect(review.tasks[0]?.latestDelivery).toEqual({ revision: 2, status: '待人工验收', summary: '新交付待审' });
   });
 
-  it('shows blocked and rework next steps without advancing the task stage', () => {
-    const blocked = project(detail('blocked')).tasks[0]!;
-    expect(blocked.stage).toBe('work'); expect(blocked.nextStep).toContain(base.blocker!.reason);
-    expect(blocked.nextStep).toContain(base.blocker!.requestedAction);
+  it('shows rework next steps without advancing the task stage', () => {
     const rework = project(detail('changes_requested')).tasks[0]!;
     expect(rework.status).toBe('需修改'); expect(rework.nextStep).toContain('新交付版本');
   });

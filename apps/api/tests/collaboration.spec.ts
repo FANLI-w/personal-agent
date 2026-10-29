@@ -268,7 +268,7 @@ describe('B1 A1–A5: two real HTTP processes, file SQLite, real passwords', () 
     expect((await request('createPlan', { client: clients.A, body: planInput([cyclic]) })).status).toBe(400)
     const upstream = item('self', 'upstream'), downstream = item('self', 'downstream'); downstream.dependencies = [upstream.id]
     const { taskIds } = await createConfirmed([upstream, downstream])
-    expect((await request('start', { client: clients.A, params: { id: taskIds[1]! }, body: { expectedVersion: 1 } })).value.error?.code).toBe('DEPENDENCY_BLOCKED')
+    expect((await request('start', { client: clients.A, params: { id: taskIds[1]! }, body: { expectedVersion: 1 } })).status).toBe(200)
     expect((await request('upload', { client: clients.A, body: {} })).status).toBe(400)
   })
   it('password hashes only, login failure indistinguishable and shared persistent throttling', async () => {

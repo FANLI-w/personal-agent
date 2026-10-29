@@ -33,7 +33,7 @@ function canonical(value: unknown): string {
   if (value && typeof value === 'object') return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, v]) => `${JSON.stringify(key)}:${canonical(v)}`).join(',')}}`
   return JSON.stringify(value)
 }
-export const collaborationCommands = [...coordinationCommands, 'researchWorkspace', 'planTasks', 'overview', 'plans', 'actionItems', 'availability', 'me', 'members', 'createPlan', 'getPlan', 'editPlan', 'confirmPlan', 'tasks', 'task', 'invite', 'invitationDecision', 'claim', 'start', 'submit', 'review'] as const satisfies readonly RouteName[]
+export const collaborationCommands = [...coordinationCommands, 'researchWorkspace', 'planTasks', 'overview', 'plans', 'actionItems', 'availability', 'me', 'members', 'createPlan', 'getPlan', 'editPlan', 'confirmPlan', 'tasks', 'task', 'invite', 'cancelInvitation', 'invitationDecision', 'claim', 'start', 'submit', 'review'] as const satisfies readonly RouteName[]
 export type CollaborationCommand = typeof collaborationCommands[number]
 type Handlers = { [K in Exclude<CollaborationCommand,CoordinationCommand>]: (request: RequestFor<K>) => unknown }
 
@@ -128,6 +128,10 @@ export class Collaboration {
     const allowedActions: TaskModel['allowedActions'] = []
     if (!task.leadId && task.status === 'awaiting_acceptance' && this.taskRow(task.id).claimable === 1) allowedActions.push('claim')
     if (task.initiatorId === this.actor.id && ['unassigned', 'awaiting_acceptance'].includes(task.status) && !this.db.prepare("SELECT id FROM assignments WHERE task_id=? AND status IN ('pending','accepted')").get(task.id)) allowedActions.push('invite')
+    if (task.status === 'awaiting_acceptance' && this.db.prepare("SELECT id FROM assignments WHERE task_id=? AND status='pending'").get(task.id)) {
+      const withdrawingLead = this.db.prepare("SELECT member_id FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId') IS NOT NULL").get(task.id)
+      if (task.initiatorId === this.actor.id || (withdrawingLead && withdrawingLead.member_id === this.actor.id)) allowedActions.push('cancel_invitation')
+    }
     if (task.leadId === this.actor.id) {
       if (['ready', 'changes_requested'].includes(task.status)) allowedActions.push('start')
       if (['in_progress', 'changes_requested'].includes(task.status)) allowedActions.push('submit')
@@ -138,8 +142,7 @@ export class Collaboration {
       if(task.leadId && [task.leadId,task.initiatorId].includes(this.actor.id)) allowedActions.push('propose_change')
       if(task.initiatorId===this.actor.id) {allowedActions.push('revoke_access');if(task.status!=='completed')allowedActions.push('cancel')}
       if(task.status!=='completed' && [task.leadId,task.initiatorId].includes(this.actor.id)) allowedActions.push('upload')
-      if(task.leadId===this.actor.id && task.status!=='completed') {allowedActions.push('withdraw');if(task.status==='blocked') allowedActions.push('resume');else if(['ready','in_progress','changes_requested'].includes(task.status)) allowedActions.push('block')}
-      if([task.leadId,task.reviewerId].includes(this.actor.id) && this.db.prepare('SELECT 1 FROM dependency_impacts WHERE task_id=? AND acknowledged=0').get(task.id)) allowedActions.push('acknowledge_impacts')
+      if(task.leadId===this.actor.id && task.status!=='completed') allowedActions.push('withdraw')
     }
     const accepted=this.db.prepare("SELECT document FROM deliverables WHERE task_id=? AND json_extract(document,'$.review.decision')='accepted' ORDER BY revision DESC LIMIT 1").get(task.id)
     if(accepted){allowedActions.push('decline_feedback');if(task.status==='completed'&&task.reviewerId===this.actor.id)allowedActions.push('retain_conclusion');const delivery=Deliverable.parse(JSON.parse(String(accepted.document)));if(task.status==='completed'&&task.reviewerId===this.actor.id&&delivery.submittedBy===this.actor.id&&!this.db.prepare("SELECT 1 FROM reuse_edges WHERE target_kind='task' AND target_id=?").get(task.id))allowedActions.push('share_feedback')}
@@ -232,6 +235,12 @@ export class Collaboration {
       return
     }
     if (name === 'claim') { const row = this.taskRow(resourceId); if (row.claimable !== 1) fail('NOT_FOUND'); return }
+    if (name === 'cancelInvitation') {
+      const task = this.task(resourceId); this.coordination.active(task)
+      const withdrawingLead = this.db.prepare("SELECT member_id FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId') IS NOT NULL").get(resourceId)
+      if (task.initiatorId !== this.actor.id && (!withdrawingLead || withdrawingLead.member_id !== this.actor.id)) fail('FORBIDDEN')
+      return
+    }
     if (['invite', 'start', 'submit'].includes(name)) {
       const task = this.task(resourceId)
       this.coordination.active(task)
@@ -358,14 +367,13 @@ export class Collaboration {
       // Summary readers may see task state, but never another person's deliveries or commitments.
       const deliveries = this.db.prepare(`SELECT COUNT(*) submitted,SUM(CASE WHEN r.deliverable_id IS NOT NULL AND json_extract(r.document,'$.decision')='accepted' THEN 1 ELSE 0 END) accepted
         FROM deliverables d LEFT JOIN reviews r ON r.deliverable_id=d.id WHERE d.task_id IN (SELECT t.id ${v.sql} AND acl.access='full')`).get(...v.values)!
-      const blocked = this.db.prepare(`SELECT t.id ${v.sql} AND acl.access='full' AND t.status='blocked' ORDER BY t.id LIMIT 101`).all(...v.values)
       const actions = this.db.prepare(`SELECT
         SUM(CASE WHEN EXISTS(SELECT 1 FROM assignments a WHERE a.task_id=t.id AND a.member_id=? AND a.status='pending') AND t.status='awaiting_acceptance' THEN 1 ELSE 0 END) invitations,
         SUM(CASE WHEN acl.access='full' AND t.reviewer_id=? AND t.status='in_review' THEN 1 ELSE 0 END) reviews
         ${v.sql}`).get(this.actor.id, this.actor.id, ...v.values)!
       const changeCount=this.db.prepare(`SELECT count(*) n FROM change_proposals p WHERE p.status='pending' AND p.task_id IN (SELECT t.id ${v.sql} AND acl.access='full') AND EXISTS(SELECT 1 FROM json_each(p.document,'$.requiredMemberIds') WHERE value=?) AND NOT EXISTS(SELECT 1 FROM change_decisions d WHERE d.proposal_id=p.id AND d.member_id=?)`).get(...v.values,this.actor.id,this.actor.id)!
       const executionCount=this.db.prepare(`SELECT count(*) n FROM execution_jobs r WHERE ${attentionRun} AND r.task_id IN (SELECT t.id ${v.sql} AND acl.access='full' AND t.status NOT IN ('completed','cancelled') AND (t.lead_id=? OR t.initiator_id=?))`).get(...v.values,this.actor.id,this.actor.id)!
-      return { data: { counts, submittedDeliverables: Number(deliveries.submitted), acceptedDeliverables: Number(deliveries.accepted ?? 0), blockedTaskIds: blocked.slice(0, 100).map(r => String(r.id)), blockedTaskIdsTruncated: blocked.length > 100, pendingActions: { executionAttention:Number(executionCount.n), changeResponses: Number(changeCount.n), invitationResponses: Number(actions.invitations ?? 0), deliverableReviews: Number(actions.reviews ?? 0) }, updatedAt: this.readSnapshot!.at } }
+      return { data: { counts, submittedDeliverables: Number(deliveries.submitted), acceptedDeliverables: Number(deliveries.accepted ?? 0), pendingActions: { executionAttention:Number(executionCount.n), changeResponses: Number(changeCount.n), invitationResponses: Number(actions.invitations ?? 0), deliverableReviews: Number(actions.reviews ?? 0) }, updatedAt: this.readSnapshot!.at } }
     },
     actionItems: ({ params, query }) => {
       this.sameLab(params.id)
@@ -462,6 +470,23 @@ export class Collaboration {
       this.event(task, 'invited'); this.outbox(task, 'invitation_created')
       return { data: assignment }
     },
+    cancelInvitation: ({ params, body }) => {
+      const task = this.task(params.id); this.checkVersion(task.version, body.expectedVersion)
+      if (task.status !== 'awaiting_acceptance') fail('INVALID_STATE')
+      const pending = this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='pending'").get(task.id)
+      if (!pending) fail('INVALID_STATE')
+      const offer = Assignment.parse(JSON.parse(String(pending.document))); offer.status = 'cancelled'; offer.version++; this.saveAssignment(offer)
+      const withdrawingLead = this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId') IS NOT NULL").get(task.id)
+      if (withdrawingLead) {
+        const restored = Assignment.parse(JSON.parse(String(withdrawingLead.document))); restored.status = 'accepted'; restored.transferToMemberId = null; restored.version++; this.saveAssignment(restored)
+        task.leadId = restored.memberId; task.status = 'ready'; this.grant(task.id, restored.memberId!, 'full')
+      } else {
+        task.status = 'unassigned'
+      }
+      this.coordination.stopDispatch(task.id)
+      task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'invitation_cancelled')
+      return { data: this.actions(task) }
+    },
     invitationDecision: ({ params, body }) => {
       const offer = this.assignment(params.id), assignment = offer.model
       this.checkVersion(assignment.version, body.expectedVersion)
@@ -529,7 +554,6 @@ export class Collaboration {
       this.db.prepare('UPDATE deliverables SET version=?,document=? WHERE id=?').run(delivery.version, encode(delivery), delivery.id)
       task.status = body.decision === 'accepted' ? 'completed' : 'changes_requested'; task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'reviewed')
       if(body.decision==='changes_requested') this.coordination.impact(task,'review_returned')
-      else this.coordination.resolveDownstream(task)
       return { data: delivery }
     },
   }

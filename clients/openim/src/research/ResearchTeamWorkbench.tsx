@@ -20,7 +20,7 @@ import { collectTeamWorkspace, teamDirections } from "./team-progress";
 import "./research-team.scss";
 import "./workbench-home.scss";
 
-type Filter = "all" | "review" | "blocked" | "deadline";
+type Filter = "all" | "review" | "deadline";
 const stageLabels = { active: "正在推进", planned: "准备开展", closed: "已结束" };
 
 export function ResearchTeamWorkbench({
@@ -98,7 +98,6 @@ export function ResearchTeamWorkbench({
     return (
       (filter === "all" ||
         (filter === "review" && status === "in_review") ||
-        (filter === "blocked" && status === "blocked") ||
         (filter === "deadline" && (row.overdue || deadline.soon))) &&
       (!query ||
         [
@@ -302,9 +301,6 @@ export function ResearchTeamWorkbench({
               成果待审 <strong>{read.data.summary.awaitingReview}</strong>
             </span>
             <span>
-              需要支持 <strong>{read.data.summary.blocked}</strong>
-            </span>
-            <span>
               已验收 <strong>{read.data.summary.accepted}</strong>
             </span>
           </div>
@@ -319,7 +315,6 @@ export function ResearchTeamWorkbench({
               options={[
                 { label: "全部", value: "all" },
                 { label: "待审", value: "review" },
-                { label: "受阻", value: "blocked" },
                 { label: "临近截止", value: "deadline" },
               ]}
             />
@@ -457,11 +452,6 @@ export function ResearchTeamWorkbench({
                             ? "待开始"
                             : taskStateLabels[status] || status}
                         </span>
-                        {isFullTask(row.task) && row.task.blocker && (
-                          <small className="lab-blocker">
-                            {row.task.blocker.reason}
-                          </small>
-                        )}
                       </div>
                       <div role="cell">
                         <small className={row.overdue ? "is-overdue" : ""}>

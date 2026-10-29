@@ -35,10 +35,9 @@ describe('B0 executable contract', () => {
     expect(Assignment.safeParse({ id: 'a', taskId: 't', kind: 'invitation', memberId: 'b', capability: null, status: 'pending', commitment: { scope: 'x', schedule: unknownSchedule, acceptedAt: '2026-09-21T00:00:00Z' }, transferToMemberId: null, version: 1 }).success).toBe(false)
     expect(Member.safeParse({ ...fixtures.unknownAvailability.value.data, availability: { from: '2026-09-22', to: '2026-09-21', timezone: 'UTC', level: 'available', hours: null, updatedAt: '2026-09-21T00:00:00Z' } }).success).toBe(false)
   })
-  it('requires blocker and keeps cancelled out of completed column', () => {
-    expect(Task.safeParse({ ...fixtures.blockedTask.value.data, blocker: null }).success).toBe(false)
+  it('keeps cancelled out of completed column', () => {
     expect(taskColumns.cancelled).toBeNull()
-    expect(Object.keys(taskColumns)).toHaveLength(9)
+    expect(Object.keys(taskColumns)).toHaveLength(8)
   })
   it('bounds inputs, pagination and public errors', () => {
     const request = endpointExamples.tasks!.request as Record<string, unknown>

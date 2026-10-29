@@ -25,7 +25,7 @@ export function researchWorkspace(c:Collaboration,request:RequestFor<'researchWo
   c.sameLab(request.params.id)
   const {query}=request,base={kind:'researchWorkspace',labId:request.params.id,scope:query.scope??'lab',limit:query.limit??30},cursor=c.cursor(base,query.cursor),v=c.visible(base.scope)
   const at=c.readSnapshot!.at
-  const summary=ResearchWorkspaceSummary.parse({total:0,unassigned:0,awaitingAcceptance:0,active:0,blocked:0,awaitingReview:0,accepted:0,cancelled:0,overdue:0,pendingMyReview:0,pendingMyInvitation:0})
+  const summary=ResearchWorkspaceSummary.parse({total:0,unassigned:0,awaitingAcceptance:0,active:0,awaitingReview:0,accepted:0,cancelled:0,overdue:0,pendingMyReview:0,pendingMyInvitation:0})
   const facts=c.db.prepare(`SELECT t.status,acl.access,t.reviewer_id,json_extract(t.document,'$.schedule') schedule,
     EXISTS(SELECT 1 FROM assignments a WHERE a.task_id=t.id AND a.member_id=? AND a.status='pending') invited,
     EXISTS(SELECT 1 FROM deliverables d JOIN reviews r ON r.deliverable_id=d.id WHERE d.task_id=t.id AND d.revision=(SELECT MAX(latest.revision) FROM deliverables latest WHERE latest.task_id=t.id) AND json_extract(r.document,'$.decision')='accepted' AND json_extract(d.document,'$.review.decision')='accepted') accepted
@@ -36,7 +36,6 @@ export function researchWorkspace(c:Collaboration,request:RequestFor<'researchWo
     if(status==='unassigned')summary.unassigned++
     if(status==='awaiting_acceptance')summary.awaitingAcceptance++
     if(['ready','in_progress','changes_requested'].includes(status))summary.active++
-    if(status==='blocked')summary.blocked++
     if(status==='in_review')summary.awaitingReview++
     if(status==='completed'&&full&&row.accepted===1)summary.accepted++
     if(status==='cancelled')summary.cancelled++

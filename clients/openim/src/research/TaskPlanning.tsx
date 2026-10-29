@@ -138,8 +138,6 @@ function ConfirmedPlan({
             <p>
               {next.status === "in_review"
                 ? "查看实际交付，再决定通过或退回修改。"
-                : next.status === "blocked"
-                ? next.blocker?.requestedAction
                 : next.status === "awaiting_acceptance"
                 ? "等待受邀成员确认承接。"
                 : "打开步骤，查看材料与当前可执行的操作。"}
