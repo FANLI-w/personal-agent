@@ -294,6 +294,18 @@
   overflow: auto;
   padding: 10px;
 }
+.workspace-task-group {
+  margin-bottom: 4px;
+  .workspace-task-group-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #858d95;
+    margin: 14px 4px 8px;
+    &:first-child {
+      margin-top: 2px;
+    }
+  }
+}
 .workspace-task-row {
   display: block;
   width: 100%;

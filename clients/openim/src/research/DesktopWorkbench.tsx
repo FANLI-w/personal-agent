@@ -24,7 +24,7 @@ import { relocatedWorkspace } from "./workspace-navigation";
 import { WorkbenchPlanning } from "./WorkbenchSections";
 import { workbenchTaskPath, workbenchTaskTarget } from "./workbench-links";
 import { PlanningAgent } from "./PlanningAgent";
-type Category = "ongoing" | "awaiting_me" | "completed";
+type ListFilter = "all" | "completed";
 function WorkbenchOverview({
   card,
   onTask,
@@ -147,12 +147,16 @@ export function DesktopWorkbench() {
     kind: requestedKind,
     valid: requestedValid,
   } = workbenchTaskTarget(params);
-  const category: Category =
-    params.get("category") === "awaiting_me"
-      ? "awaiting_me"
-      : params.get("category") === "completed"
-      ? "completed"
-      : "ongoing";
+  const filter: ListFilter =
+    params.get("category") === "completed" ? "completed" : "all";
+  const view =
+    tab === "team"
+      ? "team"
+      : tab === "planning"
+      ? params.get("panel") === "scheduled"
+        ? "scheduled"
+        : "planning"
+      : "tasks";
   const [pages, setPages] = useState<(string | undefined)[]>([undefined]);
   const cursor = pages[pages.length - 1];
   const generation = useResearchStore((s) => s.generation),
@@ -161,8 +165,8 @@ export function DesktopWorkbench() {
   const availability = useWorkspaceAvailability(!relocated);
   const supported = availability.supports(21);
   const read = useResearchRead(
-    () => workspaceApi.tasks(category, cursor),
-    `workbench:${category}:${cursor || ""}`,
+    () => workspaceApi.tasks(filter, cursor),
+    `workbench:${filter}:${cursor || ""}`,
     tab === "tasks" && supported && !!actor,
   );
   const [selected, setSelected] = useState<WorkbenchCard>(),
@@ -221,7 +225,7 @@ export function DesktopWorkbench() {
           card.source === "research_task" ? "research" : "personal",
         ).split("?")[1],
       );
-      next.set("category", category);
+      if (filter === "completed") next.set("category", "completed");
       setParams(next);
       return;
     }
@@ -279,70 +283,30 @@ export function DesktopWorkbench() {
                 setBusy(false);
               }}
             >
-              联系人协作任务
+              新建任务
             </Button>
           )}
         </div>
       </header>
       <div className="workspace-toolbar">
         <Segmented
-          aria-label="任务栏目"
-          value={tab === "planning" ? "tasks" : tab}
-          onChange={(value) => setTab(String(value))}
+          aria-label="任务视图"
+          value={view}
+          onChange={(value) => {
+            setPlanningLaunch(0);
+            const next = String(value);
+            if (next === "scheduled")
+              setParams({ view: "planning", panel: "scheduled" });
+            else setTab(next);
+          }}
           options={[
-            { label: "课题组任务", value: "team" },
-            { label: "我的任务", value: "tasks" },
+            { label: "待办", value: "tasks" },
+            { label: "计划", value: "planning" },
+            { label: "定时", value: "scheduled" },
+            { label: "团队", value: "team" },
           ]}
         />
       </div>
-      {(tab === "tasks" || tab === "planning") && (
-        <div className="workspace-subnavigation workbench-personal-tabs">
-          <Segmented
-            aria-label="我的任务栏目"
-            value={
-              tab === "tasks"
-                ? "tasks"
-                : params.get("panel") === "scheduled"
-                ? "scheduled"
-                : "planning"
-            }
-            options={[
-              { label: "我的待办", value: "tasks" },
-              { label: "研究计划", value: "planning" },
-              { label: "定时安排", value: "scheduled" },
-            ]}
-            onChange={(value) => {
-              setPlanningLaunch(0);
-              if (value === "scheduled")
-                setParams({ view: "planning", panel: "scheduled" });
-              else setTab(String(value));
-            }}
-          />
-          {tab === "tasks" && (
-            <Segmented
-              aria-label="任务分类"
-              value={category}
-              onChange={(value) => {
-                const next = new URLSearchParams({
-                  view: "tasks",
-                  category: String(value),
-                });
-                setParams(next);
-                setPages([undefined]);
-                setSelected(undefined);
-                setDetails(false);
-              }}
-              options={[
-                { label: "进行中", value: "ongoing" },
-                { label: "待我处理", value: "awaiting_me" },
-                { label: "已完成", value: "completed" },
-              ]}
-            />
-          )}
-
-          {tab === "tasks" && <p>个人助手安排与科研任务在这里衔接</p>}
-        </div>
-      )}
       {supported && availability.error && (
         <Alert
           type="warning"
@@ -409,45 +373,90 @@ export function DesktopWorkbench() {
                   正在读取任务…
                 </p>
               )}
-              {read.data?.data.map((card) => (
-                <button
-                  className="workspace-task-row"
-                  key={`${card.source}:${card.id}`}
-                  aria-pressed={
-                    requestedTask
-                      ? card.taskId === requestedTask &&
-                        (card.source === "research_task" ? "research" : "personal") ===
-                          requestedKind
-                      : activeCard?.id === card.id
-                  }
-                  onClick={() => select(card)}
-                >
-                  <span className="workspace-task-row-title">{card.title}</span>
-                  <span className="workspace-status">
-                    {workspaceStatusLabel[card.status] ||
-                      card.progress.label ||
-                      "查看状态"}
-                  </span>
-                  <p>{card.goal || "接受后可查看获准目标"}</p>
-                  <footer>
-                    {card.owner.displayName}
-                    <span>
-                      {workspaceStatusLabel[card.progress.label] || card.progress.label}
-                    </span>
-                  </footer>
-                </button>
-              ))}
+              {(() => {
+                const cards = read.data?.data || [],
+                  partial = !!read.data?.nextCursor,
+                  groups = [
+                    { key: "awaiting_me", label: "需要你动手" },
+                    { key: "ongoing", label: "进行中" },
+                    { key: "scheduled", label: "定时安排" },
+                    { key: "completed", label: "已完成" },
+                  ]
+                    .map((group) => ({
+                      ...group,
+                      items: cards.filter((card) => card.category === group.key),
+                    }))
+                    .filter((group) => group.items.length);
+                return groups.map((group) => (
+                  <section
+                    className="workspace-task-group"
+                    key={group.key}
+                    aria-label={group.label}
+                  >
+                    <h2 className="workspace-task-group-label">
+                      {group.label}
+                      {partial ? "" : ` · ${group.items.length}`}
+                    </h2>
+                    {group.items.map((card) => (
+                      <button
+                        className="workspace-task-row"
+                        key={`${card.source}:${card.id}`}
+                        aria-pressed={
+                          requestedTask
+                            ? card.taskId === requestedTask &&
+                              (card.source === "research_task"
+                                ? "research"
+                                : "personal") === requestedKind
+                            : activeCard?.id === card.id
+                        }
+                        onClick={() => select(card)}
+                      >
+                        <span className="workspace-task-row-title">{card.title}</span>
+                        <span className="workspace-status">
+                          {workspaceStatusLabel[card.status] ||
+                            card.progress.label ||
+                            "查看状态"}
+                        </span>
+                        <p>{card.goal || "接受后可查看获准目标"}</p>
+                        <footer>
+                          {card.owner.displayName}
+                          <span>
+                            {workspaceStatusLabel[card.progress.label] ||
+                              card.progress.label}
+                          </span>
+                        </footer>
+                      </button>
+                    ))}
+                  </section>
+                ));
+              })()}
               {read.data && !read.data.data.length && (
                 <div className="workspace-empty">
                   <h2>
-                    {category === "awaiting_me"
-                      ? "暂时没有待你处理的任务"
-                      : category === "completed"
+                    {filter === "completed"
                       ? "还没有已完成的任务"
-                      : "暂时没有进行中的任务"}
+                      : "暂时没有要推进的任务"}
                   </h2>
-                  <p>聊天中的协作建议会在这里确认，也可以手工建立一项任务。</p>
+                  <p>聊天中的协作建议会在这里确认，也可以新建一项任务。</p>
                 </div>
+              )}
+              {read.data && read.data.data.length > 0 && (
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={() => {
+                    setParams(
+                      filter === "completed"
+                        ? { view: "tasks" }
+                        : { view: "tasks", category: "completed" },
+                    );
+                    setPages([undefined]);
+                    setSelected(undefined);
+                    setDetails(false);
+                  }}
+                >
+                  {filter === "completed" ? "返回待办" : "查看已完成"}
+                </Button>
               )}
               {(pages.length > 1 || read.data?.nextCursor) && (
                 <div className="workspace-pages">
