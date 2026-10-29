@@ -1,9 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, renameSync, statSync, createReadStream } from 'node:fs'
 import { join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { z } from 'zod'
-import { ResearchCollection, ResearchFile, ResearchFileVersion, ResearchCollectionSettings, ResearchFileImport, ResearchContextSnapshot, AgentResearchContext, researchLibraryRoutes } from '@research-agent-platform/contracts'
+import { ResearchCollection, ResearchFile, ResearchFileVersion, ResearchCollectionSettings, ResearchFileImport, ResearchOriginalUpload, ResearchContextSnapshot, AgentResearchContext, researchLibraryRoutes } from '@research-agent-platform/contracts'
 import type { Actor } from './auth.js'
 import { fail, ApiError } from './errors.js'
 import {sharedCollectionAccess,teamLabId,hasLabMembership} from './lab-access.js'
@@ -43,7 +43,7 @@ export async function parseResearchImport(raw:z.input<typeof ResearchFileImport>
 
 export class ResearchLibraryService {
   readonly createdBlobs:string[]=[]
-  constructor(readonly db:DatabaseSync,readonly actor:Actor,readonly blobRoot?:string){}
+  constructor(readonly db:DatabaseSync,readonly actor:Actor,readonly blobRoot?:string,readonly largeOriginals=true){}
   private aclArgs(){return [this.actor.id,this.actor.id,this.actor.id]}
   collection(id:string,includeWithdrawn=false):Row {
     const r=this.db.prepare(`SELECT c.* FROM research_collections c WHERE c.id=? AND ${collectionAcl} AND (c.status='available' OR (c.owner_id=? AND ?=1))`).get(id,...this.aclArgs(),this.actor.id,includeWithdrawn?1:0)
@@ -69,8 +69,27 @@ export class ResearchLibraryService {
     const v=this.db.prepare('SELECT * FROM research_file_versions WHERE file_id=? AND version=?').get(r.id!,version);if(!v)fail('NOT_FOUND')
     return {row:v,model:ResearchFileVersion.parse(decode(v.document))}
   }
-  private fileView(r:Row):ResearchFile {const c=this.collection(String(r.collection_id),true);return ResearchFile.parse({...this.fileVersion(r).model,id:r.id,collectionId:r.collection_id,status:r.status,owned:c.owner_id===this.actor.id})}
+  private fileView(r:Row):ResearchFile {const c=this.collection(String(r.collection_id),true),model=this.fileVersion(r).model;if(!this.largeOriginals&&model.byteLength>10485760)fail('NOT_FOUND');return ResearchFile.parse({...model,id:r.id,collectionId:r.collection_id,status:r.status,owned:c.owner_id===this.actor.id})}
   authorizeImport(collectionId:string,raw:z.input<typeof ResearchFileImport>){const input=ResearchFileImport.parse(raw),c=this.owned(collectionId,input.expectedCollectionVersion);if(this.db.prepare('SELECT 1 FROM feishu_library_sources WHERE collection_id=?').get(c.id!))fail('INVALID_STATE');if(input.fileId){const f=this.file(input.fileId);if(f.collection_id!==c.id)fail('NOT_FOUND');if(f.version!==input.expectedVersion)fail('VERSION_CONFLICT')}return c}
+  authorizeOriginal(collectionId:string,input:z.infer<typeof ResearchOriginalUpload>,expected?:number){
+    const c=this.owned(collectionId,expected)
+    if(c.scope!==input.scope)fail('VERSION_CONFLICT')
+    if(this.db.prepare('SELECT 1 FROM feishu_library_sources WHERE collection_id=?').get(c.id!))fail('INVALID_STATE')
+    if(input.fileId){const f=this.file(input.fileId);if(f.collection_id!==c.id)fail('NOT_FOUND');if(f.version!==input.expectedVersion)fail('VERSION_CONFLICT')}
+    return c
+  }
+  async originalStream(id:string,version?:number,offset?:number,length?:number){
+    const f=this.file(id),v=this.fileVersion(f,version)
+    if(!this.blobRoot)fail('SERVICE_UNAVAILABLE')
+    const file=join(this.blobRoot,String(v.row.blob_key)),hash=createHash('sha256')
+    try {
+      if(statSync(file).size!==v.model.byteLength)fail('SERVICE_UNAVAILABLE')
+      if(offset===undefined){for await(const chunk of createReadStream(file))hash.update(chunk);if(hash.digest('hex')!==v.model.sha256)fail('SERVICE_UNAVAILABLE')}
+      else if(offset+length!>v.model.byteLength)fail('VALIDATION_ERROR')
+    } catch {fail('SERVICE_UNAVAILABLE')}
+    this.file(id) // Permissions may have changed while reading the original.
+    return {file:v.model,stream:createReadStream(file,offset===undefined?{}:{start:offset,end:offset+length!-1})}
+  }
   private agent(id:string){if(!this.db.prepare("SELECT id FROM chat_contacts WHERE id=? AND kind='personal_agent' AND owner_id=?").get(id,this.actor.id))fail('NOT_FOUND');requireActiveAgent(this.db,id)}
   bindings(agentId:string){
     this.agent(agentId)
@@ -140,7 +159,7 @@ export class ResearchLibraryService {
     const text=String(p.text);if(end<=start||end>text.length||end-start>2000)fail('VALIDATION_ERROR')
     return {citation:{collectionId:String(c.id),collectionVersion:Number(c.version),sourceId:id,version,sha256:v.sha256,pageNumber,start,end},filename:v.filename,text:text.slice(start,end),pageCharacterCount:text.length,partial:start>0||end<text.length}
   }
-  run(name:ResearchLibraryCommand,req:LibraryRequest,extraction?:Extraction):unknown {
+  run(name:ResearchLibraryCommand,req:LibraryRequest,extraction?:Extraction,original?:{input:z.infer<typeof ResearchOriginalUpload>;path:string;byteLength:number;sha256:string}):unknown {
     const body=req.body as Record<string,any>,id=req.params.id,key=req.headers['Idempotency-Key'],command=researchLibraryRoutes[name]
     const requestHash=createHash('sha256').update(JSON.stringify(req)).digest('hex')
     const cached=key?this.db.prepare('SELECT * FROM idempotency_results WHERE actor_id=? AND command=? AND resource_id=? AND key=?').get(this.actor.id,name,id??'*',key):undefined
@@ -149,6 +168,7 @@ export class ResearchLibraryService {
       const result=decode(cached.response_json)
       if(['createResearchCollection','updateResearchCollection','withdrawResearchCollection'].includes(name))return {data:this.view(this.owned(result.data.id,undefined,name==='withdrawResearchCollection'))}
       if(['importResearchFile','withdrawResearchFile'].includes(name))return {data:this.fileView(this.file(result.data.id,name==='withdrawResearchFile'))}
+      if(name==='completeResearchUpload'){this.owned(id!);return {data:this.fileView(this.file(result.data.id))}}
       if(name==='bindAgentResearchCollections')return {data:this.bindings(id!)}
       if(name==='agentResearchContext')this.validateSnapshot(result.data.snapshot)
       if(name==='validateResearchCitations')this.validateSnapshot(req.body as ResearchContextSnapshot)
@@ -169,6 +189,16 @@ export class ResearchLibraryService {
       this.db.prepare('UPDATE research_collections SET name=?,description=?,scope=?,task_ids=?,version=version+1,updated_at=? WHERE id=?').run(settings.name,settings.description,settings.scope,JSON.stringify(settings.taskIds),now(),id!);if(settings.scope==='lab_shared'&&current.scope!=='lab_shared')this.share(id!);else if(settings.scope!=='lab_shared') this.db.prepare('DELETE FROM research_collection_labs WHERE collection_id=?').run(id!);result={data:this.view(this.collection(id!))}
     }else if(name==='withdrawResearchCollection'){
       this.owned(id!,body.expectedVersion);this.db.prepare("UPDATE research_collections SET status='withdrawn',version=version+1,updated_at=? WHERE id=?").run(now(),id!);result={data:this.view(this.collection(id!,true))}
+    }else if(name==='completeResearchUpload'){
+      if(!original||!this.blobRoot)fail('SERVICE_UNAVAILABLE')
+      const input=original.input;this.authorizeOriginal(id!,input,body.expectedCollectionVersion)
+      const fileId=input.fileId??randomUUID(),revision=(input.expectedVersion??0)+1,blobKey=`${randomUUID()}.blob`
+      const model=ResearchFileVersion.parse({version:revision,filename:input.filename,mediaType:input.mediaType,byteLength:original.byteLength,sha256:original.sha256,metadata:input.metadata,extraction:'original_only',extractionReason:'Large original stored without automatic text extraction.',pageCount:0,characterCount:0,createdAt:now()})
+      const path=join(this.blobRoot,blobKey);renameSync(original.path,path);this.createdBlobs.push(path)
+      if(input.fileId)this.db.prepare('UPDATE research_files SET version=? WHERE id=?').run(revision,fileId)
+      else this.db.prepare("INSERT INTO research_files VALUES (?,?,?,'available')").run(fileId,id!,revision)
+      this.db.prepare('INSERT INTO research_file_versions VALUES (?,?,?,?)').run(fileId,revision,blobKey,JSON.stringify(model))
+      this.touch(id!);result={data:this.fileView(this.file(fileId))}
     }else if(name==='importResearchFile'){
       const input=ResearchFileImport.parse(body);this.authorizeImport(id!,input);if(!extraction||!this.blobRoot)fail('SERVICE_UNAVAILABLE')
       const bytes=Buffer.from(input.contentBase64,'base64'),fileId=input.fileId??randomUUID(),revision=(input.expectedVersion??0)+1,blobKey=`${randomUUID()}.blob`
@@ -180,10 +210,10 @@ export class ResearchLibraryService {
       for(const page of extraction.pages)this.db.prepare('INSERT INTO research_file_pages VALUES (?,?,?,?)').run(fileId,revision,page.pageNumber,page.text)
       this.touch(id!);result={data:this.fileView(this.file(fileId))}
     }else if(name==='researchFiles'){
-      this.collection(id!);result={data:this.db.prepare("SELECT * FROM research_files WHERE collection_id=? AND status='available' ORDER BY id LIMIT ?").all(id!,Number(req.query.limit??50)).map(f=>this.fileView(f))}
+      this.collection(id!);result={data:this.db.prepare(`SELECT * FROM research_files WHERE collection_id=? AND status='available' ${this.largeOriginals?'':"AND json_extract((SELECT document FROM research_file_versions v WHERE v.file_id=research_files.id AND v.version=research_files.version),'$.byteLength')<=10485760"} ORDER BY id LIMIT ?`).all(id!,Number(req.query.limit??50)).map(f=>this.fileView(f))}
     }else if(name==='researchFile'){
       const f=this.file(id!),c=this.collection(String(f.collection_id)),file=this.fileView(f),pages=this.db.prepare('SELECT page_number,text FROM research_file_pages WHERE file_id=? AND version=? ORDER BY page_number').all(id!,f.version!)
-      result={data:{file,versions:this.db.prepare('SELECT document FROM research_file_versions WHERE file_id=? ORDER BY version DESC LIMIT 100').all(id!).map(v=>ResearchFileVersion.parse(decode(v.document))),pages:pages.map(p=>({pageNumber:p.page_number,characterCount:String(p.text).length})),preview:pages.filter(p=>String(p.text).trim()).slice(0,3).map(p=>{const text=String(p.text);let end=Math.min(text.length,1000);if(end<text.length&&/[\uD800-\uDBFF]/.test(text[end-1]!))end--;return {citation:{collectionId:String(c.id),collectionVersion:Number(c.version),sourceId:id!,version:Number(f.version),sha256:file.sha256,pageNumber:Number(p.page_number),start:0,end},filename:file.filename,text:text.slice(0,end),pageCharacterCount:text.length,partial:end<text.length}})}}
+      result={data:{file,versions:this.db.prepare('SELECT document FROM research_file_versions WHERE file_id=? ORDER BY version DESC LIMIT 100').all(id!).map(v=>ResearchFileVersion.parse(decode(v.document))).filter(v=>this.largeOriginals||v.byteLength<=10485760),pages:pages.map(p=>({pageNumber:p.page_number,characterCount:String(p.text).length})),preview:pages.filter(p=>String(p.text).trim()).slice(0,3).map(p=>{const text=String(p.text);let end=Math.min(text.length,1000);if(end<text.length&&/[\uD800-\uDBFF]/.test(text[end-1]!))end--;return {citation:{collectionId:String(c.id),collectionVersion:Number(c.version),sourceId:id!,version:Number(f.version),sha256:file.sha256,pageNumber:Number(p.page_number),start:0,end},filename:file.filename,text:text.slice(0,end),pageCharacterCount:text.length,partial:end<text.length}})}}
     }else if(name==='withdrawResearchFile'){
       const f=this.file(id!);this.owned(String(f.collection_id));if(f.version!==body.expectedVersion)fail('VERSION_CONFLICT')
       this.db.prepare("UPDATE research_files SET status='withdrawn' WHERE id=?").run(id!);this.touch(String(f.collection_id));result={data:this.fileView(this.file(id!,true))}

@@ -28,7 +28,7 @@ await esbuild.build({
         }));
         build.onLoad({ filter: /.*/, namespace: "fixture" }, () => ({
           contents:
-            "export class ResearchApiError extends Error { constructor(code,status,message) { super(message); this.code=code; this.status=status; } }",
+            "export async function researchApi(){throw Error('Not used in download fixture');} export class ResearchApiError extends Error { constructor(code,status,message) { super(message); this.code=code; this.status=status; } }",
         }));
       },
     },
@@ -186,4 +186,11 @@ test("opaque and JSON originals are supported when they match stored metadata", 
     const blob = await download(undefined, { ...version, mediaType });
     assert.equal(blob.type, mediaType);
   }
+});
+
+test('large library originals download in bounded ranges and verify one final hash',async t=>{
+  const original=Buffer.alloc(11*1048576+5,37),seen=[];
+  const selected={...version,mediaType:'application/octet-stream',byteLength:original.length,sha256:createHash('sha256').update(original).digest('hex')};
+  mock(t,async url=>{const query=new URL('http://fixture'+url).searchParams,offset=Number(query.get('offset')),length=Number(query.get('length'));assert(length<=1048576);seen.push(offset);return new Response(original.subarray(offset,offset+length),{headers:{'content-type':selected.mediaType,'content-length':String(length)}});});
+  const result=await download(undefined,selected);assert.equal(seen.length,12);assert.deepEqual(Buffer.from(await result.arrayBuffer()),original);
 });

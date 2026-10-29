@@ -1,5 +1,7 @@
 import { TaskExecutionStatus } from './TaskExecutionStatus';
 import { TaskKnowledgePanel } from './TaskKnowledgePanel';
+import { TaskArchivePanel } from './TaskArchivePanel';
+import { researchScopeLabels } from './research-library-api';
 import { Alert, Button, Checkbox, Input, Segmented, Select } from "antd";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type {
@@ -54,6 +56,9 @@ export function TaskWorkPage({
   useEffect(() => {
     flight.current = false;
     setBusy(false);
+    setState(undefined); setText(''); setNote(''); setSummary(''); setPreview('');
+    setSelected([]); setCollection(''); setNotice(''); setError(''); setConnectionError('');
+    request.current = undefined; noteLoaded.current = false;
   }, [operation.scope]);
   const detail = useResearchRead(async (signal) => {
     if (kind === "personal") {
@@ -109,7 +114,7 @@ export function TaskWorkPage({
     let cancelled = false,
       reading = false;
     const poll = async () => {
-      if (reading || flight.current || cancelled || !bridge?.taskStatus) return;
+      if (reading || cancelled || !bridge?.taskStatus) return;
       reading = true;
       try {
         await refresh();
@@ -162,14 +167,14 @@ export function TaskWorkPage({
   };
   const send = () =>
     command(async () => {
+      const { isCurrent } = operation.capture();
       const pending = state?.binding.pending;
       const attempt = pending
         ? { id: pending.requestId, text: pending.userText || pending.text }
         : request.current || { id: crypto.randomUUID(), text };
       request.current = attempt;
       await bridge!.taskPrompt(target, attempt.text, attempt.id);
-      request.current = undefined;
-      setText("");
+      if (isCurrent()) { request.current = undefined; setText(""); }
     });
   const importFile = (source: {
     kind: "artifact" | "library";
@@ -177,13 +182,14 @@ export function TaskWorkPage({
     version: number;
   }) =>
     command(async () => {
+      const { isCurrent } = operation.capture();
       await bridge!.taskImport(target, source);
-      setNotice("已将选定版本保存到本任务目录。");
+      if (isCurrent()) setNotice("已将选定版本保存到本任务目录，相同内容的已选素材会复用本地副本。");
     });
   const submit = () =>
     command(async () => {
       const { isCurrent } = operation.capture();
-      await bridge!.taskSubmit(target, summary, selected);
+      await bridge!.taskSubmit(target, summary, kind === 'personal' ? [] : selected);
       if (isCurrent()) {
         setNotice("成果已提交，等待验收。");
         setTab("details");
@@ -211,7 +217,7 @@ export function TaskWorkPage({
         onChange={(v) => setTab(String(v))}
         options={[
           { value: "execute", label: "执行" },
-          { value: "materials", label: "资料与成果" },
+          { value: "materials", label: "文件与归档" },
           { value: "details", label: "安排与验收" },
           { value: "knowledge", label: "规则与记忆" },
         ]}
@@ -259,19 +265,9 @@ export function TaskWorkPage({
               {!state ? (
                 <div className="task-work-empty">
                   <h3>在此任务中开始工作</h3>
-                  <p>使用当前 AcceptCat 模型。会话、进度和文件按任务保存在这台电脑。</p>
+                  <p>选择已有素材所在的工作文件夹即可开始，无需先上传到资料库。DSH 在此目录读取、修改和生成文件，使用当前 AcceptCat 模型。</p>
                   <Button
                     type="primary"
-                    disabled={!bridge?.taskOpen || !canWork || busy}
-                    onClick={() =>
-                      void command(async () => {
-                        await bridge!.taskOpen(target);
-                      })
-                    }
-                  >
-                    建立任务工作区
-                  </Button>
-                  <Button
                     disabled={!bridge?.taskOpen || !canWork || busy}
                     onClick={() =>
                       void command(async () => {
@@ -279,11 +275,30 @@ export function TaskWorkPage({
                       })
                     }
                   >
-                    选择已有文件夹
+                    选择本地工作文件夹
+                  </Button>
+                  <Button
+                    disabled={!bridge?.taskOpen || !canWork || busy}
+                    onClick={() =>
+                      void command(async () => {
+                        await bridge!.taskOpen(target);
+                      })
+                    }
+                  >
+                    新建空白工作区
                   </Button>
                 </div>
               ) : (
                 <>
+                  <div className="task-material-actions">
+                    <Button disabled={busy || !canWork || state.phase === 'running'} onClick={() => void command(async () => {
+                      const { isCurrent } = operation.capture();
+                      const added = await bridge!.taskAddLocal(target);
+                      if (added && isCurrent()) setNotice('素材已加入本机工作文件夹，未上传到资料服务。');
+                    })}>添加本地素材</Button>
+                    <Button disabled={busy} onClick={() => void command(() => bridge!.taskReveal(target))}>打开工作文件夹</Button>
+                    <Button onClick={() => setTab('materials')}>取用共享资料 / 归档成果</Button>
+                  </div>
                   <div
                     className="task-work-transcript"
                     ref={transcript}
@@ -360,7 +375,7 @@ export function TaskWorkPage({
                       value={text}
                       maxLength={16000}
                       disabled={!!state.binding.pending || busy || !canWork}
-                      placeholder="说明这一步要处理什么。先在“资料与成果”中选入材料。"
+                      placeholder="说明要做什么，以及工作文件夹中要使用的素材；也可按需选入共享资料。"
                       onChange={(e) => {
                         setText(e.target.value);
                         request.current = undefined;
@@ -417,9 +432,29 @@ export function TaskWorkPage({
           )}
           {tab === "materials" && (
             <div className="task-work-materials">
-              <h3>选入任务资料</h3>
+              <h3>本地工作文件夹</h3>
+              <p>本地文件是主要工作材料，DSH 直接在此目录工作。补充素材只复制到本机；使用模型时，读取的相关内容可能作为上下文发送。</p>
+              <p className="task-work-muted">{state?.binding.directory || '尚未选择工作文件夹'}</p>
+              <div className="task-material-actions">
+                {!state ? <>
+                  <Button type="primary" disabled={!bridge || busy || !canWork} onClick={() => void command(() => bridge!.taskOpen(target, true))}>选择本地工作文件夹</Button>
+                  <Button disabled={!bridge || busy || !canWork} onClick={() => void command(() => bridge!.taskOpen(target))}>新建空白工作区</Button>
+                </> : <>
+                  <Button disabled={busy || !canWork || state.phase === 'running'} onClick={() => void command(async () => {
+                    const { isCurrent } = operation.capture();
+                    const added = await bridge!.taskAddLocal(target);
+                    if (added && isCurrent()) setNotice('素材已加入本机工作文件夹，未上传到资料服务。');
+                  })}>添加本地素材</Button>
+                  <Button disabled={busy} onClick={() => void command(() => bridge!.taskReveal(target))}>打开工作文件夹</Button>
+                  <Button disabled={busy} onClick={() => void command(async () => {})}>刷新文件</Button>
+                </>}
+              </div>
+              {!!state?.binding.localMaterials?.length && <details><summary>补充的本地素材（仅本机）</summary>
+                {state.binding.localMaterials.map(s => <p key={`${s.localName}:${s.sha256}`}>{s.filename} → {s.localName}</p>)}
+              </details>}
+              <h3>按需取用共享资料</h3>
               <p>
-                仅将你选定且当前有权访问的版本复制到本机。团队成员不会因此获得私人资料权限。
+                不必先上传本地素材。这里仅将你选定且有权访问的资料版本取到本机；相同内容的已选素材复用，保留各自来源。
               </p>
               {detail.data?.artifacts.map((a) => (
                 <div className="task-work-file" key={a.id}>
@@ -447,9 +482,9 @@ export function TaskWorkPage({
                 placeholder="选择资料板块中的资料集"
                 value={collection || undefined}
                 onChange={setCollection}
-                options={collections.data?.data.map((c) => ({
+                options={collections.data?.data.filter(c => !c.externalSource).map((c) => ({
                   value: c.id,
-                  label: c.name,
+                  label: `${c.name} · ${researchScopeLabels[c.scope]}`,
                 }))}
               />
               {(collections.error || library.error) && (
@@ -480,12 +515,12 @@ export function TaskWorkPage({
                   ))}
                 </details>
               )}
-              <h3>文件与待交付成果</h3>
-              <p>先查看文件，再选择需要共享的成果。仅勾选并提交的文件会上传。</p>
+              <h3>工作文件与成果</h3>
+              <p>勾选要归档或提交的成果；勾选本身不会上传。列表展示最多 100 个文件、子目录至 3 层，完整内容可在工作文件夹查看。</p>
               {state?.files.map((f) => (
                 <div className="task-work-file" key={f.name}>
                   <Checkbox
-                    disabled={kind === "personal" || busy}
+                    disabled={busy}
                     checked={selected.includes(f.name)}
                     onChange={(e) =>
                       setSelected((v) =>
@@ -495,28 +530,33 @@ export function TaskWorkPage({
                       )
                     }
                   >
-                    {f.name} · {f.size} 字节
+                    <span title={f.name}>{state.binding.localMaterials?.find(s => s.localName === f.name)?.filename || state.binding.sources.find(s => s.localName === f.name)?.filename || f.name} · {f.size} 字节</span>
                   </Checkbox>
-                  <Button
+                  <div className="task-material-actions"><Button disabled={busy} onClick={() => void command(() => bridge!.taskReveal(target, f.name))}>在文件夹中显示</Button><Button
                     disabled={busy}
                     onClick={() =>
                       void command(async () => {
+                        const { isCurrent } = operation.capture();
                         const output = await bridge!.taskOutput(target, f.name);
-                        setPreview(
+                        if (isCurrent()) setPreview(
                           output.preview ||
-                            "此格式请在本机工作目录中查看；支持提交 PDF/PNG。",
+                            "此格式可在文件夹中打开查看，并归档原件到资料集合。",
                         );
                       })
                     }
                   >
-                    预览
-                  </Button>
+                    查看文字
+                  </Button></div>
                 </div>
               ))}
               {preview && <pre className="task-work-preview">{preview}</pre>}
+              <TaskArchivePanel target={target} state={state} selected={selected} collections={collections.data?.data || []}
+                busy={busy} command={command} refreshCollections={collections.refresh} />
+              <h3>提交任务验收</h3>
+              {kind === 'research' && <p>任务附件支持 TXT/Markdown/CSV/TSV/JSON/PDF/PNG，每份最多 10 MiB。PPT、Word、Excel 原件请先归档，再在成果摘要中注明集合与文件名。</p>}
               {kind === "personal" && (
                 <p>
-                  个人协作任务首版提交文字成果；文件保存在本机。科研任务支持共享成果文件。
+                  个人任务提交文字摘要；文件可通过上方入口归档。科研任务可提交 TXT/Markdown/CSV/TSV/JSON/PDF/PNG；PPT 等原件请先归档，在摘要中注明集合与文件名。
                 </p>
               )}
               <Input.TextArea
@@ -557,6 +597,7 @@ export function TaskWorkPage({
                   !bridge?.taskSubmit ||
                   !state ||
                   !summary.trim() ||
+                  (kind === 'research' && selected.some(n => !/\.(txt|md|csv|tsv|json|pdf|png)$/i.test(n))) ||
                   (!actions.includes("submit") &&
                     state?.binding.delivery?.status !== "pending")
                 }

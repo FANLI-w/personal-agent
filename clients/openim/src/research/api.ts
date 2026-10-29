@@ -98,7 +98,7 @@ async function requestResearchApi<K extends RouteName>(
     csrfToken = session.data.csrfToken;
   }
   assertRequestActive(options.signal);
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { 'X-AcceptCat-Originals': 'chunked-v1' };
   if (route.method !== "GET") headers["Content-Type"] = "application/json";
   if (csrfToken && route.method !== "GET" && route.access === "session")
     headers["X-CSRF-Token"] = csrfToken;

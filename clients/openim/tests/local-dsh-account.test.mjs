@@ -72,6 +72,19 @@ test('managed account overlay preserves user plugins and contains only a credent
     assert.equal(configured.defaultContextWindow, contextWindow);
     assert.equal(configured.models[0].contextWindow, contextWindow);
     assert.equal(configured.models[0].maxTokens, 8192);
+    const overlay = JSON.parse(readFileSync(file, 'utf8'));
+    const native = overlay.find(entry => entry.id === 'llm-deepseek');
+    if (provider === 'deepseek' && model !== 'unknown-future-model') {
+      assert.equal(native.config.apiKeyEnv, 'ACCEPTCAT_DSH_TOKEN');
+      assert.equal(native.config.baseURL, 'http://127.0.0.1:4321');
+      assert.equal(native.config.models[0].maxTokens, 8192);
+      assert.equal(native.config.models[0].contextWindow, contextWindow);
+      assert.deepEqual(native.config.models.map(m => m.id), ['deepseek-flash', 'deepseek-v4-pro']);
+      assert.equal(native.config.thinking, undefined); // DSH owns effort semantics/defaults.
+      assert.equal(overlay.find(entry => entry.id === 'agent-default-model').config.provider, 'deepseek-official');
+      assert.equal(overlay.find(entry => entry.id === 'session-log-deepseek').config.enabled, false);
+      assert.equal(overlay.find(entry => entry.id === 'plugin-package-inventory-deepseek').config.enabled, false);
+    } else assert.equal(native, undefined);
   }
 });
 

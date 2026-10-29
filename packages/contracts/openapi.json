@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.37.0"
+    "version": "0.38.0"
   },
   "paths": {
     "/api/v1/chat/conversations/{id}/team-work": {
@@ -9669,6 +9669,1051 @@
         }
       }
     },
+    "/api/v1/research-library/collections/{id}/uploads": {
+      "post": {
+        "operationId": "beginResearchUpload",
+        "description": "Current actor authorization before retrieval. Explicit collection scope; Agent publication never shares source material or credentials. Immutable source versions and precise excerpts; revalidate bindings, permissions and versions before using late output.",
+        "x-stage": "LIBRARY1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "uploadId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "filename": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[^\\\\/\\x00-\\x1f]+$"
+                  },
+                  "mediaType": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[a-zA-Z0-9!#$&^_.+-]+\\/[a-zA-Z0-9!#$&^_.+-]+$"
+                  },
+                  "byteLength": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 536870912
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "owner_private",
+                      "task_scoped",
+                      "lab_shared",
+                      "public"
+                    ]
+                  },
+                  "metadata": {
+                    "default": {
+                      "title": "",
+                      "authors": [],
+                      "year": null,
+                      "doi": null,
+                      "tags": [],
+                      "note": ""
+                    },
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "default": "",
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "authors": {
+                        "default": [],
+                        "maxItems": 30,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 200
+                        }
+                      },
+                      "year": {
+                        "default": null,
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 1000,
+                            "maximum": 9999
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "doi": {
+                        "default": null,
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 300
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "tags": {
+                        "default": [],
+                        "maxItems": 30,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 100
+                        }
+                      },
+                      "note": {
+                        "default": "",
+                        "type": "string",
+                        "maxLength": 4000
+                      }
+                    },
+                    "required": [
+                      "title",
+                      "authors",
+                      "year",
+                      "doi",
+                      "tags",
+                      "note"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "fileId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                  },
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "uploadId",
+                  "filename",
+                  "mediaType",
+                  "byteLength",
+                  "scope",
+                  "metadata"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "uploadId": "00000000-0000-4000-8000-000000000001",
+                "filename": "synthetic",
+                "mediaType": "application/octet-stream",
+                "byteLength": 1,
+                "scope": "owner_private",
+                "metadata": {
+                  "title": "",
+                  "authors": [],
+                  "year": null,
+                  "doi": null,
+                  "tags": [],
+                  "note": ""
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "LIBRARY1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "uploadId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "chunkBytes": {
+                          "type": "number",
+                          "const": 1048576
+                        },
+                        "receivedParts": {
+                          "maxItems": 512,
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        }
+                      },
+                      "required": [
+                        "uploadId",
+                        "chunkBytes",
+                        "receivedParts"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "uploadId": "00000000-0000-4000-8000-000000000001",
+                    "chunkBytes": 1048576,
+                    "receivedParts": []
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research-library/collections/{id}/uploads/parts": {
+      "post": {
+        "operationId": "putResearchUploadPart",
+        "description": "Current actor authorization before retrieval. Explicit collection scope; Agent publication never shares source material or credentials. Immutable source versions and precise excerpts; revalidate bindings, permissions and versions before using late output.",
+        "x-stage": "LIBRARY1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "uploadId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "index": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 511
+                  },
+                  "contentBase64": {
+                    "type": "string",
+                    "minLength": 4,
+                    "maxLength": 1398104,
+                    "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+                  }
+                },
+                "required": [
+                  "uploadId",
+                  "index",
+                  "contentBase64"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "uploadId": "00000000-0000-4000-8000-000000000001",
+                "index": 0,
+                "contentBase64": "eA=="
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "LIBRARY1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "accepted": {
+                          "type": "boolean",
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "accepted"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "accepted": true
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research-library/collections/{id}/uploads/complete": {
+      "post": {
+        "operationId": "completeResearchUpload",
+        "description": "Current actor authorization before retrieval. Explicit collection scope; Agent publication never shares source material or credentials. Immutable source versions and precise excerpts; revalidate bindings, permissions and versions before using late output.",
+        "x-stage": "LIBRARY1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "uploadId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "expectedCollectionVersion": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "uploadId",
+                  "expectedCollectionVersion"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "uploadId": "00000000-0000-4000-8000-000000000001",
+                "expectedCollectionVersion": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "LIBRARY1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "filename": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "mediaType": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "byteLength": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 536870912
+                        },
+                        "sha256": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        },
+                        "metadata": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "default": "",
+                              "type": "string",
+                              "maxLength": 500
+                            },
+                            "authors": {
+                              "default": [],
+                              "maxItems": 30,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "maxLength": 200
+                              }
+                            },
+                            "year": {
+                              "default": null,
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 1000,
+                                  "maximum": 9999
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "doi": {
+                              "default": null,
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 300
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "tags": {
+                              "default": [],
+                              "maxItems": 30,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "maxLength": 100
+                              }
+                            },
+                            "note": {
+                              "default": "",
+                              "type": "string",
+                              "maxLength": 4000
+                            }
+                          },
+                          "required": [
+                            "title",
+                            "authors",
+                            "year",
+                            "doi",
+                            "tags",
+                            "note"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "extraction": {
+                          "type": "string",
+                          "enum": [
+                            "text_extracted",
+                            "original_only",
+                            "extraction_failed"
+                          ]
+                        },
+                        "extractionReason": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "pageCount": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "characterCount": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "collectionId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "available",
+                            "withdrawn"
+                          ]
+                        },
+                        "owned": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "version",
+                        "filename",
+                        "mediaType",
+                        "byteLength",
+                        "sha256",
+                        "metadata",
+                        "extraction",
+                        "extractionReason",
+                        "pageCount",
+                        "characterCount",
+                        "createdAt",
+                        "id",
+                        "collectionId",
+                        "status",
+                        "owned"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "version": 1,
+                    "filename": "synthetic",
+                    "mediaType": "application/octet-stream",
+                    "byteLength": 1,
+                    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "metadata": {
+                      "title": "",
+                      "authors": [],
+                      "year": null,
+                      "doi": null,
+                      "tags": [],
+                      "note": ""
+                    },
+                    "extraction": "text_extracted",
+                    "extractionReason": null,
+                    "pageCount": 0,
+                    "characterCount": 0,
+                    "createdAt": "2026-09-21T08:00:00+08:00",
+                    "id": "synthetic",
+                    "collectionId": "synthetic",
+                    "status": "available",
+                    "owned": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/research-library/collections": {
       "get": {
         "operationId": "researchCollections",
@@ -11213,7 +12258,7 @@
                         "byteLength": {
                           "type": "integer",
                           "exclusiveMinimum": 0,
-                          "maximum": 10485760
+                          "maximum": 536870912
                         },
                         "sha256": {
                           "type": "string",
@@ -11588,7 +12633,7 @@
                           "byteLength": {
                             "type": "integer",
                             "exclusiveMinimum": 0,
-                            "maximum": 10485760
+                            "maximum": 536870912
                           },
                           "sha256": {
                             "type": "string",
@@ -11932,7 +12977,7 @@
                             "byteLength": {
                               "type": "integer",
                               "exclusiveMinimum": 0,
-                              "maximum": 10485760
+                              "maximum": 536870912
                             },
                             "sha256": {
                               "type": "string",
@@ -12099,7 +13144,7 @@
                               "byteLength": {
                                 "type": "integer",
                                 "exclusiveMinimum": 0,
-                                "maximum": 10485760
+                                "maximum": 536870912
                               },
                               "sha256": {
                                 "type": "string",
@@ -12545,6 +13590,26 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 536870911
+            }
+          },
+          {
+            "name": "length",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1048576
             }
           }
         ],
@@ -13102,7 +14167,7 @@
                         "byteLength": {
                           "type": "integer",
                           "exclusiveMinimum": 0,
-                          "maximum": 10485760
+                          "maximum": 536870912
                         },
                         "sha256": {
                           "type": "string",
@@ -16160,7 +17225,7 @@
                         "byteLength": {
                           "type": "integer",
                           "exclusiveMinimum": 0,
-                          "maximum": 10485760
+                          "maximum": 536870912
                         },
                         "sha256": {
                           "type": "string",
@@ -67122,7 +68187,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.37.0"
+                          "const": "0.38.0"
                         },
                         "checks": {
                           "type": "object",
@@ -67181,7 +68246,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.37.0",
+                    "contractVersion": "0.38.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -67355,7 +68420,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.37.0"
+                          "const": "0.38.0"
                         },
                         "checks": {
                           "type": "object",
@@ -67414,7 +68479,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.37.0",
+                    "contractVersion": "0.38.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -67566,7 +68631,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.37.0"
+                          "const": "0.38.0"
                         },
                         "checks": {
                           "type": "object",
@@ -67625,7 +68690,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.37.0",
+                    "contractVersion": "0.38.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
