@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const contractVersion = '0.38.0' as const
+export const contractVersion = '0.39.0' as const
 export const Id = z.string().regex(/^[A-Za-z0-9_-]{1,96}$/)
 export const Text = z.string().min(1).max(8000)
 export const Title = z.string().min(1).max(200)
@@ -26,9 +26,11 @@ export const Dependency = z.strictObject({ taskId: Id, kind: z.enum(['accepted_d
 export const ProposedItem = z.strictObject({ id: Id, title: Title, goal: Text, deliverable: Text, acceptanceCriteria: Text, allocation: Allocation, dependencies: z.array(Id).max(100), schedule: Schedule, inputArtifactIds: z.array(Id).max(100), budget: Budget.nullable() })
 export const PlanInput = z.strictObject({ labId: Id, goal: Text, proposedItems: z.array(ProposedItem).max(100), unresolvedQuestions: z.array(Text).max(50) })
 export const Plan = PlanInput.extend({ conclusionRefs: z.array(ConclusionBinding).max(100).optional(), id: Id, ownerId: Id, version: Version, status: z.enum(['draft', 'confirmed', 'superseded']), createdAt: Instant })
-export const TaskStatus = z.enum(['unassigned', 'awaiting_acceptance', 'ready', 'in_progress', 'in_review', 'changes_requested', 'completed', 'cancelled'])
-export const taskColumns = { unassigned: 'unassigned', awaiting_acceptance: 'unassigned', ready: 'unassigned', in_progress: 'active', changes_requested: 'active', in_review: 'review', completed: 'completed', cancelled: null } as const satisfies Record<z.infer<typeof TaskStatus>, string | null>
-export const Action = z.enum(['confirm', 'invite', 'cancel_invitation', 'decide', 'claim', 'start', 'submit', 'review', 'propose_change', 'withdraw', 'cancel', 'run', 'publish', 'disable', 'revoke_access', 'upload', 'retain_conclusion', 'share_feedback', 'decline_feedback'])
+// blocked is retained only for historical snapshots and older server responses.
+// New workflow writers do not generate it; migration031 restores current tasks.
+export const TaskStatus = z.enum(['unassigned', 'awaiting_acceptance', 'ready', 'in_progress', 'blocked', 'in_review', 'changes_requested', 'completed', 'cancelled'])
+export const taskColumns = { unassigned: 'unassigned', awaiting_acceptance: 'unassigned', ready: 'unassigned', in_progress: 'active', blocked: 'active', changes_requested: 'active', in_review: 'review', completed: 'completed', cancelled: null } as const satisfies Record<z.infer<typeof TaskStatus>, string | null>
+export const Action = z.enum(['confirm', 'invite', 'cancel_invitation', 'decide', 'claim', 'start', 'block', 'resume', 'submit', 'review', 'propose_change', 'withdraw', 'cancel', 'run', 'publish', 'disable', 'revoke_access', 'upload', 'acknowledge_impacts', 'retain_conclusion', 'share_feedback', 'decline_feedback'])
 export const Blocker = z.strictObject({ reason: Text, requestedMemberId: Id.nullable(), requestedAction: Text, resumeStatus: z.enum(['ready', 'in_progress', 'changes_requested', 'in_review']) })
 export const Access = z.strictObject({ visibility: z.enum(['participants', 'lab_summary']), summary: Text.nullable() })
 export const Task = z.strictObject({ conclusionRefs: z.array(ConclusionBinding).max(100).optional(), id: Id, labId: Id, parentTaskId: Id.nullable(), planId: Id, planVersion: Version, title: Title, taskType: z.enum(['paper', 'grant', 'ip', 'experiment', 'training', 'report', 'other']), goal: Text, acceptanceCriteria: Text, initiatorId: Id, leadId: Id.nullable(), reviewerId: Id, participantIds: z.array(Id).max(100), status: TaskStatus, blocker: Blocker.nullable(), dependencies: z.array(Dependency).max(100), schedule: Schedule, access: Access, version: Version, createdAt: Instant, updatedAt: Instant, allowedActions: z.array(Action).max(20) })

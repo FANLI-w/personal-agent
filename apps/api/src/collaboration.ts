@@ -11,6 +11,7 @@ import type { CoordinationCommand } from './coordination.js'
 import { fail } from './errors.js'
 import {hasLabMembership,teamLabId} from './lab-access.js'
 import {planTasks, researchWorkspace} from './research-team.js'
+import { pendingHandoff } from './task-handoffs.js'
 
 export const authorizedPlanSources=`NOT EXISTS(SELECT 1 FROM reuse_denials rd WHERE rd.target_kind='plan' AND rd.target_id=plans.id AND rd.member_id=plans.owner_id) AND NOT EXISTS (SELECT 1 FROM execution_jobs j,json_each(j.request_json,'$.inputs') ref
  LEFT JOIN artifacts f ON f.id=json_extract(ref.value,'$.id') LEFT JOIN tasks source ON source.id=f.task_id
@@ -129,8 +130,8 @@ export class Collaboration {
     if (!task.leadId && task.status === 'awaiting_acceptance' && this.taskRow(task.id).claimable === 1) allowedActions.push('claim')
     if (task.initiatorId === this.actor.id && ['unassigned', 'awaiting_acceptance'].includes(task.status) && !this.db.prepare("SELECT id FROM assignments WHERE task_id=? AND status IN ('pending','accepted')").get(task.id)) allowedActions.push('invite')
     if (task.status === 'awaiting_acceptance' && this.db.prepare("SELECT id FROM assignments WHERE task_id=? AND status='pending'").get(task.id)) {
-      const withdrawingLead = this.db.prepare("SELECT member_id FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId') IS NOT NULL").get(task.id)
-      if (task.initiatorId === this.actor.id || (withdrawingLead && withdrawingLead.member_id === this.actor.id)) allowedActions.push('cancel_invitation')
+      const handoff = pendingHandoff(this.db,task.id)
+      if (task.initiatorId === this.actor.id || handoff?.from_member_id === this.actor.id) allowedActions.push('cancel_invitation')
     }
     if (task.leadId === this.actor.id) {
       if (['ready', 'changes_requested'].includes(task.status)) allowedActions.push('start')
@@ -237,8 +238,8 @@ export class Collaboration {
     if (name === 'claim') { const row = this.taskRow(resourceId); if (row.claimable !== 1) fail('NOT_FOUND'); return }
     if (name === 'cancelInvitation') {
       const task = this.task(resourceId); this.coordination.active(task)
-      const withdrawingLead = this.db.prepare("SELECT member_id FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId') IS NOT NULL").get(resourceId)
-      if (task.initiatorId !== this.actor.id && (!withdrawingLead || withdrawingLead.member_id !== this.actor.id)) fail('FORBIDDEN')
+      const handoff = pendingHandoff(this.db,resourceId)
+      if (task.initiatorId !== this.actor.id && task.leadId !== this.actor.id && handoff?.from_member_id !== this.actor.id) fail('FORBIDDEN')
       return
     }
     if (['invite', 'start', 'submit'].includes(name)) {
@@ -322,7 +323,7 @@ export class Collaboration {
     const assignment = Assignment.parse({ id: id(), taskId: task.id, kind, memberId, capability: null, status: accepted ? 'accepted' : 'pending', commitment: accepted ? { scope, schedule, acceptedAt: now() } : null, transferToMemberId: null, version: 1 })
     this.db.prepare('INSERT INTO assignments VALUES (?,?,?,?,?,?,?,?,?)').run(assignment.id, task.id, memberId, kind, assignment.status, 1, encode(assignment), scope, encode(schedule))
     this.db.prepare('INSERT INTO assignment_versions VALUES (?,?,?)').run(assignment.id,assignment.version,encode(assignment))
-    this.grant(task.id, memberId, accepted ? 'full' : 'summary')
+    if (accepted || !this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='full'").get(task.id,memberId)) this.grant(task.id, memberId, accepted ? 'full' : 'summary')
     return assignment
   }
   validateInvitation(task: TaskModel, memberId: string, schedule: ScheduleModel) {
@@ -475,14 +476,22 @@ export class Collaboration {
       if (task.status !== 'awaiting_acceptance') fail('INVALID_STATE')
       const pending = this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='pending'").get(task.id)
       if (!pending) fail('INVALID_STATE')
-      const offer = Assignment.parse(JSON.parse(String(pending.document))); offer.status = 'cancelled'; offer.version++; this.saveAssignment(offer)
-      const withdrawingLead = this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId') IS NOT NULL").get(task.id)
-      if (withdrawingLead) {
-        const restored = Assignment.parse(JSON.parse(String(withdrawingLead.document))); restored.status = 'accepted'; restored.transferToMemberId = null; restored.version++; this.saveAssignment(restored)
-        task.leadId = restored.memberId; task.status = 'ready'; this.grant(task.id, restored.memberId!, 'full')
+      const offer = Assignment.parse(JSON.parse(String(pending.document))),handoff=pendingHandoff(this.db,task.id)
+      offer.status = 'cancelled'; offer.version++; this.saveAssignment(offer)
+      const former=handoff&&String(handoff.from_member_id)
+      const mayRestore=former&&hasLabMembership(this.db,former,task.labId)
+        &&this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='full'").get(task.id,former)
+        &&this.db.prepare('SELECT 1 FROM auth_accounts WHERE member_id=? AND disabled=0').get(former)
+      if (handoff&&mayRestore) {
+        const original=this.db.prepare('SELECT document FROM assignments WHERE id=?').get(handoff.from_assignment_id!)!
+        const restored = Assignment.parse(JSON.parse(String(original.document))); restored.status = 'accepted'; restored.transferToMemberId = null; restored.version++; this.saveAssignment(restored)
+        task.leadId = restored.memberId; task.status = handoff.prior_status as TaskModel['status'];task.schedule=JSON.parse(String(handoff.prior_schedule))
+        this.db.prepare('UPDATE tasks SET summary_document=? WHERE id=?').run(handoff.prior_summary!,task.id)
       } else {
-        task.status = 'unassigned'
+        task.leadId=null;task.status = 'unassigned'
       }
+      if(handoff)this.db.prepare("UPDATE task_handoffs SET status='cancelled' WHERE offer_id=?").run(offer.id)
+      this.db.prepare("DELETE FROM task_access WHERE task_id=? AND member_id=? AND access='summary'").run(task.id,offer.memberId!)
       this.coordination.stopDispatch(task.id)
       task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'invitation_cancelled')
       return { data: this.actions(task) }
@@ -493,6 +502,7 @@ export class Collaboration {
       const row = this.taskRow(assignment.taskId); this.checkVersion(Number(row.version), body.expectedTaskVersion)
       if (assignment.status !== 'pending' || row.status !== 'awaiting_acceptance' || row.lead_id) fail('INVALID_STATE')
       const task = Task.parse(JSON.parse(String(this.db.prepare('SELECT document FROM tasks WHERE id=?').get(assignment.taskId)!.document)))
+      const handoff=pendingHandoff(this.db,task.id)
       this.db.prepare('INSERT INTO invitation_decisions VALUES (?,?,?,?,?,?,?)').run(assignment.id, this.actor.id, assignment.version, task.version, body.decision, body.comment, now())
       assignment.status = body.decision; assignment.version++
       if (body.decision === 'accepted') {
@@ -501,8 +511,15 @@ export class Collaboration {
         task.leadId = this.actor.id; task.schedule = assignment.commitment.schedule; this.grant(task.id, this.actor.id, 'full')
         this.coordination.acceptedState(task)
         new ReuseService(this).copy('plan',task.planId,'task',task.id)
-        for(const row of this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId')=?").all(task.id,this.actor.id)) {const old=Assignment.parse(JSON.parse(String(row.document)));old.status='transferred';old.version++;this.saveAssignment(old)}
+        if(handoff) {
+          const row=this.db.prepare('SELECT document FROM assignments WHERE id=?').get(handoff.from_assignment_id!)!
+          const old=Assignment.parse(JSON.parse(String(row.document)));old.status='transferred';old.version++;this.saveAssignment(old)
+        }
       } else { if(body.committed) fail('VALIDATION_ERROR');task.status = 'unassigned'; this.db.prepare("DELETE FROM task_access WHERE task_id=? AND member_id=? AND access='summary'").run(task.id, this.actor.id) }
+      if(handoff) {
+        if(![task.initiatorId,task.reviewerId,...task.participantIds].includes(String(handoff.from_member_id)))this.db.prepare("UPDATE task_access SET access='revoked' WHERE task_id=? AND member_id=?").run(task.id,handoff.from_member_id!)
+        this.db.prepare('UPDATE task_handoffs SET status=? WHERE offer_id=?').run(body.decision,assignment.id)
+      }
       this.saveAssignment(assignment); task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, body.decision)
       return { data: assignment }
     },

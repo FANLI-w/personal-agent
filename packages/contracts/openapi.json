@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.38.0"
+    "version": "0.39.0"
   },
   "paths": {
     "/api/v1/chat/conversations/{id}/team-work": {
@@ -34973,6 +34973,7 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
+                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -35436,6 +35437,8 @@
                                                 "decide",
                                                 "claim",
                                                 "start",
+                                                "block",
+                                                "resume",
                                                 "submit",
                                                 "review",
                                                 "propose_change",
@@ -35446,6 +35449,7 @@
                                                 "disable",
                                                 "revoke_access",
                                                 "upload",
+                                                "acknowledge_impacts",
                                                 "retain_conclusion",
                                                 "share_feedback",
                                                 "decline_feedback"
@@ -35493,6 +35497,7 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
+                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -36641,6 +36646,7 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
+                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -37104,6 +37110,8 @@
                                         "decide",
                                         "claim",
                                         "start",
+                                        "block",
+                                        "resume",
                                         "submit",
                                         "review",
                                         "propose_change",
@@ -37114,6 +37122,7 @@
                                         "disable",
                                         "revoke_access",
                                         "upload",
+                                        "acknowledge_impacts",
                                         "retain_conclusion",
                                         "share_feedback",
                                         "decline_feedback"
@@ -37161,6 +37170,7 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
+                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -39005,6 +39015,11 @@
                           "maximum": 9007199254740991
                         },
                         "active": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "blocked": {
                           "type": "integer",
                           "minimum": 0,
                           "maximum": 9007199254740991
@@ -68187,7 +68202,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.38.0"
+                          "const": "0.39.0"
                         },
                         "checks": {
                           "type": "object",
@@ -68246,7 +68261,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.38.0",
+                    "contractVersion": "0.39.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -68420,7 +68435,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.38.0"
+                          "const": "0.39.0"
                         },
                         "checks": {
                           "type": "object",
@@ -68479,7 +68494,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.38.0",
+                    "contractVersion": "0.39.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -68631,7 +68646,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.38.0"
+                          "const": "0.39.0"
                         },
                         "checks": {
                           "type": "object",
@@ -68690,7 +68705,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.38.0",
+                    "contractVersion": "0.39.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -75897,6 +75912,7 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
+                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -76360,6 +76376,8 @@
                                         "decide",
                                         "claim",
                                         "start",
+                                        "block",
+                                        "resume",
                                         "submit",
                                         "review",
                                         "propose_change",
@@ -76370,6 +76388,7 @@
                                         "disable",
                                         "revoke_access",
                                         "upload",
+                                        "acknowledge_impacts",
                                         "retain_conclusion",
                                         "share_feedback",
                                         "decline_feedback"
@@ -76960,6 +76979,7 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
+                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -77834,6 +77854,7 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
+                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -78297,6 +78318,8 @@
                                         "decide",
                                         "claim",
                                         "start",
+                                        "block",
+                                        "resume",
                                         "submit",
                                         "review",
                                         "propose_change",
@@ -78307,6 +78330,7 @@
                                         "disable",
                                         "revoke_access",
                                         "upload",
+                                        "acknowledge_impacts",
                                         "retain_conclusion",
                                         "share_feedback",
                                         "decline_feedback"
@@ -78961,6 +78985,7 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
+                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -79424,6 +79449,8 @@
                                         "decide",
                                         "claim",
                                         "start",
+                                        "block",
+                                        "resume",
                                         "submit",
                                         "review",
                                         "propose_change",
@@ -79434,6 +79461,7 @@
                                         "disable",
                                         "revoke_access",
                                         "upload",
+                                        "acknowledge_impacts",
                                         "retain_conclusion",
                                         "share_feedback",
                                         "decline_feedback"
@@ -82860,6 +82888,7 @@
                 "awaiting_acceptance",
                 "ready",
                 "in_progress",
+                "blocked",
                 "in_review",
                 "changes_requested",
                 "completed",
@@ -83005,6 +83034,7 @@
                                   "awaiting_acceptance",
                                   "ready",
                                   "in_progress",
+                                  "blocked",
                                   "in_review",
                                   "changes_requested",
                                   "completed",
@@ -83468,6 +83498,8 @@
                                     "decide",
                                     "claim",
                                     "start",
+                                    "block",
+                                    "resume",
                                     "submit",
                                     "review",
                                     "propose_change",
@@ -83478,6 +83510,7 @@
                                     "disable",
                                     "revoke_access",
                                     "upload",
+                                    "acknowledge_impacts",
                                     "retain_conclusion",
                                     "share_feedback",
                                     "decline_feedback"
@@ -83525,6 +83558,7 @@
                                   "awaiting_acceptance",
                                   "ready",
                                   "in_progress",
+                                  "blocked",
                                   "in_review",
                                   "changes_requested",
                                   "completed",
@@ -84618,6 +84652,7 @@
                                     "awaiting_acceptance",
                                     "ready",
                                     "in_progress",
+                                    "blocked",
                                     "in_review",
                                     "changes_requested",
                                     "completed",
@@ -85081,6 +85116,8 @@
                                       "decide",
                                       "claim",
                                       "start",
+                                      "block",
+                                      "resume",
                                       "submit",
                                       "review",
                                       "propose_change",
@@ -85091,6 +85128,7 @@
                                       "disable",
                                       "revoke_access",
                                       "upload",
+                                      "acknowledge_impacts",
                                       "retain_conclusion",
                                       "share_feedback",
                                       "decline_feedback"
@@ -86941,6 +86979,7 @@
                                 "awaiting_acceptance",
                                 "ready",
                                 "in_progress",
+                                "blocked",
                                 "in_review",
                                 "changes_requested",
                                 "completed",
@@ -89095,6 +89134,7 @@
                             "awaiting_acceptance",
                             "ready",
                             "in_progress",
+                            "blocked",
                             "in_review",
                             "changes_requested",
                             "completed",
@@ -89558,6 +89598,8 @@
                               "decide",
                               "claim",
                               "start",
+                              "block",
+                              "resume",
                               "submit",
                               "review",
                               "propose_change",
@@ -89568,6 +89610,7 @@
                               "disable",
                               "revoke_access",
                               "upload",
+                              "acknowledge_impacts",
                               "retain_conclusion",
                               "share_feedback",
                               "decline_feedback"
@@ -91511,6 +91554,7 @@
                             "awaiting_acceptance",
                             "ready",
                             "in_progress",
+                            "blocked",
                             "in_review",
                             "changes_requested",
                             "completed",
@@ -91974,6 +92018,8 @@
                               "decide",
                               "claim",
                               "start",
+                              "block",
+                              "resume",
                               "submit",
                               "review",
                               "propose_change",
@@ -91984,6 +92030,7 @@
                               "disable",
                               "revoke_access",
                               "upload",
+                              "acknowledge_impacts",
                               "retain_conclusion",
                               "share_feedback",
                               "decline_feedback"
@@ -95354,6 +95401,7 @@
                             "awaiting_acceptance",
                             "ready",
                             "in_progress",
+                            "blocked",
                             "in_review",
                             "changes_requested",
                             "completed",
@@ -95817,6 +95865,8 @@
                               "decide",
                               "claim",
                               "start",
+                              "block",
+                              "resume",
                               "submit",
                               "review",
                               "propose_change",
@@ -95827,6 +95877,7 @@
                               "disable",
                               "revoke_access",
                               "upload",
+                              "acknowledge_impacts",
                               "retain_conclusion",
                               "share_feedback",
                               "decline_feedback"
@@ -96093,6 +96144,17 @@
                     "data": {
                       "type": "object",
                       "properties": {
+                        "blockedTaskIds": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          }
+                        },
+                        "blockedTaskIdsTruncated": {
+                          "type": "boolean"
+                        },
                         "counts": {
                           "type": "object",
                           "properties": {
@@ -96581,6 +96643,7 @@
                             "awaiting_acceptance",
                             "ready",
                             "in_progress",
+                            "blocked",
                             "in_review",
                             "changes_requested",
                             "completed",
@@ -97044,6 +97107,8 @@
                               "decide",
                               "claim",
                               "start",
+                              "block",
+                              "resume",
                               "submit",
                               "review",
                               "propose_change",
@@ -97054,6 +97119,7 @@
                               "disable",
                               "revoke_access",
                               "upload",
+                              "acknowledge_impacts",
                               "retain_conclusion",
                               "share_feedback",
                               "decline_feedback"
@@ -99722,6 +99788,7 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
+                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -100185,6 +100252,8 @@
                                                 "decide",
                                                 "claim",
                                                 "start",
+                                                "block",
+                                                "resume",
                                                 "submit",
                                                 "review",
                                                 "propose_change",
@@ -100195,6 +100264,7 @@
                                                 "disable",
                                                 "revoke_access",
                                                 "upload",
+                                                "acknowledge_impacts",
                                                 "retain_conclusion",
                                                 "share_feedback",
                                                 "decline_feedback"
@@ -100242,6 +100312,7 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
+                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -101035,6 +101106,8 @@
                                           "decide",
                                           "claim",
                                           "start",
+                                          "block",
+                                          "resume",
                                           "submit",
                                           "review",
                                           "propose_change",
@@ -101045,6 +101118,7 @@
                                           "disable",
                                           "revoke_access",
                                           "upload",
+                                          "acknowledge_impacts",
                                           "retain_conclusion",
                                           "share_feedback",
                                           "decline_feedback"
@@ -102508,6 +102582,7 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
+                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -102971,6 +103046,8 @@
                                                 "decide",
                                                 "claim",
                                                 "start",
+                                                "block",
+                                                "resume",
                                                 "submit",
                                                 "review",
                                                 "propose_change",
@@ -102981,6 +103058,7 @@
                                                 "disable",
                                                 "revoke_access",
                                                 "upload",
+                                                "acknowledge_impacts",
                                                 "retain_conclusion",
                                                 "share_feedback",
                                                 "decline_feedback"
@@ -103028,6 +103106,7 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
+                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -103821,6 +103900,8 @@
                                           "decide",
                                           "claim",
                                           "start",
+                                          "block",
+                                          "resume",
                                           "submit",
                                           "review",
                                           "propose_change",
@@ -103831,6 +103912,7 @@
                                           "disable",
                                           "revoke_access",
                                           "upload",
+                                          "acknowledge_impacts",
                                           "retain_conclusion",
                                           "share_feedback",
                                           "decline_feedback"
@@ -108892,6 +108974,7 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
+                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -109355,6 +109438,8 @@
                                                 "decide",
                                                 "claim",
                                                 "start",
+                                                "block",
+                                                "resume",
                                                 "submit",
                                                 "review",
                                                 "propose_change",
@@ -109365,6 +109450,7 @@
                                                 "disable",
                                                 "revoke_access",
                                                 "upload",
+                                                "acknowledge_impacts",
                                                 "retain_conclusion",
                                                 "share_feedback",
                                                 "decline_feedback"
@@ -109412,6 +109498,7 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
+                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -110205,6 +110292,8 @@
                                           "decide",
                                           "claim",
                                           "start",
+                                          "block",
+                                          "resume",
                                           "submit",
                                           "review",
                                           "propose_change",
@@ -110215,6 +110304,7 @@
                                           "disable",
                                           "revoke_access",
                                           "upload",
+                                          "acknowledge_impacts",
                                           "retain_conclusion",
                                           "share_feedback",
                                           "decline_feedback"

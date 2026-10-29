@@ -6,7 +6,7 @@ import type { ConversationWorkflowView, WorkflowTaskView, WorkflowStage } from '
 type TaskData = ResponseFor<'task'>['data'];
 const stageFor: Record<TaskModel['status'], WorkflowStage> = {
   unassigned: 'accept', awaiting_acceptance: 'accept', ready: 'work',
-  in_progress: 'work', changes_requested: 'work',
+  in_progress: 'work', changes_requested: 'work', blocked: 'work',
   in_review: 'review', completed: 'done', cancelled: 'cancelled',
 };
 

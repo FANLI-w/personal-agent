@@ -33,7 +33,7 @@ export class ApiClient {
     try {
       response = await this.transport(path + (query.size ? '?' + query : ''), {
         method: endpoint.method, credentials: 'same-origin', cache: 'no-store', signal,
-        headers: { ...(endpoint.method !== 'GET' ? {'Content-Type': 'application/json', 'X-CSRF-Token': this.csrfToken} : {}), ...input.headers },
+        headers: { 'X-AcceptCat-Task-Workflow':'handoff-v1', ...(endpoint.method !== 'GET' ? {'Content-Type': 'application/json', 'X-CSRF-Token': this.csrfToken} : {}), ...input.headers },
         ...(endpoint.method !== 'GET' ? { body: JSON.stringify(parsed.data.body) } : {}),
       });
     } catch (error) {

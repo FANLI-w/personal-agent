@@ -102,7 +102,7 @@ it('revokes execution on group membership change while allowing the original dev
  expect((await s.route('teamWork',null,{id:s.groupId})).json().data.find((i:any)=>i.taskId===id).status).toBe('unavailable');
 });
 it('upgrades populated schema029 twice without changing old rows',{timeout:20000},async()=>{
- const s=await setup();s.db.exec('DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30');
+ const s=await setup();s.db.exec('DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30');
  const tables=s.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name!='schema_migrations' AND name NOT LIKE 'sqlite_%'").all().map(r=>String(r.name));
  const snapshot=()=>tables.map(t=>[t,s.db.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all()]);const before=snapshot();migrate(s.db);migrate(s.db);expect(snapshot()).toEqual(before);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
 });

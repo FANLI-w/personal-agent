@@ -208,13 +208,13 @@ describe('B2b A6–A9: transaction database and two actual HTTP processes',()=>{
     expect(saved.artifacts![0]!.accessStatus).toBe('revoked')
   })
 
-  it('A8 withdrawal keeps work, removes old access, and offers successor a fresh unaccepted scope/time',async()=>{
+  it('A8 handoff preserves work and a cancellable read for the former lead, then revokes it when the successor accepts',async()=>{
     const {taskIds}=await createConfirmed();const id=taskIds[0]!;const accepted=await accept(id)
     const {r,input}=await upload(id);await command('start',id,clients.B)
     const submitted=await command('submit',id,clients.B,{summary:'Preserve before transfer',artifactRefs:[r.value.data.id],sources:[]});expect(submitted.status).toBe(201)
     const withdrawal=await command('withdraw',id,clients.B,{reason:'Synthetic availability changed',remainingScope:'Remaining synthetic checks',transferToMemberId:'member_C'});expect(withdrawal.status).toBe(200)
-    expect((await request('task',{client:clients.B,params:{id}})).status).toBe(404);expect((await download(r.value.data.id,clients.B)).status).toBe(404);expect((await request('upload',input)).status).toBe(404)
-    expect((await request('invitationDecision',{client:clients.B,params:{id:accepted.value.data.id},body:{expectedVersion:1,expectedTaskVersion:1,decision:'accepted',comment:null}})).status).toBe(404)
+    expect((await request('task',{client:clients.B,params:{id}})).status).toBe(200);expect((await download(r.value.data.id,clients.B)).status).toBe(200);expect((await request('upload',input)).status).toBe(403)
+    expect((await request('invitationDecision',{client:clients.B,params:{id:accepted.value.data.id},body:{expectedVersion:1,expectedTaskVersion:1,decision:'accepted',comment:null}})).status).toBe(409)
     const offered=await request('task',{client:clients.C,params:{id}});expect(offered.status).toBe(200)
     if(!('pendingInvitation' in offered.value.data)) throw new Error('summary expected')
     expect(offered.value.data.pendingInvitation!.scope).toBe('Remaining synthetic checks');expect(offered.value.data.pendingInvitation!.schedule.committed).toBeNull()
@@ -223,6 +223,7 @@ describe('B2b A6–A9: transaction database and two actual HTTP processes',()=>{
     const acceptedC=await request('invitationDecision',{client:clients.C,params:{id:offered.value.data.pendingInvitation!.id},body:{expectedVersion:1,expectedTaskVersion:offered.value.data.version,decision:'accepted',comment:null}});expect(acceptedC.status).toBe(200)
     expect((await detail(id,clients.C)).deliverables[0]!.summary).toBe('Preserve before transfer');expect((await download(r.value.data.id,clients.C)).status).toBe(200)
     expect((await detail(id)).assignments.find(a=>a.memberId==='member_B')!.status).toBe('transferred')
+    expect((await request('task',{client:clients.B,params:{id}})).status).toBe(404);expect((await download(r.value.data.id,clients.B)).status).toBe(404)
   })
 
   it('A8 cancellation preserves queue evidence, revokes access and forbids new dispatch or cached success',async()=>{
@@ -297,7 +298,7 @@ describe('B2b A6–A9: transaction database and two actual HTTP processes',()=>{
       const tables=[...Object.keys(selectors),'member_availability'],before=tables.map(t=>JSON.stringify(legacy.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all()))
       migrate(legacy);migrate(legacy)
       expect(tables.map(t=>JSON.stringify(legacy.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all()))).toEqual(before)
-      expect(legacy.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(30)
+      expect(legacy.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(31)
       expect(legacy.prepare('SELECT document FROM task_versions WHERE task_id=?').get(id)!.document).toBe(legacy.prepare('SELECT document FROM tasks WHERE id=?').get(id)!.document)
       expect(legacy.prepare('SELECT count(*) n FROM assignment_versions').get()!.n).toBe(1)
       const original=databasePath;databasePath=legacyPath

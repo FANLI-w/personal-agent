@@ -1,7 +1,7 @@
 import { Alert, App, Button, Input, Select, Space } from "antd";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { researchApi } from "./api";
+import { researchApi, supportsTaskHandoffs } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import type { ResponseFor } from "@research-agent-platform/contracts";
 import { usePersonalOperation } from "./usePersonalOperation";
@@ -282,9 +282,9 @@ export function ResearchTaskPanel({
                 disabled={busy}
                 onClick={() =>
                   confirm({
-                    title: "撤销转交？",
-                    okText: "撤销转交",
-                    content: "任务将回到你自己名下，对方不再承接。",
+                    title: "撤销这次承接邀请？",
+                    okText: "撤销邀请",
+                    content: "对方将不能接受这次邀请。已有成果会保留，任务归属会随之更新。",
                     onOk: () =>
                       command(() =>
                         researchApi("cancelInvitation", {
@@ -295,7 +295,7 @@ export function ResearchTaskPanel({
                   })
                 }
               >
-                撤销转交
+                撤销邀请
               </Button>
             )}
           </p>
@@ -313,7 +313,7 @@ export function ResearchTaskPanel({
             aria-label="承接成员"
             placeholder="选择本实验室成员"
             value={inviteId || undefined}
-            options={(members.data?.data || []).map((m) => ({
+            options={(members.data?.data || []).filter(m => m.id !== actor?.member.id).map((m) => ({
               value: m.id,
               label: m.displayName,
             }))}
@@ -364,7 +364,8 @@ export function ResearchTaskPanel({
           </Button>
         </details>
       )}
-      {allowed("withdraw") && (
+      {allowed("withdraw") && !supportsTaskHandoffs() && <Alert type="info" message="当前后台还未支持任务转交，请联系课题组维护者更新服务。" />}
+      {allowed("withdraw") && supportsTaskHandoffs() && (
         <details className="research-task-operation">
           <summary>转交任务</summary>
           <ResearchTeamAccountHint />
@@ -372,7 +373,7 @@ export function ResearchTaskPanel({
             aria-label="承接成员"
             placeholder="选择转交的成员"
             value={transferToMemberId || undefined}
-            options={(members.data?.data || []).map((m) => ({
+            options={(members.data?.data || []).filter(m => m.id !== actor?.member.id).map((m) => ({
               value: m.id,
               label: m.displayName,
             }))}
@@ -393,7 +394,7 @@ export function ResearchTaskPanel({
               confirm({
                 title: "转交任务？",
                 okText: "转交任务",
-                content: "任务将转给这位成员，由对方决定是否承接。转交后可随时撤销。",
+                content: "任务将转给这位成员，由对方决定是否承接。对方接受前可以撤销。",
                 onOk: () =>
                   command(() =>
                     researchApi("withdraw", {

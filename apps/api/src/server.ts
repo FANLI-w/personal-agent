@@ -1,4 +1,5 @@
 import {runTeamWork, notifyTeamDecision} from './team-work.js'
+import { taskWorkflowProjection } from './task-workflow-compat.js'
 import {runWorkContext} from './work-context.js'
 import { ReuseService, reuseCommands } from './reuse.js'
 import { registerLocalDsh, type DshTransport } from './local-dsh.js'
@@ -268,7 +269,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
         reconcile(connection,config)
         reconcileChat(connection,config)
         if(name==='content') {const file=collaboration.coordination.artifact((parsed.data.params as {id:string}).id).model;reply.header('Content-Type',file.mediaType);reply.header('Content-Disposition',`attachment; filename="download"; filename*=UTF-8''${encodeURIComponent(file.filename)}`);return Buffer.from(result as Uint8Array)}
-        return result
+        return taskWorkflowProjection(name,result,request.headers['x-acceptcat-task-workflow']==='handoff-v1')
       }) } catch(error) {if(collaboration) cleanBlobs(collaboration.createdBlobs);throw error}
     } })
   }

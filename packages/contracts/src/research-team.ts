@@ -11,6 +11,7 @@ export const ResearchWorkspaceRow = z.strictObject({
 export const ResearchWorkspaceSummary = z.strictObject({
   total: z.number().int().nonnegative(), unassigned: z.number().int().nonnegative(),
   awaitingAcceptance: z.number().int().nonnegative(), active: z.number().int().nonnegative(),
+  blocked: z.number().int().nonnegative().optional(),
   awaitingReview: z.number().int().nonnegative(),
   accepted: z.number().int().nonnegative(), cancelled: z.number().int().nonnegative(),
   overdue: z.number().int().nonnegative(), pendingMyReview: z.number().int().nonnegative(), pendingMyInvitation: z.number().int().nonnegative(),

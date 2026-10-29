@@ -74,7 +74,7 @@ it('requires lab manager to activate lab rules and rejects scope/decision forger
 
 it('upgrades populated schema028 twice while preserving all pre-existing task rows and migration checksums',async()=>{
  const s=await setup();
- s.db.exec('DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29');
+ s.db.exec('DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29');
  const tables=s.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name!='schema_migrations' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(r=>String(r.name));
  const snapshot=()=>Object.fromEntries(tables.map(name=>[name,s.db.prepare(`SELECT * FROM ${name} ORDER BY rowid`).all()]));
  const before=snapshot(),history=s.db.prepare('SELECT * FROM schema_migrations ORDER BY version').all();

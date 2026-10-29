@@ -37,7 +37,8 @@ describe('B0 executable contract', () => {
   })
   it('keeps cancelled out of completed column', () => {
     expect(taskColumns.cancelled).toBeNull()
-    expect(Object.keys(taskColumns)).toHaveLength(8)
+    expect(Object.keys(taskColumns)).toHaveLength(9)
+    expect(taskColumns.blocked).toBe('active') // Old servers and immutable history remain readable.
   })
   it('bounds inputs, pagination and public errors', () => {
     const request = endpointExamples.tasks!.request as Record<string, unknown>

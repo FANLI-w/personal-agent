@@ -5,6 +5,7 @@ import { Artifact, Assignment, ChangeProposal, DependencyImpact, Task, TaskEvent
 import type { ArtifactModel, ChangeProposalModel, DependencyImpactModel, RequestFor, TaskModel, ScheduleModel } from '@research-agent-platform/contracts'
 import type { Collaboration } from './collaboration.js'
 import { fail } from './errors.js'
+import { pendingHandoff } from './task-handoffs.js'
 
 export const coordinationCommands = ['proposeChange', 'decideChange', 'withdraw', 'cancelTask', 'revokeAccess', 'upload', 'artifact', 'content', 'revokeArtifact', 'events'] as const
 export type CoordinationCommand = typeof coordinationCommands[number]
@@ -118,7 +119,12 @@ export class Coordination {
   stopDispatch(taskId: string) { this.db.prepare("UPDATE outbox SET status='cancelled' WHERE aggregate_id=? AND status IN ('pending','leased')").run(taskId) }
   endMember(task: TaskModel, memberId: string, status: 'withdrawn'|'cancelled', transferTo: string|null = null) {
     for (const row of this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND member_id=? AND status IN ('accepted','pending')").all(task.id,memberId)) {
-      const a = Assignment.parse(JSON.parse(String(row.document)));a.status=status;a.transferToMemberId=transferTo;a.version++;this.c.saveAssignment(a)
+      const a = Assignment.parse(JSON.parse(String(row.document))),handoff=pendingHandoff(this.db,task.id)
+      if(handoff?.offer_id===a.id) {
+        this.db.prepare("UPDATE task_handoffs SET status='cancelled' WHERE offer_id=?").run(a.id)
+        if(![task.initiatorId,task.reviewerId,...task.participantIds].includes(String(handoff.from_member_id)))this.db.prepare("UPDATE task_access SET access='revoked' WHERE task_id=? AND member_id=?").run(task.id,handoff.from_member_id!)
+      }
+      a.status=status;a.transferToMemberId=transferTo;a.version++;this.c.saveAssignment(a)
     }
     if (task.leadId === memberId) { task.leadId=null;if(task.status!=='completed') task.status='unassigned';task.blocker=null;task.schedule={...task.schedule,committed:null} }
     if (!task.leadId && task.status === 'awaiting_acceptance' && !this.db.prepare("SELECT 1 FROM assignments WHERE task_id=? AND status IN ('pending','accepted')").get(task.id)) {
@@ -165,10 +171,15 @@ export class Coordination {
         if (body.transferToMemberId===this.c.actor.id || this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='revoked'").get(t.id,body.transferToMemberId)) fail('FORBIDDEN')
         if (Number(this.db.prepare('SELECT count(*) n FROM assignments WHERE task_id=?').get(t.id)!.n)>=100) fail('VALIDATION_ERROR')
       }
+      const previous = body.transferToMemberId ? this.db.prepare("SELECT id FROM assignments WHERE task_id=? AND member_id=? AND status='accepted'").get(t.id,this.c.actor.id) : undefined
+      const priorStatus=t.status,priorSchedule=encode(t.schedule),priorSummary=String(this.db.prepare('SELECT summary_document FROM tasks WHERE id=?').get(t.id)!.summary_document)
+      if(body.transferToMemberId&&(!previous||!['ready','in_progress','changes_requested','in_review'].includes(priorStatus)))fail('INVALID_STATE')
       this.endMember(t,this.c.actor.id,'withdrawn',body.transferToMemberId)
       if ([t.initiatorId,t.reviewerId].includes(this.c.actor.id)) this.c.grant(t.id,this.c.actor.id,'full')
       if (body.transferToMemberId) {
-        const schedule={...t.schedule,committed:null};this.c.createAssignment(t,'invitation',body.transferToMemberId,body.remainingScope,schedule);t.status='awaiting_acceptance'
+        const schedule={...t.schedule,committed:null};const offer=this.c.createAssignment(t,'invitation',body.transferToMemberId,body.remainingScope,schedule);t.status='awaiting_acceptance'
+        this.db.prepare("INSERT INTO task_handoffs VALUES(?,?,?,?,?,?,?,'pending')").run(offer.id,t.id,previous!.id!,this.c.actor.id,priorStatus,priorSchedule,priorSummary)
+        this.c.grant(t.id,this.c.actor.id,'full')
         this.db.prepare("UPDATE tasks SET summary_document=json_set(summary_document,'$.deliverable',?,'$.summary',?,'$.schedule',json(?)) WHERE id=?").run(body.remainingScope,body.remainingScope,encode(schedule),t.id)
       }
       this.touch(t,'withdrawn',body.reason);this.c.event(t,'withdrawn',body.remainingScope);this.impact(t,'withdrawn')
@@ -187,6 +198,7 @@ export class Coordination {
       if(t.status==='completed') fail('INVALID_STATE')
       for (const row of this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status IN ('pending','accepted')").all(t.id)) {const a=Assignment.parse(JSON.parse(String(row.document)));a.status='cancelled';a.version++;this.c.saveAssignment(a)}
       this.db.prepare("UPDATE task_access SET access='revoked' WHERE task_id=? AND member_id!=?").run(t.id,t.initiatorId)
+      this.db.prepare("UPDATE task_handoffs SET status='cancelled' WHERE task_id=? AND status='pending'").run(t.id)
       this.db.prepare('UPDATE tasks SET claimable=0 WHERE id=?').run(t.id)
       t.status='cancelled';t.blocker=null;this.touch(t,'cancelled',body.reason);this.stopDispatch(t.id);this.impact(t,'cancelled');return {data:this.c.actions(t)}
     },
