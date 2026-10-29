@@ -2424,3 +2424,9 @@ CI复查：f160首轮Windows Foundation两组未修改的后台测试5项超过5
 审核发现139缺存量blocked迁移、撤销会按任意历史withdrawn找负责人、非发起人失去撤销权限、结束邀请残留临时权限/转交索引，以及邀请已有full权限的发起人会被降级。新增精确task_handoffs和schema031，保留历史/旧读取，新contract0.39按header提供旧桌面投影；接受/拒绝/撤权/取消和重放均定向验证，新客户端遇0.38后台先隐藏转交入口。后台7项定向、客户端156项、双类型、群10+1/任务7项隔离交互、真实官方DSH4项原生预览/模型菜单通过。根CI本机串行回执保存在ci-serial.log，最终结果随整合PR记录并核对最新head远端检查；并行压缩时一项既有5000ms进程测试超时日志保留，未扩大超时。
 
 0.10.73 NSIS/六入口/四项功能包内标记、SHA512/大小/更新清单及隔离成品OpenIM SDK启动通过。安装器405064574字节，SHA256 acf55e015f87f6ce9ff4216c0ca6b79dabb3b872fc6d1989392bbc270968fbe9；产物与原失败在Git外release-chat-workbench-0.10.73-20261029。说明见deployment/acceptcat-0.10.73.md。本批未部署或公开，生产最后记录contract0.38/schema030、公开Latest0.10.71。真实账号/双人群/模型未验收，未完成的本地聊天历史5536ffc和手机PR90不混入。
+
+## 2026-10-29 Windows0.10.73公开发布
+
+负责人明确要求发布Release。从实际main/ea7350f建立docs/release-0.10.73-receipt，核对PR142已合并四项且四项远端检查成功；79aaef1至main只有测试和交付文档差异。复用既有Windows0.10.73成品，安装器405064574字节，SHA256 acf55e015f87f6ce9ff4216c0ca6b79dabb3b872fc6d1989392bbc270968fbe9，更新SHA512与清单一致。先建草稿并直连上传四附件，等待405MB安装器完成后逐一比较远端摘要/大小，再于20:18:11公开稳定Latest v0.10.73，Release427820358，tag固定实际安装器产品79aaef163a50d7e26e180d1760fb91c6967633a7。
+
+20:18:23公开复查通过：匿名Latest、标签提交、latest.yml/SHA256SUMS.txt实际下载内容、安装器HEAD200及405064574字节。发布前ready为contract0.39/database-storage-authentication ok，harness not_verified；后台031为前批已部署，本批不再部署。四附件摘要、范围及证据见deployment/acceptcat-0.10.73-release.md与Git外release-chat-workbench-0.10.73-20261029的两份验证JSON。旧Release保留，原共享目录和已用客户端未操作，未合并PR143/144或未完成本地历史5536ffc，不把公开发布等同真人模型与科研验收。仅补README、当前状态与发布回执，不重复已通过产品CI。

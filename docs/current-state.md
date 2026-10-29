@@ -2,6 +2,12 @@
 
 更新日期：2026-10-29（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## Windows 0.10.73 已公开为稳定 Latest
+
+负责人明确授权发布。2026-10-29 20:18:11（北京时间）公开[v0.10.73](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.73)，Release427820358，标签固定安装器产品79aaef1；PR142/main ea7350f已整合PR129/139/140/141，四项远端检查通过。本批复用405064574字节既有成品，四附件远端SHA256/大小、匿名Latest/更新清单/校验文件、公开标签与安装器HEAD全部核对通过。旧版本保留，未重新编译或代安装。[发布回执](deployment/acceptcat-0.10.73-release.md)。
+
+配套后台此前已单独部署contract0.39.0/schema031，本批公网ready实际0.39、数据库/存储/认证ok，harness仍not_verified；运维记录[PR143](https://github.com/luoyan96/personal-agent/pull/143)待合并。真实模型、私人材料和双机科研体验仍由使用者验收；本地聊天历史WIP5536ffc、手机PR90未纳入。下方旧“未合并/未部署/未发布”是各批历史，以本节及实际远端为准。
+
 ## PR129/139/140/141 整合与 Windows0.10.73
 
 负责人本批明确授权审核合并四个PR并打包。从main/2d0091c建立独立release/chat-workbench-0.10.73，以普通merge保留四项历史，产品79aaef1；具体合并结果以本批整合PR为准。建群联系人/智能体分类、真实群主与待接受邀请、任务转交和依赖图/标题、原生DSH文件/PDF预览同时纳入。审核补修精确邀请/原负责人关联、撤销恢复、临时权限和旧桌面读取兼容；新增contract0.39.0/schema031。详见[整合、安装包和升级边界](deployment/acceptcat-0.10.73.md)。
