@@ -33908,7 +33908,6 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
-                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -34368,11 +34367,10 @@
                                               "enum": [
                                                 "confirm",
                                                 "invite",
+                                                "cancel_invitation",
                                                 "decide",
                                                 "claim",
                                                 "start",
-                                                "block",
-                                                "resume",
                                                 "submit",
                                                 "review",
                                                 "propose_change",
@@ -34383,7 +34381,6 @@
                                                 "disable",
                                                 "revoke_access",
                                                 "upload",
-                                                "acknowledge_impacts",
                                                 "retain_conclusion",
                                                 "share_feedback",
                                                 "decline_feedback"
@@ -34431,7 +34428,6 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
-                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -35580,7 +35576,6 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
-                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -36040,11 +36035,10 @@
                                       "enum": [
                                         "confirm",
                                         "invite",
+                                        "cancel_invitation",
                                         "decide",
                                         "claim",
                                         "start",
-                                        "block",
-                                        "resume",
                                         "submit",
                                         "review",
                                         "propose_change",
@@ -36055,7 +36049,6 @@
                                         "disable",
                                         "revoke_access",
                                         "upload",
-                                        "acknowledge_impacts",
                                         "retain_conclusion",
                                         "share_feedback",
                                         "decline_feedback"
@@ -36103,7 +36096,6 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
-                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -37952,11 +37944,6 @@
                           "minimum": 0,
                           "maximum": 9007199254740991
                         },
-                        "blocked": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 9007199254740991
-                        },
                         "awaitingReview": {
                           "type": "integer",
                           "minimum": 0,
@@ -37993,7 +37980,6 @@
                         "unassigned",
                         "awaitingAcceptance",
                         "active",
-                        "blocked",
                         "awaitingReview",
                         "accepted",
                         "cancelled",
@@ -38055,7 +38041,6 @@
                     "unassigned": 0,
                     "awaitingAcceptance": 0,
                     "active": 0,
-                    "blocked": 0,
                     "awaitingReview": 0,
                     "accepted": 0,
                     "cancelled": 0,
@@ -74847,7 +74832,6 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
-                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -75307,11 +75291,10 @@
                                       "enum": [
                                         "confirm",
                                         "invite",
+                                        "cancel_invitation",
                                         "decide",
                                         "claim",
                                         "start",
-                                        "block",
-                                        "resume",
                                         "submit",
                                         "review",
                                         "propose_change",
@@ -75322,7 +75305,6 @@
                                         "disable",
                                         "revoke_access",
                                         "upload",
-                                        "acknowledge_impacts",
                                         "retain_conclusion",
                                         "share_feedback",
                                         "decline_feedback"
@@ -75913,7 +75895,6 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
-                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -76788,7 +76769,6 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
-                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -77248,11 +77228,10 @@
                                       "enum": [
                                         "confirm",
                                         "invite",
+                                        "cancel_invitation",
                                         "decide",
                                         "claim",
                                         "start",
-                                        "block",
-                                        "resume",
                                         "submit",
                                         "review",
                                         "propose_change",
@@ -77263,7 +77242,6 @@
                                         "disable",
                                         "revoke_access",
                                         "upload",
-                                        "acknowledge_impacts",
                                         "retain_conclusion",
                                         "share_feedback",
                                         "decline_feedback"
@@ -77918,7 +77896,6 @@
                                       "awaiting_acceptance",
                                       "ready",
                                       "in_progress",
-                                      "blocked",
                                       "in_review",
                                       "changes_requested",
                                       "completed",
@@ -78378,11 +78355,10 @@
                                       "enum": [
                                         "confirm",
                                         "invite",
+                                        "cancel_invitation",
                                         "decide",
                                         "claim",
                                         "start",
-                                        "block",
-                                        "resume",
                                         "submit",
                                         "review",
                                         "propose_change",
@@ -78393,7 +78369,6 @@
                                         "disable",
                                         "revoke_access",
                                         "upload",
-                                        "acknowledge_impacts",
                                         "retain_conclusion",
                                         "share_feedback",
                                         "decline_feedback"
@@ -81820,7 +81795,6 @@
                 "awaiting_acceptance",
                 "ready",
                 "in_progress",
-                "blocked",
                 "in_review",
                 "changes_requested",
                 "completed",
@@ -81966,7 +81940,6 @@
                                   "awaiting_acceptance",
                                   "ready",
                                   "in_progress",
-                                  "blocked",
                                   "in_review",
                                   "changes_requested",
                                   "completed",
@@ -82426,11 +82399,10 @@
                                   "enum": [
                                     "confirm",
                                     "invite",
+                                    "cancel_invitation",
                                     "decide",
                                     "claim",
                                     "start",
-                                    "block",
-                                    "resume",
                                     "submit",
                                     "review",
                                     "propose_change",
@@ -82441,7 +82413,6 @@
                                     "disable",
                                     "revoke_access",
                                     "upload",
-                                    "acknowledge_impacts",
                                     "retain_conclusion",
                                     "share_feedback",
                                     "decline_feedback"
@@ -82489,7 +82460,6 @@
                                   "awaiting_acceptance",
                                   "ready",
                                   "in_progress",
-                                  "blocked",
                                   "in_review",
                                   "changes_requested",
                                   "completed",
@@ -83583,7 +83553,6 @@
                                     "awaiting_acceptance",
                                     "ready",
                                     "in_progress",
-                                    "blocked",
                                     "in_review",
                                     "changes_requested",
                                     "completed",
@@ -84043,11 +84012,10 @@
                                     "enum": [
                                       "confirm",
                                       "invite",
+                                      "cancel_invitation",
                                       "decide",
                                       "claim",
                                       "start",
-                                      "block",
-                                      "resume",
                                       "submit",
                                       "review",
                                       "propose_change",
@@ -84058,7 +84026,6 @@
                                       "disable",
                                       "revoke_access",
                                       "upload",
-                                      "acknowledge_impacts",
                                       "retain_conclusion",
                                       "share_feedback",
                                       "decline_feedback"
@@ -85909,7 +85876,6 @@
                                 "awaiting_acceptance",
                                 "ready",
                                 "in_progress",
-                                "blocked",
                                 "in_review",
                                 "changes_requested",
                                 "completed",
@@ -87867,6 +87833,886 @@
         }
       }
     },
+    "/api/v1/tasks/{id}/invitations/cancel": {
+      "post": {
+        "operationId": "cancelInvitation",
+        "description": "Initiator or withdrawing lead; awaiting_acceptance with a pending invitation; cancel the offer and restore the withdrawing lead or unassign; no side effects on completed work.",
+        "x-stage": "B1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "expectedVersion"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "expectedVersion": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "B1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "conclusionRefs": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              "version": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "current",
+                                  "needs_review"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "version",
+                              "status"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "labId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "parentTaskId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "planId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "planVersion": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "taskType": {
+                          "type": "string",
+                          "enum": [
+                            "paper",
+                            "grant",
+                            "ip",
+                            "experiment",
+                            "training",
+                            "report",
+                            "other"
+                          ]
+                        },
+                        "goal": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 8000
+                        },
+                        "acceptanceCriteria": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 8000
+                        },
+                        "initiatorId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "leadId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "reviewerId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "participantIds": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          }
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "unassigned",
+                            "awaiting_acceptance",
+                            "ready",
+                            "in_progress",
+                            "in_review",
+                            "changes_requested",
+                            "completed",
+                            "cancelled"
+                          ]
+                        },
+                        "blocker": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "reason": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 8000
+                                },
+                                "requestedMemberId": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "requestedAction": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 8000
+                                },
+                                "resumeStatus": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ready",
+                                    "in_progress",
+                                    "changes_requested",
+                                    "in_review"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "reason",
+                                "requestedMemberId",
+                                "requestedAction",
+                                "resumeStatus"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "dependencies": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "taskId": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "accepted_deliverable",
+                                  "confirmed_decision"
+                                ]
+                              },
+                              "requiredRevision": {
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "taskId",
+                              "kind",
+                              "requiredRevision"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "schedule": {
+                          "type": "object",
+                          "properties": {
+                            "suggested": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "date"
+                                            },
+                                            "date": {
+                                              "type": "string",
+                                              "format": "date",
+                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                            },
+                                            "timezone": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 100
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "date",
+                                            "timezone"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "instant"
+                                            },
+                                            "at": {
+                                              "type": "string",
+                                              "format": "date-time",
+                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "at"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      ]
+                                    },
+                                    "source": {
+                                      "type": "string",
+                                      "enum": [
+                                        "user",
+                                        "authorized_material",
+                                        "suggestion",
+                                        "member"
+                                      ]
+                                    },
+                                    "confirmed": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "required": [
+                                    "value",
+                                    "source",
+                                    "confirmed"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "hardDeadline": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "date"
+                                            },
+                                            "date": {
+                                              "type": "string",
+                                              "format": "date",
+                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                            },
+                                            "timezone": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 100
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "date",
+                                            "timezone"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "instant"
+                                            },
+                                            "at": {
+                                              "type": "string",
+                                              "format": "date-time",
+                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "at"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      ]
+                                    },
+                                    "source": {
+                                      "type": "string",
+                                      "enum": [
+                                        "user",
+                                        "authorized_material",
+                                        "suggestion",
+                                        "member"
+                                      ]
+                                    },
+                                    "confirmed": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "required": [
+                                    "value",
+                                    "source",
+                                    "confirmed"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "committed": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "date"
+                                            },
+                                            "date": {
+                                              "type": "string",
+                                              "format": "date",
+                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                            },
+                                            "timezone": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 100
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "date",
+                                            "timezone"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "instant"
+                                            },
+                                            "at": {
+                                              "type": "string",
+                                              "format": "date-time",
+                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "at"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      ]
+                                    },
+                                    "source": {
+                                      "type": "string",
+                                      "enum": [
+                                        "user",
+                                        "authorized_material",
+                                        "suggestion",
+                                        "member"
+                                      ]
+                                    },
+                                    "confirmed": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "required": [
+                                    "value",
+                                    "source",
+                                    "confirmed"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "estimatedHumanHours": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 10000
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "checkpoint": {
+                              "anyOf": [
+                                {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "date"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "format": "date",
+                                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                        },
+                                        "timezone": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 100
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "date",
+                                        "timezone"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "instant"
+                                        },
+                                        "at": {
+                                          "type": "string",
+                                          "format": "date-time",
+                                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "at"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "suggested",
+                            "hardDeadline",
+                            "committed",
+                            "estimatedHumanHours",
+                            "checkpoint"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "access": {
+                          "type": "object",
+                          "properties": {
+                            "visibility": {
+                              "type": "string",
+                              "enum": [
+                                "participants",
+                                "lab_summary"
+                              ]
+                            },
+                            "summary": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 8000
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "visibility",
+                            "summary"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        "allowedActions": {
+                          "maxItems": 20,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "confirm",
+                              "invite",
+                              "cancel_invitation",
+                              "decide",
+                              "claim",
+                              "start",
+                              "submit",
+                              "review",
+                              "propose_change",
+                              "withdraw",
+                              "cancel",
+                              "run",
+                              "publish",
+                              "disable",
+                              "revoke_access",
+                              "upload",
+                              "retain_conclusion",
+                              "share_feedback",
+                              "decline_feedback"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "labId",
+                        "parentTaskId",
+                        "planId",
+                        "planVersion",
+                        "title",
+                        "taskType",
+                        "goal",
+                        "acceptanceCriteria",
+                        "initiatorId",
+                        "leadId",
+                        "reviewerId",
+                        "participantIds",
+                        "status",
+                        "blocker",
+                        "dependencies",
+                        "schedule",
+                        "access",
+                        "version",
+                        "createdAt",
+                        "updatedAt",
+                        "allowedActions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "id": "synthetic",
+                    "labId": "synthetic",
+                    "parentTaskId": null,
+                    "planId": "synthetic",
+                    "planVersion": 1,
+                    "title": "synthetic",
+                    "taskType": "paper",
+                    "goal": "synthetic",
+                    "acceptanceCriteria": "synthetic",
+                    "initiatorId": "synthetic",
+                    "leadId": null,
+                    "reviewerId": "synthetic",
+                    "participantIds": [],
+                    "status": "unassigned",
+                    "blocker": null,
+                    "dependencies": [],
+                    "schedule": {
+                      "suggested": null,
+                      "hardDeadline": null,
+                      "committed": null,
+                      "estimatedHumanHours": null,
+                      "checkpoint": null
+                    },
+                    "access": {
+                      "visibility": "participants",
+                      "summary": null
+                    },
+                    "version": 1,
+                    "createdAt": "2026-09-21T08:00:00+08:00",
+                    "updatedAt": "2026-09-21T08:00:00+08:00",
+                    "allowedActions": []
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/invitations/{id}/decision": {
       "post": {
         "operationId": "invitationDecision",
@@ -89600,7 +90446,6 @@
                             "awaiting_acceptance",
                             "ready",
                             "in_progress",
-                            "blocked",
                             "in_review",
                             "changes_requested",
                             "completed",
@@ -90060,11 +90905,10 @@
                             "enum": [
                               "confirm",
                               "invite",
+                              "cancel_invitation",
                               "decide",
                               "claim",
                               "start",
-                              "block",
-                              "resume",
                               "submit",
                               "review",
                               "propose_change",
@@ -90075,1800 +90919,6 @@
                               "disable",
                               "revoke_access",
                               "upload",
-                              "acknowledge_impacts",
-                              "retain_conclusion",
-                              "share_feedback",
-                              "decline_feedback"
-                            ]
-                          }
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "labId",
-                        "parentTaskId",
-                        "planId",
-                        "planVersion",
-                        "title",
-                        "taskType",
-                        "goal",
-                        "acceptanceCriteria",
-                        "initiatorId",
-                        "leadId",
-                        "reviewerId",
-                        "participantIds",
-                        "status",
-                        "blocker",
-                        "dependencies",
-                        "schedule",
-                        "access",
-                        "version",
-                        "createdAt",
-                        "updatedAt",
-                        "allowedActions"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "data"
-                  ],
-                  "additionalProperties": false
-                },
-                "example": {
-                  "data": {
-                    "id": "synthetic",
-                    "labId": "synthetic",
-                    "parentTaskId": null,
-                    "planId": "synthetic",
-                    "planVersion": 1,
-                    "title": "synthetic",
-                    "taskType": "paper",
-                    "goal": "synthetic",
-                    "acceptanceCriteria": "synthetic",
-                    "initiatorId": "synthetic",
-                    "leadId": null,
-                    "reviewerId": "synthetic",
-                    "participantIds": [],
-                    "status": "unassigned",
-                    "blocker": null,
-                    "dependencies": [],
-                    "schedule": {
-                      "suggested": null,
-                      "hardDeadline": null,
-                      "committed": null,
-                      "estimatedHumanHours": null,
-                      "checkpoint": null
-                    },
-                    "access": {
-                      "visibility": "participants",
-                      "summary": null
-                    },
-                    "version": 1,
-                    "createdAt": "2026-09-21T08:00:00+08:00",
-                    "updatedAt": "2026-09-21T08:00:00+08:00",
-                    "allowedActions": []
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "410": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/tasks/{id}/block": {
-      "post": {
-        "operationId": "block",
-        "description": "Lead; ready/in_progress/changes_requested; save prior state server-side as resumeStatus.",
-        "x-stage": "B2b",
-        "x-implemented": true,
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9_-]{1,96}$"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9_-]{16,128}$"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 32,
-              "maxLength": 128
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "expectedVersion": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 9007199254740991
-                  },
-                  "reason": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 8000
-                  },
-                  "requestedMemberId": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "requestedAction": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 8000
-                  }
-                },
-                "required": [
-                  "expectedVersion",
-                  "reason",
-                  "requestedMemberId",
-                  "requestedAction"
-                ],
-                "additionalProperties": false
-              },
-              "example": {
-                "expectedVersion": 1,
-                "reason": "synthetic",
-                "requestedMemberId": null,
-                "requestedAction": "synthetic"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "B2b contract; implemented",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "conclusionRefs": {
-                          "maxItems": 100,
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                              },
-                              "version": {
-                                "type": "integer",
-                                "minimum": 1,
-                                "maximum": 9007199254740991
-                              },
-                              "status": {
-                                "type": "string",
-                                "enum": [
-                                  "current",
-                                  "needs_review"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "version",
-                              "status"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "id": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "labId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "parentTaskId": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "planId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "planVersion": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991
-                        },
-                        "title": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 200
-                        },
-                        "taskType": {
-                          "type": "string",
-                          "enum": [
-                            "paper",
-                            "grant",
-                            "ip",
-                            "experiment",
-                            "training",
-                            "report",
-                            "other"
-                          ]
-                        },
-                        "goal": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 8000
-                        },
-                        "acceptanceCriteria": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 8000
-                        },
-                        "initiatorId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "leadId": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "reviewerId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "participantIds": {
-                          "maxItems": 100,
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                          }
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "unassigned",
-                            "awaiting_acceptance",
-                            "ready",
-                            "in_progress",
-                            "blocked",
-                            "in_review",
-                            "changes_requested",
-                            "completed",
-                            "cancelled"
-                          ]
-                        },
-                        "blocker": {
-                          "anyOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "reason": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 8000
-                                },
-                                "requestedMemberId": {
-                                  "anyOf": [
-                                    {
-                                      "type": "string",
-                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "requestedAction": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 8000
-                                },
-                                "resumeStatus": {
-                                  "type": "string",
-                                  "enum": [
-                                    "ready",
-                                    "in_progress",
-                                    "changes_requested",
-                                    "in_review"
-                                  ]
-                                }
-                              },
-                              "required": [
-                                "reason",
-                                "requestedMemberId",
-                                "requestedAction",
-                                "resumeStatus"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "dependencies": {
-                          "maxItems": 100,
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "taskId": {
-                                "type": "string",
-                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                              },
-                              "kind": {
-                                "type": "string",
-                                "enum": [
-                                  "accepted_deliverable",
-                                  "confirmed_decision"
-                                ]
-                              },
-                              "requiredRevision": {
-                                "anyOf": [
-                                  {
-                                    "type": "integer",
-                                    "minimum": 1,
-                                    "maximum": 9007199254740991
-                                  },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
-                              }
-                            },
-                            "required": [
-                              "taskId",
-                              "kind",
-                              "requiredRevision"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "schedule": {
-                          "type": "object",
-                          "properties": {
-                            "suggested": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "date"
-                                            },
-                                            "date": {
-                                              "type": "string",
-                                              "format": "date",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                            },
-                                            "timezone": {
-                                              "type": "string",
-                                              "minLength": 1,
-                                              "maxLength": 100
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "date",
-                                            "timezone"
-                                          ],
-                                          "additionalProperties": false
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "instant"
-                                            },
-                                            "at": {
-                                              "type": "string",
-                                              "format": "date-time",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "at"
-                                          ],
-                                          "additionalProperties": false
-                                        }
-                                      ]
-                                    },
-                                    "source": {
-                                      "type": "string",
-                                      "enum": [
-                                        "user",
-                                        "authorized_material",
-                                        "suggestion",
-                                        "member"
-                                      ]
-                                    },
-                                    "confirmed": {
-                                      "type": "boolean"
-                                    }
-                                  },
-                                  "required": [
-                                    "value",
-                                    "source",
-                                    "confirmed"
-                                  ],
-                                  "additionalProperties": false
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "hardDeadline": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "date"
-                                            },
-                                            "date": {
-                                              "type": "string",
-                                              "format": "date",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                            },
-                                            "timezone": {
-                                              "type": "string",
-                                              "minLength": 1,
-                                              "maxLength": 100
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "date",
-                                            "timezone"
-                                          ],
-                                          "additionalProperties": false
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "instant"
-                                            },
-                                            "at": {
-                                              "type": "string",
-                                              "format": "date-time",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "at"
-                                          ],
-                                          "additionalProperties": false
-                                        }
-                                      ]
-                                    },
-                                    "source": {
-                                      "type": "string",
-                                      "enum": [
-                                        "user",
-                                        "authorized_material",
-                                        "suggestion",
-                                        "member"
-                                      ]
-                                    },
-                                    "confirmed": {
-                                      "type": "boolean"
-                                    }
-                                  },
-                                  "required": [
-                                    "value",
-                                    "source",
-                                    "confirmed"
-                                  ],
-                                  "additionalProperties": false
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "committed": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "date"
-                                            },
-                                            "date": {
-                                              "type": "string",
-                                              "format": "date",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                            },
-                                            "timezone": {
-                                              "type": "string",
-                                              "minLength": 1,
-                                              "maxLength": 100
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "date",
-                                            "timezone"
-                                          ],
-                                          "additionalProperties": false
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "instant"
-                                            },
-                                            "at": {
-                                              "type": "string",
-                                              "format": "date-time",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "at"
-                                          ],
-                                          "additionalProperties": false
-                                        }
-                                      ]
-                                    },
-                                    "source": {
-                                      "type": "string",
-                                      "enum": [
-                                        "user",
-                                        "authorized_material",
-                                        "suggestion",
-                                        "member"
-                                      ]
-                                    },
-                                    "confirmed": {
-                                      "type": "boolean"
-                                    }
-                                  },
-                                  "required": [
-                                    "value",
-                                    "source",
-                                    "confirmed"
-                                  ],
-                                  "additionalProperties": false
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "estimatedHumanHours": {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                  "minimum": 0,
-                                  "maximum": 10000
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "checkpoint": {
-                              "anyOf": [
-                                {
-                                  "anyOf": [
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "kind": {
-                                          "type": "string",
-                                          "const": "date"
-                                        },
-                                        "date": {
-                                          "type": "string",
-                                          "format": "date",
-                                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                        },
-                                        "timezone": {
-                                          "type": "string",
-                                          "minLength": 1,
-                                          "maxLength": 100
-                                        }
-                                      },
-                                      "required": [
-                                        "kind",
-                                        "date",
-                                        "timezone"
-                                      ],
-                                      "additionalProperties": false
-                                    },
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "kind": {
-                                          "type": "string",
-                                          "const": "instant"
-                                        },
-                                        "at": {
-                                          "type": "string",
-                                          "format": "date-time",
-                                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                        }
-                                      },
-                                      "required": [
-                                        "kind",
-                                        "at"
-                                      ],
-                                      "additionalProperties": false
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            }
-                          },
-                          "required": [
-                            "suggested",
-                            "hardDeadline",
-                            "committed",
-                            "estimatedHumanHours",
-                            "checkpoint"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "access": {
-                          "type": "object",
-                          "properties": {
-                            "visibility": {
-                              "type": "string",
-                              "enum": [
-                                "participants",
-                                "lab_summary"
-                              ]
-                            },
-                            "summary": {
-                              "anyOf": [
-                                {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 8000
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            }
-                          },
-                          "required": [
-                            "visibility",
-                            "summary"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "version": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                        },
-                        "allowedActions": {
-                          "maxItems": 20,
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "confirm",
-                              "invite",
-                              "decide",
-                              "claim",
-                              "start",
-                              "block",
-                              "resume",
-                              "submit",
-                              "review",
-                              "propose_change",
-                              "withdraw",
-                              "cancel",
-                              "run",
-                              "publish",
-                              "disable",
-                              "revoke_access",
-                              "upload",
-                              "acknowledge_impacts",
-                              "retain_conclusion",
-                              "share_feedback",
-                              "decline_feedback"
-                            ]
-                          }
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "labId",
-                        "parentTaskId",
-                        "planId",
-                        "planVersion",
-                        "title",
-                        "taskType",
-                        "goal",
-                        "acceptanceCriteria",
-                        "initiatorId",
-                        "leadId",
-                        "reviewerId",
-                        "participantIds",
-                        "status",
-                        "blocker",
-                        "dependencies",
-                        "schedule",
-                        "access",
-                        "version",
-                        "createdAt",
-                        "updatedAt",
-                        "allowedActions"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "data"
-                  ],
-                  "additionalProperties": false
-                },
-                "example": {
-                  "data": {
-                    "id": "synthetic",
-                    "labId": "synthetic",
-                    "parentTaskId": null,
-                    "planId": "synthetic",
-                    "planVersion": 1,
-                    "title": "synthetic",
-                    "taskType": "paper",
-                    "goal": "synthetic",
-                    "acceptanceCriteria": "synthetic",
-                    "initiatorId": "synthetic",
-                    "leadId": null,
-                    "reviewerId": "synthetic",
-                    "participantIds": [],
-                    "status": "unassigned",
-                    "blocker": null,
-                    "dependencies": [],
-                    "schedule": {
-                      "suggested": null,
-                      "hardDeadline": null,
-                      "committed": null,
-                      "estimatedHumanHours": null,
-                      "checkpoint": null
-                    },
-                    "access": {
-                      "visibility": "participants",
-                      "summary": null
-                    },
-                    "version": 1,
-                    "createdAt": "2026-09-21T08:00:00+08:00",
-                    "updatedAt": "2026-09-21T08:00:00+08:00",
-                    "allowedActions": []
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "410": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/tasks/{id}/resume": {
-      "post": {
-        "operationId": "resume",
-        "description": "Lead; blocked only; recheck accepted dependency revisions and unresolved impacts, restore stored state, clear blocker.",
-        "x-stage": "B2b",
-        "x-implemented": true,
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9_-]{1,96}$"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9_-]{16,128}$"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 32,
-              "maxLength": 128
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "expectedVersion": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 9007199254740991
-                  }
-                },
-                "required": [
-                  "expectedVersion"
-                ],
-                "additionalProperties": false
-              },
-              "example": {
-                "expectedVersion": 1
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "B2b contract; implemented",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "conclusionRefs": {
-                          "maxItems": 100,
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                              },
-                              "version": {
-                                "type": "integer",
-                                "minimum": 1,
-                                "maximum": 9007199254740991
-                              },
-                              "status": {
-                                "type": "string",
-                                "enum": [
-                                  "current",
-                                  "needs_review"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "version",
-                              "status"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "id": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "labId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "parentTaskId": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "planId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "planVersion": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991
-                        },
-                        "title": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 200
-                        },
-                        "taskType": {
-                          "type": "string",
-                          "enum": [
-                            "paper",
-                            "grant",
-                            "ip",
-                            "experiment",
-                            "training",
-                            "report",
-                            "other"
-                          ]
-                        },
-                        "goal": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 8000
-                        },
-                        "acceptanceCriteria": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 8000
-                        },
-                        "initiatorId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "leadId": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "reviewerId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "participantIds": {
-                          "maxItems": 100,
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                          }
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "unassigned",
-                            "awaiting_acceptance",
-                            "ready",
-                            "in_progress",
-                            "blocked",
-                            "in_review",
-                            "changes_requested",
-                            "completed",
-                            "cancelled"
-                          ]
-                        },
-                        "blocker": {
-                          "anyOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "reason": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 8000
-                                },
-                                "requestedMemberId": {
-                                  "anyOf": [
-                                    {
-                                      "type": "string",
-                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "requestedAction": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 8000
-                                },
-                                "resumeStatus": {
-                                  "type": "string",
-                                  "enum": [
-                                    "ready",
-                                    "in_progress",
-                                    "changes_requested",
-                                    "in_review"
-                                  ]
-                                }
-                              },
-                              "required": [
-                                "reason",
-                                "requestedMemberId",
-                                "requestedAction",
-                                "resumeStatus"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "dependencies": {
-                          "maxItems": 100,
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "taskId": {
-                                "type": "string",
-                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                              },
-                              "kind": {
-                                "type": "string",
-                                "enum": [
-                                  "accepted_deliverable",
-                                  "confirmed_decision"
-                                ]
-                              },
-                              "requiredRevision": {
-                                "anyOf": [
-                                  {
-                                    "type": "integer",
-                                    "minimum": 1,
-                                    "maximum": 9007199254740991
-                                  },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
-                              }
-                            },
-                            "required": [
-                              "taskId",
-                              "kind",
-                              "requiredRevision"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "schedule": {
-                          "type": "object",
-                          "properties": {
-                            "suggested": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "date"
-                                            },
-                                            "date": {
-                                              "type": "string",
-                                              "format": "date",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                            },
-                                            "timezone": {
-                                              "type": "string",
-                                              "minLength": 1,
-                                              "maxLength": 100
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "date",
-                                            "timezone"
-                                          ],
-                                          "additionalProperties": false
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "instant"
-                                            },
-                                            "at": {
-                                              "type": "string",
-                                              "format": "date-time",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "at"
-                                          ],
-                                          "additionalProperties": false
-                                        }
-                                      ]
-                                    },
-                                    "source": {
-                                      "type": "string",
-                                      "enum": [
-                                        "user",
-                                        "authorized_material",
-                                        "suggestion",
-                                        "member"
-                                      ]
-                                    },
-                                    "confirmed": {
-                                      "type": "boolean"
-                                    }
-                                  },
-                                  "required": [
-                                    "value",
-                                    "source",
-                                    "confirmed"
-                                  ],
-                                  "additionalProperties": false
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "hardDeadline": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "date"
-                                            },
-                                            "date": {
-                                              "type": "string",
-                                              "format": "date",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                            },
-                                            "timezone": {
-                                              "type": "string",
-                                              "minLength": 1,
-                                              "maxLength": 100
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "date",
-                                            "timezone"
-                                          ],
-                                          "additionalProperties": false
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "instant"
-                                            },
-                                            "at": {
-                                              "type": "string",
-                                              "format": "date-time",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "at"
-                                          ],
-                                          "additionalProperties": false
-                                        }
-                                      ]
-                                    },
-                                    "source": {
-                                      "type": "string",
-                                      "enum": [
-                                        "user",
-                                        "authorized_material",
-                                        "suggestion",
-                                        "member"
-                                      ]
-                                    },
-                                    "confirmed": {
-                                      "type": "boolean"
-                                    }
-                                  },
-                                  "required": [
-                                    "value",
-                                    "source",
-                                    "confirmed"
-                                  ],
-                                  "additionalProperties": false
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "committed": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "date"
-                                            },
-                                            "date": {
-                                              "type": "string",
-                                              "format": "date",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                            },
-                                            "timezone": {
-                                              "type": "string",
-                                              "minLength": 1,
-                                              "maxLength": 100
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "date",
-                                            "timezone"
-                                          ],
-                                          "additionalProperties": false
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "instant"
-                                            },
-                                            "at": {
-                                              "type": "string",
-                                              "format": "date-time",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "at"
-                                          ],
-                                          "additionalProperties": false
-                                        }
-                                      ]
-                                    },
-                                    "source": {
-                                      "type": "string",
-                                      "enum": [
-                                        "user",
-                                        "authorized_material",
-                                        "suggestion",
-                                        "member"
-                                      ]
-                                    },
-                                    "confirmed": {
-                                      "type": "boolean"
-                                    }
-                                  },
-                                  "required": [
-                                    "value",
-                                    "source",
-                                    "confirmed"
-                                  ],
-                                  "additionalProperties": false
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "estimatedHumanHours": {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                  "minimum": 0,
-                                  "maximum": 10000
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "checkpoint": {
-                              "anyOf": [
-                                {
-                                  "anyOf": [
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "kind": {
-                                          "type": "string",
-                                          "const": "date"
-                                        },
-                                        "date": {
-                                          "type": "string",
-                                          "format": "date",
-                                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                        },
-                                        "timezone": {
-                                          "type": "string",
-                                          "minLength": 1,
-                                          "maxLength": 100
-                                        }
-                                      },
-                                      "required": [
-                                        "kind",
-                                        "date",
-                                        "timezone"
-                                      ],
-                                      "additionalProperties": false
-                                    },
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "kind": {
-                                          "type": "string",
-                                          "const": "instant"
-                                        },
-                                        "at": {
-                                          "type": "string",
-                                          "format": "date-time",
-                                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                        }
-                                      },
-                                      "required": [
-                                        "kind",
-                                        "at"
-                                      ],
-                                      "additionalProperties": false
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            }
-                          },
-                          "required": [
-                            "suggested",
-                            "hardDeadline",
-                            "committed",
-                            "estimatedHumanHours",
-                            "checkpoint"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "access": {
-                          "type": "object",
-                          "properties": {
-                            "visibility": {
-                              "type": "string",
-                              "enum": [
-                                "participants",
-                                "lab_summary"
-                              ]
-                            },
-                            "summary": {
-                              "anyOf": [
-                                {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 8000
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            }
-                          },
-                          "required": [
-                            "visibility",
-                            "summary"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "version": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                        },
-                        "allowedActions": {
-                          "maxItems": 20,
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "confirm",
-                              "invite",
-                              "decide",
-                              "claim",
-                              "start",
-                              "block",
-                              "resume",
-                              "submit",
-                              "review",
-                              "propose_change",
-                              "withdraw",
-                              "cancel",
-                              "run",
-                              "publish",
-                              "disable",
-                              "revoke_access",
-                              "upload",
-                              "acknowledge_impacts",
                               "retain_conclusion",
                               "share_feedback",
                               "decline_feedback"
@@ -95239,7 +94289,6 @@
                             "awaiting_acceptance",
                             "ready",
                             "in_progress",
-                            "blocked",
                             "in_review",
                             "changes_requested",
                             "completed",
@@ -95699,11 +94748,10 @@
                             "enum": [
                               "confirm",
                               "invite",
+                              "cancel_invitation",
                               "decide",
                               "claim",
                               "start",
-                              "block",
-                              "resume",
                               "submit",
                               "review",
                               "propose_change",
@@ -95714,7 +94762,6 @@
                               "disable",
                               "revoke_access",
                               "upload",
-                              "acknowledge_impacts",
                               "retain_conclusion",
                               "share_feedback",
                               "decline_feedback"
@@ -95928,7 +94975,7 @@
     "/api/v1/labs/{id}/overview": {
       "get": {
         "operationId": "overview",
-        "description": "One read snapshot; ACL before counts; no cancelled in four columns; blocked IDs capped with truncation flag; members/tasks/action items separately paginated under returned snapshot. Deliverable counts include all revisions on full-access tasks only.",
+        "description": "One read snapshot; ACL before counts; no cancelled in four columns; members/tasks/action items separately paginated under returned snapshot. Deliverable counts include all revisions on full-access tasks only.",
         "x-stage": "B2a",
         "x-implemented": true,
         "security": [
@@ -96023,17 +95070,6 @@
                           "minimum": 0,
                           "maximum": 9007199254740991
                         },
-                        "blockedTaskIds": {
-                          "maxItems": 100,
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                          }
-                        },
-                        "blockedTaskIdsTruncated": {
-                          "type": "boolean"
-                        },
                         "pendingActions": {
                           "type": "object",
                           "properties": {
@@ -96074,8 +95110,6 @@
                         "counts",
                         "acceptedDeliverables",
                         "submittedDeliverables",
-                        "blockedTaskIds",
-                        "blockedTaskIdsTruncated",
                         "pendingActions",
                         "updatedAt"
                       ],
@@ -96124,8 +95158,6 @@
                     },
                     "acceptedDeliverables": 0,
                     "submittedDeliverables": 0,
-                    "blockedTaskIds": [],
-                    "blockedTaskIdsTruncated": false,
                     "pendingActions": {
                       "invitationResponses": 0,
                       "deliverableReviews": 0
@@ -96484,7 +95516,6 @@
                             "awaiting_acceptance",
                             "ready",
                             "in_progress",
-                            "blocked",
                             "in_review",
                             "changes_requested",
                             "completed",
@@ -96944,11 +95975,10 @@
                             "enum": [
                               "confirm",
                               "invite",
+                              "cancel_invitation",
                               "decide",
                               "claim",
                               "start",
-                              "block",
-                              "resume",
                               "submit",
                               "review",
                               "propose_change",
@@ -96959,7 +95989,6 @@
                               "disable",
                               "revoke_access",
                               "upload",
-                              "acknowledge_impacts",
                               "retain_conclusion",
                               "share_feedback",
                               "decline_feedback"
@@ -97468,909 +96497,6 @@
         }
       }
     },
-    "/api/v1/tasks/{id}/dependency-impacts/acknowledge": {
-      "post": {
-        "operationId": "acknowledgeImpacts",
-        "description": "Lead/reviewer explicitly reassesses preserved downstream results after dependencies are valid; acknowledge named impacts, never erase history or auto resume.",
-        "x-stage": "B2b",
-        "x-implemented": true,
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9_-]{1,96}$"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9_-]{16,128}$"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 32,
-              "maxLength": 128
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "expectedVersion": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 9007199254740991
-                  },
-                  "impactIds": {
-                    "minItems": 1,
-                    "maxItems": 100,
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                    }
-                  },
-                  "comment": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 8000
-                  }
-                },
-                "required": [
-                  "expectedVersion",
-                  "impactIds",
-                  "comment"
-                ],
-                "additionalProperties": false
-              },
-              "example": {
-                "expectedVersion": 1,
-                "impactIds": [
-                  "synthetic"
-                ],
-                "comment": "synthetic"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "B2b contract; implemented",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "conclusionRefs": {
-                          "maxItems": 100,
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                              },
-                              "version": {
-                                "type": "integer",
-                                "minimum": 1,
-                                "maximum": 9007199254740991
-                              },
-                              "status": {
-                                "type": "string",
-                                "enum": [
-                                  "current",
-                                  "needs_review"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "version",
-                              "status"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "id": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "labId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "parentTaskId": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "planId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "planVersion": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991
-                        },
-                        "title": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 200
-                        },
-                        "taskType": {
-                          "type": "string",
-                          "enum": [
-                            "paper",
-                            "grant",
-                            "ip",
-                            "experiment",
-                            "training",
-                            "report",
-                            "other"
-                          ]
-                        },
-                        "goal": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 8000
-                        },
-                        "acceptanceCriteria": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 8000
-                        },
-                        "initiatorId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "leadId": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "reviewerId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                        },
-                        "participantIds": {
-                          "maxItems": 100,
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                          }
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "unassigned",
-                            "awaiting_acceptance",
-                            "ready",
-                            "in_progress",
-                            "blocked",
-                            "in_review",
-                            "changes_requested",
-                            "completed",
-                            "cancelled"
-                          ]
-                        },
-                        "blocker": {
-                          "anyOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "reason": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 8000
-                                },
-                                "requestedMemberId": {
-                                  "anyOf": [
-                                    {
-                                      "type": "string",
-                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "requestedAction": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 8000
-                                },
-                                "resumeStatus": {
-                                  "type": "string",
-                                  "enum": [
-                                    "ready",
-                                    "in_progress",
-                                    "changes_requested",
-                                    "in_review"
-                                  ]
-                                }
-                              },
-                              "required": [
-                                "reason",
-                                "requestedMemberId",
-                                "requestedAction",
-                                "resumeStatus"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "dependencies": {
-                          "maxItems": 100,
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "taskId": {
-                                "type": "string",
-                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
-                              },
-                              "kind": {
-                                "type": "string",
-                                "enum": [
-                                  "accepted_deliverable",
-                                  "confirmed_decision"
-                                ]
-                              },
-                              "requiredRevision": {
-                                "anyOf": [
-                                  {
-                                    "type": "integer",
-                                    "minimum": 1,
-                                    "maximum": 9007199254740991
-                                  },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
-                              }
-                            },
-                            "required": [
-                              "taskId",
-                              "kind",
-                              "requiredRevision"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "schedule": {
-                          "type": "object",
-                          "properties": {
-                            "suggested": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "date"
-                                            },
-                                            "date": {
-                                              "type": "string",
-                                              "format": "date",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                            },
-                                            "timezone": {
-                                              "type": "string",
-                                              "minLength": 1,
-                                              "maxLength": 100
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "date",
-                                            "timezone"
-                                          ],
-                                          "additionalProperties": false
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "instant"
-                                            },
-                                            "at": {
-                                              "type": "string",
-                                              "format": "date-time",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "at"
-                                          ],
-                                          "additionalProperties": false
-                                        }
-                                      ]
-                                    },
-                                    "source": {
-                                      "type": "string",
-                                      "enum": [
-                                        "user",
-                                        "authorized_material",
-                                        "suggestion",
-                                        "member"
-                                      ]
-                                    },
-                                    "confirmed": {
-                                      "type": "boolean"
-                                    }
-                                  },
-                                  "required": [
-                                    "value",
-                                    "source",
-                                    "confirmed"
-                                  ],
-                                  "additionalProperties": false
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "hardDeadline": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "date"
-                                            },
-                                            "date": {
-                                              "type": "string",
-                                              "format": "date",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                            },
-                                            "timezone": {
-                                              "type": "string",
-                                              "minLength": 1,
-                                              "maxLength": 100
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "date",
-                                            "timezone"
-                                          ],
-                                          "additionalProperties": false
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "instant"
-                                            },
-                                            "at": {
-                                              "type": "string",
-                                              "format": "date-time",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "at"
-                                          ],
-                                          "additionalProperties": false
-                                        }
-                                      ]
-                                    },
-                                    "source": {
-                                      "type": "string",
-                                      "enum": [
-                                        "user",
-                                        "authorized_material",
-                                        "suggestion",
-                                        "member"
-                                      ]
-                                    },
-                                    "confirmed": {
-                                      "type": "boolean"
-                                    }
-                                  },
-                                  "required": [
-                                    "value",
-                                    "source",
-                                    "confirmed"
-                                  ],
-                                  "additionalProperties": false
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "committed": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "date"
-                                            },
-                                            "date": {
-                                              "type": "string",
-                                              "format": "date",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                            },
-                                            "timezone": {
-                                              "type": "string",
-                                              "minLength": 1,
-                                              "maxLength": 100
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "date",
-                                            "timezone"
-                                          ],
-                                          "additionalProperties": false
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "instant"
-                                            },
-                                            "at": {
-                                              "type": "string",
-                                              "format": "date-time",
-                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                            }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "at"
-                                          ],
-                                          "additionalProperties": false
-                                        }
-                                      ]
-                                    },
-                                    "source": {
-                                      "type": "string",
-                                      "enum": [
-                                        "user",
-                                        "authorized_material",
-                                        "suggestion",
-                                        "member"
-                                      ]
-                                    },
-                                    "confirmed": {
-                                      "type": "boolean"
-                                    }
-                                  },
-                                  "required": [
-                                    "value",
-                                    "source",
-                                    "confirmed"
-                                  ],
-                                  "additionalProperties": false
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "estimatedHumanHours": {
-                              "anyOf": [
-                                {
-                                  "type": "number",
-                                  "minimum": 0,
-                                  "maximum": 10000
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "checkpoint": {
-                              "anyOf": [
-                                {
-                                  "anyOf": [
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "kind": {
-                                          "type": "string",
-                                          "const": "date"
-                                        },
-                                        "date": {
-                                          "type": "string",
-                                          "format": "date",
-                                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-                                        },
-                                        "timezone": {
-                                          "type": "string",
-                                          "minLength": 1,
-                                          "maxLength": 100
-                                        }
-                                      },
-                                      "required": [
-                                        "kind",
-                                        "date",
-                                        "timezone"
-                                      ],
-                                      "additionalProperties": false
-                                    },
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "kind": {
-                                          "type": "string",
-                                          "const": "instant"
-                                        },
-                                        "at": {
-                                          "type": "string",
-                                          "format": "date-time",
-                                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                                        }
-                                      },
-                                      "required": [
-                                        "kind",
-                                        "at"
-                                      ],
-                                      "additionalProperties": false
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            }
-                          },
-                          "required": [
-                            "suggested",
-                            "hardDeadline",
-                            "committed",
-                            "estimatedHumanHours",
-                            "checkpoint"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "access": {
-                          "type": "object",
-                          "properties": {
-                            "visibility": {
-                              "type": "string",
-                              "enum": [
-                                "participants",
-                                "lab_summary"
-                              ]
-                            },
-                            "summary": {
-                              "anyOf": [
-                                {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 8000
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            }
-                          },
-                          "required": [
-                            "visibility",
-                            "summary"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "version": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-                        },
-                        "allowedActions": {
-                          "maxItems": 20,
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "confirm",
-                              "invite",
-                              "decide",
-                              "claim",
-                              "start",
-                              "block",
-                              "resume",
-                              "submit",
-                              "review",
-                              "propose_change",
-                              "withdraw",
-                              "cancel",
-                              "run",
-                              "publish",
-                              "disable",
-                              "revoke_access",
-                              "upload",
-                              "acknowledge_impacts",
-                              "retain_conclusion",
-                              "share_feedback",
-                              "decline_feedback"
-                            ]
-                          }
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "labId",
-                        "parentTaskId",
-                        "planId",
-                        "planVersion",
-                        "title",
-                        "taskType",
-                        "goal",
-                        "acceptanceCriteria",
-                        "initiatorId",
-                        "leadId",
-                        "reviewerId",
-                        "participantIds",
-                        "status",
-                        "blocker",
-                        "dependencies",
-                        "schedule",
-                        "access",
-                        "version",
-                        "createdAt",
-                        "updatedAt",
-                        "allowedActions"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "data"
-                  ],
-                  "additionalProperties": false
-                },
-                "example": {
-                  "data": {
-                    "id": "synthetic",
-                    "labId": "synthetic",
-                    "parentTaskId": null,
-                    "planId": "synthetic",
-                    "planVersion": 1,
-                    "title": "synthetic",
-                    "taskType": "paper",
-                    "goal": "synthetic",
-                    "acceptanceCriteria": "synthetic",
-                    "initiatorId": "synthetic",
-                    "leadId": null,
-                    "reviewerId": "synthetic",
-                    "participantIds": [],
-                    "status": "unassigned",
-                    "blocker": null,
-                    "dependencies": [],
-                    "schedule": {
-                      "suggested": null,
-                      "hardDeadline": null,
-                      "committed": null,
-                      "estimatedHumanHours": null,
-                      "checkpoint": null
-                    },
-                    "access": {
-                      "visibility": "participants",
-                      "summary": null
-                    },
-                    "version": 1,
-                    "createdAt": "2026-09-21T08:00:00+08:00",
-                    "updatedAt": "2026-09-21T08:00:00+08:00",
-                    "allowedActions": []
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "410": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "See error.code mapping and retry rules in protocol.md.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/tasks/{id}/events": {
       "get": {
         "operationId": "events",
@@ -98489,6 +96615,7 @@
                               "invited",
                               "accepted",
                               "declined",
+                              "invitation_cancelled",
                               "claimed",
                               "started",
                               "blocked",
@@ -100530,7 +98657,6 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
-                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -100990,11 +99116,10 @@
                                               "enum": [
                                                 "confirm",
                                                 "invite",
+                                                "cancel_invitation",
                                                 "decide",
                                                 "claim",
                                                 "start",
-                                                "block",
-                                                "resume",
                                                 "submit",
                                                 "review",
                                                 "propose_change",
@@ -101005,7 +99130,6 @@
                                                 "disable",
                                                 "revoke_access",
                                                 "upload",
-                                                "acknowledge_impacts",
                                                 "retain_conclusion",
                                                 "share_feedback",
                                                 "decline_feedback"
@@ -101053,7 +99177,6 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
-                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -101843,11 +99966,10 @@
                                         "enum": [
                                           "confirm",
                                           "invite",
+                                          "cancel_invitation",
                                           "decide",
                                           "claim",
                                           "start",
-                                          "block",
-                                          "resume",
                                           "submit",
                                           "review",
                                           "propose_change",
@@ -101858,7 +99980,6 @@
                                           "disable",
                                           "revoke_access",
                                           "upload",
-                                          "acknowledge_impacts",
                                           "retain_conclusion",
                                           "share_feedback",
                                           "decline_feedback"
@@ -103322,7 +101443,6 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
-                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -103782,11 +101902,10 @@
                                               "enum": [
                                                 "confirm",
                                                 "invite",
+                                                "cancel_invitation",
                                                 "decide",
                                                 "claim",
                                                 "start",
-                                                "block",
-                                                "resume",
                                                 "submit",
                                                 "review",
                                                 "propose_change",
@@ -103797,7 +101916,6 @@
                                                 "disable",
                                                 "revoke_access",
                                                 "upload",
-                                                "acknowledge_impacts",
                                                 "retain_conclusion",
                                                 "share_feedback",
                                                 "decline_feedback"
@@ -103845,7 +101963,6 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
-                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -104635,11 +102752,10 @@
                                         "enum": [
                                           "confirm",
                                           "invite",
+                                          "cancel_invitation",
                                           "decide",
                                           "claim",
                                           "start",
-                                          "block",
-                                          "resume",
                                           "submit",
                                           "review",
                                           "propose_change",
@@ -104650,7 +102766,6 @@
                                           "disable",
                                           "revoke_access",
                                           "upload",
-                                          "acknowledge_impacts",
                                           "retain_conclusion",
                                           "share_feedback",
                                           "decline_feedback"
@@ -109712,7 +107827,6 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
-                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -110172,11 +108286,10 @@
                                               "enum": [
                                                 "confirm",
                                                 "invite",
+                                                "cancel_invitation",
                                                 "decide",
                                                 "claim",
                                                 "start",
-                                                "block",
-                                                "resume",
                                                 "submit",
                                                 "review",
                                                 "propose_change",
@@ -110187,7 +108300,6 @@
                                                 "disable",
                                                 "revoke_access",
                                                 "upload",
-                                                "acknowledge_impacts",
                                                 "retain_conclusion",
                                                 "share_feedback",
                                                 "decline_feedback"
@@ -110235,7 +108347,6 @@
                                               "awaiting_acceptance",
                                               "ready",
                                               "in_progress",
-                                              "blocked",
                                               "in_review",
                                               "changes_requested",
                                               "completed",
@@ -111025,11 +109136,10 @@
                                         "enum": [
                                           "confirm",
                                           "invite",
+                                          "cancel_invitation",
                                           "decide",
                                           "claim",
                                           "start",
-                                          "block",
-                                          "resume",
                                           "submit",
                                           "review",
                                           "propose_change",
@@ -111040,7 +109150,6 @@
                                           "disable",
                                           "revoke_access",
                                           "upload",
-                                          "acknowledge_impacts",
                                           "retain_conclusion",
                                           "share_feedback",
                                           "decline_feedback"
