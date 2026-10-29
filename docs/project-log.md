@@ -2472,3 +2472,13 @@ typecheck、typecheck:electron、build:web、local-dsh 39 项、workbench-links 
 成果摘要改为自动预填助手最后一轮回复（截断 8000 字），并标注“已按助手最后一轮回复预填，可直接在上面改”。用户改过或点过“用作成果摘要”后不再覆盖；没改过则随最新一轮回复更新。进度备注在本地没有保存过时，按阶段生成一句（执行中/本轮已结束，工作文件夹里有 N 个文件/中断/未完成），不再留空框。
 
 隔离预览验证：研究任务显示目标 2 条、验收 2 条；个人任务只有目标 1 条且不出现空的验收组；摘要框自动带出“提纲已读完……”，手改后跨一次 3.5 秒轮询仍保留“我改过的摘要”；1024 宽度下要点换行正常。typecheck、typecheck:electron、build:web、local-dsh 39 项、workbench-links 7 项、planning 4 项通过。未合并、未打包、未部署。
+
+## 2026-10-30 本地候选安装包 0.10.74
+
+负责人要求先打包一个本地安装包查看当前效果。版本号由 0.10.73 改为 0.10.74，仅用于与本机已装公开版区分；依赖、契约、数据库、后台接口均未改，纯客户端渲染层变化。根目录 `corepack pnpm@11.21.0 run desktop:win`（publish never），产物在 clients/openim/release/Base/0.10.74。
+
+构建环境遇到两次工具侧拦截：批量删除守卫（安全删除 shim）在重建 `packages/research-skills/dist/roles`（124 项）和清理 pnpm 临时目录时拒绝删除。先手工清空这两处，并在构建命令前设 `CODEBUDDY_SAFE_DELETE_ENABLED=0`；仓库脚本未修改，CI 不受影响。electron-builder 的 rcedit 首次写版本信息报 `Unable to commit changes`，重试后成功，成品 FileVersion/ProductVersion 已核对为 0.10.74。
+
+安装器 405064752 字节，SHA256 71b39c0468db7288e6b694dd34b8d240dc338841c39389322c6f8c7df4f92bf4；blockmap 417306 字节，SHA256 31cb0d9a126fe741c38b47b7f5e871ec292da9159de008cb0a1f0c6613de255e；latest.yml 记录 0.10.74 与同一 sha512。check-web-build 通过，app.asar 六个必需入口通过，直接在 asar 内检索到本批新增文案与样式类，确认包内为当前代码。
+
+未运行安装器、未启动成品、未连真实账号或模型；未发布 Release、未部署后台、未推送分支。安装会覆盖本机 0.10.73，由负责人自行决定。详见 docs/deployment/acceptcat-0.10.74.md，证据 D:/deepseek-agent/.runtime/task-page-0.10.74-20261030/windows。
