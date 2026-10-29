@@ -162,13 +162,8 @@ export class Coordination {
     block: ({params,body}) => {
       const t=this.c.task(params.id);this.c.checkVersion(t.version,body.expectedVersion)
       if (!['ready','in_progress','changes_requested'].includes(t.status)) fail('INVALID_STATE')
-      if (body.requestedMemberId) {
-        this.c.member(body.requestedMemberId)
-        if (this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='revoked'").get(t.id,body.requestedMemberId)) fail('FORBIDDEN')
-      }
-      t.blocker={reason:body.reason,requestedMemberId:body.requestedMemberId,requestedAction:body.requestedAction,resumeStatus:t.status as 'ready'|'in_progress'|'changes_requested'};t.status='blocked'
+      t.blocker={reason:body.reason,requestedMemberId:null,requestedAction:body.requestedAction,resumeStatus:t.status as 'ready'|'in_progress'|'changes_requested'};t.status='blocked'
       this.touch(t,'blocked');this.stopDispatch(t.id);this.impact(t,'blocked')
-      if(body.requestedMemberId)this.c.outbox(t,'support_requested',{taskId:t.id,labId:this.c.labId,requestedBy:this.c.actor.id})
       return {data:this.c.actions(t)}
     },
     resume: ({params,body}) => {
@@ -228,7 +223,7 @@ export class Coordination {
         this.db.prepare("UPDATE tasks SET summary_document=json_set(summary_document,'$.deliverable',?,'$.summary',?,'$.schedule',json(?)) WHERE id=?").run(body.remainingScope,body.remainingScope,encode(schedule),t.id)
       }
       this.touch(t,'withdrawn',body.reason);this.c.event(t,'withdrawn',body.remainingScope);this.impact(t,'withdrawn')
-      if (body.transferToMemberId) this.c.outbox(t,'transfer_invitation_created')
+      if (body.transferToMemberId) this.c.outbox(t,'transfer_invitation_created',{taskId:t.id,requestedBy:this.c.actor.id})
       return {data:{taskId:t.id,taskVersion:t.version,status:'withdrawn'}}
     },
     revokeAccess: ({params,body}) => {

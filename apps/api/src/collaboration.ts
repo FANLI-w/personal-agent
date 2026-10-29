@@ -33,7 +33,7 @@ function canonical(value: unknown): string {
   if (value && typeof value === 'object') return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, v]) => `${JSON.stringify(key)}:${canonical(v)}`).join(',')}}`
   return JSON.stringify(value)
 }
-export const collaborationCommands = [...coordinationCommands, 'researchWorkspace', 'planTasks', 'overview', 'plans', 'actionItems', 'availability', 'me', 'members', 'createPlan', 'getPlan', 'editPlan', 'confirmPlan', 'tasks', 'task', 'invite', 'invitationDecision', 'claim', 'start', 'submit', 'review'] as const satisfies readonly RouteName[]
+export const collaborationCommands = [...coordinationCommands, 'researchWorkspace', 'planTasks', 'overview', 'plans', 'actionItems', 'availability', 'me', 'members', 'createPlan', 'getPlan', 'editPlan', 'confirmPlan', 'tasks', 'task', 'invite', 'cancelInvitation', 'invitationDecision', 'claim', 'start', 'submit', 'review'] as const satisfies readonly RouteName[]
 export type CollaborationCommand = typeof collaborationCommands[number]
 type Handlers = { [K in Exclude<CollaborationCommand,CoordinationCommand>]: (request: RequestFor<K>) => unknown }
 
@@ -128,6 +128,10 @@ export class Collaboration {
     const allowedActions: TaskModel['allowedActions'] = []
     if (!task.leadId && task.status === 'awaiting_acceptance' && this.taskRow(task.id).claimable === 1) allowedActions.push('claim')
     if (task.initiatorId === this.actor.id && ['unassigned', 'awaiting_acceptance'].includes(task.status) && !this.db.prepare("SELECT id FROM assignments WHERE task_id=? AND status IN ('pending','accepted')").get(task.id)) allowedActions.push('invite')
+    if (task.status === 'awaiting_acceptance' && this.db.prepare("SELECT id FROM assignments WHERE task_id=? AND status='pending'").get(task.id)) {
+      const withdrawingLead = this.db.prepare("SELECT member_id FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId') IS NOT NULL").get(task.id)
+      if (task.initiatorId === this.actor.id || (withdrawingLead && withdrawingLead.member_id === this.actor.id)) allowedActions.push('cancel_invitation')
+    }
     if (task.leadId === this.actor.id) {
       if (['ready', 'changes_requested'].includes(task.status)) allowedActions.push('start')
       if (['in_progress', 'changes_requested'].includes(task.status)) allowedActions.push('submit')
@@ -232,6 +236,12 @@ export class Collaboration {
       return
     }
     if (name === 'claim') { const row = this.taskRow(resourceId); if (row.claimable !== 1) fail('NOT_FOUND'); return }
+    if (name === 'cancelInvitation') {
+      const task = this.task(resourceId); this.coordination.active(task)
+      const withdrawingLead = this.db.prepare("SELECT member_id FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId') IS NOT NULL").get(resourceId)
+      if (task.initiatorId !== this.actor.id && (!withdrawingLead || withdrawingLead.member_id !== this.actor.id)) fail('FORBIDDEN')
+      return
+    }
     if (['invite', 'start', 'submit'].includes(name)) {
       const task = this.task(resourceId)
       this.coordination.active(task)
@@ -461,6 +471,23 @@ export class Collaboration {
       this.db.prepare('UPDATE tasks SET claimable=0 WHERE id=?').run(task.id)
       this.event(task, 'invited'); this.outbox(task, 'invitation_created')
       return { data: assignment }
+    },
+    cancelInvitation: ({ params, body }) => {
+      const task = this.task(params.id); this.checkVersion(task.version, body.expectedVersion)
+      if (task.status !== 'awaiting_acceptance') fail('INVALID_STATE')
+      const pending = this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='pending'").get(task.id)
+      if (!pending) fail('INVALID_STATE')
+      const offer = Assignment.parse(JSON.parse(String(pending.document))); offer.status = 'cancelled'; offer.version++; this.saveAssignment(offer)
+      const withdrawingLead = this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId') IS NOT NULL").get(task.id)
+      if (withdrawingLead) {
+        const restored = Assignment.parse(JSON.parse(String(withdrawingLead.document))); restored.status = 'accepted'; restored.transferToMemberId = null; restored.version++; this.saveAssignment(restored)
+        task.leadId = restored.memberId; task.status = 'ready'; this.grant(task.id, restored.memberId!, 'full')
+      } else {
+        task.status = 'unassigned'
+      }
+      this.coordination.stopDispatch(task.id)
+      task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'invitation_cancelled')
+      return { data: this.actions(task) }
     },
     invitationDecision: ({ params, body }) => {
       const offer = this.assignment(params.id), assignment = offer.model

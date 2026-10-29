@@ -10,8 +10,6 @@ import { routes } from '@research-agent-platform/contracts'
 import type { PlanModel, RequestFor, ResponseFor, RouteName } from '@research-agent-platform/contracts'
 import { openDatabase, migrate, seed, transaction } from '../src/database.js'
 import { provisionTestAccounts, passwordHash } from '../src/auth.js'
-import { TaskSupportWorker } from '../src/task-support.js'
-import { readConfig } from '../src/config.js'
 import { Collaboration } from '../src/collaboration.js'
 
 const origin = 'http://127.0.0.1:4173'
@@ -126,7 +124,7 @@ async function upload(taskId:string, client=clients.B, text='Synthetic attachmen
 }
 async function download(id:string,client:Client) {return fetch(new URL(routes.content.path.replace('{id}',id),address),{headers:{cookie:client.cookie}})}
 
-describe('safe task recovery and explicit support delivery',()=>{
+describe('safe task recovery',()=>{
   it('does not acknowledge transitive evidence changes or restore old downstream submissions',async()=>{
     const u=item('self','u'),v=item('self','v'),w=item('self','w');v.dependencies=['u'];w.dependencies=['v']
     const {taskIds}=await createConfirmed([u,v,w]);const [up,middle,down]=taskIds as [string,string,string]
@@ -176,38 +174,6 @@ describe('safe task recovery and explicit support delivery',()=>{
     expect(db.prepare('SELECT * FROM dependency_bindings WHERE task_id=?').all(down)).toHaveLength(2)
   })
 
-  const supportWorker=()=>new TaskSupportWorker(db,readConfig({NODE_ENV:'test',DATABASE_PATH:databasePath,BLOB_ROOT:join(directory,'blobs')}))
-  it('delivers one minimal request to the target assistant chat and IM queue without granting private task access',async()=>{
-    const {taskIds}=await createConfirmed([item('self','support')]);const id=taskIds[0]!
-    const expectedVersion=(await detail(id)).task.version
-    const input={client:clients.A,params:{id},body:{expectedVersion,reason:'PRIVATE_REASON_SENTINEL',requestedMemberId:'member_C',requestedAction:'Please check the synthetic decision'},key:key()}
-    expect((await request('block',input)).status).toBe(200);expect((await request('block',input)).status).toBe(200)
-    expect(db.prepare("SELECT * FROM outbox WHERE aggregate_id=? AND kind='support_requested'").all(id)).toHaveLength(1)
-    expect(await supportWorker().tick()).toBe(true);expect(await supportWorker().tick()).toBe(false)
-    const personal=await request('personalConversation',{client:clients.C})
-    const messages=await request('chatMessages',{client:clients.C,params:{id:personal.value.data.conversation.id}})
-    const delivered=messages.value.data.filter(m=>m.text?.includes('Please check the synthetic decision'))
-    expect(delivered).toHaveLength(1)
-    expect(JSON.stringify(delivered)).not.toMatch(/RESTRICTED_INPUT_SENTINEL|PRIVATE_REASON_SENTINEL|Owner-only planning notes/)
-    expect(delivered[0]!.resources).toEqual([]);expect(delivered[0]!.origin).toBe('service')
-    expect(db.prepare('SELECT status FROM im_message_outbox WHERE message_id=?').get(delivered[0]!.id)!.status).toBe('pending')
-    expect((await request('task',{client:clients.C,params:{id}})).status).toBe(404)
-    expect((await request('tasks',{client:clients.C,query:{labId:'lab_synthetic',scope:'mine'}})).value.data.some(t=>t.id===id)).toBe(false)
-    expect(db.prepare("SELECT * FROM outbox WHERE kind!='support_requested' AND status='delivered'").all()).toHaveLength(0)
-    expect(db.prepare('SELECT * FROM chat_turns').all()).toHaveLength(0)
-  })
 
-  it.each(['resume','cancel','disable','revoke'] as const)('does not deliver a support request after %s',async(fence)=>{
-    const {taskIds}=await createConfirmed([item('self',`support_${fence}`)]);const id=taskIds[0]!
-    expect((await command('block',id,clients.A,{reason:'Need help',requestedMemberId:'member_C',requestedAction:`Do not deliver ${fence}`})).status).toBe(200)
-    if(fence==='resume')expect((await command('resume',id,clients.A)).status).toBe(200)
-    if(fence==='cancel')expect((await command('cancelTask',id,clients.A,{reason:'No longer needed'})).status).toBe(200)
-    if(fence==='disable')db.prepare('UPDATE auth_accounts SET disabled=1 WHERE member_id=?').run('member_C')
-    if(fence==='revoke')db.prepare("INSERT INTO task_access VALUES (?,?,'revoked')").run(id,'member_C')
-    await supportWorker().tick()
-    if(fence==='disable')db.prepare('UPDATE auth_accounts SET disabled=0 WHERE member_id=?').run('member_C')
-    expect(db.prepare("SELECT status FROM outbox WHERE aggregate_id=? AND kind='support_requested'").get(id)!.status).toBe('cancelled')
-    expect(db.prepare("SELECT id FROM chat_messages WHERE json_extract(document,'$.text') LIKE ?").all(`%Do not deliver ${fence}%`)).toHaveLength(0)
-  })
 })
 
