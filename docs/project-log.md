@@ -2416,3 +2416,11 @@ Git外证据D:/deepseek-agent/.runtime/large-originals-20261029。首次Electron
 交付回执：产品f160ee7，PR141已创建。0.10.72最终安装器405060395字节、SHA256 8b73d92d661f12ed720578f8ef5ac33ea02b3e3cf82825b1655d6044c087c7a7，Git外dsh-native-files-20261029/windows。最终NSIS/六入口/ASAR桥接与更新校验、隔离成品和OpenIM SDK初始化通过；4项原生预览、13项账号原生界面、5项Playwright外壳检查通过。中间旧来源包主动停止压缩，最终重建留证；PNG夹具和服务退出的失败另留。远端f160两Linux及Windows包通过，Windows Foundation待PR状态。无合并、部署、公开Release或代安装。
 
 CI复查：f160首轮Windows Foundation两组未修改的后台测试5项超过5秒，无断言错误；同组本机7项通过。产品源码相同的文档提交9fbd7fb三项远端Foundation全通过（run40843065222），未调整测试时限或后台代码。失败日志remote-foundation-first-failed.log和复查记录留在同一Git外证据目录。安装器仍对应f160ee7；后续文档head检查以PR为准。隔离界面/API夹具已清理，用户客户端未动。
+
+## 2026-10-29 PR129/139/140/141 审核整合与0.10.73
+
+负责人要求四项一起审核合并并打包。从实际main/2d0091c建立独立release/chat-workbench-0.10.73，普通merge保留四原PR历史，解决139/140任务面板冲突，产品79aaef1。群业务身份/邀请分类、任务转交、依赖图箭头与标题、DSH原生文件/PDF预览共存；原桌面开发目录及已用客户端不改动。具体合并结果以整合PR为准，打包不等于公开Release或后台部署。
+
+审核发现139缺存量blocked迁移、撤销会按任意历史withdrawn找负责人、非发起人失去撤销权限、结束邀请残留临时权限/转交索引，以及邀请已有full权限的发起人会被降级。新增精确task_handoffs和schema031，保留历史/旧读取，新contract0.39按header提供旧桌面投影；接受/拒绝/撤权/取消和重放均定向验证，新客户端遇0.38后台先隐藏转交入口。后台7项定向、客户端156项、双类型、群10+1/任务7项隔离交互、真实官方DSH4项原生预览/模型菜单通过。根CI本机串行回执保存在ci-serial.log，最终结果随整合PR记录并核对最新head远端检查；并行压缩时一项既有5000ms进程测试超时日志保留，未扩大超时。
+
+0.10.73 NSIS/六入口/四项功能包内标记、SHA512/大小/更新清单及隔离成品OpenIM SDK启动通过。安装器405064574字节，SHA256 acf55e015f87f6ce9ff4216c0ca6b79dabb3b872fc6d1989392bbc270968fbe9；产物与原失败在Git外release-chat-workbench-0.10.73-20261029。说明见deployment/acceptcat-0.10.73.md。本批未部署或公开，生产最后记录contract0.38/schema030、公开Latest0.10.71。真实账号/双人群/模型未验收，未完成的本地聊天历史5536ffc和手机PR90不混入。
