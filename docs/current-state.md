@@ -4,7 +4,7 @@
 
 ## 工作台命名与原生模型设置（待审、未发布）
 
-2026-10-29，从 main/7f8775f 建立 fix/workbench-model-settings，DSH入口/标题改为工作台，任务保持。已知DeepSeek账号改接官方原生适配器，恢复Flash/Pro和Off/Low/High/Max菜单，沿用AcceptCat账号；旧会话兼容路由保留。后台补严格模型名单及output_config.effort转发，须先更新后台再发布客户端。详见[实现与验收](development/workbench-model-settings.md)。
+2026-10-29，从 main/7f8775f 建立 fix/workbench-model-settings，产品ea364d6交付[PR136](https://github.com/luoyan96/personal-agent/pull/136)，DSH入口/标题改为工作台，任务保持。已知DeepSeek账号改接官方原生适配器，恢复Flash/Pro和Off/Low/High/Max菜单，沿用AcceptCat账号；旧会话兼容路由保留。后台补严格模型名单及output_config.effort转发，须先更新后台再发布客户端。详见[实现与验收](development/workbench-model-settings.md)。
 
 根CI856项/68文件、生产3项/B0/Web、客户端28项定向、双类型及Web/Electron编译通过；真实DSH和本地API配合合成模型验证四档推理、模型切换及刷新恢复。末次额外截图超时保留，真实模型未验收。生产3162c814/contract0.37/schema030、公开Windows0.10.70未变；未部署、合并或生成安装器。PR135本地材料/512MiB共享仍在独立分支，未混入。
 

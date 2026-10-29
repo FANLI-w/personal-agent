@@ -2359,3 +2359,5 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 根冻结安装/最终CI856项68文件、生产3项/B0/Web、客户端28项定向、双类型、Web/Electron编译通过。隔离真实Electron/DSH/本地API配合合成模型，菜单、四档真实参数、刷新恢复及Flash/Pro实际请求通过。额外截图超时、旧编译API及计数/标题请求等测试环境失败保留，原生附加字段拒绝已通过官方配置修正。证据Git外workbench-model-settings-20261029，详见docs/development/workbench-model-settings.md。
 
 需先配套部署后台再发客户端；contract0.37/schema030无迁移，与PR135的0.38分块接口整合时须保留双方。生产3162c814、公开Windows0.10.70保持，未合并、部署或打包发布，真实模型及用户客户端未操作。
+
+交付回执：产品ea364d6已推送fix/workbench-model-settings并创建PR136（https://github.com/luoyan96/personal-agent/pull/136）。再次fetch确认main仍7f8775f；最终根CI及客户端编译/双类型退出0、494份Markdown检查通过。隔离API/Vite/DSH已停止，原用户客户端未动；远端CI以PR状态为准。
