@@ -2375,3 +2375,5 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 真实本地HTTP/SQLite/磁盘的300 MiB合成原件上传、重启续传、重复完成唯一性、流式下载hash一致和旧列表小文件兼容通过。最终根CI861项/68文件、生产3项/B0/Web通过；37项DSH加12项账号/服务/附件、9项资料原件下载共58项客户端检查及双类型通过。隔离Edge15项任务材料流程加3项资料页导入/断网续传检查通过；DSH/原生选择器为替身，合成PPT只验字节流转，不代表Office文稿或真实模型验收。
 
 Git外证据D:/deepseek-agent/.runtime/large-originals-20261029。首次Electron22非Readable类型、VM跨上下文对象断言、测试关闭连接超时、旧Web contract0.37断言及UI含图标的按钮定位问题已修正并保留失败日志。上传暂存/磁盘预算、旧客户端可见性、前滚回退条件及实际边界见docs/development/large-originals.md。继续通过PR135交付，后台升级、客户端打包、合并与公开发布分开处理。
+
+大文件交付回执：产品bb1dd55已推送同一PR135，PR标题和说明已按最终本地材料/大文件共享范围重写。最终Web/Electron编译通过（client-build-final2.log），495份Markdown内容检查通过；隔离QA服务已关闭。代码合并、0.38后台部署与新安装包仍待分别安排，未改变正在运行的客户端。
