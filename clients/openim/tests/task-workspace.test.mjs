@@ -392,3 +392,115 @@ test('Electron CommonJS bundle validates canonical work context without requirin
   assert.equal(WorkContext.safeParse({...policy,privateMemoryAllowed:'yes'}).success, false);
   assert.equal(WorkContext.safeParse({...policy,unexpected:'not admitted'}).success, false);
 });
+
+test('local files stay local, same-content shared material reuses the copy, and the prompt lists provenance not file contents', async t => {
+  const f = await fixture(t), dir = path.join(f.root, 'chosen-work');
+  await fs.mkdir(dir);
+  await fs.writeFile(path.join(dir, 'existing.csv'), 'actual,local\n1,2');
+  const b = await f.store.open(context, dir), local = path.join(f.root, 'input.txt');
+  await fs.writeFile(local, 'LOCAL_CONTENT_NOT_A_MEMORY');
+  await f.store.importLocal(context, [local, path.join(dir, 'existing.csv')]);
+  const recorded = (await f.store.load(context)).localMaterials;
+  assert.equal(recorded.length, 2);
+  assert.equal(recorded[1].localName, 'existing.csv');
+  const bytes = Buffer.from('LOCAL_CONTENT_NOT_A_MEMORY');
+  const source = await f.store.importSource(context, {kind:'library',id:'library-source',version:2,filename:'different-name.txt',sha256:createHash('sha256').update(bytes).digest('hex')}, bytes);
+  assert.equal(source.localName, recorded[0].localName);
+  assert.equal((await fs.readdir(b.directory)).length, 2);
+  await f.store.prompt(context, 'Make a presentation using the materials', 'local_material_request', workInput());
+  const prompt = f.calls.filter(c => c.method === 'session/prompt').at(-1).args.content[0].text;
+  assert(prompt.includes('existing.csv')); assert(prompt.includes('library-source'));
+  assert(!prompt.includes('LOCAL_CONTENT_NOT_A_MEMORY'));
+  assert(!f.calls.some(c => c.method.includes('upload')));
+  await fs.writeFile(path.join(b.directory, source.localName), 'edited');
+  const second = await f.store.importSource(context, {kind:'library',id:'another-source',version:1,filename:'original.txt',sha256:recorded[0].sha256}, bytes);
+  assert.notEqual(second.localName, source.localName);
+  assert.equal(await fs.readFile(path.join(b.directory, source.localName), 'utf8'), 'edited');
+});
+
+const archiveSelection = (names, overrides = {}) => ({requestId:'archive_request_fixture_001', collectionId:'collection_synthetic', collectionName:'Synthetic shared files', scope:'lab_shared', expectedCollectionVersion:1, names, ...overrides});
+test('archive lost responses replay original PPT bytes and keys after restart; changed drafts do not create duplicates', async t => {
+  const f=await fixture(t), b=await f.store.open(context);
+  await fs.writeFile(path.join(b.directory,'plan.pptx'),'synthetic ppt bytes');
+  await fs.writeFile(path.join(b.directory,'data.xlsx'),'synthetic workbook');
+  const selection=archiveSelection(['plan.pptx','data.xlsx']), accepted=new Map();
+  let version=1, lose=true;
+  const post=async(url,body,key)=>{
+    routes.importResearchFile.request.parse({params:{id:selection.collectionId},query:{},body,headers:{'Idempotency-Key':key}});
+    assert.equal(url,'/api/v1/research-library/collections/collection_synthetic/files');
+    if(accepted.has(key)){ assert.equal(JSON.stringify(body),accepted.get(key).body); return accepted.get(key).result; }
+    assert.equal(body.expectedCollectionVersion,version++);
+    assert(!body.metadata.note.includes(b.directory));
+    assert(body.mediaType.includes('openxmlformats'));
+    const result={id:'saved-'+version,version:1,sha256:createHash('sha256').update(Buffer.from(body.contentBase64,'base64')).digest('hex'),extraction:'original_only'};
+    accepted.set(key,{body:JSON.stringify(body),result});
+    if(lose){lose=false;throw Error('lost response');}
+    return result;
+  };
+  await assert.rejects(f.store.archive(context,selection,async()=>{},post),/lost response/);
+  await fs.writeFile(path.join(b.directory,'plan.pptx'),'changed after first upload');
+  await assert.rejects(f.restart().archive(context,{...selection,names:['data.xlsx']},async()=>{},post),/原归档/);
+  const result=await f.restart().archive(context,selection,async()=>{},post);
+  assert.equal(result.status,'archived');assert.equal(result.files.length,2);assert.equal(accepted.size,2);
+  assert.equal(result.files[0].sha256,createHash('sha256').update('synthetic ppt bytes').digest('hex'));
+  await f.restart().archive(context,selection,async()=>{},post);assert.equal(accepted.size,2);
+});
+
+test('archive checks current collection permission on replay and only rebases a definite version rejection', async t => {
+  const f=await fixture(t),b=await f.store.open(context);
+  await fs.writeFile(path.join(b.directory,'result.md'),'synthetic result');
+  const s=archiveSelection(['result.md']);let reject=true,calls=0;const keys=[];
+  const post=async(_url,body,key)=>{calls++;keys.push(key);if(reject)throw Object.assign(Error('conflict'),{code:'VERSION_CONFLICT'});assert.equal(body.expectedCollectionVersion,5);return{id:'saved',version:1,sha256:'a'.repeat(64),extraction:'text_extracted'};};
+  await assert.rejects(f.store.archive(context,s,async()=>{},post),/conflict/);
+  assert.equal((await f.store.load(context)).archive.versionConflict,true);
+  await assert.rejects(f.restart().archive(context,s,async()=>{throw Error('revoked');},post),/revoked/);assert.equal(calls,1);
+  reject=false;
+  await f.restart().archive(context,{...s,expectedCollectionVersion:5},async()=>{},post,true);
+  assert.equal(calls,2);assert.notEqual(keys[0],keys[1]);
+  const next=archiveSelection(['result.md'],{requestId:'archive_request_fixture_002',expectedCollectionVersion:6});
+  await assert.rejects(f.store.archive(context,next,async()=>{},post,true),/原归档/);
+});
+
+test('archive rejects traversal, links and oversize files before any upload, and does not turn local files into submitted tasks', async t => {
+  const f=await fixture(t),b=await f.store.open(context);let uploads=0;
+  const post=async()=>{uploads++;return{};};
+  await assert.rejects(f.store.archive(context,archiveSelection(['../private.txt']),async()=>{},post),/路径/);
+  const outside=path.join(f.root,'outside-archive');await fs.mkdir(outside);await fs.writeFile(path.join(outside,'private.txt'),'private');
+  await fs.symlink(outside,path.join(b.directory,'linked'),'junction');
+  await assert.rejects(f.store.archive(context,archiveSelection(['linked/private.txt']),async()=>{},post),/链接/);
+  const oversized=await fs.open(path.join(b.directory,'large.pptx'),'w');await oversized.truncate(512*1048576+1);await oversized.close();
+  await assert.rejects(f.store.archive(context,archiveSelection(['large.pptx']),async()=>{},post),/512 MiB/);
+  assert.equal(uploads,0);assert.equal((await f.store.load(context)).delivery,undefined);
+  f.deny();await assert.rejects(f.store.archive(context,archiveSelection(['large.pptx']),async()=>{},post),/expired/);
+});
+
+test('large originals use bounded chunks and persisted snapshots across interruption and lost completion acknowledgement',async t=>{
+  const f=await fixture(t),b=await f.store.open(context),original=Buffer.alloc(11*1048576+3,81);
+  const file=path.join(b.directory,'large.pptx');await fs.writeFile(file,original);
+  const selected=archiveSelection(['large.pptx']);const parts=new Map();let manifest,stop=true,lose=true,published,chunkCalls=0;
+  const post=async(url,body,key)=>{
+    if(url.endsWith('/uploads')){manifest??=structuredClone(body);assert.equal(JSON.stringify(body),JSON.stringify(manifest));return{chunkBytes:1048576,receivedParts:[...parts.keys()]};}
+    if(url.endsWith('/parts')){
+      const bytes=Buffer.from(body.contentBase64,'base64');assert(bytes.length<=1048576);chunkCalls++;
+      parts.set(body.index,bytes);if(body.index===2&&stop){stop=false;throw Error('network interruption');}return{accepted:true};
+    }
+    assert(url.endsWith('/complete'));
+    if(!published){const bytes=Buffer.concat([...parts.entries()].sort((a,b)=>a[0]-b[0]).map(e=>e[1]));assert.deepEqual(bytes,original);published={id:'large',version:1,sha256:createHash('sha256').update(bytes).digest('hex'),extraction:'original_only'};}
+    if(lose){lose=false;throw Error('lost completion');}return published;
+  };
+  await assert.rejects(f.store.archive(context,selected,async()=>{},post),/network interruption/);
+  await fs.writeFile(file,'changed source after snapshot');
+  await assert.rejects(f.restart().archive(context,selected,async()=>{},post),/lost completion/);
+  const calls=chunkCalls;const result=await f.restart().archive(context,selected,async()=>{},post);
+  assert.equal(result.status,'archived');assert.equal(chunkCalls,calls);assert.equal(parts.size,12);
+  assert.equal((await fs.readdir(f.store.root)).filter(n=>n.endsWith('.snapshot')).length,0);
+});
+
+test('local material copies and shared originals larger than 10 MiB remain file based',async t=>{
+  const f=await fixture(t),b=await f.store.open(context),original=Buffer.alloc(51*1048576,29),input=path.join(f.root,'large-local.pptx');
+  await fs.writeFile(input,original);await f.store.importLocal(context,[input]);
+  const saved=await f.store.load(context);assert.equal(saved.localMaterials[0].size,original.length);
+  const source={kind:'library',id:'large_shared',version:1,filename:'shared.pptx',sha256:createHash('sha256').update(original).digest('hex')};
+  const selected=await f.store.importOriginal(context,source,input);assert.equal(selected.localName,saved.localMaterials[0].localName);
+  assert.deepEqual(await fs.readFile(path.join(b.directory,selected.localName)),original);
+});

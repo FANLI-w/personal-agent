@@ -290,7 +290,7 @@ function MaterialBrowser({
             </Button>
           </div>
           {file.size > 10 * 1024 * 1024 && (
-            <p>资料库单文件上限 10 MiB；此原件可另存。</p>
+            <p>此 Skill 素材快捷入口仅处理 10 MiB 内文件；大文件可先另存，再从资料页导入（支持 512 MiB）。</p>
           )}
           {preview?.image && <img src={preview.image} alt={file.path} />}
           {preview?.text !== undefined && <pre>{preview.text}</pre>}

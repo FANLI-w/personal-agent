@@ -49,7 +49,7 @@ it('relays tool-call SSE with owned credentials; rejects anonymous, CSRF, wrong 
   expect((await s.call('local-dsh/completion', input, 0, { origin: 'https://evil.example' })).statusCode).toBe(403)
   expect((await s.call('local-dsh/completion', input, 1)).statusCode).toBe(503)
   expect((await s.call('local-dsh/completion', { ...input, fingerprint: 'stale' })).statusCode).toBe(409)
-  for (const patch of [{ model: 'unauthorized' }, { baseURL: 'http://127.0.0.1' }, { max_tokens: 8193 }, { max_completion_tokens: 8193 }, { store: true }, { tools: [{ type: 'web_search' }] }])
+  for (const patch of [{ model: 'unauthorized' }, { baseURL: 'http://127.0.0.1' }, { max_tokens: 8193 }, { max_completion_tokens: 8193 }, { store: true }, { tools: [{ type: 'web_search' }] }, { output_config: { effort: 'high' } }])
     expect((await s.call('local-dsh/completion', { ...input, request: { ...input.request, ...patch } })).statusCode).toBe(400)
   expect(seen).toHaveLength(0)
   const result = await s.call('local-dsh/completion', { ...input, request: { ...input.request, store: false } })
@@ -60,6 +60,31 @@ it('relays tool-call SSE with owned credentials; rejects anonymous, CSRF, wrong 
   const settings = (await s.call('me/model-configurations')).json().data
   await s.call('me/model-configurations/default', { expectedVersion: settings.version, configurationId: null })
   expect((await s.call('local-dsh/completion', input)).statusCode).toBe(503)
+})
+
+it('preserves native DeepSeek effort and off selections without opening arbitrary output settings', async () => {
+  const seen: any[] = []
+  const s = await setup(async (_url, init) => {
+    seen.push(JSON.parse(String(init?.body)))
+    return new Response('event: message_stop\ndata: {"type":"message_stop"}\n\n', { headers: { 'content-type': 'text/event-stream' } })
+  })
+  const meta = await s.model('deepseek', 'deepseek-flash'), input = s.input(meta)
+  for (const effort of ['low', 'high', 'max']) {
+    const request = { ...input.request, thinking: { type: 'enabled' }, output_config: { effort } }
+    expect((await s.call('local-dsh/completion', { ...input, request })).statusCode).toBe(200)
+    expect(seen.at(-1)).toEqual(request)
+  }
+  const off = { ...input.request, thinking: { type: 'disabled' } }
+  expect((await s.call('local-dsh/completion', { ...input, request: off })).statusCode).toBe(200)
+  expect(seen.at(-1)).toEqual(off)
+  const pro = { ...input.request, model: 'deepseek-v4-pro', thinking: { type: 'enabled' }, output_config: { effort: 'high' } }
+  expect((await s.call('local-dsh/completion', { ...input, request: pro })).statusCode).toBe(200)
+  expect(seen.at(-1)).toEqual(pro)
+  for (const model of ['unauthorized', 'qwen-plus', 'claude-opus'])
+    expect((await s.call('local-dsh/completion', { ...input, request: { ...input.request, model } })).statusCode).toBe(400)
+  for (const output_config of [null, [], 'high', {}, { effort: 'ultra' }, { effort: 'high', format: 'json' }, { effort: ['high'] }])
+    expect((await s.call('local-dsh/completion', { ...input, request: { ...input.request, output_config } })).statusCode).toBe(400)
+  expect(seen).toHaveLength(5)
 })
 
 it('uses Anthropic messages for DeepSeek, redacts provider errors, and applies the per-member rate limit', async () => {

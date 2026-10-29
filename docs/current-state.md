@@ -2,6 +2,25 @@
 
 更新日期：2026-10-29（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## PPT 大文件共享跟进（PR135 待审、后台未部署）
+
+负责人说明PPT常见1–300 MB。PR135继续将共享原件上限由10 MiB改为512 MiB，任务归档/资料页导入分块续传，任务取用逐块落盘校验；本地添加素材取消50 MiB/份和200 MiB/批限制。实测300 MiB合成原件上传、重启续传和下载hash一致，旧客户端的小文件列表保持可解析。详见[实现、兼容与部署要求](development/large-originals.md)。
+
+新增contract0.38.0分块接口，schema030不变；**本次需要配套后台升级**，与下面前批“无需部署”不同。未部署、合并或公开安装包，生产仍3162c814/contract0.37/schema030、Windows公开0.10.70。大原件仅保存原件，自动文字提取/旧验收附件预算保持，真实PPT内容及生产使用仍由负责人验收。
+
+最终根CI861项/68文件、生产3项/B0/Web通过；37项DSH、12项账号/服务/附件及9项资料原件下载共58项客户端检查、双类型及Web/Electron编译通过。300 MiB实际HTTP检查通过；18项隔离页面检查通过。开发证据与失败原因保留在Git外large-originals-20261029，真实DSH/模型/Office内容不在本批验收范围。
+
+## 本地文件、共享资料取用与成果归档（待审）
+
+按负责人“本地文件为主，资料板块做轻量共享”授权，从实际 main/7f8775f 创建独立分支 `feat/local-material-workflow`，产品5b09af7交付[PR135](https://github.com/luoyan96/personal-agent/pull/135)。任务工作页以本地目录为入口，支持原生添加本地素材、按版本取用共享原件、查看工作文件、明确范围后归档选中成果，并从回执定位资料。内容相同且未修改的已有材料复用，归档丢响应可沿原快照/幂等键恢复；归档、任务提交、验收保持独立。详见[功能、使用和验收边界](development/local-material-workflow.md)。
+
+根 CI 855项/68文件、生产3项/B0/Web、客户端46项定向、双类型及Web/Electron编译通过；隔离Edge15项流程检查连接真实本地资料API，但选择器和DSH RPC为合成替身，未验收真实模型或PPT生成。无后台接口/数据库迁移，不需本批部署；未合并、发布或生成安装器，客户端版本及公开0.10.70不变。归档最多5份/单份10MiB，Office仅保存原件，完整限制和Git外证据见说明。原共享开发目录未改动。
+## 工作台命名与原生模型设置（待审、未发布）
+
+2026-10-29，从 main/7f8775f 建立 fix/workbench-model-settings，产品ea364d6交付[PR136](https://github.com/luoyan96/personal-agent/pull/136)，DSH入口/标题改为工作台，任务保持。已知DeepSeek账号改接官方原生适配器，恢复Flash/Pro和Off/Low/High/Max菜单，沿用AcceptCat账号；旧会话兼容路由保留。后台补严格模型名单及output_config.effort转发，须先更新后台再发布客户端。详见[实现与验收](development/workbench-model-settings.md)。
+
+根CI856项/68文件、生产3项/B0/Web、客户端28项定向、双类型及Web/Electron编译通过；真实DSH和本地API配合合成模型验证四档推理、模型切换及刷新恢复。末次额外截图超时保留，真实模型未验收。生产3162c814/contract0.37/schema030、公开Windows0.10.70未变；未部署、合并或生成安装器。PR135本地材料/512MiB共享仍在独立分支，未混入。
+
 ## DSH 三步首版已合并，Windows 0.10.70 已公开
 
 负责人明确批准合并与发布。00:04:00（北京时间）PR133普通合入main/dcffcd01，PR130/131/132随之标记MERGED；合并树与受审head2341933一致，四项GitHub CI全成功。00:35:21公开[稳定Latest v0.10.70](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.70)，Release426880701，标签固定安装器产品a5534b5；四附件远端大小/摘要、未登录Latest、公开更新清单/校验文件及标签指向核验通过。完整安装器366896002字节，SHA256 405ecffd4e6853f279c85ab6772135d96b5933ae1d26e1e825fb43efb99a2f36。

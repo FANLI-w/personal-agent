@@ -22,10 +22,10 @@ async function setup(){
   const db=openDatabase(config.databasePath,true);cleanup.push(()=>db.close());migrate(db);seed(db,'test')
   const accounts=['A','B','C'].map(letter=>({memberId:`member_${letter}`,username:`library_${letter}`,password:randomBytes(24).toString('hex')}))
   await provisionTestAccounts(db,'test',accounts)
-  let app=createServer(config),url=await app.listen({host:'127.0.0.1',port:0});cleanup.push(()=>app.close())
+  let app=createServer(config),url=await app.listen({host:'127.0.0.1',port:0});cleanup.push(()=>{app.server.closeAllConnections();return app.close()})
   const clients:{cookie:string;csrf:string}[]=[]
-  const call=async(name:RouteName,body:unknown=null,params:Record<string,string>={},actor=0,query='',key=randomUUID())=>{
-    const route=routes[name],response=await fetch(url+route.path.replace(/\{(\w+)\}/g,(_,k:string)=>params[k]!)+query,{method:route.method,headers:{origin:config.origin,'content-type':'application/json','idempotency-key':key,...(clients[actor]?{cookie:clients[actor].cookie,'x-csrf-token':clients[actor].csrf}:{})},...(route.method==='GET'?{}:{body:JSON.stringify(body)})})
+  const call=async(name:RouteName,body:unknown=null,params:Record<string,string>={},actor=0,query='',key=randomUUID(),large=true)=>{
+    const route=routes[name],response=await fetch(url+route.path.replace(/\{(\w+)\}/g,(_,k:string)=>params[k]!)+query,{method:route.method,headers:{origin:config.origin,'content-type':'application/json','idempotency-key':key,...(large?{'x-acceptcat-originals':'chunked-v1'}:{}),...(clients[actor]?{cookie:clients[actor].cookie,'x-csrf-token':clients[actor].csrf}:{})},...(route.method==='GET'?{}:{body:JSON.stringify(body)})})
     const bytes=Buffer.from(await response.arrayBuffer()),text=bytes.toString(),value=name==='researchFileContent'&&response.ok?null:JSON.parse(text)
     if(response.ok&&value)route.response.parse(value)
     return {status:response.status,value,text,bytes,cookie:response.headers.get('set-cookie')?.split(';')[0]??'',headers:response.headers}
@@ -41,7 +41,7 @@ async function setup(){
     const c=await collection(id,actor);return ok('importResearchFile',{expectedCollectionVersion:c.version,filename,mediaType,contentBase64:Buffer.from(text).toString('base64'),...extra},{id},actor)
   }
   const own=async(actor=0)=>(await ok('personalConversation',{}, {},actor)).agent.id
-  return {dir,db,config,clients,call,ok,create,collection,upload,own,restart:async()=>{await app.close();app=createServer(config);url=await app.listen({host:'127.0.0.1',port:0})}}
+  return {dir,db,config,clients,call,ok,create,collection,upload,own,streamOriginal:(id:string)=>fetch(url+`/api/v1/research-library/files/${id}/content`,{headers:{cookie:clients[0]!.cookie}}),restart:async()=>{await app.close();app=createServer(config);url=await app.listen({host:'127.0.0.1',port:0})}}
 }
 
 describe('research library actual HTTP, SQLite and original storage',{timeout:30000},()=>{
@@ -213,3 +213,59 @@ describe('research library actual HTTP, SQLite and original storage',{timeout:30
     expect(ranked[0].text).not.toContain('hidden high relevance')
   })
 })
+
+describe('large original chunk transport', {timeout:180000},()=>{
+  it('resumes immutable chunks across restart, publishes once and streams the complete original without breaking old lists',async()=>{
+    const s=await setup(),c=await s.create(),uploadId=randomUUID(),part=Buffer.alloc(1048576,73);
+    const count=Number(process.env.ACCEPTCAT_LARGE_FILE_MIB||11);expect(count).toBeGreaterThan(10);expect(count).toBeLessThanOrEqual(512);
+    const digest=createHash('sha256');for(let i=0;i<count;i++)digest.update(part);const expected=digest.digest('hex');
+    const begin={uploadId,filename:'synthetic-large.pptx',mediaType:'application/vnd.openxmlformats-officedocument.presentationml.presentation',byteLength:part.length*count,scope:'owner_private',sha256:expected};
+    await s.ok('beginResearchUpload',begin,{id:c.id});
+    const chunk=(index:number)=>({uploadId,index,contentBase64:part.toString('base64')});
+    expect((await s.call('putResearchUploadPart',chunk(0),{id:c.id},1)).status).toBe(404);
+    await s.ok('putResearchUploadPart',chunk(0),{id:c.id});await s.ok('putResearchUploadPart',chunk(0),{id:c.id});
+    expect((await s.call('putResearchUploadPart',{...chunk(0),contentBase64:Buffer.alloc(part.length,74).toString('base64')},{id:c.id})).status).toBe(409);
+    expect((await s.call('completeResearchUpload',{uploadId,expectedCollectionVersion:1},{id:c.id})).status).toBe(409);
+    await s.restart();expect((await s.ok('beginResearchUpload',begin,{id:c.id})).receivedParts).toEqual([0]);
+    for(let i=1;i<count;i++)await s.ok('putResearchUploadPart',chunk(i),{id:c.id});
+    const key=randomUUID(),body={uploadId,expectedCollectionVersion:1};
+    const file=await s.ok('completeResearchUpload',body,{id:c.id},0,'',key);
+    expect(file).toMatchObject({byteLength:part.length*count,sha256:expected,extraction:'original_only'});
+    await s.restart();expect((await s.ok('completeResearchUpload',body,{id:c.id},0,'',key)).id).toBe(file.id);
+    expect((await s.ok('researchFiles',null,{id:c.id})).length).toBe(1);
+    expect((await s.call('researchFiles',null,{id:c.id},0,'',randomUUID(),false)).value.data).toEqual([]);
+    const response=await s.streamOriginal(file.id);expect(response.status).toBe(200);
+    const downloaded=createHash('sha256');let size=0;for await(const bytes of response.body as any){size+=bytes.length;downloaded.update(bytes);}
+    expect(size).toBe(part.length*count);expect(downloaded.digest('hex')).toBe(expected);
+    expect((await s.call('researchFileContent',null,{id:file.id},1)).status).toBe(404);
+    expect(s.db.prepare('SELECT count(*) n FROM research_file_versions WHERE file_id=?').get(file.id)!.n).toBe(1);
+    expect(readdirSync(join(s.config.blobRoot,'.uploads'))).toEqual([]);
+    await s.upload(c.id,'small original survives','small.txt');
+    expect((await s.call('researchFiles',null,{id:c.id},0,'',randomUUID(),false)).value.data.map((f:any)=>f.filename)).toEqual(['small.txt']);
+  });
+  it('rechecks scope and optimistic versions after chunks, preserving staged data for an explicit retry',async()=>{
+    const s=await setup(),c=await s.create(),uploadId=randomUUID(),bytes=Buffer.from('synthetic original');
+    const begin={uploadId,filename:'synthetic.pptx',mediaType:'application/octet-stream',byteLength:bytes.length,scope:'owner_private'};
+    await s.ok('beginResearchUpload',begin,{id:c.id});
+    const shared=await s.ok('updateResearchCollection',{expectedVersion:1,settings:{name:c.name,scope:'lab_shared'}},{id:c.id});
+    expect((await s.call('putResearchUploadPart',{uploadId,index:0,contentBase64:bytes.toString('base64')},{id:c.id})).status).toBe(409);
+    const restored=await s.ok('updateResearchCollection',{expectedVersion:shared.version,settings:{name:c.name,scope:'owner_private'}},{id:c.id});
+    await s.ok('putResearchUploadPart',{uploadId,index:0,contentBase64:bytes.toString('base64')},{id:c.id});
+    expect((await s.call('completeResearchUpload',{uploadId,expectedCollectionVersion:1},{id:c.id})).value.error.code).toBe('VERSION_CONFLICT');
+    const saved=await s.ok('completeResearchUpload',{uploadId,expectedCollectionVersion:restored.version},{id:c.id});
+    expect((await s.call('researchFileContent',null,{id:saved.id})).bytes).toEqual(bytes);
+  });
+  it('rejects wrong part lengths, mismatched hashes, excessive size, missing credentials and changed upload manifests',async()=>{
+    const s=await setup(),c=await s.create(),uploadId=randomUUID();
+    const begin={uploadId,filename:'synthetic.pptx',mediaType:'application/octet-stream',byteLength:4,sha256:'a'.repeat(64),scope:'owner_private'};
+    expect((await s.call('beginResearchUpload',begin,{id:c.id},99)).status).toBe(401);
+    expect((await s.call('beginResearchUpload',{...begin,byteLength:512*1048576+1},{id:c.id})).status).toBe(400);
+    await s.ok('beginResearchUpload',begin,{id:c.id});
+    expect((await s.call('beginResearchUpload',{...begin,filename:'changed.pptx'},{id:c.id})).status).toBe(409);
+    expect((await s.call('putResearchUploadPart',{uploadId,index:0,contentBase64:'eA=='},{id:c.id})).status).toBe(400);
+    await s.ok('putResearchUploadPart',{uploadId,index:0,contentBase64:Buffer.from('abcd').toString('base64')},{id:c.id});
+    expect((await s.call('completeResearchUpload',{uploadId,expectedCollectionVersion:1},{id:c.id})).status).toBe(400);
+    expect((await s.ok('researchFiles',null,{id:c.id})).length).toBe(0);
+    expect(readdirSync(s.config.blobRoot).filter(n=>n.endsWith('.upload'))).toEqual([]);
+  });
+});

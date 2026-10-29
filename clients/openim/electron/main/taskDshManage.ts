@@ -1,8 +1,9 @@
 import { createRequire } from 'node:module';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, unlink, open } from 'node:fs/promises';
 import { parseImportedSkill } from '@research-agent-platform/research-skills/import';
 import type { WorkInputs, HandoffInput } from '../../../../integrations/deepseek-harness/desktop/work-memory';
-import { app, BrowserWindow, dialog, ipcMain, net } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, net, shell } from "electron";
+import type { ArchiveSelection } from '../../../../integrations/deepseek-harness/desktop/material-archive';
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { authority } from "./localFolderManage";
@@ -36,6 +37,7 @@ export function registerTaskDshBridge(
     await c.account.valid();
     return new Promise((resolve, reject) => {
       const req = c.account.request(url, body === undefined ? "GET" : "POST");
+      req.setHeader('X-AcceptCat-Originals','chunked-v1');
       if (body !== undefined) {
         req.setHeader("Content-Type", "application/json");
         req.setHeader("X-CSRF-Token", c.account.csrf);
@@ -44,7 +46,7 @@ export function registerTaskDshBridge(
       const timer = setTimeout(() => {
         req.abort();
         reject(Error("任务服务请求超时，请重试原操作。"));
-      }, 30000);
+      }, 120000);
       const fail = (e: Error) => {
         clearTimeout(timer);
         reject(e);
@@ -92,6 +94,22 @@ export function registerTaskDshBridge(
       });
       req.end(body === undefined ? undefined : JSON.stringify(body));
     });
+  }
+  async function downloadOriginal(c:Connection,url:string,destination:string,expected:number) {
+    if(!Number.isSafeInteger(expected)||expected<1||expected>512*1024*1024)throw Error('共享原件大小不受支持。');
+    await c.account.valid();
+    const file=await open(destination,'wx');
+    try {for(let offset=0;offset<expected;offset+=1048576){
+      const length=Math.min(1048576,expected-offset);
+      const bytes=await business(c,url+`&offset=${offset}&length=${length}`,undefined,undefined,true);
+      if(bytes.length!==length)throw Error('原件未完整下载，请重试。');
+      await file.writeFile(bytes);
+    }} finally {await file.close();}
+  }
+  async function requireLargeOriginals(c:Connection){
+    const health=await business(c,'/api/v1/health/ready');
+    if(health?.status!=='ok'||!/^0\.(\d+)\.\d+$/.test(health.contractVersion)||Number(health.contractVersion.split('.')[1])<38)
+      throw Error('当前后台尚未支持大文件共享，请更新配套后台至 0.38 或更高版本；本地工作仍可继续。');
   }
   async function authorized(
     event: Electron.IpcMainInvokeEvent,
@@ -343,6 +361,45 @@ export function registerTaskDshBridge(
     const a = await authorized(event, target);
     return a.store.status(target);
   });
+  ipcMain.handle('task-dsh-add-local', async (event, target: TaskTarget) => {
+    const a = await authorized(event, target, true);
+    await a.coordinator.idle(target);
+    const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
+      title: '添加本地素材（仅复制到此任务，不上传）', properties: ['openFile', 'multiSelections'],
+    });
+    if (result.canceled || !result.filePaths.length) return false;
+    await authorized(event, target, true);
+    await a.c.account.valid();
+    await a.coordinator.idle(target);
+    if ((await a.store.status(target))?.phase === 'running') throw Error('请等本轮结束后添加素材。');
+    await a.store.importLocal(target, result.filePaths);
+    return true;
+  });
+  ipcMain.handle('task-dsh-reveal', async (event, target: TaskTarget, name?: string) => {
+    const a = await authorized(event, target), b = await a.store.load(target);
+    if (!b) throw Error('请先选择本机工作文件夹。');
+    const file = name === undefined ? b.directory : await a.store.filePath(b, name);
+    await a.c.account.valid();
+    if (name !== undefined) shell.showItemInFolder(file);
+    else { const error = await shell.openPath(file); if (error) throw Error('工作文件夹暂时无法打开，请检查目录是否仍然存在。'); }
+  });
+  ipcMain.handle('task-dsh-archive', async (event, target: TaskTarget, selection: ArchiveSelection, rebase = false) => {
+    // A current full task reader may archive their own local workspace after submission; collection write ACL is separate.
+    const a = await authorized(event, target);
+    await a.coordinator.idle(target);
+    if ((await a.store.status(target))?.phase === 'running') throw Error('请等本轮结束后核对成果再归档。');
+    const checkCollection = async () => {
+      await authorized(event, target);
+      const list = await business(a.c, '/api/v1/research-library/collections?scope=mine&limit=100');
+      const collection = list.find((c: any) => c.id === selection?.collectionId);
+      if (!collection?.owned || collection.status !== 'available' || collection.externalSource)
+        throw Error('请选择本人可写的普通资料集合。');
+      if (collection.scope !== selection.scope) throw Error('集合共享范围已变化，请核对原归档及集合设置。');
+    };
+    let largeReady=false;
+    return a.store.archive(target, selection, checkCollection,
+      async(url, body, key) => {if(url.includes('/uploads')&&!largeReady){await requireLargeOriginals(a.c);largeReady=true;}return business(a.c,url,body,key);}, rebase);
+  });
   ipcMain.handle(
     "task-dsh-prompt",
     async (event, target: TaskTarget, text: string, requestId: string) => {
@@ -377,6 +434,16 @@ export function registerTaskDshBridge(
     ) => {
       const a = await authorized(event, target, true),
         s = await source(a.c, selected, target);
+      await a.coordinator.idle(target);
+      if(s.metadata.byteLength>10485760) {
+        await requireLargeOriginals(a.c);
+        const temporary=path.join(a.store.root,randomUUID()+'.download');
+        try {
+          await downloadOriginal(a.c,s.url,temporary,s.metadata.byteLength);
+          await source(a.c,selected,target);await authorized(event,target,true);await a.coordinator.idle(target);
+          return await a.store.importOriginal(target,{...selected,sha256:s.metadata.sha256,filename:s.metadata.filename},temporary);
+        } finally {await unlink(temporary).catch(()=>{});}
+      }
       const bytes = await business(a.c, s.url, undefined, undefined, true);
       await source(a.c, selected, target);
       await authorized(event, target, true);

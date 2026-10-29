@@ -176,6 +176,9 @@ const Api: IElectronAPI = {
   getVersion: () => process.version,
   getPlatform,
   localDsh: {
+      taskAddLocal: target => ipcRenderer.invoke('task-dsh-add-local', target),
+      taskReveal: (target, name) => ipcRenderer.invoke('task-dsh-reveal', target, name),
+      taskArchive: (target, selection, rebase) => ipcRenderer.invoke('task-dsh-archive', target, selection, rebase),
       taskOpen: (target, pick) => ipcRenderer.invoke('task-dsh-open', target, pick),
       taskStatus: (target) => ipcRenderer.invoke('task-dsh-status', target),
       taskAbandonPending: target => ipcRenderer.invoke('task-dsh-abandon-pending',target),
