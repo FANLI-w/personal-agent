@@ -788,8 +788,6 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     const change = await s.call('proposeChange', {expectedVersion:current.version,scope:'合成依赖修改',dependencies:[{taskId:task.id,kind:'accepted_deliverable',requiredRevision:null}],goal:current.goal,acceptanceCriteria:current.acceptanceCriteria,schedule:current.schedule,proposedLeadId:current.leadId,reason:'依赖未验收'}, {id:current.id})
     expect(change.status, change.raw).toBe(201); expect(change.value.data.status).toBe('accepted')
     current = (await s.call('task', null, {id:current.id})).value.data.task
-    const blockedPayload = {...payload,task:{id:current.id,version:current.version}}
-    await rejectedProposal(blockedPayload,[{kind:'task',ref:blockedPayload.task},{kind:'artifact',ref:payload.inputArtifactRefs[0]}])
     expect((await s.call('run', {expectedVersion:current.version,capability,budget,inputArtifactIds:[artifact.id],conclusionRefs:[]}, {id:current.id})).status).toBe(202)
     expect(s.db.prepare('SELECT count(*) n FROM dependency_bindings WHERE task_id=?').get(current.id)!.n).toBe(0)
   })

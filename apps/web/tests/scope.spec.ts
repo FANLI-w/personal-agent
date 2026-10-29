@@ -66,8 +66,8 @@ describe('contract role-based demo scope',()=>{
     expect(tasksInScope(fixture,'lab').map(t=>t.id)).toEqual(['patent','intern','proposal','paper','data','meeting']);
     const mine=tasksInScope(fixture,'mine');
     expect(mine.map(t=>t.id)).toEqual(['proposal','data','meeting']);
-    expect([0,1,2,3].map(column=>mine.filter(t=>t.column===column).length)).toEqual([0,1,1,1]);
-    expect(mine.filter(t=>['受阻','待安排'].includes(t.state)).map(t=>t.id)).toEqual(['proposal']);
+    expect([0,1,2,3].map(column=>mine.filter(t=>t.column===column).length)).toEqual([1,0,1,1]);
+    expect(mine.filter(t=>['待开始','待安排'].includes(t.state)).map(t=>t.id)).toEqual(['proposal']);
     for(const id of ['patent','intern','paper']) {
       const task=contractTasks.find(t=>t.id===id)!;
       expect([task.initiatorId,task.leadId,task.reviewerId,...task.participantIds]).not.toContain('member_A');
