@@ -58,13 +58,6 @@ export function teamNextStep(task: TeamTask, viewerId?: string): string {
   const full = isFullTask(task) ? task : undefined;
   const isLead = !!viewerId && full?.leadId === viewerId;
   const isReviewer = !!viewerId && full?.reviewerId === viewerId;
-  if (status === "blocked" && full) {
-    const support = full.blocker?.requestedAction;
-    if (!viewerId) return support || "说明阻碍，协调所需支持";
-    if (full.blocker?.requestedMemberId === viewerId)
-      return support ? `这一步需要你协助：${support}` : "看看阻碍说明，帮助确认下一步";
-    return support ? `当前需要的支持：${support}` : "当前有阻碍，可以在详情里说明需要的帮助";
-  }
   if (status === "in_review")
     return !viewerId || isReviewer ? "审阅实际交付，指出已解决的问题和具体修改建议" : "成果已提交，等待审阅意见；可以先查看这一版内容";
   if (status === "changes_requested")

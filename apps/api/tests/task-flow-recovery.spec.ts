@@ -10,7 +10,6 @@ import { routes } from '@research-agent-platform/contracts'
 import type { PlanModel, RequestFor, ResponseFor, RouteName } from '@research-agent-platform/contracts'
 import { openDatabase, migrate, seed, transaction } from '../src/database.js'
 import { provisionTestAccounts, passwordHash } from '../src/auth.js'
-import { Collaboration } from '../src/collaboration.js'
 
 const origin = 'http://127.0.0.1:4173'
 const schedule = { suggested: null, hardDeadline: null, committed: null, estimatedHumanHours: null, checkpoint: null }
@@ -125,7 +124,7 @@ async function upload(taskId:string, client=clients.B, text='Synthetic attachmen
 async function download(id:string,client:Client) {return fetch(new URL(routes.content.path.replace('{id}',id),address),{headers:{cookie:client.cookie}})}
 
 describe('safe task recovery',()=>{
-  it('does not acknowledge transitive evidence changes or restore old downstream submissions',async()=>{
+  it('preserves downstream submissions when upstream evidence changes',async()=>{
     const u=item('self','u'),v=item('self','v'),w=item('self','w');v.dependencies=['u'];w.dependencies=['v']
     const {taskIds}=await createConfirmed([u,v,w]);const [up,middle,down]=taskIds as [string,string,string]
     await finish(up);await finish(middle)
@@ -133,42 +132,30 @@ describe('safe task recovery',()=>{
     expect((await command('submit',down,clients.A,{summary:'Old evidence preserved',artifactRefs:[],sources:[]})).status).toBe(201)
     expect((await propose(up,{goal:'Changed upstream premise'})).status).toBe(201)
     await finish(up)
-    const after=await detail(down),between=await detail(middle)
-    expect(after.task.status).toBe('blocked');expect(after.task.blocker!.resumeStatus).toBe('in_review')
+    const after=await detail(down)
     expect(after.deliverables[0]!.summary).toBe('Old evidence preserved')
-    expect(between.dependencyImpacts!.some(i=>!i.acknowledgedBy)).toBe(true)
-    expect(after.dependencyImpacts!.some(i=>i.kind==='changed'&&!i.acknowledgedBy)).toBe(true)
-    expect(after.dependencyImpacts!.some(i=>i.acknowledgedBy==='system')).toBe(false)
-    expect((await command('resume',down,clients.A)).value.error?.code).toBe('DEPENDENCY_BLOCKED')
+    expect(after.dependencyImpacts!.some(i=>i.kind==='changed')).toBe(true)
   })
 
-  it.each(['invitation','claim'] as const)('keeps %s dependency revisions unbound until work starts and allows explicit reassessment',async(allocation)=>{
+  it.each(['invitation','claim'] as const)('binds %s dependency revisions only when prerequisites are complete',async(allocation)=>{
     const u=item('self','u'),v=item('self','v'),d=item(allocation,'d');d.dependencies=['u','v']
     const {taskIds}=await createConfirmed([u,v,d]);const [first,second,down]=taskIds as [string,string,string]
     await finish(first)
     if(allocation==='invitation')await accept(down)
     else {const offer=await request('task',{client:clients.B,params:{id:down}});if('task' in offer.value.data)throw new Error('Expected claim summary');expect((await request('claim',{client:clients.B,params:{id:down},body:{expectedVersion:offer.value.data.version}})).status).toBe(200)}
     expect(db.prepare('SELECT * FROM dependency_bindings WHERE task_id=?').all(down)).toHaveLength(0)
-    const c=new Collaboration(db,{id:'member_B',labId:'lab_synthetic',csrfHash:'',expiresAt:'9999-12-31T00:00:00Z'})
-    expect(()=>c.coordination.dependenciesReady(c.task(down),true)).toThrow('DEPENDENCY_BLOCKED')
-    expect(db.prepare('SELECT * FROM dependency_bindings WHERE task_id=?').all(down)).toHaveLength(0)
-    expect((await propose(first,{goal:'Updated first dependency'})).status).toBe(201)
-    await finish(first);await finish(second)
-    const after=await detail(down,clients.B)
-    expect(after.task.status).toBe('blocked')
-    expect((await command('acknowledgeImpacts',down,clients.B,{impactIds:after.dependencyImpacts!.filter(i=>!i.acknowledgedBy).map(i=>i.id),comment:'Explicitly reviewed the new evidence'})).status).toBe(200)
-    expect((await command('resume',down,clients.B)).status).toBe(200)
-    expect(db.prepare('SELECT revision FROM dependency_bindings WHERE task_id=? AND upstream_id=?').get(down,first)!.revision).toBe(2)
     expect((await command('start',down,clients.B)).status).toBe(200)
+    expect(db.prepare('SELECT revision FROM dependency_bindings WHERE task_id=? AND upstream_id=?').get(down,first)!.revision).toBe(1)
+    expect(db.prepare('SELECT revision FROM dependency_bindings WHERE task_id=? AND upstream_id=?').get(down,second)).toBeUndefined()
   })
 
-  it.each(['invitation','claim'] as const)('auto-recovers an untouched %s only after all first-time prerequisites are accepted',async(allocation)=>{
+  it.each(['invitation','claim'] as const)('accepts %s with unfinished prerequisites and binds on start',async(allocation)=>{
     const u=item('self','u'),v=item('self','v'),d=item(allocation,'d');d.dependencies=['u','v']
     const {taskIds}=await createConfirmed([u,v,d]);const [first,second,down]=taskIds as [string,string,string]
     if(allocation==='invitation')await accept(down)
     else {const offer=await request('task',{client:clients.B,params:{id:down}});if('task' in offer.value.data)throw new Error('Expected claim summary');expect((await request('claim',{client:clients.B,params:{id:down},body:{expectedVersion:offer.value.data.version}})).status).toBe(200)}
-    await finish(first);expect((await detail(down,clients.B)).task.status).toBe('blocked')
-    await finish(second);expect((await detail(down,clients.B)).task.status).toBe('ready')
+    expect((await detail(down,clients.B)).task.status).toBe('ready')
+    await finish(first);await finish(second)
     expect(db.prepare('SELECT * FROM dependency_bindings WHERE task_id=?').all(down)).toHaveLength(0)
     expect((await command('start',down,clients.B)).status).toBe(200)
     expect(db.prepare('SELECT * FROM dependency_bindings WHERE task_id=?').all(down)).toHaveLength(2)

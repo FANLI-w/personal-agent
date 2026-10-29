@@ -11,7 +11,7 @@ import { usePersonalOperation } from './usePersonalOperation';
 import { useGroupChatRoster, groupContactDescription } from './GroupChatRoster';
 import { useChatTimeline } from './chat-timeline';
 
-export const workStatus:Record<string,string>={awaiting_acceptance:'待负责人承接',ready:'已承接，等待开始',in_progress:'任务进行中',in_review:'成果已提交，待验收',completed:'已验收',cancelled:'已取消',blocked:'任务有阻碍',claimed:'设备已领取',running:'本机正在执行',uncertain:'连接中断，结果待核对',finished:'本轮结束，待提交成果',failed:'本轮失败',stopped:'本轮已停止',unavailable:'群成员或来源权限已变化'};
+export const workStatus:Record<string,string>={awaiting_acceptance:'待负责人承接',ready:'已承接，等待开始',in_progress:'任务进行中',in_review:'成果已提交，待验收',completed:'已验收',cancelled:'已取消',claimed:'设备已领取',running:'本机正在执行',uncertain:'连接中断，结果待核对',finished:'本轮结束，待提交成果',failed:'本轮失败',stopped:'本轮已停止',unavailable:'群成员或来源权限已变化'};
 export const useTeamWorkDraft=create<{source?:{conversationId:string;messageId:string;generation:number};choose:(source:{conversationId:string;messageId:string;generation:number})=>void}>((set)=>({choose:source=>set({source})}));
 
 export function TeamWorkPanel({imID}:{imID?:string}){

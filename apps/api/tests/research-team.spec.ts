@@ -95,16 +95,15 @@ describe('research team real HTTP, synthetic accounts and isolated SQLite',{time
     expect((await s.workspace()).value.summary).toMatchObject({accepted:0,awaitingReview:1})
     expect((await s.workspace()).value.data[0].latestDeliverable.review).toBeNull()
   })
-  it('keeps blocked actions and confirmed deadline counts consistent across scope and pagination',async()=>{
+  it('keeps confirmed deadline counts consistent across scope and pagination',async()=>{
     const s=await setup(),due:ScheduleModel={...schedule,hardDeadline:{value:{kind:'date',date:'2000-01-01',timezone:'UTC'},source:'user',confirmed:true}}
-    const p=await s.confirmed([{...item('blocked'),schedule:due},{...item('suggested'),schedule:{...schedule,suggested:{value:{kind:'date',date:'2000-01-01',timezone:'UTC'},source:'suggestion',confirmed:false}}},{...item('cancelled'),schedule:due},item('open','claim')])
-    await s.ok('block',{expectedVersion:1,reason:'Waiting for approved synthetic input',requestedMemberId:'member_A',requestedAction:'Provide approved input'},{id:p.taskIds[0]})
+    const p=await s.confirmed([{...item('overdue'),schedule:due},{...item('suggested'),schedule:{...schedule,suggested:{value:{kind:'date',date:'2000-01-01',timezone:'UTC'},source:'suggestion',confirmed:false}}},{...item('cancelled'),schedule:due},item('open','claim')])
     await s.ok('cancelTask',{expectedVersion:1,reason:'Synthetic cancellation'},{id:p.taskIds[2]})
-    const all=(await s.workspace()).value;expect(all.summary).toMatchObject({total:4,blocked:1,overdue:1,active:1,cancelled:1,awaitingAcceptance:1})
-    expect(all.data.find((row:{task:{id:string}})=>row.task.id===p.taskIds[0])).toMatchObject({overdue:true,nextActions:expect.arrayContaining(['resume']),task:{blocker:{requestedAction:'Provide approved input'}}})
+    const all=(await s.workspace()).value;expect(all.summary).toMatchObject({total:4,overdue:1,active:2,cancelled:1,awaitingAcceptance:1})
+    expect(all.data.find((row:{task:{id:string}})=>row.task.id===p.taskIds[0])).toMatchObject({overdue:true})
     expect(all.data.find((row:{task:{id:string}})=>row.task.id===p.taskIds[2]).overdue).toBe(false)
     const mine=(await s.workspace(1,'?scope=mine&limit=1')).value;expect(mine.data).toEqual([]);expect(mine.summary.total).toBe(0)
-    const publicOnly=(await s.workspace(1,'?scope=lab&limit=1')).value;expect(publicOnly.summary).toMatchObject({total:1,blocked:0,overdue:0,accepted:0})
+    const publicOnly=(await s.workspace(1,'?scope=lab&limit=1')).value;expect(publicOnly.summary).toMatchObject({total:1,overdue:0,accepted:0})
     expect(publicOnly.data[0].task.projection).toBe('claim_summary')
   })
 })

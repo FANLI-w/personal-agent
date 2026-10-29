@@ -290,17 +290,6 @@ export function ResearchTaskPanel({
         .map((a) => (
           <p key={a.id}>已拒绝：{name(a.memberId)}</p>
         ))}
-      {task.blocker && (
-        <Alert
-          type="warning"
-          message={task.blocker.reason}
-          description={`需要${
-            task.blocker.requestedMemberId
-              ? ` ${name(task.blocker.requestedMemberId)} `
-              : ""
-          }${task.blocker.requestedAction}`}
-        />
-      )}
       {allowed("invite") && (
         <details className="research-task-operation">
           <summary>邀请成员承接</summary>
@@ -408,27 +397,6 @@ export function ResearchTaskPanel({
             转交任务
           </Button>
         </details>
-      )}
-      {allowed("resume") && (
-        <Button
-          disabled={busy}
-          onClick={() =>
-            confirm({
-              title: "阻碍已经解决？",
-              okText: "继续任务",
-              content: "恢复后继续此前的任务阶段。",
-              onOk: () =>
-                command(() =>
-                  researchApi("resume", {
-                    params: { id: task.id },
-                    body: { expectedVersion: task.version },
-                  }),
-                ),
-            })
-          }
-        >
-          确认解决并继续
-        </Button>
       )}
       {failure && <Alert type="error" message={failure} />}
       {allowed("start") && (

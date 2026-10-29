@@ -10,7 +10,7 @@ type Command = keyof typeof teamWorkRoutes
 type TeamRow = {id:string;conversation_id:string;source_message_id:string;task_id:string;agent_id:string;owner_id:string;document:string}
 const decode = (v:unknown) => JSON.parse(String(v))
 const active = (phase:string) => ['claimed','running','uncertain'].includes(phase)
-const labels:Record<string,string> = {awaiting_acceptance:'待负责人承接',ready:'已承接，等待设备开始',in_progress:'任务进行中',blocked:'任务有阻碍',in_review:'成果已提交，待验收',completed:'成果已验收',cancelled:'任务已取消',claimed:'设备已领取',running:'本机正在执行',uncertain:'设备中断，结果待核对',finished:'本轮结束，待核对并提交成果',failed:'本轮失败，待处理',stopped:'本轮已停止',unavailable:'群成员或来源权限已变化'}
+const labels:Record<string,string> = {awaiting_acceptance:'待负责人承接',ready:'已承接，等待设备开始',in_progress:'任务进行中',in_review:'成果已提交，待验收',completed:'成果已验收',cancelled:'任务已取消',claimed:'设备已领取',running:'本机正在执行',uncertain:'设备中断，结果待核对',finished:'本轮结束，待核对并提交成果',failed:'本轮失败，待处理',stopped:'本轮已停止',unavailable:'群成员或来源权限已变化'}
 
 function lastExecution(s:ChatService,kind:string,id:string):WorkExecution|null {
   const row=s.db.prepare('SELECT document FROM work_executions WHERE kind=? AND task_id=? ORDER BY rowid DESC LIMIT 1').get(kind,id)
@@ -36,7 +36,7 @@ function teamItem(s:ChatService,row:TeamRow,notify=true):TeamWorkItem {
   let status=String(task.status),canOpen=false
   try {s.c.taskRow(row.task_id);canOpen=true}catch{/* Group membership is not task access. */}
   try {teamAuthority(s,row)}catch{status='unavailable'}
-  if(!['unavailable','in_review','completed','cancelled','awaiting_acceptance','blocked','changes_requested'].includes(status)&&execution)status=execution.phase
+  if(!['unavailable','in_review','completed','cancelled','awaiting_acceptance','changes_requested'].includes(status)&&execution)status=execution.phase
   const deviceOnline=!!s.db.prepare('SELECT 1 FROM work_devices WHERE actor_id=? AND seen_at>?').get(row.owner_id,new Date(s.clock()-45000).toISOString())
   if(notify&&doc.notified!==status){
     const message=s.message(row.conversation_id,{senderContactId:null,origin:'service',text:`${doc.agentName}（${doc.ownerName}的助手） · ${doc.title}：${labels[status]||status}。`,mentions:[],resources:status==='unavailable'?[]:[{kind:'task',ref:{id:row.task_id,version:Number(task.version)}}],actionIds:[],turnId:null})
