@@ -62,6 +62,8 @@ type Props = {
   available: boolean;
   conversationAvailable: boolean;
   full: boolean;
+  /** Hidden keeps the session and the draft alive while another view is in front. */
+  hidden?: boolean;
   focus: number;
   planId?: string;
   requestId?: string;
@@ -106,6 +108,7 @@ function PlanningAgentSession({
   available,
   conversationAvailable,
   full,
+  hidden,
   focus,
   planId: adoptPlan,
   requestId: adoptRequest,
@@ -221,6 +224,10 @@ function PlanningAgentSession({
   useEffect(() => {
     if (full) setExpanded(true);
   }, [full]);
+  useEffect(() => {
+    // Leaving the bar behind another view closes it, so returning starts from the list.
+    if (hidden) setExpanded(false);
+  }, [hidden]);
   useLayoutEffect(() => {
     onExpandedChange(expanded && !full);
     return () => onExpandedChange(false);
@@ -666,8 +673,9 @@ function PlanningAgentSession({
     <section
       className={`planning-agent ${expanded || full ? "is-expanded" : ""} ${
         full ? "is-full" : ""
-      }`}
+      } ${hidden ? "is-hidden" : ""}`}
       aria-label="任务规划 Agent"
+      aria-hidden={hidden || undefined}
     >
       <header className="planning-agent-heading">
         <div>

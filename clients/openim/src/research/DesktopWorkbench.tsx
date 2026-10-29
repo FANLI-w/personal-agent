@@ -164,7 +164,6 @@ export function DesktopWorkbench() {
     contacts = useResearchStore((s) => s.contacts);
   const availability = useWorkspaceAvailability(!relocated);
   const supported = availability.supports(21);
-  const assistantReady = supported && availability.supports(23) && !!actor;
   const read = useResearchRead(
     () => workspaceApi.tasks(filter, cursor),
     `workbench:${filter}:${cursor || ""}`,
@@ -267,10 +266,14 @@ export function DesktopWorkbench() {
     }
   };
   if (relocated) return <Navigate to={relocated} replace />;
+  // A task detail is read-and-act, not a place to start a new plan: the assistant
+  // bar stays on the list so the detail screen keeps a single next action.
+  const detailOpen = tab === "tasks" && !!requestedTask && requestedValid;
+  const assistantBar = !!actor && !detailOpen;
   return (
     <div
       className={`social-workspace workspace-workbench ${
-        planningExpanded ? "is-planning-expanded" : ""
+        planningExpanded && assistantBar ? "is-planning-expanded" : ""
       }`}
     >
       <header className="workspace-heading">
@@ -279,28 +282,17 @@ export function DesktopWorkbench() {
         </div>
         <div className="workspace-heading-actions">
           {tab === "tasks" && (
-            <>
-              <Button
-                type="primary"
-                disabled={!supported}
-                onClick={() => {
-                  setCreating(true);
-                  setFailure("");
-                  setBusy(false);
-                }}
-              >
-                新建任务
-              </Button>
-              {assistantReady && (
-                <Button
-                  type="link"
-                  size="small"
-                  onClick={() => setPlanningLaunch((value) => value + 1)}
-                >
-                  和助手说一句
-                </Button>
-              )}
-            </>
+            <Button
+              type="primary"
+              disabled={!supported}
+              onClick={() => {
+                setCreating(true);
+                setFailure("");
+                setBusy(false);
+              }}
+            >
+              新建任务
+            </Button>
           )}
         </div>
       </header>
@@ -563,6 +555,7 @@ export function DesktopWorkbench() {
       </div>
       {!!actor && (
         <PlanningAgent
+          hidden={detailOpen}
           available={supported && availability.supports(23)}
           conversationAvailable={availability.supports(32)}
           full={tab === "planning" && params.get("panel") !== "scheduled"}

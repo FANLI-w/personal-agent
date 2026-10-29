@@ -3,7 +3,7 @@ import { TaskKnowledgePanel } from './TaskKnowledgePanel';
 import { TaskArchivePanel } from './TaskArchivePanel';
 import { researchScopeLabels } from './research-library-api';
 import { Alert, Button, Checkbox, Input, Select } from "antd";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import type {
   DshTaskState,
   TaskTarget,
@@ -30,16 +30,18 @@ function Section({
   hint,
   open,
   onToggle,
+  nodeRef,
   children,
 }: {
   title: string;
   hint?: string;
   open: boolean;
   onToggle: () => void;
+  nodeRef?: RefObject<HTMLElement>;
   children: ReactNode;
 }) {
   return (
-    <section className="task-work-section" aria-label={title}>
+    <section className="task-work-section" aria-label={title} ref={nodeRef}>
       <button
         type="button"
         className="task-work-section-head"
@@ -75,25 +77,25 @@ export function TaskWorkPage({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [connectionError, setConnectionError] = useState("");
-  const [text, setText] = useState(""),
-    [note, setNote] = useState(""),
+  const [note, setNote] = useState(""),
     [summary, setSummary] = useState(""),
     [preview, setPreview] = useState("");
   const [selected, setSelected] = useState<string[]>([]),
     [collection, setCollection] = useState(""),
     [notice, setNotice] = useState("");
   const flight = useRef(false),
-    request = useRef<{ id: string; text: string }>(),
     noteLoaded = useRef(false);
   const transcript = useRef<HTMLDivElement>(null),
+    materialsRef = useRef<HTMLElement>(null),
+    planRef = useRef<HTMLElement>(null),
     follow = useRef(true);
   useEffect(() => {
     flight.current = false;
     setBusy(false);
     setSection({});
-    setState(undefined); setText(''); setNote(''); setSummary(''); setPreview('');
+    setState(undefined); setNote(''); setSummary(''); setPreview('');
     setSelected([]); setCollection(''); setNotice(''); setError(''); setConnectionError('');
-    request.current = undefined; noteLoaded.current = false;
+    noteLoaded.current = false;
   }, [operation.scope]);
   const detail = useResearchRead(async (signal) => {
     if (kind === "personal") {
@@ -140,6 +142,16 @@ export function TaskWorkPage({
   };
   const toggle = (id: string) =>
     setSection((value) => ({ ...value, [id]: !isOpen(id) }));
+  // Opening a section from the next-step button should also bring it into view.
+  const reveal = (id: "materials" | "plan") => {
+    setSection((value) => ({ ...value, [id]: true }));
+    window.requestAnimationFrame(() =>
+      (id === "materials" ? materialsRef : planRef).current?.scrollIntoView({
+        block: "start",
+        behavior: "smooth",
+      }),
+    );
+  };
   const refresh = async () => {
     if (!bridge?.taskStatus) return;
     const { isCurrent } = operation.capture();
@@ -237,16 +249,16 @@ export function TaskWorkPage({
       // Choosing a folder means starting work: continue in the workbench with this task's context.
       if (isCurrent()) navigate(nativeWorkbenchTaskPath(taskId, kind));
     });
+  // New prompts start in the workbench; here only an unconfirmed request can be retried.
   const send = () =>
     command(async () => {
-      const { isCurrent } = operation.capture();
       const pending = state?.binding.pending;
-      const attempt = pending
-        ? { id: pending.requestId, text: pending.userText || pending.text }
-        : request.current || { id: crypto.randomUUID(), text };
-      request.current = attempt;
-      await bridge!.taskPrompt(target, attempt.text, attempt.id);
-      if (isCurrent()) { request.current = undefined; setText(""); }
+      if (!pending) return;
+      await bridge!.taskPrompt(
+        target,
+        pending.userText || pending.text,
+        pending.requestId,
+      );
     });
   const importFile = (source: {
     kind: "artifact" | "library";
@@ -278,7 +290,7 @@ export function TaskWorkPage({
       : {
           hint: "本轮已结束。核对文件与工具记录，选定成果后提交验收。",
           label: "核对成果并提交",
-          run: async () => setSection((value) => ({ ...value, materials: true })),
+          run: async () => reveal("materials"),
         }
     : !canWork
     ? canStart
@@ -302,7 +314,7 @@ export function TaskWorkPage({
       : {
           hint: "先看下面的安排，确认承接范围后再开始。",
           label: "看安排与验收",
-          run: async () => setSection((value) => ({ ...value, plan: true })),
+          run: async () => reveal("plan"),
         }
     : bridge?.taskOpen
     ? {
@@ -313,7 +325,7 @@ export function TaskWorkPage({
     : {
         hint: "本机执行需要新版 Windows 客户端，安排与验收仍可使用。",
         label: "看安排与验收",
-        run: async () => setSection((value) => ({ ...value, plan: true })),
+        run: async () => reveal("plan"),
       };
   return (
     <section className="task-work-page" aria-label="任务工作页">
@@ -389,8 +401,11 @@ export function TaskWorkPage({
                 if (added && isCurrent()) setNotice('素材已加入本机工作文件夹，未上传到资料服务。');
               })}>添加本地素材</Button>
               <Button disabled={busy} onClick={() => void command(() => bridge!.taskReveal(target))}>打开工作文件夹</Button>
-              <Button onClick={() => setSection((value) => ({ ...value, materials: true }))}>取用共享资料 / 归档成果</Button>
+              <Button onClick={() => reveal("materials")}>取用共享资料 / 归档成果</Button>
             </div>
+            <p className="task-work-muted">
+              本地文件是主要工作材料，补充素材只复制到本机；使用模型时，读取的相关内容可能作为上下文发送。
+            </p>
             <div
               className="task-work-transcript"
               ref={transcript}
@@ -520,32 +535,19 @@ export function TaskWorkPage({
         hint={state ? `${state.files.length} 个文件 · 归档与提交是两件事` : "先建立工作区"}
         open={isOpen("materials")}
         onToggle={() => toggle("materials")}
+        nodeRef={materialsRef}
       >
         <div className="task-work-materials">
-          <h3>本地工作文件夹</h3>
-          <p>本地文件是主要工作材料，DSH 直接在此目录工作。补充素材只复制到本机；使用模型时，读取的相关内容可能作为上下文发送。</p>
-          <p className="task-work-muted">{state?.binding.directory || '尚未选择工作文件夹'}</p>
-          <div className="task-material-actions">
-            {!state ? <>
-              <Button type="primary" disabled={!bridge || busy || !canWork} onClick={() => void openWorkspace(true)}>选择本地工作文件夹</Button>
-              <Button disabled={!bridge || busy || !canWork} onClick={() => void openWorkspace()}>新建空白工作区</Button>
-            </> : <>
-              <Button disabled={busy || !canWork || state.phase === 'running'} onClick={() => void command(async () => {
-                const { isCurrent } = operation.capture();
-                const added = await bridge!.taskAddLocal(target);
-                if (added && isCurrent()) setNotice('素材已加入本机工作文件夹，未上传到资料服务。');
-              })}>添加本地素材</Button>
-              <Button disabled={busy} onClick={() => void command(() => bridge!.taskReveal(target))}>打开工作文件夹</Button>
-              <Button disabled={busy} onClick={() => void command(async () => {})}>刷新文件</Button>
-            </>}
-          </div>
+          {!state && (
+            <p className="task-work-muted">
+              先在「工作」里选择工作文件夹，这里才会列出可归档的成果。
+            </p>
+          )}
           {!!state?.binding.localMaterials?.length && <details><summary>补充的本地素材（仅本机）</summary>
             {state.binding.localMaterials.map(s => <p key={`${s.localName}:${s.sha256}`}>{s.filename} → {s.localName}</p>)}
           </details>}
           <h3>按需取用共享资料</h3>
-          <p>
-            不必先上传本地素材。这里仅将你选定且有权访问的资料版本取到本机；相同内容的已选素材复用，保留各自来源。
-          </p>
+          <p>只把你选定的版本取到本机，不必先上传本地素材。</p>
           {detail.data?.artifacts.map((a) => (
             <div className="task-work-file" key={a.id}>
               <span>
@@ -606,7 +608,7 @@ export function TaskWorkPage({
             </details>
           )}
           <h3>工作文件与成果</h3>
-          <p>勾选要归档或提交的成果；勾选本身不会上传。列表展示最多 100 个文件、子目录至 3 层，完整内容可在工作文件夹查看。</p>
+          <p>勾选要归档或提交的成果，勾选本身不会上传。</p>
           {state?.files.map((f) => (
             <div className="task-work-file" key={f.name}>
               <Checkbox
@@ -645,9 +647,7 @@ export function TaskWorkPage({
           <h3>提交任务验收</h3>
           {kind === 'research' && <p>任务附件支持 TXT/Markdown/CSV/TSV/JSON/PDF/PNG，每份最多 10 MiB。PPT、Word、Excel 原件请先归档，再在成果摘要中注明集合与文件名。</p>}
           {kind === "personal" && (
-            <p>
-              个人任务提交文字摘要；文件可通过上方入口归档。科研任务可提交 TXT/Markdown/CSV/TSV/JSON/PDF/PNG；PPT 等原件请先归档，在摘要中注明集合与文件名。
-            </p>
+            <p>提交文字摘要；PPT、Word、Excel 原件请先归档，在摘要里写明集合与文件名。</p>
           )}
           <Input.TextArea
             aria-label="成果摘要"
@@ -702,6 +702,7 @@ export function TaskWorkPage({
         hint="承接、依赖、交付记录与审阅"
         open={isOpen("plan")}
         onToggle={() => toggle("plan")}
+        nodeRef={planRef}
       >
         {children(async () => {
           setNotice("");
