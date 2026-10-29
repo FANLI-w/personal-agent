@@ -1,6 +1,6 @@
 # 本地文件为主、资料轻量共享：文件与归档
 
-2026-10-29，基于 main/7f8775f，在独立工作副本的 `feat/local-material-workflow` 实现。客户端版本仍为 0.10.70，本批不是新公开版本。原桌面开发目录未改动。
+2026-10-29，基于 main/7f8775f，在独立工作副本的 `feat/local-material-workflow` 实现，产品5b09af7交付[PR135](https://github.com/luoyan96/personal-agent/pull/135)。客户端版本仍为 0.10.70，本批不是新公开版本。原桌面开发目录未改动。
 
 ## 使用流程
 

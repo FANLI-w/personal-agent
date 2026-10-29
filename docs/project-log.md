@@ -2363,3 +2363,5 @@ GitHub直连与既有代理多次TLS超时，保留失败；间歇恢复后fetch
 证据在Git外D:/deepseek-agent/.runtime/local-material-workflow-20261029，含完整日志、ui-results.json和截图。早期夹具投影、定位器空格及预期文案不符的失败记录保留，修正后重跑通过；既有ReactRouter/Antd兼容/焦点警告、隔离IM worker 404和主动注入丢响应500如实记录，未掩盖为生产验证。未使用私人材料/真实账号密钥或操作用户客户端。
 
 无新增后台接口、依赖/锁文件、数据库迁移或DSH升级；contract0.37.0/schema030保持，生产3162c814无需本批部署。客户端版本仍0.10.70，未生成安装器、合并或公开Release。下一步通过PR评审后用真实项目验证本地执行与成果交付，优先按实际需要处理大文件/成果版本，不新建完整知识库。
+
+交付回执：产品5b09af7推送feat/local-material-workflow并创建PR135（https://github.com/luoyan96/personal-agent/pull/135）。GitHub连接器创建返回403，改用本机已登录gh成功；未重复创建。交付前再次fetch确认main仍7f8775f，最终双类型/编译及494份Markdown内容检查通过。远端CI以PR当前状态为准，未据本机检查宣布远端通过。隔离QA服务已停止。
