@@ -158,7 +158,7 @@ export const fixtureContractVersion = contractVersion;
 const statuses: TaskModel["status"][] = [
   "unassigned",
   "unassigned",
-  "blocked",
+  "ready",
   "in_progress",
   "in_review",
   "completed",
@@ -185,15 +185,7 @@ export const contractTasks = content.tasks.map((view, index) =>
     reviewerId: ["member_C", "member_B", "member_A", "member_C", "member_A", "member_A"][index],
     leadId: [null, null, "member_A", "member_C", "member_D", "member_B"][index],
     participantIds: index === 2 ? ["member_B"] : [],
-    blocker:
-      statuses[index] === "blocked"
-        ? {
-            reason: view.note!,
-            requestedMemberId: "member_A",
-            requestedAction: "确认研究主线",
-            resumeStatus: "in_progress",
-          }
-        : null,
+    blocker: null,
     schedule:
       index < 2
         ? unknownSchedule
@@ -244,7 +236,7 @@ const childStatuses: TaskModel["status"][] = [
   "completed",
   "ready",
   "in_progress",
-  "blocked",
+  "changes_requested",
   "unassigned",
 ];
 export const contractSteps = content.steps.map((step, index) =>
@@ -256,15 +248,7 @@ export const contractSteps = content.steps.map((step, index) =>
     goal: step.output,
     status: childStatuses[index],
     leadId: index === 4 ? null : index === 2 ? "member_B" : "member_A",
-    blocker:
-      index === 3
-        ? {
-            reason: "等待研究主线确认及前期成果交付",
-            requestedMemberId: "member_A",
-            requestedAction: "完成前置交付",
-            resumeStatus: "ready",
-          }
-        : null,
+    blocker: null,
     dependencies:
       index === 3
         ? [
