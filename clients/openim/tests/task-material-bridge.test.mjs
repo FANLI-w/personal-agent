@@ -77,7 +77,7 @@ test('native material picker cancels without reading, rechecks navigation after 
   assert.deepEqual(await fs.readdir(path.join(f.root,'work')),[]);
   f.set({hash:'#/workbench?task=synthetic-task',duringPicker:()=>{}});
   assert.equal(await f.call('task-dsh-add-local'),true);assert.equal(f.uploads(),0);
-  await f.call('task-dsh-reveal');assert.equal(f.revealed[0],path.join(f.root,'work'));
+  await f.call('task-dsh-reveal');assert.equal(await fs.realpath(f.revealed[0]),await fs.realpath(path.join(f.root,'work')));
   await assert.rejects(f.call('task-dsh-reveal','../input.txt'),/路径/);
 });
 test('archive IPC enforces writable collection, confirmed sharing scope, idle local host and current account',async t=>{
