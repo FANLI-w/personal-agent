@@ -27,3 +27,13 @@ Mimir、SciencePrism、AgentTeams 尚未安装。下一批集中验证“文献�
 证据在 Git 外 `D:\deepseek-agent\.runtime\dsh-native-files-20261029`。实际官方 DSH＋隔离 Electron 使用合成 PDF/文本/图片；串联界面使用独立合成账号、本机业务 API，不调用真实模型。Browser 插件不可用，采用隔离 Electron/CDP/Playwright 工作流。初次空页面探针超时、引用选择器错误、旧内核解析/语法失败及缺少桌面 API 的界面夹具失败保留，不能计入通过。
 
 无 API/契约/数据库迁移，无需后台部署；生产 contract0.38/schema030、公开 Windows0.10.71保持。真实模型、私人材料、多人双机及安装升级仍由负责人验收。
+
+## 最终交付回执
+
+产品提交 f160ee7，PR141（https://github.com/luoyan96/personal-agent/pull/141）。最终NSIS重新构建通过；一次包含旧路径适配的中间压缩主动中止并留日志，只以 build-win-delivery.log 对应包为准。成品包含新preload、逻辑scheme、聊天getFilePath与任务返回链接，ASAR/更新SHA512核验通过；隔离成品启动、主preload和OpenIM原生SDK初始化通过，不表示真实IM收发已验收。既有electron-log重复initialize警告仍在。
+
+候选：D:\deepseek-agent\.runtime\dsh-native-files-20261029\windows\AcceptCat_0.10.72.exe，405060395字节，SHA256 8b73d92d661f12ed720578f8ef5ac33ea02b3e3cf82825b1655d6044c087c7a7。未代安装、公开发布或更新后台。
+
+实际原生DSH四项检查覆盖PDF canvas、文本阅读、图片解码成功（naturalWidth=16）和模型/推理菜单。13项账号/业务API/原生视图串联通过；Playwright/Edge在1400×900和1024×768验证任务两分类、返回链接、共享资料导航、非空/无框架覆盖层、Console及截图，5项通过。浏览器测试中的DSH桥接为替身，真正的PDF和原生IPC由前述Electron测试验证。浏览器服务超时退出导致首轮连接拒绝，重启隔离夹具后通过；初版PNG夹具有误已换为真实编码位图并补解码断言，未修改产品图片显示逻辑。
+
+客户端39项DSH＋34项桌面回归、双类型通过，最终路径变更后追加16项通过。根862项已通过，共享源码未再改动；最后内容检查和diff检查通过。受测产品f160ee7远端两项Linux和Windows打包通过，Windows Foundation结果以PR实时状态为准；后续交付文档提交只改变记录，不冒充新产品验证。

@@ -2403,3 +2403,5 @@ Git外证据D:/deepseek-agent/.runtime/large-originals-20261029。首次Electron
 负责人要求先恢复原生能力。从main/2d0091c在独立fix/dsh-native-files-workbench开发0.10.72候选。根因是缺File路径桥接、Chromium108自定义资源hostname为空，以及原生PDF新正则语法不受支持；新增隔离preload、逻辑scheme注册、固定Electron43.8.4，未改写DSH源码/发行资产。试过44.7.0但剪贴板类型不兼容，保留失败类型记录。聊天文件上传同步使用webUtils路径，合成文件仍落盘回退。
 
 工作台复用现有待办/进行中及资料入口，任务往返保留ID和kind；关闭抽屉恢复原视图。Mimir/SciencePrism/AgentTeams未安装，不宣称全套科研工作台已完成。根862项/68文件、生产3项/B0/Web、39项DSH、34项桌面回归、双类型与追加16项通过；13项真实DSH+合成账号本地API串联验证PDF、任务抽屉、返回链接、原生目录IPC及退出。真实模型、私人材料和多人体验未测。证据Git外dsh-native-files-20261029，初次探针/旧内核/夹具失败保留；无后台变更、部署或公开发布。详见docs/development/dsh-native-files-workbench.md，安装包与PR回执另补。
+
+交付回执：产品f160ee7，PR141已创建。0.10.72最终安装器405060395字节、SHA256 8b73d92d661f12ed720578f8ef5ac33ea02b3e3cf82825b1655d6044c087c7a7，Git外dsh-native-files-20261029/windows。最终NSIS/六入口/ASAR桥接与更新校验、隔离成品和OpenIM SDK初始化通过；4项原生预览、13项账号原生界面、5项Playwright外壳检查通过。中间旧来源包主动停止压缩，最终重建留证；PNG夹具和服务退出的失败另留。远端f160两Linux及Windows包通过，Windows Foundation待PR状态。无合并、部署、公开Release或代安装。
