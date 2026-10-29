@@ -14,7 +14,7 @@ import { usePersonalOperation } from "./usePersonalOperation";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { taskEventRows } from "./task-dsh-events";
 import "./task-work-page.scss";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { nativeWorkbenchTaskPath } from './workbench-links';
 
 const phases = {
@@ -67,6 +67,7 @@ export function TaskWorkPage({
   onChanged: () => Promise<void>;
 }) {
   const bridge = window.electronAPI?.localDsh;
+  const navigate = useNavigate();
   const target = { taskId, kind },
     operation = usePersonalOperation(true, `task-work:${kind}:${taskId}`);
   const [section, setSection] = useState<Record<string, boolean>>({}),
@@ -233,7 +234,8 @@ export function TaskWorkPage({
     command(async () => {
       const { isCurrent } = operation.capture();
       await bridge!.taskOpen(target, pick);
-      if (isCurrent()) setSection((value) => ({ ...value, work: true }));
+      // Choosing a folder means starting work: continue in the workbench with this task's context.
+      if (isCurrent()) navigate(nativeWorkbenchTaskPath(taskId, kind));
     });
   const send = () =>
     command(async () => {
@@ -265,7 +267,20 @@ export function TaskWorkPage({
         setSection((value) => ({ ...value, plan: true, materials: false }));
       }
     });
-  const next = !canWork
+  // An existing workspace always decides the next step: the work already started.
+  const next = state
+    ? state.phase === "running"
+      ? {
+          hint: "助手正在工作台执行。工具确认和完整轨迹都在工作台完成。",
+          label: "去工作台看进度",
+          run: async () => navigate(nativeWorkbenchTaskPath(taskId, kind)),
+        }
+      : {
+          hint: "本轮已结束。核对文件与工具记录，选定成果后提交验收。",
+          label: "核对成果并提交",
+          run: async () => setSection((value) => ({ ...value, materials: true })),
+        }
+    : !canWork
     ? canStart
       ? {
           hint: "这项任务还没开始。开始后就能在本机文件夹里动手，不需要先上传材料。",
@@ -289,28 +304,16 @@ export function TaskWorkPage({
           label: "看安排与验收",
           run: async () => setSection((value) => ({ ...value, plan: true })),
         }
-    : !state
-    ? bridge?.taskOpen
-      ? {
-          hint: "选择一个已有的工作文件夹就能开始，文件留在本机。",
-          label: "选择本地工作文件夹",
-          run: () => openWorkspace(true),
-        }
-      : {
-          hint: "本机执行需要新版 Windows 客户端，安排与验收仍可使用。",
-          label: "看安排与验收",
-          run: async () => setSection((value) => ({ ...value, plan: true })),
-        }
-    : state.phase === "running"
+    : bridge?.taskOpen
     ? {
-        hint: "正在执行，工具与回复会持续更新。需要确认工具时去工作台同一会话。",
-        label: "查看执行记录",
-        run: async () => setSection((value) => ({ ...value, work: true })),
+        hint: "选择一个已有的工作文件夹就能开始，文件留在本机。",
+        label: "选择本地工作文件夹",
+        run: () => openWorkspace(true),
       }
     : {
-        hint: "本轮已结束。核对文件与工具记录，选定成果后提交验收。",
-        label: "核对成果并提交",
-        run: async () => setSection((value) => ({ ...value, materials: true })),
+        hint: "本机执行需要新版 Windows 客户端，安排与验收仍可使用。",
+        label: "看安排与验收",
+        run: async () => setSection((value) => ({ ...value, plan: true })),
       };
   return (
     <section className="task-work-page" aria-label="任务工作页">
@@ -334,9 +337,6 @@ export function TaskWorkPage({
           <Button type="primary" loading={busy} disabled={!task} onClick={() => void next.run()}>
             {next.label}
           </Button>
-          {!!state && (
-            <Link to={nativeWorkbenchTaskPath(taskId, kind)}>在工作台中查看文件和完整轨迹</Link>
-          )}
         </div>
       </div>
       {(error || detail.error || connectionError) && (
@@ -460,33 +460,25 @@ export function TaskWorkPage({
                 />
               )}
             </div>
-            <div className="task-work-composer">
-              <Input.TextArea
-                aria-label="任务执行要求"
-                rows={3}
-                value={text}
-                maxLength={16000}
-                disabled={!!state.binding.pending || busy || !canWork}
-                placeholder="说明要做什么，以及工作文件夹中要使用的素材；也可按需选入共享资料。"
-                onChange={(e) => {
-                  setText(e.target.value);
-                  request.current = undefined;
-                }}
+            {state.binding.pending && (
+              <Alert
+                type="warning"
+                message="上一条请求结果待核对"
+                description="回执可能丢失。先在工作台核对实际结果，确认没有执行完再按原内容重试，不会重复已完成的部分。"
+                action={
+                  <Button size="small" loading={busy} onClick={() => void send()}>
+                    核对并重试原请求
+                  </Button>
+                }
               />
+            )}
+            <div className="task-work-handoff">
               <Button
                 type="primary"
-                loading={busy}
-                disabled={!canWork || (!text.trim() && !state.binding.pending)}
-                onClick={() => void send()}
+                onClick={() => navigate(nativeWorkbenchTaskPath(taskId, kind))}
               >
-                {state.binding.pending
-                  ? "核对并重试原请求"
-                  : state.phase === "running"
-                  ? "排入下一步"
-                  : "发送"}
+                在工作台继续
               </Button>
-            </div>
-            <div className="task-work-muted">
               {state.phase === "running" && (
                 <Button
                   disabled={busy}
@@ -494,8 +486,12 @@ export function TaskWorkPage({
                 >
                   停止本轮
                 </Button>
-              )}{" "}
-              选择“{state.binding.sessionTitle || task?.title}”会话，可处理工具确认、追问和查看完整轨迹。
+              )}
+              <span className="task-work-muted">
+                {state.phase === "running"
+                  ? "助手正在工作台执行。工具确认、追问和完整轨迹都在工作台完成。"
+                  : "任务背景、目标、资料版本和工作目录会一起带过去，不需要再复述一遍。"}
+              </span>
             </div>
             <details>
               <summary>进度与下一步</summary>

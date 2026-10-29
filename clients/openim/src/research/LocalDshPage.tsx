@@ -2,11 +2,64 @@ import { Alert, Button, Drawer, Spin } from "antd";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from 'react-router-dom';
 import { workbenchTaskPath, workbenchTaskTarget } from './workbench-links';
+import { researchApi } from './api';
 import type { LocalDshSnapshot } from "@/types/localDsh";
+import type { DshTaskState, TaskTarget } from "../../../../integrations/deepseek-harness/desktop/task-workspace";
 import "./local-dsh.scss";
 const TaskInbox = lazy(() => import('./WorkbenchTaskInbox').then(m => ({ default: m.WorkbenchTaskInbox })));
 
 const labels = { stopped: "未启动", starting: "正在启动", running: "正在打开页面", stopping: "正在停止", error: "启动异常" };
+
+type TaskBrief = { title: string; goal: string };
+
+/** The workbench receives the task's goal and acceptance text so nobody retypes them. */
+function TaskHandoff({
+  target,
+  brief,
+  workspace,
+  busy,
+  onOpen,
+  onHandoff,
+  onRefresh,
+}: {
+  target: TaskTarget;
+  brief?: TaskBrief;
+  workspace?: DshTaskState;
+  busy: boolean;
+  onOpen: () => void;
+  onHandoff: () => void;
+  onRefresh: () => void;
+}) {
+  if (!brief) return null;
+  const running = workspace?.phase === "running";
+  return (
+    <div className="local-dsh-task">
+      <div className="local-dsh-task-text">
+        <strong>{brief.title}</strong>
+        <p>{brief.goal || "这项任务还没有写目标，可以先在工作台里说明。"}</p>
+      </div>
+      <div className="local-dsh-task-actions">
+        {!workspace ? (
+          <Button type="primary" loading={busy} onClick={onOpen}>
+            选择工作文件夹并开始
+          </Button>
+        ) : (
+          <Button type="primary" loading={busy} disabled={running} onClick={onHandoff}>
+            {running ? "助手正在执行" : "把任务背景交给助手"}
+          </Button>
+        )}
+        <Button type="link" size="small" onClick={onRefresh}>
+          刷新状态
+        </Button>
+      </div>
+      <p className="local-dsh-task-note">
+        {workspace
+          ? `会话「${workspace.binding.sessionTitle || brief.title}」· ${workspace.binding.directory}。交给助手的是目标、交付要求、验收标准和已选资料版本，不含你的私人记忆。`
+          : "选好工作文件夹后，任务目标、验收标准和已选资料版本会一起带过去。"}
+      </p>
+    </div>
+  );
+}
 
 export function LocalDshPage() {
   const [params] = useSearchParams();
@@ -17,7 +70,47 @@ export function LocalDshPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [brief, setBrief] = useState<TaskBrief>();
+  const [workspace, setWorkspace] = useState<DshTaskState>();
+  const target: TaskTarget | undefined =
+    task.valid && task.id
+      ? { taskId: task.id, kind: task.kind as TaskTarget["kind"] }
+      : undefined;
   const alive = useRef(true);
+  useEffect(() => {
+    if (!target) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response =
+          target.kind === "research"
+            ? await researchApi("task", { params: { id: target.taskId } })
+            : await researchApi("personalWorkTask", { params: { id: target.taskId } });
+        if (cancelled) return;
+        const value =
+          "task" in response.data ? response.data.task : response.data;
+        setBrief({
+          title: value.title,
+          goal:
+            ("goal" in value && value.goal) ||
+            ("summary" in value && value.summary) ||
+            "",
+        });
+      } catch {
+        /* The workbench still works without the task strip. */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [target?.taskId, target?.kind]);
+  const readWorkspace = async () => {
+    if (!bridge?.taskStatus || !target) return;
+    try {
+      setWorkspace(await bridge.taskStatus(target));
+    } catch {
+      setWorkspace(undefined);
+    }
+  };
+  useEffect(() => { void readWorkspace(); }, [bridge, target?.taskId, target?.kind]);
   useEffect(() => {
     alive.current = true;
     if (!bridge) return;
@@ -60,6 +153,26 @@ export function LocalDshPage() {
     catch (e) { if (alive.current) setError(e instanceof Error ? e.message : "操作失败，请重试。"); }
     finally { if (alive.current) setBusy(false); }
   };
+  const openTask = async () => {
+    if (!bridge?.taskOpen || !target) return;
+    setBusy(true); setError("");
+    try { await bridge.taskOpen(target, true); await readWorkspace(); }
+    catch (e) { setError(e instanceof Error ? e.message : "无法打开工作文件夹，请重试。"); }
+    finally { setBusy(false); }
+  };
+  const handoff = async () => {
+    if (!bridge?.taskPrompt || !target) return;
+    setBusy(true); setError("");
+    try {
+      await bridge.taskPrompt(
+        target,
+        "开始这项任务：先确认工作文件夹里的材料，说明打算怎么做，然后开始。",
+        crypto.randomUUID(),
+      );
+      await readWorkspace();
+    } catch (e) { setError(e instanceof Error ? e.message : "无法把任务背景交给助手，请重试。"); }
+    finally { setBusy(false); }
+  };
   return <section className="local-dsh-page" aria-label="工作台">
     <header className="local-dsh-header">
       <div><h1>工作台</h1><p>阅读材料、处理文件，和助手一起完成科研工作。</p></div>
@@ -71,6 +184,17 @@ export function LocalDshPage() {
     </header>
     {!bridge && <Alert showIcon type="info" message="请使用支持本地 DSH 的 Windows 客户端" description="网页版及旧版客户端不能启动这台电脑上的 DSH。" />}
     {(error || state?.error) && <Alert showIcon type="error" message={error || state?.error} />}
+    {target && (
+      <TaskHandoff
+        target={target}
+        brief={brief}
+        workspace={workspace}
+        busy={busy}
+        onOpen={() => void openTask()}
+        onHandoff={() => void handoff()}
+        onRefresh={() => void readWorkspace()}
+      />
+    )}
     <div ref={seat} className="local-dsh-seat">
       {!state?.pageReady && <div className="local-dsh-welcome">
         {(busy || state?.phase === "starting" || state?.phase === "stopping") ? <><Spin size="large" /><h2>{state?.phase === "running" ? "正在打开工作台" : state ? labels[state.phase] : "正在读取状态"}</h2></> : <>

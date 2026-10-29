@@ -47,6 +47,21 @@
       }
     }
   }
+  .task-work-handoff {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 12px 0 4px;
+    border-top: 1px solid #eef1f3;
+    margin-top: 12px;
+    span {
+      flex: 1;
+      min-width: 200px;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+  }
   .task-work-goal {
     summary {
       cursor: pointer;
