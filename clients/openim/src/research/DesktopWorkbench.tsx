@@ -164,6 +164,7 @@ export function DesktopWorkbench() {
     contacts = useResearchStore((s) => s.contacts);
   const availability = useWorkspaceAvailability(!relocated);
   const supported = availability.supports(21);
+  const assistantReady = supported && availability.supports(23) && !!actor;
   const read = useResearchRead(
     () => workspaceApi.tasks(filter, cursor),
     `workbench:${filter}:${cursor || ""}`,
@@ -243,8 +244,11 @@ export function DesktopWorkbench() {
     setBusy(true);
     setFailure("");
     try {
+      // A name is optional: the first sentence of the goal is enough to start.
+      const title =
+        form.title.trim() || form.goal.trim().split("\n")[0].trim().slice(0, 60);
       const created = await researchApi("createPersonalWorkTask", {
-        body: { ...form, title: form.title.trim(), goal: form.goal.trim() },
+        body: { ...form, title, goal: form.goal.trim() },
       });
       if (!isCurrent()) return;
       setCreating(false);
@@ -275,16 +279,28 @@ export function DesktopWorkbench() {
         </div>
         <div className="workspace-heading-actions">
           {tab === "tasks" && (
-            <Button
-              disabled={!supported}
-              onClick={() => {
-                setCreating(true);
-                setFailure("");
-                setBusy(false);
-              }}
-            >
-              新建任务
-            </Button>
+            <>
+              <Button
+                type="primary"
+                disabled={!supported}
+                onClick={() => {
+                  setCreating(true);
+                  setFailure("");
+                  setBusy(false);
+                }}
+              >
+                新建任务
+              </Button>
+              {assistantReady && (
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={() => setPlanningLaunch((value) => value + 1)}
+                >
+                  和助手说一句
+                </Button>
+              )}
+            </>
           )}
         </div>
       </header>
@@ -573,7 +589,7 @@ export function DesktopWorkbench() {
       >
         <div className="workspace-task-form">
           <label>
-            任务名称
+            任务名称（可留空，默认取第一句）
             <Input
               aria-label="任务名称"
               maxLength={200}
@@ -647,7 +663,7 @@ export function DesktopWorkbench() {
           <Button
             type="primary"
             loading={busy}
-            disabled={!form.title.trim() || !form.goal.trim()}
+            disabled={!form.goal.trim()}
             onClick={() => void create()}
           >
             保存任务草案
