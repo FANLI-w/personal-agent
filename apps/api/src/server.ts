@@ -13,6 +13,8 @@ import { reconcile } from './execution-worker.js'
 import Fastify from 'fastify'
 import {runSkills,type SkillCommand} from './skills.js'
 import { ResearchLibraryService, parseResearchImport, type ResearchLibraryCommand, type LibraryRequest } from './research-library.js'
+import { ResearchUploads } from './research-uploads.js'
+import { unlink } from 'node:fs/promises'
 import { FeishuService } from './feishu.js'
 import { FeishuLibraryService } from './feishu-library.js'
 import { FeishuBitableClient } from './integrations/feishu-bitable.js'
@@ -108,7 +110,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
   })
   for (const [name, route] of Object.entries(routes)) {
     if (route.stage === 'B0') continue
-    app.route({ method: route.method, url: route.path.replace(/\{(\w+)\}/g, ':$1'), ...((name==='upload'||name==='agentFileMessage'||name==='importResearchFile')?{bodyLimit:14000000}:name==='register'?{bodyLimit:8192}:{}), handler: async (request, reply) => {
+    app.route({ method: route.method, url: route.path.replace(/\{(\w+)\}/g, ':$1'), ...((name==='upload'||name==='agentFileMessage'||name==='importResearchFile')?{bodyLimit:14000000}:name==='putResearchUploadPart'?{bodyLimit:1500000}:name==='register'?{bodyLimit:8192}:{}), handler: async (request, reply) => {
       if (!route.implemented && name !== 'planRequest') fail('NOT_IMPLEMENTED')
       if (route.method !== 'GET' && request.headers.origin !== config.origin) fail('FORBIDDEN')
       const connection = database()
@@ -117,7 +119,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
       const query = { ...request.query as Record<string, unknown> }
       if ('limit' in query && typeof query.limit === 'string' && /^\d+$/.test(query.limit)) query.limit = Number(query.limit)
       if ('afterSequence' in query && typeof query.afterSequence === 'string' && /^\d+$/.test(query.afterSequence)) query.afterSequence = Number(query.afterSequence)
-      if (name==='researchFileContent' && typeof query.version==='string' && /^\d+$/.test(query.version)) query.version=Number(query.version)
+      if(name==='researchFileContent')for(const field of ['version','offset','length'])if(typeof query[field]==='string'&&/^\d+$/.test(query[field] as string))query[field]=Number(query[field])
       if(name==='researchFileExcerpt')for(const field of ['version','pageNumber','start','end'])if(typeof query[field]==='string'&&/^\d+$/.test(query[field] as string))query[field]=Number(query[field])
       if((name==='upload'||name==='agentFileMessage') && typeof (request.body as {contentBase64?:unknown})?.contentBase64==='string' && (request.body as {contentBase64:string}).contentBase64.length>13981016) fail(name==='agentFileMessage'?'FILE_TOO_LARGE':'PAYLOAD_TOO_LARGE')
       if(name==='agentFileMessage'&&typeof (request.body as {mediaType?:unknown})?.mediaType==='string'&&!['application/pdf','text/plain','text/markdown','text/csv'].includes((request.body as {mediaType:string}).mediaType))fail('FILE_UNSUPPORTED')
@@ -150,7 +152,33 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
       }
       if(route.stage==='LIBRARY1'){
         const input=parsed.data as unknown as LibraryRequest
-        const authorized=()=>{const actor=authenticate(connection,token);if(route.method!=='GET')requireCsrf(actor,request.headers['x-csrf-token']);return new ResearchLibraryService(connection,actor,config.blobRoot)}
+        const authorized=()=>{const actor=authenticate(connection,token);if(route.method!=='GET')requireCsrf(actor,request.headers['x-csrf-token']);return new ResearchLibraryService(connection,actor,config.blobRoot,request.headers['x-acceptcat-originals']==='chunked-v1'||['beginResearchUpload','putResearchUploadPart','completeResearchUpload'].includes(name))}
+        if(name==='researchFileContent'){
+          const {file,stream}=await authorized().originalStream(input.params.id!,query.version as number|undefined,query.offset as number|undefined,query.length as number|undefined)
+          try{authorized().file(input.params.id!)}catch(error){stream.destroy();throw error}
+          reply.header('Content-Type',file.mediaType);reply.header('Content-Length',query.length??file.byteLength);reply.header('Content-Disposition',`attachment; filename="download"; filename*=UTF-8''${encodeURIComponent(file.filename)}`)
+          return reply.send(stream)
+        }
+        if(name==='beginResearchUpload')return route.response.parse({data:await new ResearchUploads(authorized()).begin(input.params.id!,(parsed.data as RequestFor<'beginResearchUpload'>).body)})
+        if(name==='putResearchUploadPart')return route.response.parse({data:await new ResearchUploads(authorized()).part(input.params.id!,(parsed.data as RequestFor<'putResearchUploadPart'>).body)})
+        if(name==='completeResearchUpload'){
+          const cached=transaction(connection,()=>{
+            const library=authorized()
+            return connection.prepare('SELECT 1 FROM idempotency_results WHERE actor_id=? AND command=? AND resource_id=? AND key=?').get(library.actor.id,name,input.params.id!,input.headers['Idempotency-Key']!)?library.run(name,input):undefined
+          })
+          if(cached)return route.response.parse(cached)
+          const uploads=new ResearchUploads(authorized()),body=(parsed.data as RequestFor<'completeResearchUpload'>).body
+          const manifest=await uploads.manifest(input.params.id!,body.uploadId)
+          authorized().authorizeOriginal(input.params.id!,manifest.input,body.expectedCollectionVersion)
+          const original=await uploads.assemble(input.params.id!,body.uploadId)
+          let library:ResearchLibraryService|undefined
+          try {
+            const result=transaction(connection,()=>{library=authorized();return library.run(name,input,undefined,original)})
+            await uploads.clear(body.uploadId).catch(()=>{})
+            return route.response.parse(result)
+          } catch(error){if(library)cleanBlobs(library.createdBlobs);throw error}
+          finally{await unlink(original.path).catch(()=>{})}
+        }
         let extraction:Awaited<ReturnType<typeof parseResearchImport>>|undefined
         if(name==='importResearchFile'){
           const initial=transaction(connection,()=>{const library=authorized();const cached=connection.prepare('SELECT request_hash FROM idempotency_results WHERE actor_id=? AND command=? AND resource_id=? AND key=?').get(library.actor.id,name,input.params.id!,input.headers['Idempotency-Key']!);if(cached)return library.run(name,input);library.authorizeImport(input.params.id!,(parsed.data as RequestFor<'importResearchFile'>).body);return null})
@@ -162,7 +190,6 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
         let library:ResearchLibraryService|undefined
         try{return transaction(connection,()=>{
           library=authorized()
-          if(name==='researchFileContent'){const {bytes,file}=library.content(input.params.id!,query.version as number|undefined);reply.header('Content-Type',file.mediaType);reply.header('Content-Disposition',`attachment; filename="download"; filename*=UTF-8''${encodeURIComponent(file.filename)}`);return bytes}
           reply.code(route.status);return route.response.parse(library.run(name as ResearchLibraryCommand,input,extraction))
         })}catch(error){if(library)cleanBlobs(library.createdBlobs);throw error}
       }

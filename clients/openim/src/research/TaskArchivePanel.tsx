@@ -20,7 +20,7 @@ export function TaskArchivePanel({ target, state, selected, collections, busy, c
   const receipt = state?.binding.archive;
   const pending = receipt?.status === 'pending';
   const pendingCollection = writable.find(c => c.id === receipt?.collectionId);
-  const oversized = selected.some(n => (state?.files.find(f => f.name === n)?.size ?? 0) > 10485760);
+  const oversized = selected.some(n => (state?.files.find(f => f.name === n)?.size ?? 0) > 512 * 1024 * 1024);
   useEffect(() => { setConfirmation(undefined); setCollectionId(''); }, [operation.scope]);
   const confirm = async () => {
     if (!confirmation || !bridge) return;
@@ -33,7 +33,7 @@ export function TaskArchivePanel({ target, state, selected, collections, busy, c
   };
   return <section className="task-archive-panel" aria-label="归档到资料">
     <h3>归档到资料</h3>
-    <p>只上传勾选的文件，不上传整个工作文件夹。每批最多 5 份、每份 10 MiB；PPT、Word、Excel 保存原件。归档与任务提交、验收分别处理。</p>
+    <p>只上传勾选的文件，不上传整个工作文件夹。共享单份支持 512 MiB，每批最多 5 份，大文件分块传输；本地工作不受此大小限制。归档与任务提交、验收分别处理。</p>
     <div className="task-material-actions">
       <Select aria-label="归档目标集合" placeholder="选择归档集合" value={collection?.id}
         disabled={busy || pending} onChange={setCollectionId}
@@ -51,6 +51,7 @@ export function TaskArchivePanel({ target, state, selected, collections, busy, c
     {receipt && <Alert type={pending ? 'warning' : 'success'}
       message={pending ? `归档待核对 · 已收到 ${receipt.files.length}/${receipt.names.length} 份文件回执` : `已归档 ${receipt.files.length} 份文件到「${receipt.collectionName}」`}
       description={<>
+        {receipt.transfer && <p>正在归档 {receipt.transfer.name} · {Math.floor(receipt.transfer.bytes / receipt.transfer.total * 100)}%（{Math.ceil(receipt.transfer.bytes/1048576)}/{Math.ceil(receipt.transfer.total/1048576)} MiB）</p>}
         {receipt.files.map(f => <p key={f.id}><Link to={`/library?collection=${encodeURIComponent(receipt.collectionId)}&file=${encodeURIComponent(f.id)}`}>{f.name}</Link> · v{f.version} · {f.extraction === 'text_extracted' ? '已提取文字' : f.extraction === 'extraction_failed' ? '原件已保存，文字提取失败' : '仅保存原件'}</p>)}
         {pending && <><p>重试使用首次归档保存的文件内容，不读取后来修改的版本。</p>
           {receipt.versionConflict && <p>集合已更新，请刷新集合并核对共享范围后继续。</p>}

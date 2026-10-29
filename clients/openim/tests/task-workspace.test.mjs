@@ -468,8 +468,39 @@ test('archive rejects traversal, links and oversize files before any upload, and
   const outside=path.join(f.root,'outside-archive');await fs.mkdir(outside);await fs.writeFile(path.join(outside,'private.txt'),'private');
   await fs.symlink(outside,path.join(b.directory,'linked'),'junction');
   await assert.rejects(f.store.archive(context,archiveSelection(['linked/private.txt']),async()=>{},post),/链接/);
-  await fs.writeFile(path.join(b.directory,'large.pptx'),Buffer.alloc(10485761));
-  await assert.rejects(f.store.archive(context,archiveSelection(['large.pptx']),async()=>{},post),/10 MiB/);
+  const oversized=await fs.open(path.join(b.directory,'large.pptx'),'w');await oversized.truncate(512*1048576+1);await oversized.close();
+  await assert.rejects(f.store.archive(context,archiveSelection(['large.pptx']),async()=>{},post),/512 MiB/);
   assert.equal(uploads,0);assert.equal((await f.store.load(context)).delivery,undefined);
   f.deny();await assert.rejects(f.store.archive(context,archiveSelection(['large.pptx']),async()=>{},post),/expired/);
+});
+
+test('large originals use bounded chunks and persisted snapshots across interruption and lost completion acknowledgement',async t=>{
+  const f=await fixture(t),b=await f.store.open(context),original=Buffer.alloc(11*1048576+3,81);
+  const file=path.join(b.directory,'large.pptx');await fs.writeFile(file,original);
+  const selected=archiveSelection(['large.pptx']);const parts=new Map();let manifest,stop=true,lose=true,published,chunkCalls=0;
+  const post=async(url,body,key)=>{
+    if(url.endsWith('/uploads')){manifest??=structuredClone(body);assert.equal(JSON.stringify(body),JSON.stringify(manifest));return{chunkBytes:1048576,receivedParts:[...parts.keys()]};}
+    if(url.endsWith('/parts')){
+      const bytes=Buffer.from(body.contentBase64,'base64');assert(bytes.length<=1048576);chunkCalls++;
+      parts.set(body.index,bytes);if(body.index===2&&stop){stop=false;throw Error('network interruption');}return{accepted:true};
+    }
+    assert(url.endsWith('/complete'));
+    if(!published){const bytes=Buffer.concat([...parts.entries()].sort((a,b)=>a[0]-b[0]).map(e=>e[1]));assert.deepEqual(bytes,original);published={id:'large',version:1,sha256:createHash('sha256').update(bytes).digest('hex'),extraction:'original_only'};}
+    if(lose){lose=false;throw Error('lost completion');}return published;
+  };
+  await assert.rejects(f.store.archive(context,selected,async()=>{},post),/network interruption/);
+  await fs.writeFile(file,'changed source after snapshot');
+  await assert.rejects(f.restart().archive(context,selected,async()=>{},post),/lost completion/);
+  const calls=chunkCalls;const result=await f.restart().archive(context,selected,async()=>{},post);
+  assert.equal(result.status,'archived');assert.equal(chunkCalls,calls);assert.equal(parts.size,12);
+  assert.equal((await fs.readdir(f.store.root)).filter(n=>n.endsWith('.snapshot')).length,0);
+});
+
+test('local material copies and shared originals larger than 10 MiB remain file based',async t=>{
+  const f=await fixture(t),b=await f.store.open(context),original=Buffer.alloc(51*1048576,29),input=path.join(f.root,'large-local.pptx');
+  await fs.writeFile(input,original);await f.store.importLocal(context,[input]);
+  const saved=await f.store.load(context);assert.equal(saved.localMaterials[0].size,original.length);
+  const source={kind:'library',id:'large_shared',version:1,filename:'shared.pptx',sha256:createHash('sha256').update(original).digest('hex')};
+  const selected=await f.store.importOriginal(context,source,input);assert.equal(selected.localName,saved.localMaterials[0].localName);
+  assert.deepEqual(await fs.readFile(path.join(b.directory,selected.localName)),original);
 });

@@ -114,7 +114,7 @@ export function TaskWorkPage({
     let cancelled = false,
       reading = false;
     const poll = async () => {
-      if (reading || flight.current || cancelled || !bridge?.taskStatus) return;
+      if (reading || cancelled || !bridge?.taskStatus) return;
       reading = true;
       try {
         await refresh();

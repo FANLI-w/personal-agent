@@ -12,6 +12,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { archiveTaskFiles, type ArchiveReceipt, type ArchiveSelection } from './material-archive';
+import { hashLocalFile, copyLocalMaterial } from './local-material-files';
 
 export type TaskTarget = { kind: "research" | "personal"; taskId: string };
 export type TaskContext = TaskTarget & {
@@ -448,16 +449,12 @@ export class DshTaskWorkspace {
       if (!b) throw Error('请先选择本机工作文件夹。');
       if (!selectedFiles.length || selectedFiles.length > 20) throw Error('每次最多添加 20 个本地文件。');
       if ((b.localMaterials?.length || 0) + selectedFiles.length > 100) throw Error('最多记录 100 个补充素材；更多材料请直接使用工作文件夹。');
-      let total = 0;
       for (const selected of selectedFiles) {
         const info = await lstat(selected);
-        if (!info.isFile() || info.isSymbolicLink() || info.size < 1 || info.size > 50 * 1024 * 1024)
-          throw Error('补充素材须为非空普通文件，每份不超过 50 MiB；大文件请直接放入工作文件夹。');
-        total += info.size;
-        if (total > 200 * 1024 * 1024) throw Error('本批素材超过 200 MiB；已选入的文件保留，可继续分批添加。');
-        const bytes = await readFile(selected);
-        if (bytes.length !== info.size) throw Error('素材正在变化，请保存后重新选择。');
-        const sha256 = createHash('sha256').update(bytes).digest('hex');
+        if (!info.isFile() || info.isSymbolicLink() || info.size < 1)
+          throw Error('补充素材须为非空普通文件，不支持链接。');
+        const {sha256,size} = await hashLocalFile(selected);
+        if (size !== info.size) throw Error('素材正在变化，请保存后重新选择。');
         const filename = path.basename(selected);
         // The working directory may already contain this exact file; no upload or second copy is needed.
         const relative = path.relative(b.directory, await realpath(selected));
@@ -470,12 +467,11 @@ export class DshTaskWorkspace {
         localName ||= `local-${sha256.slice(0, 16)}-${filename.replace(/[^\p{L}\p{N}._ -]/gu, '_').slice(-120)}`;
         const destination = await this.filePath(b, localName, true);
         await this.valid();
-        await writeFile(destination, bytes, { flag: 'wx' }).catch(async e => {
-          if (e.code !== 'EEXIST' || createHash('sha256').update(await readFile(destination)).digest('hex') !== sha256) throw e;
-        });
+        try { const copied=await copyLocalMaterial(selected,destination); if(copied.sha256!==sha256)throw Error('素材已变化，请保存后重新选择。'); }
+        catch(e) { if ((e as NodeJS.ErrnoException).code !== 'EEXIST' || (await hashLocalFile(destination)).sha256 !== sha256) throw e; }
         b.localMaterials ||= [];
         if (!b.localMaterials.some(s => s.localName === localName && s.sha256 === sha256))
-          b.localMaterials.push({ filename, localName, sha256, size: bytes.length });
+          b.localMaterials.push({ filename, localName, sha256, size });
         await this.save(b);
       }
       return b.localMaterials;
@@ -486,8 +482,7 @@ export class DshTaskWorkspace {
     for (const s of [...b.sources, ...(b.localMaterials || [])].filter(s => s.sha256 === sha256)) {
       try {
         const file = await this.filePath(b, s.localName), info = await lstat(file);
-        if (info.isFile() && info.size <= 50 * 1024 * 1024
-          && createHash('sha256').update(await readFile(file)).digest('hex') === sha256) return s.localName;
+        if (info.isFile() && (await hashLocalFile(file)).sha256 === sha256) return s.localName;
       } catch { /* Missing or modified copies are not reused. */ }
     }
   }
@@ -498,7 +493,20 @@ export class DshTaskWorkspace {
       if (!b) throw Error('请先打开任务工作区。');
       return archiveTaskFiles({ root: this.root, taskKey: taskKey(target), taskId: target.taskId,
         selection, current: b.archive, rebase, read: name => this.readOutput(target, name), valid: this.valid,
-        checkCollection, post, save: async receipt => { b.archive = receipt; await this.save(b); } });
+        sourcePath:name=>this.filePath(b,name), checkCollection, post, save: async receipt => { b.archive = receipt; await this.save(b); } });
+    });
+  }
+  async importOriginal(target:TaskTarget,source:Omit<TaskSource,'localName'>,temporary:string) {
+    return this.exclusive(target,async()=>{
+      const b=await this.load(target);if(!b)throw Error('请先打开任务。');
+      if(!safeId.test(source.id)||b.sources.length>=95)throw Error('资料标识或数量超出范围。');
+      const hash=await hashLocalFile(temporary);
+      if(hash.sha256!==source.sha256)throw Error('资料校验不符，未选入。');
+      const localName=await this.sameMaterial(b,source.sha256)||`source-${source.kind}-${source.id}-v${source.version}${path.extname(source.filename).replace(/[^.a-zA-Z0-9]/g,'').slice(0,12)}`;
+      const destination=await this.filePath(b,localName,true);await this.valid();
+      try{await copyLocalMaterial(temporary,destination)}catch(error){if((error as NodeJS.ErrnoException).code!=='EEXIST'||(await hashLocalFile(destination)).sha256!==source.sha256)throw error}
+      if(!b.sources.some(s=>s.kind===source.kind&&s.id===source.id&&s.version===source.version))b.sources.push({...source,localName});
+      await this.save(b);return {...source,localName};
     });
   }
   async stageMethod(target:TaskTarget,name:string,version:string,files:{path:string;text:string}[]) {

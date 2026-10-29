@@ -7,6 +7,7 @@ import {
   fileAsBase64,
   researchFileMediaType,
   researchScopeLabels,
+  uploadResearchOriginal,
 } from "./research-library-api";
 
 type Collection = ResponseFor<"researchCollections">["data"][number];
@@ -65,7 +66,8 @@ export function ResearchFileImport({
     [locked, setLocked] = useState(false),
     [blocked, setBlocked] = useState(false),
     [saved, setSaved] = useState<Source>();
-  const attempt = useRef<{ key: string; body: ImportBody }>();
+  const attempt = useRef<{ key: string; body: ImportBody;uploadId:string;ready?:boolean }>();
+  const [progress,setProgress]=useState<number>();
   const collectionVersion = useRef(collection.version),
     sourceVersion = useRef(source?.version);
   const operation = usePersonalOperation(
@@ -110,10 +112,12 @@ export function ResearchFileImport({
   async function submit(isCurrent: () => boolean) {
     if (!file || saved || blocked) return;
     if (!attempt.current) {
-      const contentBase64 = await fileAsBase64(file);
+      if(file.size>512*1024*1024)throw Error('共享原件单份支持 512 MiB；本地工作不受此限制。');
+      const contentBase64 = file.size>10485760?'':await fileAsBase64(file);
       if (!isCurrent()) return;
       attempt.current = {
         key: crypto.randomUUID(),
+        uploadId: crypto.randomUUID(),
         body: {
           expectedCollectionVersion: collectionVersion.current,
           filename: file.name,
@@ -135,7 +139,7 @@ export function ResearchFileImport({
     }
     setLocked(true);
     try {
-      const result = await researchApi("importResearchFile", {
+      const result = file.size>10485760 ? await uploadResearchOriginal(collection,file,attempt.current.body,attempt.current,isCurrent,setProgress) : await researchApi("importResearchFile", {
         params: { id: collection.id },
         body: attempt.current.body,
         idempotencyKey: attempt.current.key,
@@ -211,8 +215,9 @@ export function ResearchFileImport({
       <div className="research-library-form">
         <p>
           保存到“{collection.name}” · {researchScopeLabels[collection.scope]}
-          。每份文件不超过 10 MiB。
+          。共享单份支持 512 MiB，大文件分块上传；本地使用不受此限制。
         </p>
+        {progress!==undefined && <p>大文件上传 {progress}%{progress===100?' · 正在核对归档回执':''}</p>}
         <label>
           原始文件
           {preparedFile ? (
@@ -230,7 +235,7 @@ export function ResearchFileImport({
         </label>
         <p className="research-library-muted">
           含文字 PDF、TXT、Markdown、CSV
-          可提取文字；图片、代码与其他素材保存原件，不执行脚本或声称理解图像。
+          在 10 MiB 内可提取文字；更大文件、图片、代码与其他素材保存原件，不执行脚本或声称理解图像。
         </p>
         <label>
           标题

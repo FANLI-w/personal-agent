@@ -1,5 +1,7 @@
 # 开发路线图
 
+2026-10-29：按1–300 MB PPT的实际材料规模，PR135追加[大文件共享](development/large-originals.md)，支持512 MiB原件分块上传/取用和失败恢复，本地文件不按共享上限限制。新增contract0.38，须另行部署兼容后台后发布客户端；不扩展为完整知识库。
+
 2026-10-29：按负责人决定实施[本地文件与轻量共享流程](development/local-material-workflow.md)，任务以本地目录执行，按需取用共享版本、明确归档成果；不新建完整知识库。本批源码和隔离流程验证完成、待PR审阅，无新后台部署或安装包。下一步以真实项目材料验收读文件、生成成果、共享归档，再处理实际暴露的大文件和版本需求。
 
 2026-10-29：DSH与聊天、任务、资料的[三步实施计划](development/dsh-team-integration-plan.md)首版均已实现并通过合成闭环，PR133连同PR130–132已合入main。第二/三步配套后台已独立部署contract0.37.0/schema030；接下来用0.10.70进行真实双机、账号模型和科研任务验收，公开状态以[current-state](current-state.md)为准。不新增长期阶段；[第一步任务工作页](development/dsh-task-workspace.md)、[第二步规则与记忆](development/dsh-rules-memory.md)、[第三步团队协作](development/dsh-team-coordination.md)分别记录功能与限制。

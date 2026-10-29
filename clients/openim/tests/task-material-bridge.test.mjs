@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
 import { EventEmitter } from 'node:events';
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { buildLocalDshRuntime } from '../../../integrations/deepseek-harness/desktop/build.mjs';
@@ -22,12 +23,13 @@ async function fixture(t) {
   const target = {kind:'research',taskId:'synthetic-task'}, handlers = new Map(), timers=[];
   let hash = '#/workbench?task=synthetic-task', picker = {canceled:false,filePaths:[path.join(root,'work')]};
   let valid = true, owned = true, scope = 'lab_shared', running = false, sessionId;
-  let duringPicker = () => {}, uploads = 0;
+  let duringPicker = () => {}, uploads = 0, original;
+  const downloadSizes=[];
   const revealed = [];
   const respond = resolve => {
     const req = new EventEmitter();req.setHeader = () => {};req.abort = () => {};
     req.end = body => queueMicrotask(() => {
-      try { const res=new EventEmitter();res.statusCode=200;req.emit('response',res);res.emit('data',Buffer.from(JSON.stringify(resolve(body))));res.emit('end'); }
+      try { const res=new EventEmitter();res.statusCode=200;req.emit('response',res);const value=resolve(body);res.emit('data',Buffer.isBuffer(value)?value:Buffer.from(JSON.stringify(value)));res.emit('end'); }
       catch(e){req.emit('error',e);}
     });return req;
   };
@@ -53,15 +55,18 @@ async function fixture(t) {
   const mod={exports:{}};
   vm.runInNewContext(bundled.outputFiles[0].text,{module:mod,exports:mod.exports,require:id=>id==='electron'?electron:id==='./localDshRuntime'?runtime.exports:require(id),process,Buffer,URL,URLSearchParams,setTimeout,clearTimeout});
   const account={identity:'synthetic',lease:'one',csrf:'synthetic',valid:async()=>{if(!valid)throw Error('expired');},request:url=>respond(()=>{
+    if(url==='/api/v1/health/ready')return{data:{status:'ok',contractVersion:'0.38.0'}};
     if(url==='/api/v1/tasks/synthetic-task')return{data:{task:{title:'Synthetic task',goal:'Local work',version:1,allowedActions:['submit']}}};
     if(url.startsWith('/api/v1/work-execution/'))return{data:{execution:null}};
     if(url.includes('/collections?'))return{data:[{id:'collection',name:'Synthetic',owned,scope,status:'available'}]};
+    if(url==='/api/v1/research-library/files/large-source')return{data:{file:{status:'available'},versions:[{version:1,filename:'large-source.pptx',byteLength:original.length,sha256:createHash('sha256').update(original).digest('hex')}]}};
+    if(url.startsWith('/api/v1/research-library/files/large-source/content')){const q=new URL('http://fixture'+url).searchParams,offset=Number(q.get('offset')),length=Number(q.get('length'));downloadSizes.push(length);return original.subarray(offset,offset+length);}
     if(url.endsWith('/collections/collection/files')){uploads++;return{data:{id:'file',version:1,sha256:'a'.repeat(64),extraction:'original_only'}};}
     return{data:{}};
   })};
   mod.exports.registerTaskDshBridge(async()=>({account,session:{},origin:'http://127.0.0.1:1'}));
   const call=(name,...args)=>handlers.get(name)({sender:{getURL:()=>`http://fixture/${hash}`}},target,...args);
-  return {root,call,uploads:()=>uploads,revealed,set:values=>{if('hash'in values)hash=values.hash;if('picker'in values)picker=values.picker;if('valid'in values)valid=values.valid;if('owned'in values)owned=values.owned;if('scope'in values)scope=values.scope;if('running'in values)running=values.running;if('duringPicker'in values)duringPicker=values.duringPicker;}};
+  return {root,call,uploads:()=>uploads,revealed,downloadSizes,set:values=>{if('original'in values)original=values.original;if('hash'in values)hash=values.hash;if('picker'in values)picker=values.picker;if('valid'in values)valid=values.valid;if('owned'in values)owned=values.owned;if('scope'in values)scope=values.scope;if('running'in values)running=values.running;if('duringPicker'in values)duringPicker=values.duringPicker;}};
 }
 test('native material picker cancels without reading, rechecks navigation after selection, and reveals only workspace files',async t=>{
   const f=await fixture(t);await f.call('task-dsh-open',true);
@@ -84,4 +89,13 @@ test('archive IPC enforces writable collection, confirmed sharing scope, idle lo
   assert.equal(f.uploads(),0);
   f.set({running:false});assert.equal((await f.call('task-dsh-archive',selection)).status,'archived');assert.equal(f.uploads(),1);
   f.set({valid:false});await assert.rejects(f.call('task-dsh-archive',selection),/expired/);assert.equal(f.uploads(),1);
+});
+
+test('large shared original uses bounded authenticated download requests and lands as an intact working file',async t=>{
+  const f=await fixture(t);await f.call('task-dsh-open',true);
+  const original=Buffer.alloc(11*1048576+7,51);f.set({original});
+  const result=await f.call('task-dsh-import',{kind:'library',id:'large-source',version:1});
+  assert.equal(f.downloadSizes.length,12);assert(f.downloadSizes.every(n=>n>0&&n<=1048576));
+  assert.deepEqual(await fs.readFile(path.join(f.root,'work',result.localName)),original);
+  assert.equal(f.uploads(),0);
 });
