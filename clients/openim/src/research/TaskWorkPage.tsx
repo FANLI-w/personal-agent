@@ -15,6 +15,7 @@ import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { taskEventRows } from "./task-dsh-events";
 import "./task-work-page.scss";
 import { Link } from "react-router-dom";
+import { nativeWorkbenchTaskPath } from './workbench-links';
 
 const phases = {
   ready: "可以开始",
@@ -351,7 +352,7 @@ export function TaskWorkPage({
                         message="工具正在等待你确认"
                         description={
                           <>
-                            请到 <Link to="/dsh">DSH 页面</Link>选择“
+                            请到 <Link to={nativeWorkbenchTaskPath(taskId, kind)}>工作台</Link>选择“
                             {state.binding.sessionTitle || task?.title}
                             ”会话，核对操作并允许一次或拒绝，然后回到此任务继续查看。
                           </>
@@ -403,7 +404,7 @@ export function TaskWorkPage({
                         停止本轮
                       </Button>
                     )}{" "}
-                    <Link to="/dsh">在 DSH 中使用完整工具</Link> · 选择“
+                    <Link to={nativeWorkbenchTaskPath(taskId, kind)}>在工作台中查看文件与完整工具</Link> · 选择“
                     {state.binding.sessionTitle || task?.title}
                     ”会话，可处理工具确认、追问和查看完整轨迹。
                   </div>

@@ -461,7 +461,8 @@ export const uploadFile = async (file: FileWithPath, path?: string) => {
     cause: "",
   };
   if (window.electronAPI) {
-    params.filepath = path ?? file.path;
+    params.filepath = path || window.electronAPI.getFilePath?.(file) || file.path
+      || await window.electronAPI.saveFileToDisk({ file, sync: true });
   } else {
     params.file = file;
   }
