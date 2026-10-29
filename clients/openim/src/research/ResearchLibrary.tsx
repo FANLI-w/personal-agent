@@ -1,6 +1,7 @@
 import { Alert, App, Button, Input, Modal, Select, Segmented } from "antd";
 import { FileTextOutlined, FolderOutlined, UploadOutlined } from "@ant-design/icons";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from 'react-router-dom';
 import type { ResponseFor } from "@research-agent-platform/contracts";
 import { researchApi, ResearchApiError } from "./api";
 import { useResearchRead } from "./useResearchRead";
@@ -110,6 +111,8 @@ function SourceDetail({ id, collection, onVersion, onChanged, onClose }: { id: s
 }
 
 function LibraryBody() {
+  const [params] = useSearchParams();
+  const linkedCollection = params.get('collection'), linkedFile = params.get('file');
   const [feishuOpen, setFeishuOpen] = useState(false);
   const [feishuLibraryRead,setFeishuLibraryRead]=useState(false);
   const [chatFocus, setChatFocus] = useState(0);
@@ -123,6 +126,9 @@ function LibraryBody() {
   const files = useResearchRead((signal) => researchApi("researchFiles", { params: { id: collection!.id }, query: { limit: 100 }, signal }), `library-files:${collection?.id}`, !!collection && !collection.externalSource);
   const matches = useResearchRead((signal) => researchApi("researchLibrarySearch", { query: { q: query, collectionId: collection!.id, limit: 20 }, signal }), `library-search:${collection?.id}:${query}`, !!collection && !!query);
   const [failure, setFailure] = useState("");
+  useEffect(() => {
+    if (linkedCollection) { setScope('visible'); setCollectionSearch(''); setSelectedId(linkedCollection); setSourceId(linkedFile || undefined); setQuery(''); }
+  }, [linkedCollection, linkedFile]);
   const operation = usePersonalOperation(true, "library-body"); const { modal } = App.useApp();
   const refresh = async () => { await Promise.all([collections.refresh(), files.refresh(), matches.refresh()]); };
   const refreshAfterImport = async () => { await Promise.all([collections.refreshChecked(), files.refreshChecked(), matches.refreshChecked()]); };
@@ -132,7 +138,7 @@ function LibraryBody() {
     catch (error) { if (isCurrent()) { setFailure(failureText(error)); await collections.refresh(); } }
   };
   return <div className="research-library">
-    <header className="research-library-heading"><div><h2>资料库</h2></div><div className="research-library-actions"><Button onClick={() => setFeishuOpen(true)}>连接飞书资料</Button><Button type="primary" onClick={() => setEditing("new")}>新建集合</Button></div></header>
+    <header className="research-library-heading"><div><h2>资料库</h2><p>保存共享材料与归档成果；本地文件可直接在 DSH 或任务中使用，无需先上传。</p></div><div className="research-library-actions"><Button onClick={() => setFeishuOpen(true)}>连接飞书资料</Button><Button type="primary" onClick={() => setEditing("new")}>新建集合</Button></div></header>
     {failure && <Alert type="warning" message={failure} />}
     <div className={`research-library-body ${sourceId ? "has-source" : ""}`}>
       <aside className="research-collection-rail" aria-label="资料集合">

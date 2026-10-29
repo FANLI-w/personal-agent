@@ -1,5 +1,6 @@
 import { Alert, Button, Spin } from "antd";
 import { useEffect, useRef, useState } from "react";
+import { Link } from 'react-router-dom';
 import type { LocalDshSnapshot } from "@/types/localDsh";
 import "./local-dsh.scss";
 
@@ -58,6 +59,7 @@ export function LocalDshPage() {
     <header className="local-dsh-header">
       <div><h1>DSH <span>本地工作区 · 试用</span></h1>
         <p>在这台电脑上聊天、处理文件、运行工具与安装插件。</p></div>
+      <Link to="/workbench?view=tasks">进入任务，取用共享资料与归档成果</Link>
     </header>
     {!bridge && <Alert showIcon type="info" message="请使用支持本地 DSH 的 Windows 客户端" description="网页版及旧版客户端不能启动这台电脑上的 DSH。" />}
     {(error || state?.error) && <Alert showIcon type="error" message={error || state?.error} />}

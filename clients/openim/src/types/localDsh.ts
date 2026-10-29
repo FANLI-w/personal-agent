@@ -11,6 +11,11 @@ export type LocalDshSnapshot = {
 };
 export type DshBounds = { x: number; y: number; width: number; height: number };
 export type LocalDshBridge = {
+  taskAddLocal: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget) => Promise<boolean>;
+  taskReveal: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget, name?: string) => Promise<void>;
+  taskArchive: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget,
+    selection: import('../../../../integrations/deepseek-harness/desktop/material-archive').ArchiveSelection,
+    rebase?: boolean) => Promise<import('../../../../integrations/deepseek-harness/desktop/material-archive').ArchiveReceipt>;
   status: () => Promise<LocalDshSnapshot>;
   connect: () => Promise<LocalDshSnapshot>;
   disconnect: () => Promise<void>;

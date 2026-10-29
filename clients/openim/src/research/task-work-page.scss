@@ -86,6 +86,8 @@
     padding: 10px;
     border-bottom: 1px solid #e5e7eb;
     overflow-wrap: anywhere;
+    flex-wrap: wrap;
+    > .ant-checkbox-wrapper { min-width: 0; flex: 1 1 240px; }
   }
   .task-work-preview {
     max-height: 300px;
@@ -97,6 +99,14 @@
   .workspace-task-detail {
     padding: 0;
   }
+}
+
+.task-material-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  .ant-select { min-width: 220px; max-width: 100%; flex: 1 1 220px; }
+}
+.task-archive-panel { display: flex; flex-direction: column; gap: 12px; border: 1px solid #d8e5df; border-radius: 10px; padding: 16px; min-width: 0;
+  p, li { overflow-wrap: anywhere; }
+  > .ant-btn { align-self: flex-start; }
 }
 
 .task-knowledge { display: flex; flex-direction: column; gap: 14px; min-width: 0; overflow: auto; padding: 12px 4px;
