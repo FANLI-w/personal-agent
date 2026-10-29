@@ -96,6 +96,24 @@ function isolated(t, fetch) {
   });
 }
 
+test("handoff capability follows the backend version and is cleared with the account", async (t) => {
+  let version = "0.38.0";
+  isolated(t, async (_, options) => {
+    assert.equal(options.headers["X-AcceptCat-Task-Workflow"], "handoff-v1");
+    return new Response(JSON.stringify(session), {
+      status: 200,
+      headers: { "Content-Type": "application/json", "X-Contract-Version": version },
+    });
+  });
+  await api.researchApi("session");
+  assert.equal(api.supportsTaskHandoffs(), false);
+  version = "0.39.0";
+  await api.researchApi("session");
+  assert.equal(api.supportsTaskHandoffs(), true);
+  api.clearResearchSession();
+  assert.equal(api.supportsTaskHandoffs(), false);
+});
+
 test("a missing session response is bounded and never dispatches the mutation", async (t) => {
   let signal,
     requests = 0;
