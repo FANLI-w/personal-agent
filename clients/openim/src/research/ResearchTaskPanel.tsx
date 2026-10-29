@@ -1,5 +1,5 @@
 import { Alert, App, Button, Input, Select, Space } from "antd";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
@@ -36,6 +36,7 @@ export function ResearchTaskPanel({
     [inviteScope, setInviteScope] = useState("");
   const [transferToMemberId, setTransferToMemberId] = useState(""),
     [transferScope, setTransferScope] = useState("");
+  const [depTitles, setDepTitles] = useState<Record<string, string>>({});
   const members = useResearchRead(
     (signal) =>
       researchApi("members", {
@@ -51,6 +52,20 @@ export function ResearchTaskPanel({
   );
   const name = (id: string | null) => (id ? people[id] || id : "尚未承接");
   const operation = usePersonalOperation(true, `research-task:${taskId}`);
+  const dependencyIds = JSON.stringify(data?.data && 'task' in data.data ? data.data.task.dependencies.map(dep => dep.taskId) : []);
+  useEffect(() => {
+    setDepTitles({});
+    const controller = new AbortController(), { isCurrent } = operation.capture();
+    void Promise.all((JSON.parse(dependencyIds) as string[]).map(async id => {
+      try {
+        const response = await researchApi('task', { params: { id }, signal: controller.signal });
+        return [id, 'task' in response.data ? response.data.task.title : response.data.title] as const;
+      } catch { return [id, id] as const; }
+    })).then(pairs => {
+      if (!controller.signal.aborted && isCurrent()) setDepTitles(Object.fromEntries(pairs));
+    });
+    return () => controller.abort();
+  }, [operation.scope, dependencyIds]);
   const inFlight = useRef(false);
   const dialogs = useRef<ReturnType<typeof modal.confirm>[]>([]);
   useLayoutEffect(() => {
@@ -237,7 +252,7 @@ export function ResearchTaskPanel({
           {task.dependencies
             .map(
               (d) =>
-                `${d.taskId}${
+                `${depTitles[d.taskId] ?? d.taskId}${
                   d.requiredRevision ? ` · 第${d.requiredRevision}版` : ""
                 }`,
             )
