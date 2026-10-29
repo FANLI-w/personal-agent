@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import { useResearchStore } from "./store";
-import { workspaceStatusLabel } from "./PersonalWorkDetail";
+import { workspaceStatusLabel } from "./workspace-labels";
 import { workbenchTaskPath } from "./workbench-links";
 import "./workspace.scss";
 

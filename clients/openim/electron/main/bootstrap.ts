@@ -1,4 +1,4 @@
-import { app } from "electron";
+import { app, protocol } from "electron";
 import path from "node:path";
 import os from "node:os";
 import { smokeResult, smokeProgress } from "../utils/smoke";
@@ -10,6 +10,12 @@ const fail = (error: unknown) => {
 };
 process.on("uncaughtException", fail);
 process.on("unhandledRejection", fail);
+// DSH's resource registry keys providers by URL.hostname. Chromium 108 otherwise
+// treats this logical address as an opaque URL with an empty hostname. Register
+// before app ready; no handler, fetch, CSP bypass or filesystem privilege is added.
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'dsh-resource', privileges: { standard: true } },
+]);
 // Electron 22's native ESM loader cannot resolve modules inside app.asar.
 // Use the original CommonJS entry while keeping startup failures observable.
 try {

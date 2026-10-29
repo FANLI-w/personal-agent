@@ -1,7 +1,8 @@
 .local-dsh-page {
   display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0;
   background: #fafbfc; color: #253746; overflow: hidden;
-  .local-dsh-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 18px 22px; border-bottom: 1px solid #e8edf2; background: white; }
+  .local-dsh-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 22px; border-bottom: 1px solid #e8edf2; background: white; }
+  .local-dsh-header nav { display: flex; align-items: center; gap: 18px; }
   h1 { margin: 0; font-size: 22px; font-weight: 600; }
   h1 span { font-size: 12px; font-weight: 400; color: #748392; margin-left: 10px; }
   .local-dsh-header p { margin: 5px 0 0; color: #748392; font-size: 12px; }

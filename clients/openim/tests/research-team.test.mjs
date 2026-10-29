@@ -63,14 +63,6 @@ test("an invitation stays unaccepted and an unreviewed result points to human re
   assert.match(teamNextStep(summary), /确认任务范围/);
   assert.match(teamNextStep({ planId: "plan", status: "in_review" }), /审阅实际交付/);
   assert.match(teamNextStep({ planId: "plan", status: "changes_requested" }), /修订/);
-  assert.equal(
-    teamNextStep({
-      planId: "plan",
-      status: "blocked",
-      blocker: { requestedAction: "补充原始数据" },
-    }),
-    "补充原始数据",
-  );
 });
 test("review guidance distinguishes the reviewer, contributor and observers", () => {
   const value = { planId: "plan", status: "in_review", leadId: "student", reviewerId: "teacher" };
@@ -83,13 +75,6 @@ test("review guidance distinguishes the reviewer, contributor and observers", ()
   assert.match(teamNextStep(value, "teacher"), /等待承接人修订/);
   value.status = before.status;
   assert.deepEqual(value, before);
-});
-test("support guidance names the requested help without assigning it to every viewer", () => {
-  const value = { planId: "plan", status: "blocked", leadId: "student", blocker: { requestedAction: "提供合成数据说明", requestedMemberId: "support" } };
-  assert.match(teamNextStep(value, "support"), /^这一步需要你协助/);
-  assert.match(teamNextStep(value, "student"), /^当前需要的支持/);
-  assert.match(teamNextStep(value, "observer"), /^当前需要的支持/);
-  assert.equal(teamNextStep(value), value.blocker.requestedAction);
 });
 test("ready and active tasks do not tell observers to start or submit someone else's work", () => {
   const value = { planId: "plan", status: "ready", leadId: "student" };

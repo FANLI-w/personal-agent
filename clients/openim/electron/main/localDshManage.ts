@@ -104,6 +104,7 @@ export function registerLocalDshBridge() {
       const current = new BrowserView({ webPreferences: {
         session: isolated, nodeIntegration: false, contextIsolation: true,
         sandbox: true, webSecurity: true, spellcheck: false,
+        preload: path.join(__dirname, '../preload/localDsh.js'),
       } });
       view = current;
       const origin = new URL(url).origin;
@@ -142,6 +143,24 @@ export function registerLocalDshBridge() {
     return starting;
   }
   ipcMain.handle("local-dsh-status", (event) => { authorize(event); return snapshot(); });
+  ipcMain.handle('local-dsh-pick-directory', async (event) => {
+    const current = view, currentAccount = account, epoch = generation;
+    const validate = async () => {
+      if (!current || current !== view || event.sender !== current.webContents
+        || event.senderFrame !== current.webContents.mainFrame || !pageReady
+        || !currentAccount || currentAccount !== account || epoch !== generation
+        || runtime.state.phase !== 'running' || new URL(event.senderFrame.url).origin !== new URL(current.webContents.getURL()).origin)
+        throw Error('工作台连接已变化，请重新选择工作目录。');
+      await currentAccount.valid();
+      if (current !== view || currentAccount !== account || epoch !== generation)
+        throw Error('工作台连接已变化，请重新选择工作目录。');
+    };
+    await validate();
+    if (!owner || owner.isDestroyed()) throw Error('应用窗口已关闭。');
+    const result = await dialog.showOpenDialog(owner, { title: '选择工作文件夹', properties: ['openDirectory', 'createDirectory'] });
+    await validate();
+    return result.canceled ? undefined : result.filePaths[0];
+  });
   registerTaskDshBridge(async (event) => {
     authorize(event, false);
     if (!account || !view || !pageReady || runtime.state.phase !== 'running') await start(event);

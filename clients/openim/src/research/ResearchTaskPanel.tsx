@@ -1,7 +1,7 @@
 import { Alert, App, Button, Input, Select, Space } from "antd";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { researchApi } from "./api";
+import { researchApi, supportsTaskHandoffs } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import type { ResponseFor } from "@research-agent-platform/contracts";
 import { usePersonalOperation } from "./usePersonalOperation";
@@ -34,9 +34,9 @@ export function ResearchTaskPanel({
     [comment, setComment] = useState("");
   const [inviteId, setInviteId] = useState(""),
     [inviteScope, setInviteScope] = useState("");
-  const [blockReason, setBlockReason] = useState(""),
-    [requestedAction, setRequestedAction] = useState("");
-  const [requestedMemberId, setRequestedMemberId] = useState<string>();
+  const [transferToMemberId, setTransferToMemberId] = useState(""),
+    [transferScope, setTransferScope] = useState("");
+  const [depTitles, setDepTitles] = useState<Record<string, string>>({});
   const members = useResearchRead(
     (signal) =>
       researchApi("members", {
@@ -52,6 +52,20 @@ export function ResearchTaskPanel({
   );
   const name = (id: string | null) => (id ? people[id] || id : "尚未承接");
   const operation = usePersonalOperation(true, `research-task:${taskId}`);
+  const dependencyIds = JSON.stringify(data?.data && 'task' in data.data ? data.data.task.dependencies.map(dep => dep.taskId) : []);
+  useEffect(() => {
+    setDepTitles({});
+    const controller = new AbortController(), { isCurrent } = operation.capture();
+    void Promise.all((JSON.parse(dependencyIds) as string[]).map(async id => {
+      try {
+        const response = await researchApi('task', { params: { id }, signal: controller.signal });
+        return [id, 'task' in response.data ? response.data.task.title : response.data.title] as const;
+      } catch { return [id, id] as const; }
+    })).then(pairs => {
+      if (!controller.signal.aborted && isCurrent()) setDepTitles(Object.fromEntries(pairs));
+    });
+    return () => controller.abort();
+  }, [operation.scope, dependencyIds]);
   const inFlight = useRef(false);
   const dialogs = useRef<ReturnType<typeof modal.confirm>[]>([]);
   useLayoutEffect(() => {
@@ -62,9 +76,8 @@ export function ResearchTaskPanel({
     setComment("");
     setInviteId("");
     setInviteScope("");
-    setBlockReason("");
-    setRequestedAction("");
-    setRequestedMemberId(undefined);
+    setTransferToMemberId("");
+    setTransferScope("");
     return () => {
       dialogs.current.forEach((dialog) => dialog.destroy());
       dialogs.current = [];
@@ -239,7 +252,7 @@ export function ResearchTaskPanel({
           {task.dependencies
             .map(
               (d) =>
-                `${d.taskId}${
+                `${depTitles[d.taskId] ?? d.taskId}${
                   d.requiredRevision ? ` · 第${d.requiredRevision}版` : ""
                 }`,
             )
@@ -261,19 +274,37 @@ export function ResearchTaskPanel({
       {assignments
         .filter((a) => a.status === "pending")
         .map((a) => (
-          <p key={a.id}>已邀请 {name(a.memberId)}，待本人确认承接</p>
+          <p key={a.id}>
+            已邀请 {name(a.memberId)}，待本人确认承接
+            {allowed("cancel_invitation") && (
+              <Button
+                size="small"
+                disabled={busy}
+                onClick={() =>
+                  confirm({
+                    title: "撤销这次承接邀请？",
+                    okText: "撤销邀请",
+                    content: "对方将不能接受这次邀请。已有成果会保留，任务归属会随之更新。",
+                    onOk: () =>
+                      command(() =>
+                        researchApi("cancelInvitation", {
+                          params: { id: task.id },
+                          body: { expectedVersion: task.version },
+                        }),
+                      ),
+                  })
+                }
+              >
+                撤销邀请
+              </Button>
+            )}
+          </p>
         ))}
-      {task.blocker && (
-        <Alert
-          type="warning"
-          message={task.blocker.reason}
-          description={`需要${
-            task.blocker.requestedMemberId
-              ? ` ${name(task.blocker.requestedMemberId)} `
-              : ""
-          }${task.blocker.requestedAction}`}
-        />
-      )}
+      {assignments
+        .filter((a) => a.status === "declined")
+        .map((a) => (
+          <p key={a.id}>已拒绝：{name(a.memberId)}</p>
+        ))}
       {allowed("invite") && (
         <details className="research-task-operation">
           <summary>邀请成员承接</summary>
@@ -282,7 +313,7 @@ export function ResearchTaskPanel({
             aria-label="承接成员"
             placeholder="选择本实验室成员"
             value={inviteId || undefined}
-            options={(members.data?.data || []).map((m) => ({
+            options={(members.data?.data || []).filter(m => m.id !== actor?.member.id).map((m) => ({
               value: m.id,
               label: m.displayName,
             }))}
@@ -333,77 +364,55 @@ export function ResearchTaskPanel({
           </Button>
         </details>
       )}
-      {allowed("block") && (
+      {allowed("withdraw") && !supportsTaskHandoffs() && <Alert type="info" message="当前后台还未支持任务转交，请联系课题组维护者更新服务。" />}
+      {allowed("withdraw") && supportsTaskHandoffs() && (
         <details className="research-task-operation">
-          <summary>说明阻碍，请求支持</summary>
-          <Input.TextArea
-            aria-label="阻碍原因"
-            placeholder="目前卡在哪里"
-            value={blockReason}
-            onChange={(e) => setBlockReason(e.target.value)}
-            maxLength={8000}
-            disabled={busy}
-          />
-          <Input.TextArea
-            aria-label="所需支持"
-            placeholder="需要补充什么材料或做什么决定"
-            value={requestedAction}
-            onChange={(e) => setRequestedAction(e.target.value)}
-            maxLength={8000}
-            disabled={busy}
-          />
+          <summary>转交任务</summary>
+          <ResearchTeamAccountHint />
           <Select
-            aria-label="请求支持成员"
-            allowClear
-            placeholder="请求谁协助（可选）"
-            value={requestedMemberId}
-            onChange={setRequestedMemberId}
-            options={(members.data?.data || []).map((m) => ({
+            aria-label="承接成员"
+            placeholder="选择转交的成员"
+            value={transferToMemberId || undefined}
+            options={(members.data?.data || []).filter(m => m.id !== actor?.member.id).map((m) => ({
               value: m.id,
               label: m.displayName,
             }))}
+            onChange={setTransferToMemberId}
+            disabled={busy}
+          />
+          <Input.TextArea
+            aria-label="剩余范围"
+            placeholder="转交后由对方完成的范围"
+            value={transferScope}
+            onChange={(e) => setTransferScope(e.target.value)}
+            maxLength={8000}
             disabled={busy}
           />
           <Button
-            disabled={busy || !blockReason.trim() || !requestedAction.trim()}
+            disabled={busy || !transferToMemberId || !transferScope.trim()}
             onClick={() =>
-              void command(() =>
-                researchApi("block", {
-                  params: { id: task.id },
-                  body: {
-                    expectedVersion: task.version,
-                    reason: blockReason.trim(),
-                    requestedMemberId: requestedMemberId || null,
-                    requestedAction: requestedAction.trim(),
-                  },
-                }),
-              )
+              confirm({
+                title: "转交任务？",
+                okText: "转交任务",
+                content: "任务将转给这位成员，由对方决定是否承接。对方接受前可以撤销。",
+                onOk: () =>
+                  command(() =>
+                    researchApi("withdraw", {
+                      params: { id: task.id },
+                      body: {
+                        expectedVersion: task.version,
+                        transferToMemberId: transferToMemberId,
+                        remainingScope: transferScope.trim(),
+                        reason: "转交任务",
+                      },
+                    }),
+                  ),
+              })
             }
           >
-            记录问题并请求帮助
+            转交任务
           </Button>
         </details>
-      )}
-      {allowed("resume") && (
-        <Button
-          disabled={busy}
-          onClick={() =>
-            confirm({
-              title: "阻碍已经解决？",
-              okText: "继续任务",
-              content: "恢复后继续此前的任务阶段。",
-              onOk: () =>
-                command(() =>
-                  researchApi("resume", {
-                    params: { id: task.id },
-                    body: { expectedVersion: task.version },
-                  }),
-                ),
-            })
-          }
-        >
-          确认解决并继续
-        </Button>
       )}
       {failure && <Alert type="error" message={failure} />}
       {allowed("start") && (

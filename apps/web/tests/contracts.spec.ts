@@ -22,7 +22,7 @@ import { projectTask } from "../src/contract-projection";
 
 describe("Frontend consumes shared contract", () => {
   it("validates every shared semantic and endpoint example", () => {
-    expect(contractVersion).toBe("0.38.0");
+    expect(contractVersion).toBe("0.39.0");
     for (const example of Object.values(fixtures))
       example.schema.parse(example.value);
     for (const [name, example] of Object.entries(endpointExamples)) {
@@ -38,25 +38,18 @@ describe("Frontend consumes shared contract", () => {
     contractSteps.forEach((task) => Task.parse(task));
     Deliverable.parse(contractDelivery);
     expect(fixture.tasks.find((task) => task.id === "proposal")).toMatchObject({
-      column: 1,
-      state: "受阻",
+      column: 0,
+      state: "待开始",
     });
     expect(
       contractTasks.find((task) => task.id === "patent")?.schedule.committed,
     ).toBeNull();
     expect(contractMembers[3]?.availability).toBeNull();
   });
-  it("does not place cancelled tasks in completed, or change a blocked task to running", () => {
+  it("does not place cancelled tasks in completed", () => {
     const cancelled = fixtures.cancelledTask.schema.parse(
       fixtures.cancelledTask.value,
     ).data;
     expect(projectTask(cancelled, fixture.tasks[0]!)).toBeNull();
-    const blocked = fixtures.blockedTask.schema.parse(
-      fixtures.blockedTask.value,
-    ).data;
-    expect(projectTask(blocked, fixture.tasks[0]!)).toMatchObject({
-      column: 1,
-      state: "受阻",
-    });
   });
 });

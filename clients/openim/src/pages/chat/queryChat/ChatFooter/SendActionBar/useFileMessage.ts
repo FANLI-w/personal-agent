@@ -67,6 +67,7 @@ export function useFileMessage() {
     });
 
   const localPath = async (file: FileWithPath) =>
+    window.electronAPI?.getFilePath?.(file) ||
     file.path ||
     (file.type.startsWith("image/") && window.electronAPI?.saveImageBytesToDisk
       ? await window.electronAPI.saveImageBytesToDisk(

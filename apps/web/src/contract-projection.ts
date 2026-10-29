@@ -8,7 +8,7 @@ export const labels: Record<TaskModel["status"], string> = {
   awaiting_acceptance: "待承接",
   ready: "待开始",
   in_progress: "进行中",
-  blocked: "受阻",
+  blocked: "旧版暂停状态",
   in_review: "待验收",
   changes_requested: "需修改",
   completed: "已完成",

@@ -11,6 +11,7 @@ import type { CoordinationCommand } from './coordination.js'
 import { fail } from './errors.js'
 import {hasLabMembership,teamLabId} from './lab-access.js'
 import {planTasks, researchWorkspace} from './research-team.js'
+import { pendingHandoff } from './task-handoffs.js'
 
 export const authorizedPlanSources=`NOT EXISTS(SELECT 1 FROM reuse_denials rd WHERE rd.target_kind='plan' AND rd.target_id=plans.id AND rd.member_id=plans.owner_id) AND NOT EXISTS (SELECT 1 FROM execution_jobs j,json_each(j.request_json,'$.inputs') ref
  LEFT JOIN artifacts f ON f.id=json_extract(ref.value,'$.id') LEFT JOIN tasks source ON source.id=f.task_id
@@ -33,7 +34,7 @@ function canonical(value: unknown): string {
   if (value && typeof value === 'object') return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, v]) => `${JSON.stringify(key)}:${canonical(v)}`).join(',')}}`
   return JSON.stringify(value)
 }
-export const collaborationCommands = [...coordinationCommands, 'researchWorkspace', 'planTasks', 'overview', 'plans', 'actionItems', 'availability', 'me', 'members', 'createPlan', 'getPlan', 'editPlan', 'confirmPlan', 'tasks', 'task', 'invite', 'invitationDecision', 'claim', 'start', 'submit', 'review'] as const satisfies readonly RouteName[]
+export const collaborationCommands = [...coordinationCommands, 'researchWorkspace', 'planTasks', 'overview', 'plans', 'actionItems', 'availability', 'me', 'members', 'createPlan', 'getPlan', 'editPlan', 'confirmPlan', 'tasks', 'task', 'invite', 'cancelInvitation', 'invitationDecision', 'claim', 'start', 'submit', 'review'] as const satisfies readonly RouteName[]
 export type CollaborationCommand = typeof collaborationCommands[number]
 type Handlers = { [K in Exclude<CollaborationCommand,CoordinationCommand>]: (request: RequestFor<K>) => unknown }
 
@@ -128,6 +129,10 @@ export class Collaboration {
     const allowedActions: TaskModel['allowedActions'] = []
     if (!task.leadId && task.status === 'awaiting_acceptance' && this.taskRow(task.id).claimable === 1) allowedActions.push('claim')
     if (task.initiatorId === this.actor.id && ['unassigned', 'awaiting_acceptance'].includes(task.status) && !this.db.prepare("SELECT id FROM assignments WHERE task_id=? AND status IN ('pending','accepted')").get(task.id)) allowedActions.push('invite')
+    if (task.status === 'awaiting_acceptance' && this.db.prepare("SELECT id FROM assignments WHERE task_id=? AND status='pending'").get(task.id)) {
+      const handoff = pendingHandoff(this.db,task.id)
+      if (task.initiatorId === this.actor.id || handoff?.from_member_id === this.actor.id) allowedActions.push('cancel_invitation')
+    }
     if (task.leadId === this.actor.id) {
       if (['ready', 'changes_requested'].includes(task.status)) allowedActions.push('start')
       if (['in_progress', 'changes_requested'].includes(task.status)) allowedActions.push('submit')
@@ -138,8 +143,7 @@ export class Collaboration {
       if(task.leadId && [task.leadId,task.initiatorId].includes(this.actor.id)) allowedActions.push('propose_change')
       if(task.initiatorId===this.actor.id) {allowedActions.push('revoke_access');if(task.status!=='completed')allowedActions.push('cancel')}
       if(task.status!=='completed' && [task.leadId,task.initiatorId].includes(this.actor.id)) allowedActions.push('upload')
-      if(task.leadId===this.actor.id && task.status!=='completed') {allowedActions.push('withdraw');if(task.status==='blocked') allowedActions.push('resume');else if(['ready','in_progress','changes_requested'].includes(task.status)) allowedActions.push('block')}
-      if([task.leadId,task.reviewerId].includes(this.actor.id) && this.db.prepare('SELECT 1 FROM dependency_impacts WHERE task_id=? AND acknowledged=0').get(task.id)) allowedActions.push('acknowledge_impacts')
+      if(task.leadId===this.actor.id && task.status!=='completed') allowedActions.push('withdraw')
     }
     const accepted=this.db.prepare("SELECT document FROM deliverables WHERE task_id=? AND json_extract(document,'$.review.decision')='accepted' ORDER BY revision DESC LIMIT 1").get(task.id)
     if(accepted){allowedActions.push('decline_feedback');if(task.status==='completed'&&task.reviewerId===this.actor.id)allowedActions.push('retain_conclusion');const delivery=Deliverable.parse(JSON.parse(String(accepted.document)));if(task.status==='completed'&&task.reviewerId===this.actor.id&&delivery.submittedBy===this.actor.id&&!this.db.prepare("SELECT 1 FROM reuse_edges WHERE target_kind='task' AND target_id=?").get(task.id))allowedActions.push('share_feedback')}
@@ -232,6 +236,12 @@ export class Collaboration {
       return
     }
     if (name === 'claim') { const row = this.taskRow(resourceId); if (row.claimable !== 1) fail('NOT_FOUND'); return }
+    if (name === 'cancelInvitation') {
+      const task = this.task(resourceId); this.coordination.active(task)
+      const handoff = pendingHandoff(this.db,resourceId)
+      if (task.initiatorId !== this.actor.id && task.leadId !== this.actor.id && handoff?.from_member_id !== this.actor.id) fail('FORBIDDEN')
+      return
+    }
     if (['invite', 'start', 'submit'].includes(name)) {
       const task = this.task(resourceId)
       this.coordination.active(task)
@@ -313,7 +323,7 @@ export class Collaboration {
     const assignment = Assignment.parse({ id: id(), taskId: task.id, kind, memberId, capability: null, status: accepted ? 'accepted' : 'pending', commitment: accepted ? { scope, schedule, acceptedAt: now() } : null, transferToMemberId: null, version: 1 })
     this.db.prepare('INSERT INTO assignments VALUES (?,?,?,?,?,?,?,?,?)').run(assignment.id, task.id, memberId, kind, assignment.status, 1, encode(assignment), scope, encode(schedule))
     this.db.prepare('INSERT INTO assignment_versions VALUES (?,?,?)').run(assignment.id,assignment.version,encode(assignment))
-    this.grant(task.id, memberId, accepted ? 'full' : 'summary')
+    if (accepted || !this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='full'").get(task.id,memberId)) this.grant(task.id, memberId, accepted ? 'full' : 'summary')
     return assignment
   }
   validateInvitation(task: TaskModel, memberId: string, schedule: ScheduleModel) {
@@ -358,14 +368,13 @@ export class Collaboration {
       // Summary readers may see task state, but never another person's deliveries or commitments.
       const deliveries = this.db.prepare(`SELECT COUNT(*) submitted,SUM(CASE WHEN r.deliverable_id IS NOT NULL AND json_extract(r.document,'$.decision')='accepted' THEN 1 ELSE 0 END) accepted
         FROM deliverables d LEFT JOIN reviews r ON r.deliverable_id=d.id WHERE d.task_id IN (SELECT t.id ${v.sql} AND acl.access='full')`).get(...v.values)!
-      const blocked = this.db.prepare(`SELECT t.id ${v.sql} AND acl.access='full' AND t.status='blocked' ORDER BY t.id LIMIT 101`).all(...v.values)
       const actions = this.db.prepare(`SELECT
         SUM(CASE WHEN EXISTS(SELECT 1 FROM assignments a WHERE a.task_id=t.id AND a.member_id=? AND a.status='pending') AND t.status='awaiting_acceptance' THEN 1 ELSE 0 END) invitations,
         SUM(CASE WHEN acl.access='full' AND t.reviewer_id=? AND t.status='in_review' THEN 1 ELSE 0 END) reviews
         ${v.sql}`).get(this.actor.id, this.actor.id, ...v.values)!
       const changeCount=this.db.prepare(`SELECT count(*) n FROM change_proposals p WHERE p.status='pending' AND p.task_id IN (SELECT t.id ${v.sql} AND acl.access='full') AND EXISTS(SELECT 1 FROM json_each(p.document,'$.requiredMemberIds') WHERE value=?) AND NOT EXISTS(SELECT 1 FROM change_decisions d WHERE d.proposal_id=p.id AND d.member_id=?)`).get(...v.values,this.actor.id,this.actor.id)!
       const executionCount=this.db.prepare(`SELECT count(*) n FROM execution_jobs r WHERE ${attentionRun} AND r.task_id IN (SELECT t.id ${v.sql} AND acl.access='full' AND t.status NOT IN ('completed','cancelled') AND (t.lead_id=? OR t.initiator_id=?))`).get(...v.values,this.actor.id,this.actor.id)!
-      return { data: { counts, submittedDeliverables: Number(deliveries.submitted), acceptedDeliverables: Number(deliveries.accepted ?? 0), blockedTaskIds: blocked.slice(0, 100).map(r => String(r.id)), blockedTaskIdsTruncated: blocked.length > 100, pendingActions: { executionAttention:Number(executionCount.n), changeResponses: Number(changeCount.n), invitationResponses: Number(actions.invitations ?? 0), deliverableReviews: Number(actions.reviews ?? 0) }, updatedAt: this.readSnapshot!.at } }
+      return { data: { counts, submittedDeliverables: Number(deliveries.submitted), acceptedDeliverables: Number(deliveries.accepted ?? 0), pendingActions: { executionAttention:Number(executionCount.n), changeResponses: Number(changeCount.n), invitationResponses: Number(actions.invitations ?? 0), deliverableReviews: Number(actions.reviews ?? 0) }, updatedAt: this.readSnapshot!.at } }
     },
     actionItems: ({ params, query }) => {
       this.sameLab(params.id)
@@ -462,12 +471,38 @@ export class Collaboration {
       this.event(task, 'invited'); this.outbox(task, 'invitation_created')
       return { data: assignment }
     },
+    cancelInvitation: ({ params, body }) => {
+      const task = this.task(params.id); this.checkVersion(task.version, body.expectedVersion)
+      if (task.status !== 'awaiting_acceptance') fail('INVALID_STATE')
+      const pending = this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='pending'").get(task.id)
+      if (!pending) fail('INVALID_STATE')
+      const offer = Assignment.parse(JSON.parse(String(pending.document))),handoff=pendingHandoff(this.db,task.id)
+      offer.status = 'cancelled'; offer.version++; this.saveAssignment(offer)
+      const former=handoff&&String(handoff.from_member_id)
+      const mayRestore=former&&hasLabMembership(this.db,former,task.labId)
+        &&this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='full'").get(task.id,former)
+        &&this.db.prepare('SELECT 1 FROM auth_accounts WHERE member_id=? AND disabled=0').get(former)
+      if (handoff&&mayRestore) {
+        const original=this.db.prepare('SELECT document FROM assignments WHERE id=?').get(handoff.from_assignment_id!)!
+        const restored = Assignment.parse(JSON.parse(String(original.document))); restored.status = 'accepted'; restored.transferToMemberId = null; restored.version++; this.saveAssignment(restored)
+        task.leadId = restored.memberId; task.status = handoff.prior_status as TaskModel['status'];task.schedule=JSON.parse(String(handoff.prior_schedule))
+        this.db.prepare('UPDATE tasks SET summary_document=? WHERE id=?').run(handoff.prior_summary!,task.id)
+      } else {
+        task.leadId=null;task.status = 'unassigned'
+      }
+      if(handoff)this.db.prepare("UPDATE task_handoffs SET status='cancelled' WHERE offer_id=?").run(offer.id)
+      this.db.prepare("DELETE FROM task_access WHERE task_id=? AND member_id=? AND access='summary'").run(task.id,offer.memberId!)
+      this.coordination.stopDispatch(task.id)
+      task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'invitation_cancelled')
+      return { data: this.actions(task) }
+    },
     invitationDecision: ({ params, body }) => {
       const offer = this.assignment(params.id), assignment = offer.model
       this.checkVersion(assignment.version, body.expectedVersion)
       const row = this.taskRow(assignment.taskId); this.checkVersion(Number(row.version), body.expectedTaskVersion)
       if (assignment.status !== 'pending' || row.status !== 'awaiting_acceptance' || row.lead_id) fail('INVALID_STATE')
       const task = Task.parse(JSON.parse(String(this.db.prepare('SELECT document FROM tasks WHERE id=?').get(assignment.taskId)!.document)))
+      const handoff=pendingHandoff(this.db,task.id)
       this.db.prepare('INSERT INTO invitation_decisions VALUES (?,?,?,?,?,?,?)').run(assignment.id, this.actor.id, assignment.version, task.version, body.decision, body.comment, now())
       assignment.status = body.decision; assignment.version++
       if (body.decision === 'accepted') {
@@ -476,8 +511,15 @@ export class Collaboration {
         task.leadId = this.actor.id; task.schedule = assignment.commitment.schedule; this.grant(task.id, this.actor.id, 'full')
         this.coordination.acceptedState(task)
         new ReuseService(this).copy('plan',task.planId,'task',task.id)
-        for(const row of this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status='withdrawn' AND json_extract(document,'$.transferToMemberId')=?").all(task.id,this.actor.id)) {const old=Assignment.parse(JSON.parse(String(row.document)));old.status='transferred';old.version++;this.saveAssignment(old)}
+        if(handoff) {
+          const row=this.db.prepare('SELECT document FROM assignments WHERE id=?').get(handoff.from_assignment_id!)!
+          const old=Assignment.parse(JSON.parse(String(row.document)));old.status='transferred';old.version++;this.saveAssignment(old)
+        }
       } else { if(body.committed) fail('VALIDATION_ERROR');task.status = 'unassigned'; this.db.prepare("DELETE FROM task_access WHERE task_id=? AND member_id=? AND access='summary'").run(task.id, this.actor.id) }
+      if(handoff) {
+        if(![task.initiatorId,task.reviewerId,...task.participantIds].includes(String(handoff.from_member_id)))this.db.prepare("UPDATE task_access SET access='revoked' WHERE task_id=? AND member_id=?").run(task.id,handoff.from_member_id!)
+        this.db.prepare('UPDATE task_handoffs SET status=? WHERE offer_id=?').run(body.decision,assignment.id)
+      }
       this.saveAssignment(assignment); task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, body.decision)
       return { data: assignment }
     },
@@ -529,7 +571,6 @@ export class Collaboration {
       this.db.prepare('UPDATE deliverables SET version=?,document=? WHERE id=?').run(delivery.version, encode(delivery), delivery.id)
       task.status = body.decision === 'accepted' ? 'completed' : 'changes_requested'; task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'reviewed')
       if(body.decision==='changes_requested') this.coordination.impact(task,'review_returned')
-      else this.coordination.resolveDownstream(task)
       return { data: delivery }
     },
   }

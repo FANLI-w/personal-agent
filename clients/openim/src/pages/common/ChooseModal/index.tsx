@@ -1,6 +1,6 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { GroupType, SessionType } from "@openim/wasm-client-sdk";
-import { Button, Input, Modal, Upload, UploadProps } from "antd";
+import { Alert, Button, Input, Modal, Upload, UploadProps } from "antd";
 import clsx from "clsx";
 import i18n, { t } from "i18next";
 import {
@@ -24,6 +24,7 @@ import { emit } from "@/utils/events";
 import { uploadFile } from "@/utils/imCommon";
 import { researchApi, researchMode } from "@/research/api";
 import { useResearchStore } from "@/research/store";
+import { usePersonalOperation } from "@/research/usePersonalOperation";
 
 import ChooseBox, { ChooseBoxHandle } from "./ChooseBox";
 import { CheckListItem } from "./ChooseBox/CheckItem";
@@ -128,6 +129,14 @@ export const ChooseContact: FC<ChooseContactProps> = ({
 }) => {
   const chooseBoxRef = useRef<ChooseBoxHandle>(null);
   const [loading, setLoading] = useState(false);
+  const sending = useRef(false);
+  const requestTicket = useRef(0);
+  const [createdGroupId, setCreatedGroupId] = useState<string>();
+  const [failure, setFailure] = useState("");
+  const operationScope = usePersonalOperation(
+    isOverlayOpen,
+    `group-choose:${type}:${typeof extraData === "string" ? extraData : ""}`,
+  );
   const [groupBaseInfo, setGroupBaseInfo] = useState({
     groupName: "",
     groupAvatar: "",
@@ -137,11 +146,18 @@ export const ChooseContact: FC<ChooseContactProps> = ({
 
   const resetState = useCallback(() => {
     chooseBoxRef.current?.resetState();
+    setCreatedGroupId(undefined);
+    requestTicket.current++;
+    sending.current = false;
+    setLoading(false);
+    setFailure("");
     setGroupBaseInfo({
       groupName: "",
       groupAvatar: "",
     });
   }, []);
+
+  useEffect(() => resetState(), [operationScope.scope, resetState]);
 
   useEffect(() => {
     let updateTimer: ReturnType<typeof setTimeout> | undefined;
@@ -165,41 +181,126 @@ export const ChooseContact: FC<ChooseContactProps> = ({
   }, [extraData, isOverlayOpen, resetState, type]);
 
   const confirmChoose = async () => {
+    if (sending.current) return;
+    const operation = operationScope.capture();
     const choosedList = chooseBoxRef.current?.getCheckedList() ?? [];
     if (!choosedList?.length && type !== "SELECT_USER")
       return message.warning(t("toast.selectLeastOne"));
 
     if (!groupBaseInfo.groupName.trim() && type === "CRATE_GROUP")
       return message.warning(t("toast.inputGroupName"));
+    if (researchMode && type === "CRATE_GROUP" && choosedList.length > 20)
+      return message.warning("一次建群最多选择20位成员。");
 
     setLoading(true);
+    setFailure("");
+    sending.current = true;
+    const ticket = ++requestTicket.current;
     try {
       if (researchMode && type !== "SELECT_USER") {
         await useResearchStore.getState().refresh();
-        const contactIds = choosedList.map(item => useResearchStore.getState().contacts.find(contact => contact.userID === item.userID)?.contact.id);
-        if (contactIds.some(id => !id)) throw new Error("选中成员包含平台系统账户或不可用联系人，请重新选择");
+        if (!operation.isCurrent()) return;
+        const contactIds = choosedList.map(
+          (item) =>
+            item.contactId ||
+            useResearchStore
+              .getState()
+              .contacts.find((contact) => contact.userID === item.userID)?.contact.id,
+        );
+        if (contactIds.some((id) => !id))
+          throw new Error("选中成员包含平台系统账户或不可用联系人，请重新选择");
         const ids = contactIds as string[];
         if (type === "CRATE_GROUP") {
-          const created = (await researchApi("imCreateGroup", {body:{title:groupBaseInfo.groupName.trim(),contactIds:ids,sharedContext:{selectedText:null,artifactRefs:[]},plan:null}})).data;
-          const mapping = (await researchApi("imSyncConversation",{params:{id:created.id},body:{}})).data;
+          const groupId =
+            createdGroupId ||
+            (
+              await researchApi("imCreateGroup", {
+                body: {
+                  title: groupBaseInfo.groupName.trim(),
+                  contactIds: ids,
+                  sharedContext: { selectedText: null, artifactRefs: [] },
+                  plan: null,
+                },
+              })
+            ).data.id;
+          if (!operation.isCurrent()) return;
+          setCreatedGroupId(groupId);
+          const mapping = (
+            await researchApi("imSyncConversation", {
+              params: { id: groupId },
+              body: {},
+            })
+          ).data;
+          if (!operation.isCurrent()) return;
           await useResearchStore.getState().refresh();
-          if (mapping.transportStatus !== "ready" || !mapping.groupID) throw new Error(`科研群已创建，即时通信同步未完成（${mapping.reason || mapping.transportStatus}）。可以重试同步，成员仍需独立同意邀请。`);
-          await toSpecifiedConversation({sourceID:mapping.groupID,sessionType:SessionType.Group});
+          if (!operation.isCurrent()) return;
+          if (mapping.transportStatus !== "ready" || !mapping.groupID)
+            throw new Error(
+              `科研群已创建，即时通信同步未完成（${
+                mapping.reason || mapping.transportStatus
+              }）。可以重试同步，成员仍需独立同意邀请。`,
+            );
+          message.success("群聊已创建，邀请状态可在聊天信息中查看");
+          await toSpecifiedConversation({
+            sourceID: mapping.groupID,
+            sessionType: SessionType.Group,
+          });
         } else {
-          const mapping = useResearchStore.getState().mappings.find(item=>item.groupID===extraData);
+          const mapping = useResearchStore
+            .getState()
+            .mappings.find((item) => item.groupID === extraData);
           if (!mapping) throw new Error("没有这个群的科研权限");
           for (const contactId of ids) {
-            const canonical = (await researchApi("chatConversation",{params:{id:mapping.researchConversationId}})).data;
-            if (type === "INVITE_TO_GROUP") await researchApi("imInviteContact",{params:{id:canonical.id},body:{contactId,expectedConversationVersion:canonical.version}});
-            else if (type === "KICK_FORM_GROUP") {
-              const member = canonical.members.find(item=>item.contactId===contactId);
+            const canonical = (
+              await researchApi("chatConversation", {
+                params: { id: mapping.researchConversationId },
+              })
+            ).data;
+            if (!operation.isCurrent()) return;
+            if (type === "INVITE_TO_GROUP") {
+              if (!canonical.allowedActions.includes("invite"))
+                throw new Error("仅群主可以邀请成员。");
+              if (
+                canonical.members.some(
+                  (m) =>
+                    m.contactId === contactId &&
+                    (m.status === "joined" || m.status === "invited"),
+                )
+              )
+                continue;
+              await researchApi("imInviteContact", {
+                params: { id: canonical.id },
+                body: { contactId, expectedConversationVersion: canonical.version },
+              });
+            } else if (type === "KICK_FORM_GROUP") {
+              const member = canonical.members.find(
+                (item) => item.contactId === contactId,
+              );
               if (!member) throw new Error("选中身份不在当前成员列表");
-              await researchApi("revokeChatMember",{params:{id:canonical.id,contactId},body:{expectedVersion:member.version,expectedConversationVersion:canonical.version,reason:"负责人通过群成员管理移除成员；既有任务承接独立处理"}});
-            } else throw new Error("科研群负责人通过实验室权限管理；不能直接转移 IM 群主身份");
+              await researchApi("revokeChatMember", {
+                params: { id: canonical.id, contactId },
+                body: {
+                  expectedVersion: member.version,
+                  expectedConversationVersion: canonical.version,
+                  reason: "负责人通过群成员管理移除成员；既有任务承接独立处理",
+                },
+              });
+            } else
+              throw new Error(
+                "科研群负责人通过实验室权限管理；不能直接转移 IM 群主身份",
+              );
           }
-          await researchApi("imSyncConversation",{params:{id:mapping.researchConversationId},body:{}});
+          if (!operation.isCurrent()) return;
+          await researchApi("imSyncConversation", {
+            params: { id: mapping.researchConversationId },
+            body: {},
+          });
+          if (!operation.isCurrent()) return;
+          if (type === "INVITE_TO_GROUP")
+            message.success("邀请已提交，接受后才会加入群聊");
         }
-        closeOverlay(); return;
+        closeOverlay();
+        return;
       }
       switch (type) {
         case "CRATE_GROUP": {
@@ -264,9 +365,17 @@ export const ChooseContact: FC<ChooseContactProps> = ({
           break;
       }
     } catch (error) {
-      feedbackToast({ error });
+      if (!researchMode || operation.isCurrent()) {
+        setFailure(error instanceof Error ? error.message : "操作未完成，请重试。");
+        feedbackToast({ error });
+      }
+      return;
+    } finally {
+      if (ticket === requestTicket.current) {
+        sending.current = false;
+        if (!researchMode || operation.isCurrent()) setLoading(false);
+      }
     }
-    setLoading(false);
     closeOverlay();
   };
 
@@ -300,7 +409,7 @@ export const ChooseContact: FC<ChooseContactProps> = ({
         />
       </div>
       {type === "CRATE_GROUP" ? (
-        <div className="px-6 pt-4">
+        <div className="px-6 pt-4" aria-busy={loading}>
           <div className="mb-6 flex items-center">
             <div className="min-w-[60px] font-medium">{t("placeholder.groupName")}</div>
             <Input
@@ -308,34 +417,53 @@ export const ChooseContact: FC<ChooseContactProps> = ({
               maxLength={16}
               spellCheck={false}
               value={groupBaseInfo.groupName}
+              disabled={loading || !!createdGroupId}
               onChange={(e) =>
                 setGroupBaseInfo((state) => ({ ...state, groupName: e.target.value }))
               }
             />
           </div>
-          <div className="mb-6 flex items-center">
-            <div className="min-w-[60px] font-medium">
-              {t("placeholder.groupAvatar")}
+          {!researchMode && (
+            <div className="mb-6 flex items-center">
+              <div className="min-w-[60px] font-medium">
+                {t("placeholder.groupAvatar")}
+              </div>
+              <div className="flex items-center">
+                <OIMAvatar src={groupBaseInfo.groupAvatar} isgroup />
+                <Upload
+                  accept="image/*"
+                  showUploadList={false}
+                  customRequest={customUpload}
+                >
+                  <span className="ml-3 cursor-pointer text-xs text-[var(--primary)]">
+                    {t("placeholder.clickToModify")}
+                  </span>
+                </Upload>
+              </div>
             </div>
-            <div className="flex items-center">
-              <OIMAvatar src={groupBaseInfo.groupAvatar} isgroup />
-              <Upload
-                accept="image/*"
-                showUploadList={false}
-                customRequest={customUpload}
-              >
-                <span className="ml-3 cursor-pointer text-xs text-[var(--primary)]">
-                  {t("placeholder.clickToModify")}
-                </span>
-              </Upload>
-            </div>
-          </div>
-          <div className="flex">
+          )}
+          {createdGroupId && (
+            <p className="mb-3 text-sm" role="status">
+              群聊已创建。如同步未完成，请重试同步，不会重复建群。
+            </p>
+          )}
+          <fieldset
+            disabled={loading || !!createdGroupId}
+            className={clsx(
+              "m-0 flex min-w-0 border-0 p-0",
+              (loading || createdGroupId) && "pointer-events-none opacity-60",
+            )}
+          >
             <div className="min-w-[60px] font-medium">
               {t("placeholder.groupMember")}
             </div>
-            <ChooseBox className={clsx("!m-0 !h-[40vh] flex-1")} ref={chooseBoxRef} />
-          </div>
+            <ChooseBox
+              className={clsx("!m-0 !h-[40vh] flex-1")}
+              ref={chooseBoxRef}
+              researchGroupPick={researchMode}
+              disabled={loading || !!createdGroupId}
+            />
+          </fieldset>
         </div>
       ) : (
         <ChooseBox
@@ -345,8 +473,16 @@ export const ChooseContact: FC<ChooseContactProps> = ({
           showGroupMember={onlyMemberTypes.includes(type)}
           chooseOneOnly={onlyOneTypes.includes(type)}
           checkMemberRole={type === "KICK_FORM_GROUP"}
+          researchGroupPick={researchMode && type === "INVITE_TO_GROUP"}
+          groupID={
+            type === "INVITE_TO_GROUP" && typeof extraData === "string"
+              ? extraData
+              : undefined
+          }
+          disabled={loading}
         />
       )}
+      {failure && <Alert className="mx-6 mt-3" type="error" message={failure} />}
       <div className="flex justify-end px-9 py-6">
         <Button
           className="mr-6 border-0 bg-[var(--chat-bubble)] px-6"
@@ -360,7 +496,7 @@ export const ChooseContact: FC<ChooseContactProps> = ({
           loading={loading}
           onClick={() => void confirmChoose()}
         >
-          {t("confirm")}
+          {createdGroupId ? "重试同步" : t("confirm")}
         </Button>
       </div>
     </>

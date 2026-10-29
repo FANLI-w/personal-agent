@@ -9,7 +9,16 @@ const source = await fs.readFile(new URL("../src/research/workbench-links.ts", i
 const module = { exports: {} };
 vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText,
   { module, exports: module.exports, URLSearchParams, Set, Error, require: () => ({ Id }) });
-const { workbenchTaskPath, workbenchTaskTarget, findAssistantWorkTask } = module.exports;
+const { workbenchTaskPath, nativeWorkbenchTaskPath, workbenchTaskTarget, findAssistantWorkTask } = module.exports;
+
+test('native workbench retains a validated task return link without changing its kind', () => {
+  for (const kind of ['personal','research']) {
+    const target=workbenchTaskTarget(new URLSearchParams(nativeWorkbenchTaskPath('task_1',kind).split('?')[1]));
+    assert.equal(target.id,'task_1');assert.equal(target.kind,kind);assert.equal(target.valid,true);
+  }
+  assert.throws(()=>nativeWorkbenchTaskPath('../bad','research'));
+  assert.throws(()=>nativeWorkbenchTaskPath('task_1','other'));
+});
 const receipt = { conversationId: "same_agent_chat", turnId: "turn_exact" };
 const card = id => ({ id, taskId: id, source: "personal_task", summaryOnly: false, conversationId: receipt.conversationId });
 const signal = () => new AbortController().signal;

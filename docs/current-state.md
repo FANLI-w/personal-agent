@@ -2,6 +2,22 @@
 
 更新日期：2026-10-29（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## PR129/139/140/141 整合与 Windows0.10.73
+
+负责人本批明确授权审核合并四个PR并打包。从main/2d0091c建立独立release/chat-workbench-0.10.73，以普通merge保留四项历史，产品79aaef1；具体合并结果以本批整合PR为准。建群联系人/智能体分类、真实群主与待接受邀请、任务转交和依赖图/标题、原生DSH文件/PDF预览同时纳入。审核补修精确邀请/原负责人关联、撤销恢复、临时权限和旧桌面读取兼容；新增contract0.39.0/schema031。详见[整合、安装包和升级边界](deployment/acceptcat-0.10.73.md)。
+
+Windows0.10.73安装器已生成，405064574字节，SHA256 acf55e015f87f6ce9ff4216c0ca6b79dabb3b872fc6d1989392bbc270968fbe9。客户端156项定向、双类型、群10+1/任务7项隔离交互、官方DSH4项原生预览/模型菜单、NSIS/六入口/包内四项修改/更新校验和隔离成品OpenIM SDK启动通过；根CI本机串行回执在Git外ci-serial.log，最终根CI/远端结果见整合PR最新head检查。未代安装用户客户端或验收真人模型。
+
+本批没有部署后台或公开Release。生产最后记录仍eccc1d9d/contract0.38/schema030，公开Latest仍v0.10.71。0.10.73可在当前后台查看任务，新转交入口等待0.39后台；配对升级API/worker/网页和031迁移须另行处理。未完成本地聊天历史WIP5536ffc及手机PR90未纳入，不能把本包称为本地聊天历史已完成。下方“待审”保留原批次事实，以本节与实际整合PR为准。
+
+## 原生文件/PDF恢复与课题组工作台首批适配（待审）
+
+2026-10-29，从实际main/2d0091c建立fix/dsh-native-files-workbench，候选0.10.72。补DSH原生File路径与目录选择桥接，修正资源URL解析并固定升级Electron43.8.4，直接使用官方PDF阅读器；聊天文件上传同步兼容新File API。工作台接现有任务/资料入口与返回原任务链接，关闭任务抽屉恢复同一DSH视图。未安装Mimir或替换原生模型/插件界面。[实现与验证边界](development/dsh-native-files-workbench.md)。
+
+根862项、客户端39项DSH及34项桌面回归、最终双类型与追加16项检查通过；真实官方DSH渲染合成PDF/文本/图片、原生模型菜单及13项账号/业务API/嵌入界面串联通过。最终0.10.72 NSIS、ASAR桥接/更新校验与隔离成品/OpenIM SDK初始化通过；405060395字节，SHA256 8b73d92d661f12ed720578f8ef5ac33ea02b3e3cf82825b1655d6044c087c7a7。产品f160ee7交付[PR141](https://github.com/luoyan96/personal-agent/pull/141)，候选路径和失败记录见说明。另5项Playwright外壳检查通过；真实私人资料/模型和已用账号升级未验收。本批无需后台改动；未合并或发布，公开仍0.10.71，生产contract0.38/schema030。
+
+远端首轮Windows Foundation有5项既有后台测试超过5秒；本机同组7项与相同产品源码9fbd7fb的三项远端Foundation复查通过，未放宽超时。f160ee7的Windows打包通过，最新文档head检查以PR为准；原失败证据已保留。
+
 ## 两批修改已合并、后台0.38上线、Windows0.10.71已公开
 
 2026-10-29，负责人明确授权整合PR135/136、更新后台并发布。12:03:05，PR137合入main/081f418，两原PR均MERGED；受审head a5746c6四项远端CI全通过。12:03:21–46，API/worker更新至eccc1d9d镜像、contract0.38/schema030，无迁移；111表、9原件、30配置输入及其他服务保全。12:04:46公开稳定Latest [v0.10.71](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.71)，四附件及匿名更新入口核验通过。[完整合并、后台、备份与发布回执](deployment/acceptcat-0.10.71.md)。
@@ -94,6 +110,14 @@ contract0.37.0/schema030，Windows候选版本0.10.70。[PR133](https://github.c
 真实本地 DSH 的工作区、插件页面和原生嵌入已验证；解决 Electron 22 缺少标准浏览器 API 导致重连/模型区域报错的问题。定向测试 14 项与客户端/Electron 类型检查通过，集成夹具验证实际 DSH 启停与窗口管理；没有真实模型调用、真实账号安装验收或第三方插件安装验收。数据按 Windows 用户保存在 AcceptCat userData/local-dsh/home，独立于 AcceptCat 账号。此分支不包含未合并 PR129；公开 Latest 仍 0.10.61，代码合并、公开发布和后台部署均未执行。[开发、构建和完整边界](development/local-dsh-page.md)。
 
 本地 DSH 试用候选补充：[PR130](https://github.com/luoyan96/personal-agent/pull/130)，产品提交 d55375d。0.10.63 的 NSIS 安装包、五个归档入口和独立数据目录的打包程序启动冒烟已通过；完整路径与 SHA256 见上述开发说明。真实账号/模型和用户安装体验仍待负责人验收。
+
+## 建群身份与真实群主修复（新分支，未公开发布）
+
+在独立 `acceptcat-chat-experience` clone 从 main/93da480 开始 `fix/group-member-identities`。建群、邀请选择器按通讯录区分联系人/智能体，显示归属并提交业务 contactId；群详情、群管理、人数统一使用业务会话成员及 ownerMemberId，区分已加入/待接受。OpenIM 内部 imAdmin 不再作为产品群主或成员展示。创建者原本就是业务群主，受邀同事需要独立接受邀请；此前界面错误展示传输名单，且没有显示待接受状态。
+
+客户端候选版本 0.10.62。不修改后台、契约或技术群主权限，兼容当前服务；已有群不需迁移。建群同步失败保留业务群 ID，重试同步不会重复创建；成员管理沿用已有版本校验和权限接口。45 项定向测试、renderer/Electron 类型检查及实际组件的 10 项合成交互通过。安装包及 PR 结果见[开发记录](development/group-member-identities.md)。本机尚未安装或进行真实多账号验收，公开最新版仍是 0.10.61；不得把本批源码当成已发布客户端。
+
+产品 `a60072f` 已提交 [PR129](https://github.com/luoyan96/personal-agent/pull/129)。本机 Windows 0.10.62 安装包生成、四入口和更新元数据校验通过，Git 外 `group-identities-20261028/windows-a60072f/AcceptCat_0.10.62.exe`，88,249,693 字节，SHA256 `e11512e2ff52a27dab6eead0460e633e48a50a07f3132cfb388e0fafc2add875`。补充账号切换迟到创建结果检查通过（合成交互共 10+1）；11:24 核对远端 CI 仍在运行，未用本机结果代替。后续仅补文档；未合并、安装、部署或公开发布。
 
 ## 聊天整合与0.10.61已公开发布
 

@@ -1,6 +1,6 @@
 {
   "name": "research-wechat-openim",
-  "version": "0.10.71",
+  "version": "0.10.73",
   "main": "dist-electron/main/bootstrap.js",
   "description": "AcceptCat · 科研个人助理与课题组协作",
   "author": "blooming",
@@ -32,7 +32,7 @@
     "typecheck:electron": "tsc -p tsconfig.electron-check.json",
     "check:workspace": "node scripts/workspace-build.mjs",
     "test:build": "node --test tests/desktop-build.test.mjs",
-    "test:local-dsh": "node --test tests/local-dsh.test.mjs tests/local-dsh-account.test.mjs tests/task-workspace.test.mjs tests/task-material-bridge.test.mjs tests/team-execution.test.mjs",
+    "test:local-dsh": "node --test tests/local-dsh.test.mjs tests/local-dsh-account.test.mjs tests/local-dsh-files.test.mjs tests/task-workspace.test.mjs tests/task-material-bridge.test.mjs tests/team-execution.test.mjs",
     "test:service": "node --test tests/research-service.test.mjs",
     "test:peer-library": "node --test tests/peer-library.test.mjs",
     "test:local-folder": "node --test tests/local-folder.test.mjs",
@@ -62,7 +62,7 @@
     "@vitejs/plugin-legacy": "^4.1.0",
     "@vitejs/plugin-react": "^3.1.0",
     "autoprefixer": "^10.4.13",
-    "electron": "22.3.27",
+    "electron": "43.8.4",
     "electron-builder": "23.6.0",
     "eslint": "^8.34.0",
     "eslint-config-prettier": "^8.6.0",
@@ -87,7 +87,7 @@
     "vite-plugin-electron": "^0.11.1"
   },
   "engines": {
-    "node": ">=18.12.0",
+    "node": ">=22.19.0",
     "pnpm": ">=10.0.0 <11.0.0"
   },
   "pnpm": {
@@ -118,14 +118,14 @@
     ]
   },
   "dependencies": {
-    "@research-agent-platform/contracts": "link:../../packages/contracts",
-    "@research-agent-platform/research-skills": "link:../../packages/research-skills",
     "@ant-design/icons": "5.6.1",
     "@ckeditor/ckeditor5-react": "^8.0.0",
     "@livekit/components-react": "2.6.9",
     "@livekit/components-styles": "1.1.4",
     "@openim/electron-client-sdk": "3.8.3-patch.15.1",
     "@openim/wasm-client-sdk": "3.8.3-patch.15.1",
+    "@research-agent-platform/contracts": "link:../../packages/contracts",
+    "@research-agent-platform/research-skills": "link:../../packages/research-skills",
     "adm-zip": "^0.5.10",
     "ahooks": "3.7.7",
     "ajv": "8.17.1",
@@ -143,8 +143,8 @@
     "i18next": "^22.5.0",
     "i18next-browser-languagedetector": "^7.0.2",
     "i18next-fs-backend": "^2.2.0",
-    "livekit-client": "2.7.0",
     "koffi": "2.8.0",
+    "livekit-client": "2.7.0",
     "localforage": "^1.10.0",
     "md5": "^2.3.0",
     "mitt": "^3.0.0",

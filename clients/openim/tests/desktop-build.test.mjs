@@ -105,7 +105,9 @@ test('requires the CommonJS skill importer and its YAML dependency inside the st
   f.put('standalone/node_modules/yaml/package.json','{"main":"index.js"}');f.put('standalone/node_modules/yaml/index.js','module.exports={}');
   assert.throws(()=>runtimeEntryFiles(path.join(f.workspace,'standalone')), /localDshRuntime/);
   f.put('standalone/dist-electron/main/localDshRuntime.js','module.exports={}');
-  assert.equal(runtimeEntryFiles(path.join(f.workspace,'standalone')).length,5);
+  assert.throws(()=>runtimeEntryFiles(path.join(f.workspace,'standalone')), /localDsh/);
+  f.put('standalone/dist-electron/preload/localDsh.js','require("electron")');
+  assert.equal(runtimeEntryFiles(path.join(f.workspace,'standalone')).length,6);
 });
 
 test('checks the actual archive, not just the staging directory', async t => {

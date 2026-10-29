@@ -1,17 +1,22 @@
-import { Alert, Button, Spin } from "antd";
-import { useEffect, useRef, useState } from "react";
-import { Link } from 'react-router-dom';
+import { Alert, Button, Drawer, Spin } from "antd";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from 'react-router-dom';
+import { workbenchTaskPath, workbenchTaskTarget } from './workbench-links';
 import type { LocalDshSnapshot } from "@/types/localDsh";
 import "./local-dsh.scss";
+const TaskInbox = lazy(() => import('./WorkbenchTaskInbox').then(m => ({ default: m.WorkbenchTaskInbox })));
 
 const labels = { stopped: "未启动", starting: "正在启动", running: "正在打开页面", stopping: "正在停止", error: "启动异常" };
 
 export function LocalDshPage() {
+  const [params] = useSearchParams();
+  const task = workbenchTaskTarget(params);
   const bridge = window.electronAPI?.localDsh;
   const seat = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<LocalDshSnapshot>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [tasksOpen, setTasksOpen] = useState(false);
   const alive = useRef(true);
   useEffect(() => {
     alive.current = true;
@@ -57,9 +62,12 @@ export function LocalDshPage() {
   };
   return <section className="local-dsh-page" aria-label="工作台">
     <header className="local-dsh-header">
-      <div><h1>工作台 <span>本地工作区 · 试用</span></h1>
-        <p>在这台电脑上聊天、处理文件、运行工具与安装插件。</p></div>
-      <Link to="/workbench?view=tasks">进入任务，取用共享资料与归档成果</Link>
+      <div><h1>工作台</h1><p>阅读材料、处理文件，和助手一起完成科研工作。</p></div>
+      <nav aria-label="科研工作入口">
+        {task.valid && <Link to={workbenchTaskPath(task.id!, task.kind as 'personal' | 'research')}>返回当前任务</Link>}
+        <Button onClick={() => setTasksOpen(true)}>任务与交付</Button>
+        <Link to="/library">共享资料</Link>
+      </nav>
     </header>
     {!bridge && <Alert showIcon type="info" message="请使用支持本地 DSH 的 Windows 客户端" description="网页版及旧版客户端不能启动这台电脑上的 DSH。" />}
     {(error || state?.error) && <Alert showIcon type="error" message={error || state?.error} />}
@@ -73,6 +81,9 @@ export function LocalDshPage() {
         </>}
       </div>}
     </div>
-    <footer title={state?.home}>内置 DSH {state?.version || "0.2.1-rc.3"}{state?.model && ` · ${state.model}`}<span>按 AcceptCat 账号保存本机工作区</span></footer>
+    <Drawer title="任务与交付" open={tasksOpen} onClose={() => setTasksOpen(false)} width={460} destroyOnClose>
+      <p>查看需要你处理的安排和成果，进入任务后可取用共享资料、继续工作、提交或验收。</p>
+      {tasksOpen && <Suspense fallback={<Spin tip="正在读取任务" />}><TaskInbox presentation="overview" /></Suspense>}
+    </Drawer>
   </section>;
 }

@@ -21,7 +21,14 @@ interface ICheckItemProps {
 }
 
 export type CheckListItem = Partial<
-  FriendUserItem & ConversationItem & GroupItem & { disabled?: boolean }
+  FriendUserItem &
+    ConversationItem &
+    GroupItem & {
+      disabled?: boolean;
+      contactId?: string;
+      identityDescription?: string;
+      selectionStatus?: string;
+    }
 >;
 
 const CheckItem: FC<ICheckItemProps> = (props) => {
@@ -35,10 +42,33 @@ const CheckItem: FC<ICheckItemProps> = (props) => {
         { "cursor-pointer": showCheck },
       )}
       onClick={() => !isDisabled && itemClick?.(data)}
+      role={showCheck ? "checkbox" : undefined}
+      aria-checked={showCheck ? !!isChecked : undefined}
+      aria-disabled={showCheck ? !!isDisabled : undefined}
+      aria-label={
+        showCheck
+          ? `${showName} ${data.identityDescription || ""} ${
+              data.selectionStatus || ""
+            }`.trim()
+          : undefined
+      }
+      tabIndex={showCheck && !isDisabled ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (showCheck && !isDisabled && (e.key === " " || e.key === "Enter")) {
+          e.preventDefault();
+          itemClick?.(data);
+        }
+      }}
     >
       <div className="flex items-center">
         {showCheck && (
-          <Checkbox className="mr-3" checked={isChecked} disabled={isDisabled} />
+          <Checkbox
+            className="mr-3"
+            checked={isChecked}
+            disabled={isDisabled}
+            tabIndex={-1}
+            aria-hidden
+          />
         )}
         <OIMAvatar
           src={data.faceURL}
@@ -48,13 +78,30 @@ const CheckItem: FC<ICheckItemProps> = (props) => {
             data.conversationType === SessionType.WorkingGroup
           }
         />
-        <div className="ml-3 max-w-[120px] truncate">{showName}</div>
+        <div className="ml-3 min-w-0 max-w-[160px]">
+          <div className="truncate" title={showName}>
+            {showName}
+          </div>
+          {data.identityDescription && (
+            <div
+              className="truncate text-xs text-[var(--sub-text)]"
+              title={data.identityDescription}
+            >
+              {data.identityDescription}
+            </div>
+          )}
+          {data.selectionStatus && (
+            <div className="text-xs text-[var(--sub-text)]">{data.selectionStatus}</div>
+          )}
+        </div>
       </div>
       {showCheck ? (
-        <RightOutlined
-          className="cursor-pointer text-[var(--sub-text)]"
-          rev={undefined}
-        />
+        data.identityDescription ? null : (
+          <RightOutlined
+            className="cursor-pointer text-[var(--sub-text)]"
+            rev={undefined}
+          />
+        )
       ) : (
         <CloseOutlined
           className="cursor-pointer text-[var(--sub-text)]"

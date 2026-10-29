@@ -56,11 +56,34 @@ export function DependencyGraph({ items }: { items: DependencyNode[] }) {
       marker.setAttribute("orient", "auto");
       const arrowPath = document.createElementNS(SVG_NS, "path");
       arrowPath.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
-      arrowPath.setAttribute("fill", "#9aa5b1");
+      arrowPath.setAttribute("fill", "#64748b");
       marker.appendChild(arrowPath);
       defs.appendChild(marker);
       const fragment = document.createDocumentFragment();
       fragment.appendChild(defs);
+
+      // 统计每个节点的出入边数，用于错开箭头出入口，避免多条线重叠
+      const outCount = new Map<string, number>();
+      const inCount = new Map<string, number>();
+      for (const st of items) {
+        for (const dep of [...new Set(st.dependencies)]) {
+          outCount.set(dep, (outCount.get(dep) || 0) + 1);
+          inCount.set(st.id, (inCount.get(st.id) || 0) + 1);
+        }
+      }
+      const outSeen = new Map<string, number>();
+      const inSeen = new Map<string, number>();
+      const port = (
+        node: { y: number; height: number },
+        key: string,
+        total: number,
+        seen: Map<string, number>,
+      ) => {
+        const idx = seen.get(key) || 0;
+        seen.set(key, idx + 1);
+        const frac = total <= 1 ? 0.5 : (idx + 0.5) / total;
+        return node.y + node.height * frac;
+      };
 
       items.forEach((st) => {
         [...new Set(st.dependencies)].forEach((dep) => {
@@ -68,16 +91,13 @@ export function DependencyGraph({ items }: { items: DependencyNode[] }) {
           const to = nodes.get(st.id);
           if (!from || !to) return;
           const x1 = from.x + from.width;
-          const y1 = from.y + from.height / 2;
+          const y1 = port(from, dep, outCount.get(dep) || 1, outSeen);
           const x2 = to.x;
-          const y2 = to.y + to.height / 2;
-          const dx = Math.max(24, (x2 - x1) * 0.45);
+          const y2 = port(to, st.id, inCount.get(st.id) || 1, inSeen);
+          const midX = x1 + Math.max(24, (x2 - x1) * 0.5);
           const path = document.createElementNS(SVG_NS, "path");
-          path.setAttribute(
-            "d",
-            `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`,
-          );
-          path.setAttribute("stroke", "#9aa5b1");
+          path.setAttribute("d", `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`);
+          path.setAttribute("stroke", "#64748b");
           path.setAttribute("stroke-width", "1.5");
           path.setAttribute("fill", "none");
           path.setAttribute("marker-end", `url(#${markerId})`);

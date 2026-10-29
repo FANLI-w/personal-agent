@@ -4,9 +4,10 @@ import { join } from 'node:path'
 import { Artifact, Assignment, ChangeProposal, DependencyImpact, Task, TaskEvent } from '@research-agent-platform/contracts'
 import type { ArtifactModel, ChangeProposalModel, DependencyImpactModel, RequestFor, TaskModel, ScheduleModel } from '@research-agent-platform/contracts'
 import type { Collaboration } from './collaboration.js'
-import { ApiError, fail } from './errors.js'
+import { fail } from './errors.js'
+import { pendingHandoff } from './task-handoffs.js'
 
-export const coordinationCommands = ['block', 'resume', 'proposeChange', 'decideChange', 'withdraw', 'cancelTask', 'revokeAccess', 'acknowledgeImpacts', 'upload', 'artifact', 'content', 'revokeArtifact', 'events'] as const
+export const coordinationCommands = ['proposeChange', 'decideChange', 'withdraw', 'cancelTask', 'revokeAccess', 'upload', 'artifact', 'content', 'revokeArtifact', 'events'] as const
 export type CoordinationCommand = typeof coordinationCommands[number]
 const now = () => new Date().toISOString()
 const encode = JSON.stringify
@@ -49,10 +50,9 @@ export class Coordination {
     if (name === 'events') return
     if (name !== 'cancelTask' && name !== 'revokeAccess') this.active(task)
     const actor = this.c.actor.id
-    if (['block','resume','withdraw'].includes(name) && task.leadId !== actor) fail('FORBIDDEN')
+    if (name === 'withdraw' && task.leadId !== actor) fail('FORBIDDEN')
     if (['cancelTask','revokeAccess'].includes(name) && task.initiatorId !== actor) fail('FORBIDDEN')
     if (['proposeChange','upload'].includes(name) && task.leadId !== actor && task.initiatorId !== actor) fail('FORBIDDEN')
-    if (name === 'acknowledgeImpacts' && task.leadId !== actor && task.reviewerId !== actor) fail('FORBIDDEN')
   }
   saveProposal(p: ChangeProposalModel) {
     ChangeProposal.parse(p)
@@ -86,31 +86,23 @@ export class Coordination {
   dependenciesReady(task: TaskModel, bind = false) {
     const bindings: [string, string, number][] = []
     for (const d of task.dependencies) {
-      if (d.kind !== 'accepted_deliverable') fail('NOT_IMPLEMENTED')
+      if (d.kind !== 'accepted_deliverable') continue
       const latest = this.db.prepare(`SELECT d.revision,r.document,d.document delivery FROM tasks t JOIN deliverables d ON d.task_id=t.id JOIN reviews r ON r.deliverable_id=d.id
         WHERE t.id=? AND t.status='completed' AND d.revision=(SELECT MAX(revision) FROM deliverables WHERE task_id=t.id)`).get(d.taskId)
       const bound = this.db.prepare('SELECT revision FROM dependency_bindings WHERE task_id=? AND upstream_id=?').get(task.id,d.taskId)
       const revision = d.requiredRevision ?? (bound ? Number(bound.revision) : null)
-      if (!latest || JSON.parse(String(latest.document)).decision !== 'accepted' || (revision !== null && Number(latest.revision) !== revision)) fail('DEPENDENCY_BLOCKED')
-      for(const artifactId of JSON.parse(String(latest.delivery)).artifactRefs as string[]) if(!this.db.prepare("SELECT 1 FROM artifacts WHERE id=? AND task_id=? AND status='available'").get(artifactId,d.taskId)) fail('DEPENDENCY_BLOCKED')
-      if (bind && !bound) bindings.push([task.id,d.taskId,Number(latest.revision)])
+      if (!latest || JSON.parse(String(latest.document)).decision !== 'accepted' || (revision !== null && Number(latest.revision) !== revision)) continue
+      let available = true
+      for(const artifactId of JSON.parse(String(latest.delivery)).artifactRefs as string[]) if(!this.db.prepare("SELECT 1 FROM artifacts WHERE id=? AND task_id=? AND status='available'").get(artifactId,d.taskId)) { available = false; break }
+      if (bind && !bound && available) bindings.push([task.id,d.taskId,Number(latest.revision)])
     }
-    // Validate the complete set before writing any revision, including callers
-    // that catch DEPENDENCY_BLOCKED to retain an accepted assignment.
     for (const binding of bindings) this.db.prepare('INSERT INTO dependency_bindings VALUES (?,?,?)').run(...binding)
   }
   runnable(task: TaskModel, bind = false) {
-    if (this.db.prepare('SELECT 1 FROM dependency_impacts WHERE task_id=? AND acknowledged=0').get(task.id)) fail('DEPENDENCY_BLOCKED')
     this.dependenciesReady(task,bind)
   }
   acceptedState(task: TaskModel) {
-    try { this.runnable(task); task.status='ready'; task.blocker=null }
-    catch (error) {
-      if (!(error instanceof ApiError && error.code==='DEPENDENCY_BLOCKED')) throw error
-      task.status='blocked'
-      const impacted=!!this.db.prepare('SELECT 1 FROM dependency_impacts WHERE task_id=? AND acknowledged=0').get(task.id)
-      task.blocker={reason:impacted?'Dependency changed; reassess preserved work.':'等待前置任务完成',requestedMemberId:null,requestedAction:impacted?'Verify dependencies and acknowledge impacts before resuming.':'前置任务完成后自动恢复',resumeStatus:'ready'}
-    }
+    this.runnable(task); task.status='ready'; task.blocker=null
   }
   impact(upstream: TaskModel, kind: DependencyImpactModel['kind']) {
     const rows = this.db.prepare(`WITH RECURSIVE downstream(id) AS (SELECT task_id FROM task_dependencies WHERE upstream_id=? UNION SELECT e.task_id FROM task_dependencies e JOIN downstream d ON e.upstream_id=d.id)
@@ -120,34 +112,19 @@ export class Coordination {
       const impact = DependencyImpact.parse({ id:randomUUID(),taskId:task.id,upstreamTaskId:upstream.id,upstreamVersion:upstream.version,kind,
         affectedRevisions:this.db.prepare('SELECT revision FROM deliverables WHERE task_id=? ORDER BY revision').all(task.id).map(r=>Number(r.revision)),createdAt:now(),acknowledgedBy:null,acknowledgedAt:null,comment:null })
       this.db.prepare('INSERT INTO dependency_impacts VALUES (?,?,?,0,?)').run(impact.id,task.id,upstream.id,encode(impact))
-      if (['ready','in_progress','changes_requested','in_review'].includes(task.status)) {
-        task.blocker={ reason:'Dependency changed; reassess preserved work.',requestedMemberId:task.leadId,requestedAction:'Verify dependencies and acknowledge impacts before resuming.',resumeStatus:task.status as 'ready'|'in_progress'|'changes_requested'|'in_review' };task.status='blocked'
-      }
       this.touch(task,'dependency_impacted')
       this.stopDispatch(task.id)
-    }
-  }
-  resolveDownstream(upstream: TaskModel) {
-    const rows = this.db.prepare(`WITH RECURSIVE downstream(id) AS (SELECT task_id FROM task_dependencies WHERE upstream_id=? UNION SELECT e.task_id FROM task_dependencies e JOIN downstream d ON e.upstream_id=d.id) SELECT t.document FROM tasks t JOIN downstream d ON d.id=t.id WHERE t.status='blocked'`).all(upstream.id)
-    for (const row of rows) {
-      const task = Task.parse(JSON.parse(String(row.document)))
-      // Only an untouched assignment waiting for first-time prerequisites can
-      // recover automatically. Evidence changes always require human review.
-      if (task.blocker?.reason !== '等待前置任务完成' || task.blocker.resumeStatus!=='ready' || task.blocker.requestedMemberId!==null) continue
-      if (this.db.prepare("SELECT 1 FROM task_events WHERE task_id=? AND json_extract(document,'$.kind')='started'").get(task.id)
-        || this.db.prepare('SELECT 1 FROM deliverables WHERE task_id=?').get(task.id)
-        || this.db.prepare('SELECT 1 FROM dependency_bindings WHERE task_id=?').get(task.id)) continue
-      try {
-        this.runnable(task)
-        task.status = task.blocker.resumeStatus; task.blocker = null
-        this.touch(task,'resumed','前置任务已完成，可以开始。')
-      } catch (error) { if (!(error instanceof ApiError && error.code==='DEPENDENCY_BLOCKED')) throw error }
     }
   }
   stopDispatch(taskId: string) { this.db.prepare("UPDATE outbox SET status='cancelled' WHERE aggregate_id=? AND status IN ('pending','leased')").run(taskId) }
   endMember(task: TaskModel, memberId: string, status: 'withdrawn'|'cancelled', transferTo: string|null = null) {
     for (const row of this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND member_id=? AND status IN ('accepted','pending')").all(task.id,memberId)) {
-      const a = Assignment.parse(JSON.parse(String(row.document)));a.status=status;a.transferToMemberId=transferTo;a.version++;this.c.saveAssignment(a)
+      const a = Assignment.parse(JSON.parse(String(row.document))),handoff=pendingHandoff(this.db,task.id)
+      if(handoff?.offer_id===a.id) {
+        this.db.prepare("UPDATE task_handoffs SET status='cancelled' WHERE offer_id=?").run(a.id)
+        if(![task.initiatorId,task.reviewerId,...task.participantIds].includes(String(handoff.from_member_id)))this.db.prepare("UPDATE task_access SET access='revoked' WHERE task_id=? AND member_id=?").run(task.id,handoff.from_member_id!)
+      }
+      a.status=status;a.transferToMemberId=transferTo;a.version++;this.c.saveAssignment(a)
     }
     if (task.leadId === memberId) { task.leadId=null;if(task.status!=='completed') task.status='unassigned';task.blocker=null;task.schedule={...task.schedule,committed:null} }
     if (!task.leadId && task.status === 'awaiting_acceptance' && !this.db.prepare("SELECT 1 FROM assignments WHERE task_id=? AND status IN ('pending','accepted')").get(task.id)) {
@@ -159,23 +136,6 @@ export class Coordination {
     this.stopDispatch(task.id)
   }
   readonly handlers: { [K in CoordinationCommand]: (r: RequestFor<K>)=>unknown } = {
-    block: ({params,body}) => {
-      const t=this.c.task(params.id);this.c.checkVersion(t.version,body.expectedVersion)
-      if (!['ready','in_progress','changes_requested'].includes(t.status)) fail('INVALID_STATE')
-      if (body.requestedMemberId) {
-        this.c.member(body.requestedMemberId)
-        if (this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='revoked'").get(t.id,body.requestedMemberId)) fail('FORBIDDEN')
-      }
-      t.blocker={reason:body.reason,requestedMemberId:body.requestedMemberId,requestedAction:body.requestedAction,resumeStatus:t.status as 'ready'|'in_progress'|'changes_requested'};t.status='blocked'
-      this.touch(t,'blocked');this.stopDispatch(t.id);this.impact(t,'blocked')
-      if(body.requestedMemberId)this.c.outbox(t,'support_requested',{taskId:t.id,labId:this.c.labId,requestedBy:this.c.actor.id})
-      return {data:this.c.actions(t)}
-    },
-    resume: ({params,body}) => {
-      const t=this.c.task(params.id);this.c.checkVersion(t.version,body.expectedVersion)
-      if (t.status!=='blocked' || !t.blocker) fail('INVALID_STATE')
-      this.runnable(t,true);t.status=t.blocker.resumeStatus;t.blocker=null;this.touch(t,'resumed');return {data:this.c.actions(t)}
-    },
     proposeChange: ({params,body}) => {
       const t=this.c.task(params.id);this.c.checkVersion(t.version,body.expectedVersion)
       if (!t.leadId || this.db.prepare("SELECT 1 FROM change_proposals WHERE task_id=? AND status='pending'").get(t.id)) fail('INVALID_STATE')
@@ -203,16 +163,6 @@ export class Coordination {
       else this.saveProposal(p)
       return {data:p}
     },
-    acknowledgeImpacts: ({params,body}) => {
-      const t=this.c.task(params.id);this.c.checkVersion(t.version,body.expectedVersion);this.dependenciesReady(t)
-      if (new Set(body.impactIds).size!==body.impactIds.length) fail('VALIDATION_ERROR')
-      for (const id of body.impactIds) {
-        const row=this.db.prepare('SELECT document FROM dependency_impacts WHERE id=? AND task_id=? AND acknowledged=0').get(id,t.id);if(!row) fail('NOT_FOUND')
-        const impact=DependencyImpact.parse(JSON.parse(String(row.document)));impact.acknowledgedBy=this.c.actor.id;impact.acknowledgedAt=now();impact.comment=body.comment
-        this.db.prepare('UPDATE dependency_impacts SET acknowledged=1,document=? WHERE id=?').run(encode(impact),id)
-      }
-      this.touch(t,'impacts_acknowledged');return {data:this.c.actions(t)}
-    },
     withdraw: ({params,body}) => {
       const t=this.c.task(params.id);this.c.checkVersion(t.version,body.expectedVersion)
       if (t.status==='completed') fail('INVALID_STATE')
@@ -221,14 +171,19 @@ export class Coordination {
         if (body.transferToMemberId===this.c.actor.id || this.db.prepare("SELECT 1 FROM task_access WHERE task_id=? AND member_id=? AND access='revoked'").get(t.id,body.transferToMemberId)) fail('FORBIDDEN')
         if (Number(this.db.prepare('SELECT count(*) n FROM assignments WHERE task_id=?').get(t.id)!.n)>=100) fail('VALIDATION_ERROR')
       }
+      const previous = body.transferToMemberId ? this.db.prepare("SELECT id FROM assignments WHERE task_id=? AND member_id=? AND status='accepted'").get(t.id,this.c.actor.id) : undefined
+      const priorStatus=t.status,priorSchedule=encode(t.schedule),priorSummary=String(this.db.prepare('SELECT summary_document FROM tasks WHERE id=?').get(t.id)!.summary_document)
+      if(body.transferToMemberId&&(!previous||!['ready','in_progress','changes_requested','in_review'].includes(priorStatus)))fail('INVALID_STATE')
       this.endMember(t,this.c.actor.id,'withdrawn',body.transferToMemberId)
       if ([t.initiatorId,t.reviewerId].includes(this.c.actor.id)) this.c.grant(t.id,this.c.actor.id,'full')
       if (body.transferToMemberId) {
-        const schedule={...t.schedule,committed:null};this.c.createAssignment(t,'invitation',body.transferToMemberId,body.remainingScope,schedule);t.status='awaiting_acceptance'
+        const schedule={...t.schedule,committed:null};const offer=this.c.createAssignment(t,'invitation',body.transferToMemberId,body.remainingScope,schedule);t.status='awaiting_acceptance'
+        this.db.prepare("INSERT INTO task_handoffs VALUES(?,?,?,?,?,?,?,'pending')").run(offer.id,t.id,previous!.id!,this.c.actor.id,priorStatus,priorSchedule,priorSummary)
+        this.c.grant(t.id,this.c.actor.id,'full')
         this.db.prepare("UPDATE tasks SET summary_document=json_set(summary_document,'$.deliverable',?,'$.summary',?,'$.schedule',json(?)) WHERE id=?").run(body.remainingScope,body.remainingScope,encode(schedule),t.id)
       }
       this.touch(t,'withdrawn',body.reason);this.c.event(t,'withdrawn',body.remainingScope);this.impact(t,'withdrawn')
-      if (body.transferToMemberId) this.c.outbox(t,'transfer_invitation_created')
+      if (body.transferToMemberId) this.c.outbox(t,'transfer_invitation_created',{taskId:t.id,requestedBy:this.c.actor.id})
       return {data:{taskId:t.id,taskVersion:t.version,status:'withdrawn'}}
     },
     revokeAccess: ({params,body}) => {
@@ -243,6 +198,7 @@ export class Coordination {
       if(t.status==='completed') fail('INVALID_STATE')
       for (const row of this.db.prepare("SELECT document FROM assignments WHERE task_id=? AND status IN ('pending','accepted')").all(t.id)) {const a=Assignment.parse(JSON.parse(String(row.document)));a.status='cancelled';a.version++;this.c.saveAssignment(a)}
       this.db.prepare("UPDATE task_access SET access='revoked' WHERE task_id=? AND member_id!=?").run(t.id,t.initiatorId)
+      this.db.prepare("UPDATE task_handoffs SET status='cancelled' WHERE task_id=? AND status='pending'").run(t.id)
       this.db.prepare('UPDATE tasks SET claimable=0 WHERE id=?').run(t.id)
       t.status='cancelled';t.blocker=null;this.touch(t,'cancelled',body.reason);this.stopDispatch(t.id);this.impact(t,'cancelled');return {data:this.c.actions(t)}
     },

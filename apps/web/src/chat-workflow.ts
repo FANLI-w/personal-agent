@@ -6,7 +6,7 @@ import type { ConversationWorkflowView, WorkflowTaskView, WorkflowStage } from '
 type TaskData = ResponseFor<'task'>['data'];
 const stageFor: Record<TaskModel['status'], WorkflowStage> = {
   unassigned: 'accept', awaiting_acceptance: 'accept', ready: 'work',
-  in_progress: 'work', blocked: 'work', changes_requested: 'work',
+  in_progress: 'work', changes_requested: 'work', blocked: 'work',
   in_review: 'review', completed: 'done', cancelled: 'cancelled',
 };
 
@@ -63,8 +63,6 @@ export function projectConversationWorkflow(
       case 'ready':
         nextStep = '已有任务承诺，核对材料与依赖后开始；AI 执行仍需确认能力、输入和预算。';
         actionLabel = task.allowedActions.includes('start') ? '开始任务' : '查看开始安排'; break;
-      case 'blocked':
-        nextStep = `处理卡点：${task.blocker?.reason ?? '请查看当前阻塞记录'}。${task.blocker?.requestedAction ?? ''}`; actionLabel = '处理卡点'; break;
       case 'changes_requested':
         nextStep = '按验收意见修改后重新提交新交付版本，再由验收人审核。'; actionLabel = '查看意见与重新交付'; break;
       case 'in_review':
