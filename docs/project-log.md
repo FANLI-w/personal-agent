@@ -2424,3 +2424,11 @@ CI复查：f160首轮Windows Foundation两组未修改的后台测试5项超过5
 审核发现139缺存量blocked迁移、撤销会按任意历史withdrawn找负责人、非发起人失去撤销权限、结束邀请残留临时权限/转交索引，以及邀请已有full权限的发起人会被降级。新增精确task_handoffs和schema031，保留历史/旧读取，新contract0.39按header提供旧桌面投影；接受/拒绝/撤权/取消和重放均定向验证，新客户端遇0.38后台先隐藏转交入口。后台7项定向、客户端156项、双类型、群10+1/任务7项隔离交互、真实官方DSH4项原生预览/模型菜单通过。根CI本机串行回执保存在ci-serial.log，最终结果随整合PR记录并核对最新head远端检查；并行压缩时一项既有5000ms进程测试超时日志保留，未扩大超时。
 
 0.10.73 NSIS/六入口/四项功能包内标记、SHA512/大小/更新清单及隔离成品OpenIM SDK启动通过。安装器405064574字节，SHA256 acf55e015f87f6ce9ff4216c0ca6b79dabb3b872fc6d1989392bbc270968fbe9；产物与原失败在Git外release-chat-workbench-0.10.73-20261029。说明见deployment/acceptcat-0.10.73.md。本批未部署或公开，生产最后记录contract0.38/schema030、公开Latest0.10.71。真实账号/双人群/模型未验收，未完成的本地聊天历史5536ffc和手机PR90不混入。
+
+## 2026-10-29 整体项目总览与简版 AI 交接
+
+负责人要求梳理做过什么、项目框架和规则设计，并给新AI交接prompt。核对既有product-plan、architecture、三步DSH计划、规则记忆与材料流程后，确认已有细节但入口分散且历史版本易误读。从实际origin/main ea7350f新建docs/project-overview-handoff，新增docs/project-overview.md及development/project-handoff-prompt.md；旧产品规划/架构/交接仅加当前入口提示，不重写历史。
+
+总览区分消息、任务、工作台与轻量资料，解释本机DSH和后台网关、共享权限的分工，明确规则/记忆/索引/原件与人工验收边界，并保留原生预览和模型菜单。按实际PR142合并、0.10.73已构建未公开、实际Latest0.10.71以及上批0.39/schema031部署记录PR143仍OPEN分别记录；本地历史WIP5536ffc和手机PR90未混报完成。近期三项重点是版本交付一致、真实科研闭环、基于已验证流程复用，不代表额外部署授权。
+
+本批check:content通过（541份Markdown、19份方法定义）、git diff --check通过；纯文档不重复产品CI。不修改产品、原共享开发目录或用户客户端，不合并、不打包、不部署、不发布。新AI仍须重新核对Git/Release/部署快照，并按根AGENTS与CONTRIBUTING开分支交付。
