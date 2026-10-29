@@ -72,7 +72,7 @@ corepack pnpm@10.28.0 run test:auth
 corepack pnpm@10.28.0 run build:web
 ```
 
-两个本地包使用 `link:` 连接当前仓库产物，避免 `file:` 安装目录保留旧文件清单；链接包的依赖由根工程冻结安装负责。Web和Electron构建入口会先重新构建两个共享包，阻止旧快照/缺失模块，检查固定Electron22.3.27与electron-builder23.6.0内部组件，并将运行依赖复制成独立目录。Windows构建还核对成品app.asar中的启动入口、Skill CommonJS导入及YAML依赖，不把开发链接带到安装包。
+两个本地包使用 `link:` 连接当前仓库产物，避免 `file:` 安装目录保留旧文件清单；链接包的依赖由根工程冻结安装负责。Web和Electron构建入口会先重新构建两个共享包，阻止旧快照/缺失模块，检查固定Electron43.8.4与electron-builder23.6.0内部组件，并将运行依赖复制成独立目录。Windows构建还核对成品app.asar中的启动入口、DSH文件桥接、Skill CommonJS导入及YAML依赖，不把开发链接带到安装包。内核升级说明见[工作台适配](docs/development/dsh-native-files-workbench.md)。
 
 不要用 `install --force` 作为共享包刷新步骤，也不要删除或浮动更新锁文件。正常冻结安装即可切换这两个链接；工具组件不一致时应先保留失败日志，再在独立干净目录使用同一固定提交和冻结锁文件重建。客户端构建环境与Windows安装后行为分开记录，不能据 `--force` 或某个报错单独判定NSIS故障根因。
 

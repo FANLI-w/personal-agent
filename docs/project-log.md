@@ -2406,3 +2406,13 @@ Git外证据D:/deepseek-agent/.runtime/large-originals-20261029。首次Electron
 45项定向检查、renderer/Electron类型和Web构建通过。实际React组件+合成账号/服务的隔离Edge10项交互通过，零应用错误，既有Antd弃用警告和早期两个定位失败日志保留。证据D:/deepseek-agent/.runtime/group-identities-20261028；说明见development/group-member-identities.md。尚未进行真实账号邀请/安装/模型验收，未合并、部署或公开发布；安装包生成结果另补。
 
 本批产品a60072fdae246bc64638a02b23b320b804b9ef85已推送PR129。本机Windows0.10.62冻结构建、NSIS、包内四入口及更新元数据检查通过，安装器另存group-identities-20261028/windows-a60072f/AcceptCat_0.10.62.exe，88,249,693字节，SHA256 e11512e2ff52a27dab6eead0460e633e48a50a07f3132cfb388e0fafc2add875。额外账号切换组件检查通过，合成交互10+1项；旧账号迟到创建结果不继续同步/跳转，新生命周期可提交。11:24（北京时间）核对远端三路Foundation和Windows打包仍运行；后续文档提交不改变产品/包来源。本机未执行安装器或真实账户测试，main、公开Release和后台保持原状态。
+
+## 2026-10-29 原生文件预览与课题组工作台首批适配
+
+负责人要求先恢复原生能力。从main/2d0091c在独立fix/dsh-native-files-workbench开发0.10.72候选。根因是缺File路径桥接、Chromium108自定义资源hostname为空，以及原生PDF新正则语法不受支持；新增隔离preload、逻辑scheme注册、固定Electron43.8.4，未改写DSH源码/发行资产。试过44.7.0但剪贴板类型不兼容，保留失败类型记录。聊天文件上传同步使用webUtils路径，合成文件仍落盘回退。
+
+工作台复用现有待办/进行中及资料入口，任务往返保留ID和kind；关闭抽屉恢复原视图。Mimir/SciencePrism/AgentTeams未安装，不宣称全套科研工作台已完成。根862项/68文件、生产3项/B0/Web、39项DSH、34项桌面回归、双类型与追加16项通过；13项真实DSH+合成账号本地API串联验证PDF、任务抽屉、返回链接、原生目录IPC及退出。真实模型、私人材料和多人体验未测。证据Git外dsh-native-files-20261029，初次探针/旧内核/夹具失败保留；无后台变更、部署或公开发布。详见docs/development/dsh-native-files-workbench.md，安装包与PR回执另补。
+
+交付回执：产品f160ee7，PR141已创建。0.10.72最终安装器405060395字节、SHA256 8b73d92d661f12ed720578f8ef5ac33ea02b3e3cf82825b1655d6044c087c7a7，Git外dsh-native-files-20261029/windows。最终NSIS/六入口/ASAR桥接与更新校验、隔离成品和OpenIM SDK初始化通过；4项原生预览、13项账号原生界面、5项Playwright外壳检查通过。中间旧来源包主动停止压缩，最终重建留证；PNG夹具和服务退出的失败另留。远端f160两Linux及Windows包通过，Windows Foundation待PR状态。无合并、部署、公开Release或代安装。
+
+CI复查：f160首轮Windows Foundation两组未修改的后台测试5项超过5秒，无断言错误；同组本机7项通过。产品源码相同的文档提交9fbd7fb三项远端Foundation全通过（run40843065222），未调整测试时限或后台代码。失败日志remote-foundation-first-failed.log和复查记录留在同一Git外证据目录。安装器仍对应f160ee7；后续文档head检查以PR为准。隔离界面/API夹具已清理，用户客户端未动。

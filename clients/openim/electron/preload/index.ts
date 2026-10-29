@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { DataPath, IElectronAPI } from "./../../src/types/globalExpose.d";
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 import "@openim/electron-client-sdk/lib/preload";
 import type { Platform } from "@openim/wasm-client-sdk";
 import { imagePasteLimits } from "../utils/imagePasteLimits";
@@ -104,6 +104,7 @@ const saveFileToDisk = async ({
 };
 
 const Api: IElectronAPI = {
+  getFilePath: (file: File) => file instanceof File ? webUtils.getPathForFile(file) : '',
   openFeishuLibrary: (url) => ipcRenderer.invoke("open-feishu-library", url),
   openFeishuAuthorization: (url) => ipcRenderer.invoke("open-feishu-authorization", url),
   connectLocalZotero: () => ipcRenderer.invoke("connect-local-zotero"),

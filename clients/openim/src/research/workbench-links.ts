@@ -3,6 +3,11 @@ import type { researchApi } from "./api";
 
 export type WorkbenchTaskKind = "personal" | "research";
 
+export function nativeWorkbenchTaskPath(id: string, kind: WorkbenchTaskKind) {
+  if (!Id.safeParse(id).success || !['personal', 'research'].includes(kind)) throw new Error('任务链接无效。');
+  return `/dsh?${new URLSearchParams({ task: id, taskKind: kind })}`;
+}
+
 export function workbenchTaskPath(id: string, kind: WorkbenchTaskKind = "personal") {
   if (!Id.safeParse(id).success) throw new Error("任务链接无效。");
   return `/workbench?${new URLSearchParams({
