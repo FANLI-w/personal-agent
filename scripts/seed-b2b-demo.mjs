@@ -50,7 +50,6 @@ await as('B',async()=>{
   }
 })
 await as('A',async()=>{
-  await call('block',{expectedVersion:1,reason:'Synthetic missing input',requestedMemberId:'member_A',requestedAction:'Provide approved synthetic evidence'},setup.taskIds[0],'b2b_seed_block_01')
   await call('proposeChange',{expectedVersion:2,scope:'Expanded synthetic checklist',goal:'Negotiated synthetic goal',acceptanceCriteria:'List missing evidence',schedule,dependencies:[],proposedLeadId:'member_B',reason:'Synthetic scope negotiation'},setup.taskIds[2],'b2b_seed_change_01')
 })
-console.log('Synthetic B2b seed complete: blocked dependency, pending change response, preserved attachment delivery and fresh C transfer invitation. Repeat preserves progress; no AI or external dispatch.')
+console.log('Synthetic B2b seed complete: pending change response, preserved attachment delivery and fresh C transfer invitation. Repeat preserves progress; no AI or external dispatch.')

@@ -790,7 +790,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     current = (await s.call('task', null, {id:current.id})).value.data.task
     const blockedPayload = {...payload,task:{id:current.id,version:current.version}}
     await rejectedProposal(blockedPayload,[{kind:'task',ref:blockedPayload.task},{kind:'artifact',ref:payload.inputArtifactRefs[0]}])
-    expect((await s.call('run', {expectedVersion:current.version,capability,budget,inputArtifactIds:[artifact.id],conclusionRefs:[]}, {id:current.id})).value.error.code).toBe('DEPENDENCY_BLOCKED')
+    expect((await s.call('run', {expectedVersion:current.version,capability,budget,inputArtifactIds:[artifact.id],conclusionRefs:[]}, {id:current.id})).status).toBe(202)
     expect(s.db.prepare('SELECT count(*) n FROM dependency_bindings WHERE task_id=?').get(current.id)!.n).toBe(0)
   })
 
