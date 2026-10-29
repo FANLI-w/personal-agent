@@ -59,6 +59,82 @@ function Section({
   );
 }
 
+/** Long prose hides the actual asks; split them into the few points people scan for. */
+function keyPoints(text: string) {
+  const points: string[] = [];
+  for (const raw of text.replace(/\r/g, "").split(/\n+|(?<=[。；;])/)) {
+    const line = raw
+      .replace(/^[\s\-*+·]+/, "")
+      .replace(/^\d+[.、)]\s*/, "")
+      .replace(/[。；;]$/, "")
+      .trim();
+    if (!line) continue;
+    // "做什么：先 A，再 B" reads better as two points than one long line.
+    const at = line.indexOf("：");
+    if (at >= 6 && line.length - at >= 8)
+      points.push(line.slice(0, at).trim(), line.slice(at + 1).trim());
+    else points.push(line);
+  }
+  return points;
+}
+
+const richText = /```|(^|\n)#{1,6}\s|(^|\n)\|/;
+
+function Points({ text }: { text: string }) {
+  const points = keyPoints(text),
+    shown = points.slice(0, 5);
+  if (richText.test(text)) return <SafeMessageMarkdown text={text} />;
+  return (
+    <>
+      <ul>
+        {shown.map((point, index) => (
+          <li key={index}>{point}</li>
+        ))}
+      </ul>
+      {points.length > shown.length && (
+        <details>
+          <summary>还有 {points.length - shown.length} 条</summary>
+          <ul>
+            {points.slice(5).map((point, index) => (
+              <li key={index}>{point}</li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </>
+  );
+}
+
+/** A blank note box is one more thing to type; state the phase in one line. */
+function progressNote(state: DshTaskState) {
+  const files = state.files.length;
+  if (state.phase === "running") return "助手正在工作台执行，工具确认在工作台完成。";
+  if (state.phase === "finished")
+    return `本轮已结束，工作文件夹里有 ${files} 个文件；核对后提交验收。`;
+  if (state.phase === "interrupted")
+    return "本轮执行中断，结果待核对；确认没有执行完再继续。";
+  if (state.phase === "failed") return "本轮未完成，先核对文件与工具记录再继续。";
+  return "";
+}
+
+/** Goal and acceptance stay open, but only as short points. */
+function TaskBrief({ goal, acceptance }: { goal: string; acceptance: string }) {
+  const groups = [
+    { label: "目标", text: goal },
+    { label: "验收", text: acceptance },
+  ].filter((group) => group.text.trim());
+  return (
+    <section className="task-work-brief" aria-label="目标与交付要求">
+      {groups.map((group) => (
+        <div key={group.label}>
+          <h3>{group.label}</h3>
+          <Points text={group.text} />
+        </div>
+      ))}
+    </section>
+  );
+}
+
 export function TaskWorkPage({
   taskId,
   kind,
@@ -84,7 +160,9 @@ export function TaskWorkPage({
     [collection, setCollection] = useState(""),
     [notice, setNotice] = useState("");
   const flight = useRef(false),
-    noteLoaded = useRef(false);
+    noteLoaded = useRef(false),
+    summaryTouched = useRef(false),
+    autoSummary = useRef("");
   const transcript = useRef<HTMLDivElement>(null),
     materialsRef = useRef<HTMLElement>(null),
     planRef = useRef<HTMLElement>(null),
@@ -96,6 +174,8 @@ export function TaskWorkPage({
     setState(undefined); setNote(''); setSummary(''); setPreview('');
     setSelected([]); setCollection(''); setNotice(''); setError(''); setConnectionError('');
     noteLoaded.current = false;
+    summaryTouched.current = false;
+    autoSummary.current = "";
   }, [operation.scope]);
   const detail = useResearchRead(async (signal) => {
     if (kind === "personal") {
@@ -160,12 +240,27 @@ export function TaskWorkPage({
       setConnectionError("");
       setState(next);
       if (next && !noteLoaded.current) {
-        setNote(next.binding.note);
+        // A saved note wins; otherwise start from the phase so the box is never blank.
+        setNote(next.binding.note || progressNote(next));
         if (next.binding.delivery?.status === "pending") {
           setSummary(next.binding.delivery.summary);
           setSelected(next.binding.delivery.names);
         }
         noteLoaded.current = true;
+      }
+      // The assistant already wrote the result; retyping it into the summary is
+      // busywork. Fill it once and keep refreshing only while it stays untouched.
+      const reply = taskEventRows(next?.events || [])
+        .filter((row) => row.role === "assistant" && row.text.trim())
+        .at(-1);
+      if (reply) {
+        const text = reply.text.trim().slice(0, 8000);
+        setSummary((current) => {
+          if (summaryTouched.current) return current;
+          if (current && current !== autoSummary.current) return current;
+          autoSummary.current = text;
+          return text;
+        });
       }
     }
   };
@@ -327,6 +422,8 @@ export function TaskWorkPage({
         label: "看安排与验收",
         run: async () => reveal("plan"),
       };
+  // Only the text we filled ourselves is worth labelling as prefilled.
+  const prefilled = !!summary && summary === autoSummary.current;
   return (
     <section className="task-work-page" aria-label="任务工作页">
       <header className="task-work-heading">
@@ -362,11 +459,10 @@ export function TaskWorkPage({
       )}
       {notice && <Alert type="success" message={notice} />}
       {task && "goal" in task && task.goal && (
-        <details className="task-work-goal">
-          <summary>目标与交付要求</summary>
-          <SafeMessageMarkdown text={task.goal} />
-          {"acceptanceCriteria" in task && <p>{task.acceptanceCriteria}</p>}
-        </details>
+        <TaskBrief
+          goal={task.goal}
+          acceptance={"acceptanceCriteria" in task ? task.acceptanceCriteria : ""}
+        />
       )}
       <Section
         title="工作"
@@ -443,6 +539,7 @@ export function TaskWorkPage({
                     <Button
                       size="small"
                       onClick={() => {
+                        summaryTouched.current = true;
                         setSummary(row.text.slice(0, 8000));
                         setSection((value) => ({ ...value, materials: true }));
                       }}
@@ -649,13 +746,21 @@ export function TaskWorkPage({
           {kind === "personal" && (
             <p>提交文字摘要；PPT、Word、Excel 原件请先归档，在摘要里写明集合与文件名。</p>
           )}
+          {prefilled && (
+            <p className="task-work-muted">
+              已按助手最后一轮回复预填，可直接在上面改。
+            </p>
+          )}
           <Input.TextArea
             aria-label="成果摘要"
             rows={5}
             maxLength={8000}
             placeholder="说明结果、引用来源与仍需核对的内容。"
             value={summary}
-            onChange={(e) => setSummary(e.target.value)}
+            onChange={(e) => {
+              summaryTouched.current = true;
+              setSummary(e.target.value);
+            }}
           />
           {state?.binding.delivery?.versionConflict && (
             <Alert
