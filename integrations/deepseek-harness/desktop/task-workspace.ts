@@ -84,6 +84,15 @@ export function taskKey(target: TaskTarget) {
     throw Error("任务标识无效。");
   return `${target.kind}-${target.taskId}`;
 }
+/** A readable default folder: the DSH sidebar lists folders by name, so never show a bare task id. */
+export function defaultFolder(context: TaskContext) {
+  const title = context.title
+    .replace(/[\\/:*?"<>|\s]+/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "")
+    .slice(0, 40)
+    .replace(/[-.]+$/, "");
+  return `${context.kind}-${title ? title + "-" : ""}${context.taskId.slice(0, 8)}`;
+}
 /** Task bindings are local receipts, never a second source of task/review authority. */
 export class DshTaskWorkspace {
   private queues = new Map<string, Promise<unknown>>();
@@ -140,7 +149,7 @@ export class DshTaskWorkspace {
       let b = await this.load(context);
       if (!b) {
         const directory =
-          selectedDirectory || path.join(this.root, "files", taskKey(context));
+          selectedDirectory || path.join(this.root, "files", defaultFolder(context));
         await mkdir(directory, { recursive: true });
         b = {
           kind: context.kind,

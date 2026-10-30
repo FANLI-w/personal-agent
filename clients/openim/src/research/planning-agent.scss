@@ -37,6 +37,9 @@
     flex: 1;
     height: auto;
   }
+  .planning-agent.is-hidden {
+    display: none;
+  }
   .planning-agent.is-full {
     flex: 1;
     height: auto;

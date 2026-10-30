@@ -33,7 +33,7 @@ export function TaskArchivePanel({ target, state, selected, collections, busy, c
   };
   return <section className="task-archive-panel" aria-label="归档到资料">
     <h3>归档到资料</h3>
-    <p>只上传勾选的文件，不上传整个工作文件夹。共享单份支持 512 MiB，每批最多 5 份，大文件分块传输；本地工作不受此大小限制。归档与任务提交、验收分别处理。</p>
+    <p>只上传勾选的文件，不上传整个工作文件夹。单份最多 512 MiB、每批 5 份；本地工作不受此限。归档与提交、验收分别处理。</p>
     <div className="task-material-actions">
       <Select aria-label="归档目标集合" placeholder="选择归档集合" value={collection?.id}
         disabled={busy || pending} onChange={setCollectionId}
