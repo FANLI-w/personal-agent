@@ -20,6 +20,7 @@ function TaskHandoff({
   busy,
   onOpen,
   onHandoff,
+  onReveal,
   onRefresh,
 }: {
   target: TaskTarget;
@@ -28,6 +29,7 @@ function TaskHandoff({
   busy: boolean;
   onOpen: () => void;
   onHandoff: () => void;
+  onReveal: () => void;
   onRefresh: () => void;
 }) {
   if (!brief) return null;
@@ -38,6 +40,24 @@ function TaskHandoff({
         <strong>{brief.title}</strong>
         <p>{brief.goal || "这项任务还没有写目标，可以先在工作台里说明。"}</p>
       </div>
+      <dl className="local-dsh-task-facts">
+        <div>
+          <dt>工作文件夹</dt>
+          <dd>
+            {workspace
+              ? workspace.binding.directory
+              : "还没选。选好后助手只在这个文件夹里读写。"}
+          </dd>
+        </div>
+        <div>
+          <dt>DSH 会话</dt>
+          <dd>
+            {workspace
+              ? workspace.binding.sessionTitle || "未命名会话"
+              : "选好文件夹后自动建立"}
+          </dd>
+        </div>
+      </dl>
       <div className="local-dsh-task-actions">
         {!workspace ? (
           <Button type="primary" loading={busy} onClick={onOpen}>
@@ -48,13 +68,18 @@ function TaskHandoff({
             {running ? "助手正在执行" : "把任务背景交给助手"}
           </Button>
         )}
+        {workspace && (
+          <Button disabled={busy} onClick={onReveal}>
+            打开文件夹
+          </Button>
+        )}
         <Button type="link" size="small" onClick={onRefresh}>
           刷新状态
         </Button>
       </div>
       <p className="local-dsh-task-note">
         {workspace
-          ? `会话「${workspace.binding.sessionTitle || brief.title}」· ${workspace.binding.directory}。交给助手的是目标、交付要求、验收标准和已选资料版本，不含你的私人记忆。`
+          ? "交给助手的是目标、验收标准和已选资料，不含私人记忆。下面这块是 DSH 自己的界面。"
           : "选好工作文件夹后，任务目标、验收标准和已选资料版本会一起带过去。"}
       </p>
     </div>
@@ -110,7 +135,32 @@ export function LocalDshPage() {
       setWorkspace(undefined);
     }
   };
-  useEffect(() => { void readWorkspace(); }, [bridge, target?.taskId, target?.kind]);
+  useEffect(() => {
+    if (!bridge?.taskStatus || !target) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const bound = await bridge.taskStatus(target);
+        if (cancelled) return;
+        setWorkspace(bound);
+        // Arriving from a task means that task is the one on screen: reopen its session
+        // (idempotent) so the folder and session title are registered, then read again.
+        if (bound && bridge.taskOpen) {
+          await bridge.taskOpen(target, false);
+          if (cancelled) return;
+          setWorkspace(await bridge.taskStatus(target));
+        }
+      } catch {
+        /* Read-only or finished tasks still show the strip; the DSH pane is unaffected. */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [bridge, target?.taskId, target?.kind]);
+  const reveal = async () => {
+    if (!bridge?.taskReveal || !target) return;
+    try { await bridge.taskReveal(target); }
+    catch (e) { setError(e instanceof Error ? e.message : "无法打开工作文件夹。"); }
+  };
   useEffect(() => {
     alive.current = true;
     if (!bridge) return;
@@ -192,6 +242,7 @@ export function LocalDshPage() {
         busy={busy}
         onOpen={() => void openTask()}
         onHandoff={() => void handoff()}
+        onReveal={() => void reveal()}
         onRefresh={() => void readWorkspace()}
       />
     )}

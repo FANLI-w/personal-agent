@@ -99,3 +99,14 @@ test('large shared original uses bounded authenticated download requests and lan
   assert.deepEqual(await fs.readFile(path.join(f.root,'work',result.localName)),original);
   assert.equal(f.uploads(),0);
 });
+
+test('the task page and the workbench route may both work on the same task, and nothing else may',async t=>{
+  const f=await fixture(t);
+  f.set({hash:'#/dsh?task=synthetic-task'});
+  assert.equal((await f.call('task-dsh-open',false)).binding.taskId,'synthetic-task');
+  assert.equal((await f.call('task-dsh-status')).binding.taskId,'synthetic-task');
+  f.set({hash:'#/dsh?task=another-task'});
+  await assert.rejects(f.call('task-dsh-status'),/任务工作页/);
+  f.set({hash:'#/chat?task=synthetic-task'});
+  await assert.rejects(f.call('task-dsh-status'),/任务工作页/);
+});

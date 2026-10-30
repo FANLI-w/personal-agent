@@ -2482,3 +2482,15 @@ typecheck、typecheck:electron、build:web、local-dsh 39 项、workbench-links 
 安装器 405064752 字节，SHA256 71b39c0468db7288e6b694dd34b8d240dc338841c39389322c6f8c7df4f92bf4；blockmap 417306 字节，SHA256 31cb0d9a126fe741c38b47b7f5e871ec292da9159de008cb0a1f0c6613de255e；latest.yml 记录 0.10.74 与同一 sha512。check-web-build 通过，app.asar 六个必需入口通过，直接在 asar 内检索到本批新增文案与样式类，确认包内为当前代码。
 
 未运行安装器、未启动成品、未连真实账号或模型；未发布 Release、未部署后台、未推送分支。安装会覆盖本机 0.10.73，由负责人自行决定。详见 docs/deployment/acceptcat-0.10.74.md，证据 D:/deepseek-agent/.runtime/task-page-0.10.74-20261030/windows。
+
+## 2026-10-30 工作台与任务文件夹对不上：守卫错路由 + 默认目录用任务号
+
+负责人反馈：任务页显示工作文件夹是 `C:/Users/luo/Desktop/李默涵老师工作`，点「在工作台继续」后工作台里显示的工作区却是 `research-2f306ffc-…`，看不出工作到底在哪个文件夹里。
+
+先查实情。读本机 `task-workspaces/<账号>/` 的绑定：组会报告任务（`a44372f2`）的 `directory` 确实是 Desktop 那个文件夹，会话 `acceptcat-3a930595…` 也确实落在 `local-dsh/accounts/<账号>/sessions/--C-Users-luo-Desktop-<编码>--/` 下，工作就是在这个文件夹里做的。而 `research-2f306ffc…`、`research-85422bac…` 是**另外两个任务**的工作区：那两个任务当时没选文件夹，`store.open` 回退到 `task-workspaces/<账号>/files/<kind>-<taskId>`，DSH 侧边栏按文件夹名列出工作区，于是显示成一串任务号。
+
+根因有两个。一是页面守卫写死了 `#/workbench?`：任务页在 `/workbench` 能通过，工作台页在 `/dsh` 一律被拒，`taskStatus` 抛错被静默吞掉，任务条因此显示成“还没选文件夹”，交接按钮也就点不动。守卫改为同时接受 `/workbench` 与 `/dsh`，仍要求 `task` 参数与本任务一致。二是默认工作目录直接用 `taskKey`（`research-<uuid>`），在侧边栏里完全读不出来，改为 `research-<标题前 40 字>-<任务号前 8 位>`，标题里的 `\ / : * ? " < > |` 与空白压成短横，仍落在账号根目录下。
+
+工作台任务条同时补上「工作文件夹」和「DSH 会话」两行事实，加「打开文件夹」，并在进入带 `task=` 的工作台时自动重开该任务会话（幂等，只读或已完成任务失败时忽略），让绑定与标题重新对齐。隔离预览在 1440/1024 下核对：任务条能直接读到文件夹全路径与会话名。
+
+typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增守卫用例：`#/dsh?task=` 放行、任务号不符与 `#/chat` 拒绝）、workbench-links 7 项通过。未合并、未部署；安装包另批产出。
