@@ -1,5 +1,7 @@
 # 当前代码与目标平台
 
+> 当前架构入口见[项目整体总览](project-overview.md)。下文保留早期设计与受测基线，旧 API/客户端版本不代表当前部署；本机 DSH、任务及资料集成以总览和最新[状态](current-state.md)为准。
+
 ## Personal Agent目标架构（2026-10-06）
 
 最终产品以个人为中心，微信式前台连接真人与Agent；[产品规划v0.7](product-plan.md)定义联系人、任务组织、长期记忆、主动跟进四层。当前运行版本为API / worker57d059e、客户端aa3c0f1、contract0.17 / schema17，证据见[统一状态](current-state.md)。

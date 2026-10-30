@@ -118,10 +118,13 @@ export function registerTaskDshBridge(
   ) {
     const auth = authority(event);
     taskKey(target);
-    const hash = new URL(auth.contents.getURL()).hash;
+    // The task page and the workbench are two routes; both may work on the same task.
+    const hash = new URL(auth.contents.getURL()).hash,
+      [route, query = ""] = hash.replace(/^#/, "").split("?"),
+      page = route.replace(/\/+$/, "");
     if (
-      !hash.startsWith("#/workbench?") ||
-      new URLSearchParams(hash.split("?")[1]).get("task") !== target.taskId
+      !["/workbench", "/dsh"].includes(page) ||
+      new URLSearchParams(query).get("task") !== target.taskId
     )
       throw Error("请在对应任务工作页操作。");
     const c = await connect(event);

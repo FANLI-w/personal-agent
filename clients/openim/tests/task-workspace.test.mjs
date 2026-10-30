@@ -83,6 +83,16 @@ test("concurrent open and restart recover the exact task session; another task h
   assert.notEqual(a.directory, c.directory);
   assert.notEqual(a.sessionId, c.sessionId);
 });
+test("a default work folder is readable, stays under the account root, and never carries a bare task id", async (t) => {
+  const f = await fixture(t);
+  const b = await f.store.open({ ...context, title: 'Plan: A/B? 复盘' });
+  assert.equal(path.basename(b.directory), "research-Plan-A-B-复盘-task_syn");
+  // realpath: Windows runners may hand out 8.3 short names for the temp root.
+  assert.equal(
+    await fs.realpath(path.dirname(b.directory)),
+    await fs.realpath(path.join(f.root, "files")),
+  );
+});
 test("ambiguous prompt survives restart and retries the exact request, blocking a different intent", async (t) => {
   const f = await fixture(t);
   await f.store.open(context);
