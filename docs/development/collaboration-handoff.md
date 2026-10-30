@@ -1,5 +1,7 @@
 # AcceptCat 新聊天交接 prompt
 
+> 新接手优先复制[简版交接 prompt](project-handoff-prompt.md)，并阅读[项目整体总览](../project-overview.md)。下方保留历次交接，历史版本、PR 和部署状态请先对照最新 current-state 与实际远端核验，不直接作为当前操作基线。
+
 2026-10-26（北京时间）。协作流程以根目录[CONTRIBUTING.md](../../CONTRIBUTING.md)为准，当前事实以[项目状态](../current-state.md)为准。下方内容可复制到负责人新聊天；外部合作者将本机目录替换为自己的克隆目录，明确本人负责的任务，并按Fork的origin/upstream关系操作。
 
 ```text

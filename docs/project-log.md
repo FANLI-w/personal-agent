@@ -2479,6 +2479,14 @@ typecheck、typecheck:electron、build:web、local-dsh 39 项、workbench-links 
 
 准备中镜像摘要/基底标签、旧演示脚本及恢复副本审计的revision触发器计数错误均留证并修正；首次维护在正式迁移前终止、旧服务自动恢复，保留首轮全目录/备份后重新静止备份上线。未放宽数据/权限检查，未下载私人库或密钥，未操作已用客户端、替换公开网页或发布Release。工具与详细回执见deployment/task-handoff-20261029.md；证据Git外task-handoff-deploy-20261029，完整私人保全证据留原服务器。
 
+## 2026-10-29 整体项目总览与简版 AI 交接
+
+负责人要求梳理做过什么、项目框架和规则设计，并给新AI交接prompt。核对既有product-plan、architecture、三步DSH计划、规则记忆与材料流程后，确认已有细节但入口分散且历史版本易误读。从实际origin/main ea7350f新建docs/project-overview-handoff，新增docs/project-overview.md及development/project-handoff-prompt.md；旧产品规划/架构/交接仅加当前入口提示，不重写历史。
+
+总览区分消息、任务、工作台与轻量资料，解释本机DSH和后台网关、共享权限的分工，明确规则/记忆/索引/原件与人工验收边界，并保留原生预览和模型菜单。按实际PR142合并、0.10.73 已于 2026-10-29 公开为 Latest、上批 0.39/schema031 部署记录随 PR143 合并分别记录；本地历史WIP5536ffc和手机PR90未混报完成。近期三项重点是版本交付一致、真实科研闭环、基于已验证流程复用，不代表额外部署授权。
+
+本批check:content通过（541份Markdown、19份方法定义）、git diff --check通过；纯文档不重复产品CI。不修改产品、原共享开发目录或用户客户端，不合并、不打包、不部署、不发布。新AI仍须重新核对Git/Release/部署快照，并按根AGENTS与CONTRIBUTING开分支交付。
+
 ## 2026-10-30 本地候选安装包 0.10.74
 
 负责人要求先打包一个本地安装包查看当前效果。版本号由 0.10.73 改为 0.10.74，仅用于与本机已装公开版区分；依赖、契约、数据库、后台接口均未改，纯客户端渲染层变化。根目录 `corepack pnpm@11.21.0 run desktop:win`（publish never），产物在 clients/openim/release/Base/0.10.74。
