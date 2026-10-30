@@ -419,7 +419,6 @@ function PlanningAgentSession({
       preview = plannerPlanInput(
         current,
         current.status === "draft" ? thread.deadline : undefined,
-        current.status !== "draft" ? "multiple" : thread.taskShape || "auto",
       );
       problems = planProblems(preview);
       if (thread.deadlineQuestion)
@@ -513,7 +512,6 @@ function PlanningAgentSession({
       key: crypto.randomUUID(),
       plan: current!,
       deadline: thread.deadline,
-      taskShape: thread.taskShape || "auto",
     };
     if (!intent) update((t) => ({ ...t, creating: chosen }));
     void run(async (isCurrent) => {
@@ -666,7 +664,6 @@ function PlanningAgentSession({
         sending: intent,
         deadline,
         deadlineQuestion,
-        taskShape,
         messages: retry
           ? t.messages.slice(0, -1)
           : [...t.messages, { id: crypto.randomUUID(), role: "user", text }],
@@ -912,14 +909,6 @@ function PlanningAgentSession({
                 }))}
               />
             )}
-            {current.status === "draft" &&
-              thread.taskShape === "single" &&
-              current.proposedItems.length > 1 && (
-                <p className="planning-agent-note">
-                  原草案的 {current.proposedItems.length}{" "}
-                  个步骤会放进同一项任务，内容保留；确认后只创建一项任务。
-                </p>
-              )}
             <ol>
               {preview.proposedItems.map((step, index) => (
                 <li key={step.id}>
