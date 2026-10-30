@@ -2520,3 +2520,13 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 在上述修复之上重新打包，版本号 0.10.74 → 0.10.75，仅为本机区分。产物 `clients/openim/release/Base/0.10.75/AcceptCat_0.10.75.exe`，405061874 字节，SHA256 `018e6b212b1b2a52a5d871917dd4467b55554b4f213b24082466261bb3f5d428`；blockmap 416914 字节。成品 FileVersion 0.10.75 / ProductVersion 0.10.75.0。check-web-build 通过，app.asar 六个必需入口通过，包内可直接检索到“打开文件夹”“工作文件夹”与守卫里的 `"/dsh"`。
 
 构建仍受本机批量删除守卫影响，处理方式同 0.10.74（手工清空 `research-skills/dist/roles` 与 pnpm 临时目录，命令前设 `CODEBUDDY_SAFE_DELETE_ENABLED=0`），仓库脚本未改；rcedit 一次成功。未运行安装器、未启动成品、未发布 Release、未部署后台、未推送分支。详见 docs/deployment/acceptcat-0.10.75.md。
+
+## 2026-10-30 整合四个 PR 并公开发布 0.10.75
+
+负责人要求「检查是不是可以一起合并，没问题就一起合并了发布新的安装包」。四个 PR 都改 `docs/current-state.md` 与 `docs/project-log.md`，逐个合并必然冲突，因此按本仓库既有做法（PR142）改用整合 PR：从 main/ea7350f 建 `release/task-page-0.10.75`，依次以普通 merge 并入 #146 任务页简化、#143 后台 0.39 回执、#144 项目总览、#145 0.10.73 回执，冲突按「状态新在前、日志按时间追加」手工重排，并修正 #144/#145 中已过期的事实（0.10.73 已于 2026-10-29 公开、PR143 已合并、Latest 不再是 0.10.71）。[PR147](https://github.com/luoyan96/personal-agent/pull/147) 四项检查全绿后于 10:12:35 合并，merge commit `bb40f76`；#143/#144/#145/#146 自动标记 MERGED。
+
+期间修了一处自己引入的测试缺陷：新增的默认目录用例在 Windows CI 上失败，因为临时目录被 realpath 解析成 `runneradmin`，而 `path.dirname` 仍是 8.3 短名 `RUNNER~1`；改为两边都走 `fs.realpath` 比较。另遇 windows foundation 上后台 `dialogue-context.spec.ts` 两次 30 秒超时（与本批无关），复跑通过。
+
+合并后在 main 重新构建安装包（0.10.74 只在本机、未公开，公开版本直接从 0.10.73 到 0.10.75）。构建时本机批量删除守卫拦截 `research-skills/dist/roles` 与 `.electron-runtime` 的清理，改为移到仓库外 `D:/deepseek-agent/.runtime/trash-20261030/`，仓库脚本未改。安装器 405061949 字节，SHA256 `aac075610ffc89a876dac3db5eebe06de679d6bd5ee6f468ee2d434373004755`，blockmap 416813 字节，成品 FileVersion/ProductVersion 0.10.75。
+
+先建草稿、上传四个附件并核对 digest，再于 10:49:29 公开为稳定 Latest v0.10.75。匿名复查：`/releases/latest` 302 到该标签、`latest.yml` 与本地产物一致、安装器直链 HEAD 200 且 405061949 字节、标签指向 `bb40f76`。未运行安装器、未启动成品、未连真实账号或模型；后台未部署。README、项目总览与简版交接 prompt 同步指向 0.10.75。详见 docs/deployment/acceptcat-0.10.75.md，证据 D:/deepseek-agent/.runtime/release-0.10.75-20261030。

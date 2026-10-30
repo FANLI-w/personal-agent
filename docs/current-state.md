@@ -2,6 +2,12 @@
 
 更新日期：2026-10-29（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## Windows 0.10.75 已公开为稳定 Latest
+
+负责人要求「合并并发布新的安装包」。四个待合并 PR 以整合 PR [PR147](https://github.com/luoyan96/personal-agent/pull/147) 一次并入 main（2026-10-30 10:12:35，merge commit `bb40f76`），#143/#144/#145/#146 均被标记 MERGED；合并时修正了 #144/#145 里「0.10.73 未公开、Latest 0.10.71、PR143 待合并」等过期事实。
+
+在 main 上重新构建 Windows 安装包并公开：[v0.10.75](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.75)（10:49:29），标签固定 `bb40f76`；安装器 405061949 字节，SHA256 `aac075610ffc89a876dac3db5eebe06de679d6bd5ee6f468ee2d434373004755`。匿名复查：`/releases/latest` 302 到 v0.10.75、`latest.yml` 与本地产物一致、直链 HEAD 200 且长度一致。四个附件（exe/blockmap/latest.yml/SHA256SUMS.txt）远端 digest 与本地一致。未运行安装器、未连真实账号或模型；后台未部署，沿用 contract0.39.0/schema031。详见[0.10.75 发布回执](deployment/acceptcat-0.10.75.md)。
+
 ## 任务页信息层级简化（待审、未打包）
 
 2026-10-29，按负责人“界面乱、功能多、到处要填字”的反馈，从 main/ea7350f 建立 feat/task-page-simplification。只改客户端四个文件，无契约、数据库、后台或锁文件变化。
