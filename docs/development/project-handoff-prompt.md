@@ -29,8 +29,8 @@ docs/current-state.md、docs/project-log.md 最新记录、README.md、docs/road
 私人记忆不能因加入群或共享任务而泄露；文件、索引、记忆、交接分别处理。
 agents/skills、agents/roles 和 packages/contracts 沿各自唯一来源维护。
 
-2026-10-30 核对快照：PR142 已整合129/139/140/141，main 为 ea7350f；
-Windows0.10.73 已于 2026-10-29 公开为 Latest，0.10.75 随任务页整合发布；
+2026-10-30 核对快照：PR147 已整合143/144/145/146，main 为 bb40f76；
+Windows0.10.75 已于 2026-10-30 公开为 Latest；
 后台已部署contract0.39/schema031，部署记录随 PR143 合并。
 本地聊天历史WIP5536ffc未纳入该主线和包；手机PR90暂缓。
 这些只是起点：先fetch核对实际main/PR/Release，并分别核对生产回执与安装版本。

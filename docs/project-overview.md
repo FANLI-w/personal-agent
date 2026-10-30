@@ -25,9 +25,9 @@ AcceptCat 先服务中国教师、科研人员和课题组，把日常交流、�
 
 | 层次 | 已核对事实 |
 | --- | --- |
-| 主仓库源码 | [PR142](https://github.com/luoyan96/personal-agent/pull/142) 已整合 PR129、139、140、141，main 为 `ea7350ff75847c9af6ff5c0b96b83b006e436517` |
-| Windows 构建 | `0.10.73` 已公开为稳定版（2026-10-29）；`0.10.75` 随本批整合发布，改动见[0.10.75 回执](deployment/acceptcat-0.10.75.md) |
-| 公开安装版本 | 稳定 Latest 为 [v0.10.73](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.73)；0.10.75 发布后以 [Releases](https://github.com/luoyan96/personal-agent/releases/latest) 为准 |
+| 主仓库源码 | [PR147](https://github.com/luoyan96/personal-agent/pull/147) 已整合 PR143、144、145、146，main 为 `bb40f76ec9cf0b41b9c2cf0fab8fe41799a04f73` |
+| Windows 构建 | `0.10.75` 已公开为稳定版（2026-10-30），标签固定 `bb40f76`；见[0.10.75 发布回执](deployment/acceptcat-0.10.75.md) |
+| 公开安装版本 | 稳定 Latest 为 [v0.10.75](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.75)（2026-10-30） |
 | 生产后台 | 2026-10-29 19:41 完成 API/worker 配对升级，contract `0.39.0`、schema `031`、镜像 `c12e3e42…`；部署记录与运维工具已随 PR143 合并 |
 | 体验验收 | 类型、构建、定向检查及隔离交互已有回执；真实私人材料、付费模型、多账号和双机连续科研体验仍需使用者验收 |
 

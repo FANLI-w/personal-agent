@@ -1,45 +1,54 @@
-# AcceptCat 0.10.75 本地候选包（工作台文件夹对齐）
+# AcceptCat 0.10.75 公开发布回执
 
-2026-10-30，负责人反馈“选了工作文件夹、点进工作台，看到的却是一串编号”，核对后修了两处并在本包内验证。本包只用于本机安装查看，**没有**创建 GitHub Release、没有推送分支、没有部署后台。
+2026-10-30，负责人明确要求「合并并发布新的安装包」。本批把任务页简化、工作台文件夹对齐，连同三个待合并的文档/运维 PR 一起整合进 main，构建 Windows 安装包并公开发布为稳定 Latest。
 
-## 来源
+## 源码
 
-- 分支 `feat/task-page-simplification`，产品代码 `f2fac9c`（在 0.10.74 的 6 个提交之上追加本批修复）。
-- 版本号由 `0.10.74` 改为 `0.10.75`，仅用于与本机已装版本区分；依赖、契约、数据库均未改动。
-- 本批改的是页面守卫与工作目录命名，属客户端与本地集成层：`clients/openim/electron/main/taskDshManage.ts`、`clients/openim/src/research/LocalDshPage.tsx`、`integrations/deepseek-harness/desktop/task-workspace.ts`。没有契约版本变化、没有迁移、没有后台接口变化。
+- 整合 PR [PR147](https://github.com/luoyan96/personal-agent/pull/147)，2026-10-30 10:12:35（北京时间）合并，merge commit `bb40f76ec9cf0b41b9c2cf0fab8fe41799a04f73`。
+- 一并纳入：[PR143](https://github.com/luoyan96/personal-agent/pull/143) 后台 0.39 部署回执、[PR144](https://github.com/luoyan96/personal-agent/pull/144) 项目总览与简版交接、[PR145](https://github.com/luoyan96/personal-agent/pull/145) 0.10.73 发布回执、[PR146](https://github.com/luoyan96/personal-agent/pull/146) 任务页简化。四个 PR 均已被 GitHub 标记 MERGED。
+- 发布标签 `v0.10.75` 固定在 `bb40f76`，与安装包产品源码一致。
+- 合并时修正了 #144/#145 中已过期的事实（0.10.73 实际已于 2026-10-29 公开、PR143 已合并、Latest 不再是 0.10.71）。
 
-## 本批修了什么
+## 本版改动
 
-1. **页面守卫只认任务页**：`authorized()` 要求页面哈希以 `#/workbench?` 开头，而工作台页在 `/dsh`，导致工作台上的任务状态、选择文件夹、交接全部被拒，错误被界面吞掉后任务条显示成“还没选文件夹”。改为 `/workbench` 与 `/dsh` 都接受，`task` 参数仍须与本任务一致。
-2. **默认工作目录用任务号命名**：没选文件夹的任务，目录原来是 `files/research-<uuid>`，DSH 侧边栏按文件夹名列出工作区，于是显示成一串任务号。改为 `research-<标题前 40 字>-<任务号前 8 位>`；已存在的旧目录不迁移，绑定里存的是绝对路径，不受影响。
-3. **工作台任务条写清事实**：新增「工作文件夹」全路径与「DSH 会话」名，加「打开文件夹」按钮；进入带 `task=` 的工作台时自动重开该任务会话（幂等，只读或已完成任务失败时忽略）。
+1. **任务页信息层级**：导航四行 tab 收为一行；详情改为四个可折叠区块；顶部只留一个「下一步」主操作，按 `allowedActions` 与工作区状态推导；新建任务只要求填「希望完成什么」。
+2. **去重与预填**：任务卡状态只显示一次；「安排与验收」不再重复目标、验收要求和第二个开始按钮；目标与验收按要点展开（最多 5 条）；成果摘要自动带出助手最后一轮回复，进度备注按阶段生成一句。
+3. **任务 ↔ 工作台**：任务详情不再内嵌聊天窗，改为「在工作台继续」，把目标、交付要求、验收标准和已选资料版本带过去；工作台任务条显示工作文件夹全路径与 DSH 会话名，可一键打开文件夹，进入带 `task=` 时自动重开该任务会话。
+4. **修复**：页面守卫原只接受 `#/workbench?`，工作台页在 `/dsh` 被拒，导致任务条误显示「还没选文件夹」、交接按钮不可用；改为两个路由都接受、`task` 参数仍须一致。
+5. **默认目录命名**：没选文件夹的任务由 `files/research-<任务号>` 改为 `research-<标题>-<任务号前 8 位>`，避免 DSH 侧边栏出现无法辨认的编号；旧目录不迁移。
+
+依赖、契约、数据库与后台接口均未改动，配套后台沿用 contract0.39.0 / schema031，可直接连当前生产后台。
 
 ## 构建
 
-根目录 `corepack pnpm@11.21.0 run desktop:win`（`--publish never`），产物写入 `clients/openim/release/Base/0.10.75/`。
+合并后在 main（`bb40f76`）上执行根目录 `corepack pnpm@11.21.0 run desktop:win`（`--publish never`），产物写入 `clients/openim/release/Base/0.10.75/`。
 
-构建环境说明：本机批量删除守卫仍会拦截 `packages/research-skills/dist/roles` 重建与 pnpm 临时目录清理。处理方式与 0.10.74 相同——先手工清空这两处，构建命令前设置 `CODEBUDDY_SAFE_DELETE_ENABLED=0`；**仓库脚本未修改**。本批 `rcedit` 一次写入成功，无重试。
+本机批量删除守卫会拦截 `packages/research-skills/dist/roles` 与 `clients/openim/.electron-runtime` 的重建清理，本批改为把这两个目录移到仓库外的临时目录（`D:/deepseek-agent/.runtime/trash-20261030/`），**仓库脚本未修改**。`rcedit` 一次写入成功，成品 FileVersion 0.10.75 / ProductVersion 0.10.75.0。
 
 ## 产物
 
 | 文件 | 字节数 | SHA256 |
 | --- | --- | --- |
-| AcceptCat_0.10.75.exe | 405061874 | `018e6b212b1b2a52a5d871917dd4467b55554b4f213b24082466261bb3f5d428` |
-| AcceptCat_0.10.75.exe.blockmap | 416914 | `6b479b62fe091e04c9b57c179ec6f75958352e058b3690163c47f7e9acb92c7d` |
-| latest.yml | 341 | 见文件 |
+| AcceptCat_0.10.75.exe | 405061949 | `aac075610ffc89a876dac3db5eebe06de679d6bd5ee6f468ee2d434373004755` |
+| AcceptCat_0.10.75.exe.blockmap | 416813 | `272827ce5e6a724b80840f6faf877c12a62dd21685e1abb42a47e465dce0cb91` |
+| latest.yml | 341 | `b5755cad0ea2db06f931b15ee281bcc40655acf248af63672d134b7905cf2efc` |
+| SHA256SUMS.txt | 262 | `4d458288a075decb5c6d5744d38a88375c5c0cf582fedc931ecb11c1905c7150` |
 
-`latest.yml` 记录版本 0.10.75、size 405061874、sha512 与安装器一致；成品 `AcceptCat.exe` 的 FileVersion 为 0.10.75、ProductVersion 为 0.10.75.0。
+四个附件的远端 digest 与本地一致；`latest.yml` 记录版本 0.10.75、size 405061949、sha512 与安装器一致。
+
+## 发布
+
+- 草稿创建 → 直连上传四个附件 → 核对 digest/大小 → 2026-10-30 10:49:29（北京时间）公开为稳定 Latest：[v0.10.75](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.75)。
+- 匿名复查：`/releases/latest` 302 到 `v0.10.75`；`latest/latest.yml` 内容与本地产物一致；安装器直链 HEAD 200、`Content-Length` 405061949；标签 `v0.10.75` 指向 `bb40f76`。
 
 ## 检查
 
-- `check-web-build`：完整 web dist、4 个固定 SDK 资源、assets/font/icons 与 HTML 引用校验通过。
-- 包内校验：`app.asar` 6 个必需入口通过；直接检索 `app.asar` 命中本批新增文案（“打开文件夹”“工作文件夹”）与守卫里的 `"/dsh"`，确认包内为当前代码。
-- 客户端 `typecheck`、`typecheck:electron`、`build:web` 通过；`local-dsh` 41 项（新增守卫用例：`#/dsh?task=` 放行、任务号不符与 `#/chat` 拒绝）、`workbench-links` 7 项通过。
+- 客户端 `typecheck`、`typecheck:electron`、`build:web` 通过；`local-dsh` 41 项、`workbench-links` 7 项通过。
+- PR147 远端四项检查全绿：foundation（ubuntu 22/24、windows）、package。
+- `check:content` 通过；包内 `app.asar` 六个必需入口通过，可直接检索到本批文案（「打开文件夹」「工作文件夹」）与守卫里的 `"/dsh"`。
 
 ## 边界
 
-未运行安装器、未启动成品、未连接真实账号或模型；安装会覆盖本机已装版本，属负责人自行决定的操作。本包不可作为公开发布物，也不能据此认为 0.10.75 已发布。
+未运行安装器、未启动成品、未连接真实账号或模型；安装会覆盖本机已装版本，由负责人自行决定。真实任务流转、双人群、模型与日常体验仍需使用者验收。本版不包含尚未整合的本地聊天历史改动（`5536ffc`），也不包含手机端 PR90。
 
-已知遗留：DSH 侧边栏按工作区注册表列目录，负责人本机那个 Desktop 文件夹的工作区在注册表里缺一行（会话本身存在且可用），所以工作台里可能仍停在上一次用过的会话。任务条已把文件夹与会话名写清，可据此对照；是否让工作台强制聚焦任务会话，待确认 DSH 是否提供可用的定位接口。
-
-证据目录：`D:/deepseek-agent/.runtime/task-page-0.10.75-20261030/windows/`（安装器、blockmap、latest.yml、builder-debug.yml）。
+证据目录：`D:/deepseek-agent/.runtime/release-0.10.75-20261030/`（安装器、blockmap、latest.yml、SHA256SUMS.txt）。
