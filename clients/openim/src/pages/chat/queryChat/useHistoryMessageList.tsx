@@ -120,10 +120,10 @@ export function useHistoryMessageList() {
         // failures of requests that belonged to a closed route or prior actor.
         if (!isCurrent()) return;
         setLoadState((previous) => ({ ...previous, initLoading: false }));
-        // A cached transcript is already on screen; saying "读取失败" there
-        // would be wrong, so the source hint carries that message instead.
+        // A cached transcript is already on screen, so a failed verification is
+        // not a read failure. A failed page further back still is.
         setHistoryError(
-          latestLoadState.current.messageList.length
+          !loadMore && latestLoadState.current.messageList.length
             ? ""
             : "历史消息读取失败，可以重试；已加载内容保留。",
         );
