@@ -26,6 +26,12 @@ typecheck、typecheck:electron、build:web（4 个固定 SDK 资源与 HTML 引�
 
 此前一批为**本地候选安装包 0.10.74**（版本号只为与本机已装 0.10.73 区分，依赖/契约/数据库/后台接口均未改）：`AcceptCat_0.10.74.exe`，405064752 字节，SHA256 `71b39c0468db7288e6b694dd34b8d240dc338841c39389322c6f8c7df4f92bf4`，产物在 `clients/openim/release/Base/0.10.74/`，证据副本在 `D:/deepseek-agent/.runtime/task-page-0.10.74-20261030/windows/`。未运行安装器、未启动成品、未发布 Release、未部署后台、未推送分支；安装会覆盖本机 0.10.73。构建与校验细节见 [0.10.74 本地候选包](deployment/acceptcat-0.10.74.md)。
 
+## 任务转交后台0.39已上线
+
+2026-10-29 19:41:05–19:41:33（北京时间）完成API/worker配对升级与031迁移，固定已合并main/ea7350f，镜像c12e3e42，contract0.39.0/schema031。59项服务器隔离检查、静止备份恢复、112表/9原件/31配置输入与其他6服务保全通过；11项旧blocked任务恢复原状态，旧版本/事件保留。公网ready0.39、数据库/存储/认证ok，API healthy、worker running、重启0，新撤销邀请接口合法请求匿名401。[部署、失败修正与备份回执](deployment/task-handoff-20261029.md)。
+
+本批未操作客户端或公开Release；使用0.10.73体验转交，公开Latest仍以实际GitHub为准。真实模型/双人任务未代验收，harness仍not_verified。首次恢复副本审计漏算触发器而失败，正式库未迁移且旧服务自动恢复；校正精确增量并重新备份后上线，原失败保留。下方“后台未部署”是前批历史，本节为最新部署事实。
+
 ## PR129/139/140/141 整合与 Windows0.10.73
 
 负责人本批明确授权审核合并四个PR并打包。从main/2d0091c建立独立release/chat-workbench-0.10.73，以普通merge保留四项历史，产品79aaef1；具体合并结果以本批整合PR为准。建群联系人/智能体分类、真实群主与待接受邀请、任务转交和依赖图/标题、原生DSH文件/PDF预览同时纳入。审核补修精确邀请/原负责人关联、撤销恢复、临时权限和旧桌面读取兼容；新增contract0.39.0/schema031。详见[整合、安装包和升级边界](deployment/acceptcat-0.10.73.md)。
