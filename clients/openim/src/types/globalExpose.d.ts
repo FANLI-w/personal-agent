@@ -13,6 +13,7 @@ export type DataPath = "public" | "emojiData" | "sdkResources" | "logsPath";
 export interface IElectronAPI {
   getFilePath: (file: File) => string;
   localDsh: import("./localDsh").LocalDshBridge;
+  chatHistory: import("./chatHistory").ChatHistoryBridge;
   setMessageUnreadCount: (count: number) => Promise<void>;
   peerLibrary: import('./peerLibrary').PeerLibraryBridge;
   openFeishuLibrary: (url: string) => Promise<void>;

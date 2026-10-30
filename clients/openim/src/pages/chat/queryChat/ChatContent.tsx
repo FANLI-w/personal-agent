@@ -43,6 +43,7 @@ const ChatContent = () => {
     getMoreOldMessages,
     seekMessage,
     historyError,
+    historySource,
   } = useHistoryMessageList();
   const actorId = useResearchStore((s) => s.actor?.member.id || "");
   const viewScope = timelineScope(actorGeneration, conversationID || "");
@@ -402,6 +403,13 @@ const ChatContent = () => {
         }
       }}
     >
+      {historySource && !historyError && (
+        <p className="chat-history-source" role="status">
+          {historySource === "cache"
+            ? "正在显示本机缓存，联网后会自动核对。"
+            : "当前无法联网，这段会话本机还没有缓存。"}
+        </p>
+      )}
       {(historyError || navigationError) && (
         <Alert
           type="warning"
