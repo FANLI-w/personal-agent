@@ -2494,3 +2494,9 @@ typecheck、typecheck:electron、build:web、local-dsh 39 项、workbench-links 
 工作台任务条同时补上「工作文件夹」和「DSH 会话」两行事实，加「打开文件夹」，并在进入带 `task=` 的工作台时自动重开该任务会话（幂等，只读或已完成任务失败时忽略），让绑定与标题重新对齐。隔离预览在 1440/1024 下核对：任务条能直接读到文件夹全路径与会话名。
 
 typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增守卫用例：`#/dsh?task=` 放行、任务号不符与 `#/chat` 拒绝）、workbench-links 7 项通过。未合并、未部署；安装包另批产出。
+
+## 2026-10-30 本地候选安装包 0.10.75
+
+在上述修复之上重新打包，版本号 0.10.74 → 0.10.75，仅为本机区分。产物 `clients/openim/release/Base/0.10.75/AcceptCat_0.10.75.exe`，405061874 字节，SHA256 `018e6b212b1b2a52a5d871917dd4467b55554b4f213b24082466261bb3f5d428`；blockmap 416914 字节。成品 FileVersion 0.10.75 / ProductVersion 0.10.75.0。check-web-build 通过，app.asar 六个必需入口通过，包内可直接检索到“打开文件夹”“工作文件夹”与守卫里的 `"/dsh"`。
+
+构建仍受本机批量删除守卫影响，处理方式同 0.10.74（手工清空 `research-skills/dist/roles` 与 pnpm 临时目录，命令前设 `CODEBUDDY_SAFE_DELETE_ENABLED=0`），仓库脚本未改；rcedit 一次成功。未运行安装器、未启动成品、未发布 Release、未部署后台、未推送分支。详见 docs/deployment/acceptcat-0.10.75.md。

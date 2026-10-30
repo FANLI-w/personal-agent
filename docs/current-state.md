@@ -22,7 +22,9 @@ typecheck、typecheck:electron、build:web（4 个固定 SDK 资源与 HTML 引�
 
 任务页与工作台现在共用同一份绑定事实：工作台任务条直接写出「工作文件夹」全路径与「DSH 会话」名，并可一键打开文件夹；进入带 `task=` 的工作台时会自动重开该任务会话。原先工作台页（`/dsh`）被页面守卫当成非任务页拒掉、任务条误显示“还没选文件夹”的问题已修，守卫改为 `/workbench` 与 `/dsh` 都接受、`task` 参数仍须一致。没选文件夹的任务，默认目录由 `research-<任务号>` 改为 `research-<标题>-<任务号前8位>`，避免侧边栏出现一串看不出含义的编号（已存在的旧目录不迁移）。
 
-本批已产出**本地候选安装包 0.10.74**（版本号只为与本机已装 0.10.73 区分，依赖/契约/数据库/后台接口均未改）：`AcceptCat_0.10.74.exe`，405064752 字节，SHA256 `71b39c0468db7288e6b694dd34b8d240dc338841c39389322c6f8c7df4f92bf4`，产物在 `clients/openim/release/Base/0.10.74/`，证据副本在 `D:/deepseek-agent/.runtime/task-page-0.10.74-20261030/windows/`。未运行安装器、未启动成品、未发布 Release、未部署后台、未推送分支；安装会覆盖本机 0.10.73。构建与校验细节见 [0.10.74 本地候选包](deployment/acceptcat-0.10.74.md)。
+修复后另出**本地候选安装包 0.10.75**：`AcceptCat_0.10.75.exe`，405061874 字节，SHA256 `018e6b212b1b2a52a5d871917dd4467b55554b4f213b24082466261bb3f5d428`，产物在 `clients/openim/release/Base/0.10.75/`，证据在 `D:/deepseek-agent/.runtime/task-page-0.10.75-20261030/windows/`。未运行安装器、未发布、未部署。细节见 [0.10.75 本地候选包](deployment/acceptcat-0.10.75.md)。
+
+此前一批为**本地候选安装包 0.10.74**（版本号只为与本机已装 0.10.73 区分，依赖/契约/数据库/后台接口均未改）：`AcceptCat_0.10.74.exe`，405064752 字节，SHA256 `71b39c0468db7288e6b694dd34b8d240dc338841c39389322c6f8c7df4f92bf4`，产物在 `clients/openim/release/Base/0.10.74/`，证据副本在 `D:/deepseek-agent/.runtime/task-page-0.10.74-20261030/windows/`。未运行安装器、未启动成品、未发布 Release、未部署后台、未推送分支；安装会覆盖本机 0.10.73。构建与校验细节见 [0.10.74 本地候选包](deployment/acceptcat-0.10.74.md)。
 
 ## PR129/139/140/141 整合与 Windows0.10.73
 
