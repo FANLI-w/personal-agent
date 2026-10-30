@@ -25,14 +25,13 @@ const phases = {
   failed: "本轮未完成",
 };
 
-/** Electron 的 IPC 报错会带上 "Error invoking remote method 'x': error." 前缀，只留人话。 */
+/** Electron 的 IPC 报错会带 "Error invoking remote method 'x': error." 或 "Error:" 前缀，只留人话。 */
 export function readableTaskError(error: unknown, fallback: string) {
   const text =
     typeof error === "string" ? error : error instanceof Error ? error.message : "";
-  const stripped = text.replace(
-    /^Error invoking remote method '[^']*':\s*(?:error\.\s*)?/i,
-    "",
-  );
+  const stripped = text
+    .replace(/^Error invoking remote method '[^']*':\s*/i, "")
+    .replace(/^error[.:]\s*/i, "");
   return stripped.trim() || fallback;
 }
 
