@@ -201,6 +201,20 @@ const Api: IElectronAPI = {
     stop: () => ipcRenderer.invoke("local-dsh-stop"),
     show: (bounds) => ipcRenderer.invoke("local-dsh-show", bounds),
   },
+  chatHistory: {
+    open: () => ipcRenderer.invoke("chat-history-open"),
+    close: (lease) => ipcRenderer.invoke("chat-history-close", lease),
+    page: (lease, conversation, before, count) =>
+      ipcRenderer.invoke("chat-history-page", lease, conversation, before, count),
+    savePage: (lease, conversation, messages, options) =>
+      ipcRenderer.invoke("chat-history-savePage", lease, conversation, messages, options),
+    revoke: (lease, messageId, patch) =>
+      ipcRenderer.invoke("chat-history-revoke", lease, messageId, patch),
+    remove: (lease, messageIds) =>
+      ipcRenderer.invoke("chat-history-remove", lease, messageIds),
+    forget: (lease, conversation) =>
+      ipcRenderer.invoke("chat-history-forget", lease, conversation),
+  },
   setMessageUnreadCount: (count) => ipcRenderer.invoke("set-message-unread-count", count),
   getSystemVersion: process.getSystemVersion,
   subscribe,

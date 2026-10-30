@@ -23,6 +23,7 @@ import {
   pushNewMessage,
   updateOneMessage,
 } from "@/pages/chat/queryChat/useHistoryMessageList";
+import { rememberWithdrawal } from "@/pages/chat/queryChat/chat-history-cache";
 import { useConversationStore, useUserStore } from "@/store";
 import { useContactStore } from "@/store/contact";
 import { feedbackToast } from "@/utils/common";
@@ -303,13 +304,17 @@ export function useGlobalEvent() {
   };
 
   const revokedMessageHandler = ({ data }: SdkEventEnvelope<RevokedInfo>) => {
-    updateOneMessage({
+    const patch = {
       clientMsgID: data.clientMsgID,
       contentType: MessageType.RevokeMessage,
       notificationElem: {
         detail: JSON.stringify(data),
       },
-    } as MessageItem);
+    };
+    updateOneMessage(patch as MessageItem);
+    // Recorded as a local fact, so a history page that started before this
+    // event cannot put the original message back on the next read.
+    void rememberWithdrawal(data.clientMsgID, patch);
   };
 
   const notPushType = [MessageType.TypingMessage, MessageType.RevokeMessage];

@@ -4,11 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { IMSDK } from "@/layout/MainContentWrap";
-import { useResearchStore } from "@/research/store";
-import { useUserStore, useConversationStore } from "@/store";
 import { matchesLocator, type MessageLocator } from "@/research/chat-timeline";
 import { withRequestDeadline } from "@/research/request-deadline";
+import { useResearchStore } from "@/research/store";
+import { useConversationStore, useUserStore } from "@/store";
 import emitter, { emit } from "@/utils/events";
+
+import { readCachedHistory, saveCachedHistory } from "./chat-history-cache";
 
 const START_INDEX = 10000;
 const SPLIT_COUNT = 20;
@@ -28,6 +30,8 @@ export function useHistoryMessageList() {
   const loadGeneration = useRef(0);
   const loadingPage = useRef(false);
   const [historyError, setHistoryError] = useState("");
+  /** Where the visible transcript came from: the local cache, or nothing yet. */
+  const [historySource, setHistorySource] = useState<"" | "cache" | "offline">("");
   const sdkReady = useUserStore(
     (state) =>
       !state.isLogining &&
@@ -63,13 +67,16 @@ export function useHistoryMessageList() {
         generation === useResearchStore.getState().generation &&
         userID === useUserStore.getState().selfInfo.userID;
       try {
+        // The anchor is captured before the request so the cache can be told
+        // exactly which page was verified.
+        const anchor = loadMore
+          ? latestLoadState.current.messageList[0]?.clientMsgID || ""
+          : "";
         const { data } = await withRequestDeadline(
           () =>
             IMSDK.getAdvancedHistoryMessageList({
               count: SPLIT_COUNT,
-              startClientMsgID: loadMore
-                ? latestLoadState.current.messageList[0]?.clientMsgID
-                : "",
+              startClientMsgID: anchor,
               conversationID: reqConversationID,
               viewType: MessageViewType.History,
             }),
@@ -102,12 +109,24 @@ export function useHistoryMessageList() {
         })();
         latestLoadState.current = nextState;
         setLoadState(nextState);
+        setHistorySource("");
+        // Only this verified page may teach the cache about continuity.
+        void saveCachedHistory(reqConversationID, data.messageList, {
+          before: anchor || undefined,
+          reachedStart: data.isEnd,
+        });
       } catch (error) {
         // A route reload can mount this hook before SDK login. Also consume
         // failures of requests that belonged to a closed route or prior actor.
         if (!isCurrent()) return;
         setLoadState((previous) => ({ ...previous, initLoading: false }));
-        setHistoryError("历史消息读取失败，可以重试；已加载内容保留。");
+        // A cached transcript is already on screen; saying "读取失败" there
+        // would be wrong, so the source hint carries that message instead.
+        setHistoryError(
+          latestLoadState.current.messageList.length
+            ? ""
+            : "历史消息读取失败，可以重试；已加载内容保留。",
+        );
       } finally {
         if (historyGeneration === loadGeneration.current) loadingPage.current = false;
       }
@@ -115,18 +134,83 @@ export function useHistoryMessageList() {
     { manual: true },
   );
 
+  /**
+   * Paints the local transcript without waiting for login, connection or
+   * server round-trips. The cache is a read cache: it never claims the history
+   * is complete, and a page that stops early is reported as incomplete.
+   */
+  const hydrateFromCache = useCallback(
+    async (generation: number) => {
+      if (!conversationID) return;
+      const cached = await readCachedHistory(conversationID, SPLIT_COUNT);
+      if (!mounted.current || generation !== loadGeneration.current) return;
+      if (!cached?.messages.length) {
+        // Nothing cached and the SDK is not usable: stop spinning, say so.
+        if (!latestSdkReady.current) {
+          setLoadState((previous) => ({ ...previous, initLoading: false }));
+          setHistorySource("offline");
+        }
+        return;
+      }
+      const preState = latestLoadState.current;
+      const existing = new Set(preState.messageList.map((m) => m.clientMsgID));
+      const merged = new Map(
+        [...cached.messages, ...preState.messageList].map((m) => [m.clientMsgID, m]),
+      );
+      const nextState = {
+        ...preState,
+        initLoading: false,
+        // Only a verified page may claim the history ends; a cache that merely
+        // ran out of rows must not stop older messages from loading.
+        hasMoreOld: preState.messageList.length
+          ? preState.hasMoreOld
+          : !cached.reachedStart,
+        messageList: [...merged.values()].sort(
+          (a, b) => a.sendTime - b.sendTime || (a.seq || 0) - (b.seq || 0),
+        ),
+        firstItemIndex:
+          preState.firstItemIndex -
+          cached.messages.filter((m) => !existing.has(m.clientMsgID)).length,
+      };
+      latestLoadState.current = nextState;
+      setLoadState(nextState);
+      setHistorySource("cache");
+    },
+    [conversationID],
+  );
+
   const loadHistoryMessages = useCallback(() => {
     loadGeneration.current++;
     loadingPage.current = false;
     setHistoryError("");
+    setHistorySource("");
     latestLoadState.current = INITIAL_LOAD_STATE;
     setLoadState(INITIAL_LOAD_STATE);
+    void hydrateFromCache(loadGeneration.current);
+  }, [hydrateFromCache]);
+
+  // Verification is the one call the cache cannot make: read the newest page
+  // from the server and let it repair the cache. It is claimed once per reset
+  // so the two effects below cannot both fire it for one conversation.
+  const verifiedGeneration = useRef("");
+  const verifyHistory = useCallback(() => {
+    if (!conversationID || !latestSdkReady.current) return;
+    const token = `${conversationID}:${loadGeneration.current}`;
+    if (verifiedGeneration.current === token) return;
+    verifiedGeneration.current = token;
     void getMoreOldMessages(false);
-  }, [getMoreOldMessages]);
+  }, [conversationID, getMoreOldMessages]);
 
   useEffect(() => {
-    if (sdkReady && conversationID) loadHistoryMessages();
-  }, [conversationID, sdkReady, actorGeneration, loadHistoryMessages]);
+    if (!conversationID) return;
+    loadHistoryMessages();
+    verifyHistory();
+  }, [conversationID, actorGeneration, loadHistoryMessages, verifyHistory]);
+
+  // Login, connection and sync can finish after the page is already readable.
+  useEffect(() => {
+    verifyHistory();
+  }, [sdkReady, verifyHistory]);
 
   useEffect(() => {
     const pushNewMessage = (message: MessageItem) => {
@@ -135,7 +219,7 @@ export function useHistoryMessageList() {
         current?.conversationID !== conversationID ||
         (current?.groupID
           ? message.groupID !== current.groupID
-          : !!message.groupID ||
+          : Boolean(message.groupID) ||
             ![message.sendID, message.recvID].includes(current?.userID || ""))
       )
         return;
@@ -196,6 +280,7 @@ export function useHistoryMessageList() {
     getMoreOldMessages,
     seekMessage,
     historyError,
+    historySource,
   };
 }
 

@@ -1,5 +1,13 @@
 # 项目进展日志
 
+## 2026-10-30：本地优先聊天历史第一批（读缓存 + 断网只读）
+
+- 负责人要求把消息改成微信式本机缓存，先看 PR149 交接文档再直接实施。文档的论断逐条对着代码核过：`useHistoryMessageList` 的历史加载被 `sdkReady`（登录+连接+同步）门控；撤回写独立表 `chat_message_retractions`、在投影时生效（`chat.ts:322`），不产生更大的 sequence，因此 `afterSequence` 永远同步不到旧消息撤回；`chatHistory*` 三个文件只存在于旧分支 `5536ffc`，从未进 main。
+- 旧分支三个问题不是偶发而是写法必错：`save()` 的 `ON CONFLICT DO UPDATE SET payload=excluded.payload` 让迟到历史页覆盖本机撤回（2101 被打回 101）并复活本机删除行；`edges` 同样被覆盖且实时批次也写边，实时消息越过空洞后 `reachedStart` 仍为 true，用户会以为已读到全部。决定不原样合并 `5536ffc`，保留 SQLite 结构、重写写入路径。
+- 第一批只做读缓存 + 断网只读。新增 `electron/utils/chatHistory.ts`（`node:sqlite`，Electron 43.8.4 内置 Node 24.22.1 实测可用，无需原生插件）、`electron/main/chatHistoryManage.ts`（租约 IPC，账号由主进程用 cookie 向 `/api/v1/auth/session` 核对）、preload 与类型、`src/pages/chat/queryChat/chat-history-cache.ts`。三条不变量：`payload` 只放 SDK 原文；`overlay` 只放本机事实且历史页永不覆盖；`edges`/`meta` 只由已验证历史页写，实时推送不写，空洞报 `incomplete`。
+- 前端先读缓存立即渲染，`sdkReady` 后取最新页校验并回写；缓存命中显示“正在显示本机缓存”，断网无缓存明确提示。撤回在 `useGlobalEvents` 同时写成本机事实。后台、契约、schema 未改动。
+- 验证：typecheck、typecheck:electron、`npm run build`（dist-electron 含 `chatHistory.js`/`chatHistoryManage.js`）、真实 Electron 运行时 SQLite 往返（撤回在迟到历史页后仍为 2101）、`tests/chat-history.test.mjs` 9 项（三个旧 bug 反例 + 通道一致性 + 账号隔离）、`test:build` 9、`test:local-dsh` 41、聊天相关 59 通过；`test:chat-history` 已接入 desktop.yml。未做真实账号、真实 OpenIM 双端、断网实机与安装包验证。
+
 ## 2026-10-10：科研团队工作台0.9.0实现与本地验收
 
 - 用户明确要求前后端并行使用gpt-6.1-sol / high。分支feature/research-team-workbench实现获准科研事项总览、当前页成员下一步、真实交付 / 导师修改意见、最新成果实际验收计数；计划以持久itemId关联任务。contract0.23，schema021，无新迁移。摘要权限不扩展私人计划或交付权限。

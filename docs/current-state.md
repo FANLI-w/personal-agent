@@ -8,6 +8,18 @@
 
 在 main 上重新构建 Windows 安装包并公开：[v0.10.75](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.75)（10:49:29），标签固定 `bb40f76`；安装器 405061949 字节，SHA256 `aac075610ffc89a876dac3db5eebe06de679d6bd5ee6f468ee2d434373004755`。匿名复查：`/releases/latest` 302 到 v0.10.75、`latest.yml` 与本地产物一致、直链 HEAD 200 且长度一致。四个附件（exe/blockmap/latest.yml/SHA256SUMS.txt）远端 digest 与本地一致。未运行安装器、未连真实账号或模型；后台未部署，沿用 contract0.39.0/schema031。详见[0.10.75 发布回执](deployment/acceptcat-0.10.75.md)。
 
+## 本地优先聊天历史（第一批，待审、未打包）
+
+2026-10-30，从 main/b1fda98 建立 feat/chat-history-local-first。目标是把“每次打开会话都要等后台加载”改成微信式的本机缓存：先出本机记录，联网后再核对。**没有合并旧分支 `5536ffc`**——它的 SQLite 思路保留，写入路径重写。
+
+旧分支的三个问题已在本机复现并逐个变成反例测试：迟到历史页把本机撤回打回原文、迟到历史页复活本机删除的消息、实时消息越过空洞却仍声称已到顶。根因是三处写法：`save()` 无条件 `payload=excluded.payload`、`edges` 同样被覆盖、`reachedStart` 只由“有没有下一页”推断。
+
+第一批只做“本地读缓存 + 断网只读”，不引入完整同步协调器，后台与契约未改动。存储层 `electron/utils/chatHistory.ts` 用 `node:sqlite`（Electron 43.8.4 自带 Node 24.22.1，实测 `DatabaseSync` 可用，不需要原生插件或 ABI 重编），每个 服务+账号 一个文件。三条不变量：`messages.payload` 只放 SDK 原文；`overlay` 只放本机事实（撤回、本地删除），历史页保存永不覆盖它；`edges`/`meta` 只由已验证的历史页写入，实时推送不写，因此空洞会被报成 `incomplete` 而不是被抹平。
+
+`electron/main/chatHistoryManage.ts` 提供租约式 IPC：账号由主进程用会话 cookie 向 `/api/v1/auth/session` 核对，渲染进程无法通过传 id 读别人的记录；cookie 变化即作废租约。渲染进程 `useHistoryMessageList` 改为先读缓存立即渲染（不等登录、连接、同步），`sdkReady` 后再取最新页校验并回写；只缓存命中时顶部显示“正在显示本机缓存”，断网且无缓存时明确提示，不再空转加载。撤回事件在 `useGlobalEvents` 里同时写成本机事实。
+
+typecheck、typecheck:electron、`npm run build`（含 dist-electron 产出）、真实 Electron 运行时 SQLite 往返、`test:chat-history` 9 项、`test:build` 9 项、`test:local-dsh` 41 项、聊天相关 8 个文件 59 项通过。未做真实账号、真实 OpenIM 双端、断网实机与安装包验证。
+
 ## 任务页信息层级简化（待审、未打包）
 
 2026-10-29，按负责人“界面乱、功能多、到处要填字”的反馈，从 main/ea7350f 建立 feat/task-page-simplification。只改客户端四个文件，无契约、数据库、后台或锁文件变化。
