@@ -10,7 +10,9 @@
 
 客户端「资料 → 课题组规范」页（`LabStandards.tsx`）：顶部说明规则与资料的区别（规则自动进任务、资料只是参考、个人任务只带平台规则），下面依次是平台基本规则（v 号 + 正文）、课题组规则分组（生效中 / 待负责人确认 / 已撤回，含版本、作者、时间与修改/确认/撤回），再往下是「模板与范文」——列出课题组范围的资料集，并给出「去资料库上传或更新」。页签在 `supports(40)` 之前不显示，旧后台仍是三个页签，不会出现死页。
 
-验证：`apps/api` 与 `apps/web` 及契约 58 文件 789 项通过（新增 `work-context.spec` 用例：成员提候选、负责人确认、篡改正文被拒、版本冲突、撤回后不可再改、scope/kind 伪造被拒、匿名 401、任务上下文与 lab 列表一致）；客户端 `tsc --noEmit` 通过；新增 `tests/lab-standards.test.mjs` 2 项并入 desktop.yml。**这次动了后台**：契约 0.40.0，需要重新部署 API 后该页签才会出现。
+验证：`apps/api` 与 `apps/web` 及契约 58 文件 789 项通过（新增 `work-context.spec` 用例：成员提候选、负责人确认、篡改正文被拒、版本冲突、撤回后不可再改、scope/kind 伪造被拒、匿名 401、任务上下文与 lab 列表一致）；客户端 `tsc --noEmit` 通过；新增 `tests/lab-standards.test.mjs` 2 项并入 desktop.yml。
+
+后台已于 2026-11-01 升级（负责人执行）：`/api/v1/health/ready` 返回 `contractVersion 0.40.0`，database/storage/authentication 全 ok；匿名访问 `/api/v1/lab/work-rules` 与 `/api/v1/work-context/research/{id}` 均为 401（路由已注册、鉴权生效，不是 404）。旧客户端不受影响——它们只检查自己需要的版本号，只是看不到新页签。
 
 ## 任务页只留「待办 / 团队」：新建任务交给助手，输入框默认收起
 
