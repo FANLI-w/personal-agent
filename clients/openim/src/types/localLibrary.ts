@@ -22,4 +22,6 @@ export type LocalLibraryBridge = {
   /** Only a path is remembered; nothing is uploaded or copied. */
   pick: () => Promise<LocalLibraryManifest | null>;
   scan: () => Promise<LocalLibraryManifest>;
+  /** Reads the file to compare "same name" with "same content". */
+  hash: (rel: string) => Promise<{ sha256: string; size: number }>;
 };

@@ -1,6 +1,7 @@
 import {runTeamWork, notifyTeamDecision} from './team-work.js'
 import { taskWorkflowProjection } from './task-workflow-compat.js'
 import {runWorkContext} from './work-context.js'
+import {runLibraryIndex} from './library-index.js'
 import { ReuseService, reuseCommands } from './reuse.js'
 import { registerLocalDsh, type DshTransport } from './local-dsh.js'
 import {labMembershipCommands,runLabMembership,type LabMembershipCommand} from './lab-membership.js'
@@ -258,6 +259,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
         reconcile(connection,config)
         reconcileChat(connection,config)
         if(route.stage==='TEAM1')return route.response.parse(runTeamWork(new ChatService(collaboration,config),name as keyof typeof import('@research-agent-platform/contracts').teamWorkRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').teamWorkRoutes>))
+        if(route.stage==='INDEX1')return route.response.parse(runLibraryIndex(new ChatService(collaboration,config),name as keyof typeof import('@research-agent-platform/contracts').libraryIndexRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').libraryIndexRoutes>))
         if(route.stage==='CONTEXT1')return route.response.parse(runWorkContext(new ChatService(collaboration,config),name as keyof typeof import('@research-agent-platform/contracts').workContextRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').workContextRoutes>))
         if(route.stage==='SKILL1'){const result=runSkills(new ChatService(collaboration,config),name as SkillCommand,parsed.data as RequestFor<SkillCommand>);reconcileChat(connection,config);return result}
         if(route.stage==='CHAT1'||route.stage==='IM1'){const result=new ChatService(collaboration,config).run(name as ChatCommand,parsed.data as RequestFor<ChatCommand>);reconcileChat(connection,config);return result}

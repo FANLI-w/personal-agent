@@ -2653,3 +2653,15 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 验证：新增 `tests/local-library.test.mjs` 3 项（越界路径拒绝、文件名提取、扫描只列文档图片且返回相对路径），客户端 `tsc --noEmit` 与 `tsc -p tsconfig.electron-check.json` 均通过；`tests/workbench-view`、`lab-standards`、`ppt-template`、`directory-navigation`、`task-notice-card` 共 23 项通过。安装包 0.10.86 见下。
 
 安装包 0.10.86 构建 11 分 13 秒，`clients/openim/release/Base/0.10.86/AcceptCat_0.10.86.exe`（405,078,396 字节，SHA256 `309f3ccd6e645b79200c99e248866c23d37ea80ba19f6bb7c515d213b6745975`，FileVersion 0.10.86），`win-unpacked` 无残留临时文件。本次无后台改动。
+
+## 2026-11-01 资料索引：云端只存指针，原件留在本地（0.10.87，需要部署）
+
+负责人问「是不是要把资料传到云仓库、让同事看到，这样是不是增加复杂度」，并确认「文件都放在本地，网上只放文件名、路径和摘要」这条路。核对后确认不采用飞书链接方案（要登录、权限在飞书侧、无法校验版本）。
+
+后台（契约 **0.41.0**，迁移 **032**）：新增 `library_index_entries`（id/lab_id/project/rel_path/status/version/updated_at/document，STRICT，唯一键 `(lab_id, project, rel_path)`）。两条路由 `GET/POST /api/v1/library/index`，stage `INDEX1`：成员可新增自己的条目，维护人或课题组负责人可改/撤回；`recommended` 在同一项目同一用途内唯一（服务端把旧的清掉并升版）；撤回保留原指针只改状态；幂等键、版本校验、不可变修订沿用既有模式；`relPath` 必须是相对路径（拒绝绝对路径、盘符和 `..`）。
+
+客户端：`资料 → 资料索引`（`supports(41)` 门禁，未部署不显示）。按项目分组列出条目：文件名、用途（母版/参考样例/事实依据/图与素材/其他）、摘要、维护人、更新时间、是否推荐；每条显示**本地状态**（本地有 / 本地缺 / 本地一致 / 本地版本不同），`校验本地版本` 会读本机文件算 sha256 与条目比对。新增/修改条目时「从本地资料文件夹选择」自动填文件名、相对路径和哈希，原件不上传。
+
+验证：`apps/api` + `apps/web` + `packages/contracts` 59 文件 795 项通过（新增 `library-index.spec.ts` 4 项：成员建/负责人改、同项目同路径拒绝、绝对与越界路径拒绝、推荐唯一、版本冲突与幂等撤回、匿名 401）；客户端 `tsc --noEmit`、electron `tsc` 通过；新增 `tests/library-index.test.mjs` 3 项并入 desktop.yml。注意：新增迁移后所有「旧 schema 升级」用例都要同时回滚 032，已批量更新 15 个 spec 的迁移计数与 10 个 spec 的模拟降级脚本。安装包 0.10.87 见下。
+
+安装包 0.10.87 构建 11 分 20 秒，`clients/openim/release/Base/0.10.87/AcceptCat_0.10.87.exe`（405,079,223 字节，SHA256 `0ed28f161615606b7775c276c4c73a9fdaaf32b8e74c3d30fb38e62a9e9d2a6f`，FileVersion 0.10.87）。该页签要生效需要部署后台（契约 0.41.0 + 迁移 032）。

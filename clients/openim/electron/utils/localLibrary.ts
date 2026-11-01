@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -125,4 +126,16 @@ export async function scanLibrary(root: string): Promise<LocalLibraryManifest> {
   }
   files.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   return { root, name: path.basename(root), files, truncated };
+}
+
+/** Used to tell "same file" from "same name" when a project has several copies. */
+export async function hashLibraryFile(root: string, rel: string) {
+  const file = resolveInRoot(root, rel);
+  const info = await fs.lstat(file);
+  if (!info.isFile() || info.isSymbolicLink())
+    throw new Error("这个路径不是普通文件。");
+  if (info.size > 200 * 1024 * 1024) throw new Error("文件超过 200MB，暂不校验版本。");
+  const hash = createHash("sha256");
+  hash.update(await fs.readFile(file));
+  return { sha256: hash.digest("hex"), size: info.size };
 }

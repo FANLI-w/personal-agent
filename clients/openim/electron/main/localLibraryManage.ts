@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { getWebContents } from "./windowManage";
 import {
+  hashLibraryFile,
   resolveInRoot,
   scanLibrary,
   type LocalLibraryManifest,
@@ -82,6 +83,13 @@ export function registerLocalLibraryBridge() {
       return manifest;
     },
   );
+  ipcMain.handle("local-library-hash", async (event, rel: string) => {
+    assertSender(event);
+    const root = await localLibraryRoot();
+    if (!root) throw new Error("还没有登记本地资料文件夹。");
+    if (typeof rel !== "string" || !rel) throw new Error("请指定要校验的文件。");
+    return hashLibraryFile(root, rel);
+  });
   ipcMain.handle("local-library-scan", async (event): Promise<LocalLibraryManifest> => {
     assertSender(event);
     const root = await localLibraryRoot();

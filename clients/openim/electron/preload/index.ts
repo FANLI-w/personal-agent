@@ -180,6 +180,7 @@ const Api: IElectronAPI = {
     status: () => ipcRenderer.invoke("local-library-status"),
     pick: () => ipcRenderer.invoke("local-library-pick"),
     scan: () => ipcRenderer.invoke("local-library-scan"),
+    hash: (rel) => ipcRenderer.invoke("local-library-hash", rel),
   },
   localDsh: {
       taskAddLocal: target => ipcRenderer.invoke('task-dsh-add-local', target),
