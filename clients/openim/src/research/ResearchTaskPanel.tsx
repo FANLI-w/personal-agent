@@ -1,15 +1,16 @@
+import type { ResponseFor } from "@research-agent-platform/contracts";
 import { Alert, App, Button, Input, Select, Space } from "antd";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+
 import { researchApi, supportsTaskHandoffs } from "./api";
-import { useResearchRead } from "./useResearchRead";
-import type { ResponseFor } from "@research-agent-platform/contracts";
-import { usePersonalOperation } from "./usePersonalOperation";
-import { useResearchStore } from "./store";
-import { taskStateLabels, planDate } from "./task-planning";
 import { teamNextStep } from "./research-team";
 import { ResearchTeamAccountHint } from "./ResearchTeamAccountHint";
+import { useResearchStore } from "./store";
+import { planDate, taskStateLabels } from "./task-planning";
 import { TaskArtifactDownload } from "./TaskArtifactDownload";
+import { usePersonalOperation } from "./usePersonalOperation";
+import { useResearchRead } from "./useResearchRead";
 import { workbenchTaskPath } from "./workbench-links";
 
 export function ResearchTaskPanel({
@@ -29,7 +30,7 @@ export function ResearchTaskPanel({
   const { data, error, refresh } = useResearchRead(
     (signal) => researchApi("task", { params: { id: taskId }, signal }),
     taskId,
-    !!actor,
+    Boolean(actor),
   );
   const [failure, setFailure] = useState(""),
     [busy, setBusy] = useState(false),
@@ -48,24 +49,40 @@ export function ResearchTaskPanel({
         signal,
       }),
     `task-members:${actor?.member.labId}`,
-    !!actor,
+    Boolean(actor),
   );
   const people = Object.fromEntries(
     (members.data?.data || []).map((m) => [m.id, m.displayName]),
   );
   const name = (id: string | null) => (id ? people[id] || id : "尚未承接");
   const operation = usePersonalOperation(true, `research-task:${taskId}`);
-  const dependencyIds = JSON.stringify(data?.data && 'task' in data.data ? data.data.task.dependencies.map(dep => dep.taskId) : []);
+  const dependencyIds = JSON.stringify(
+    data?.data && "task" in data.data
+      ? data.data.task.dependencies.map((dep) => dep.taskId)
+      : [],
+  );
   useEffect(() => {
     setDepTitles({});
-    const controller = new AbortController(), { isCurrent } = operation.capture();
-    void Promise.all((JSON.parse(dependencyIds) as string[]).map(async id => {
-      try {
-        const response = await researchApi('task', { params: { id }, signal: controller.signal });
-        return [id, 'task' in response.data ? response.data.task.title : response.data.title] as const;
-      } catch { return [id, id] as const; }
-    })).then(pairs => {
-      if (!controller.signal.aborted && isCurrent()) setDepTitles(Object.fromEntries(pairs));
+    const controller = new AbortController(),
+      { isCurrent } = operation.capture();
+    void Promise.all(
+      (JSON.parse(dependencyIds) as string[]).map(async (id) => {
+        try {
+          const response = await researchApi("task", {
+            params: { id },
+            signal: controller.signal,
+          });
+          return [
+            id,
+            "task" in response.data ? response.data.task.title : response.data.title,
+          ] as const;
+        } catch {
+          return [id, id] as const;
+        }
+      }),
+    ).then((pairs) => {
+      if (!controller.signal.aborted && isCurrent())
+        setDepTitles(Object.fromEntries(pairs));
     });
     return () => controller.abort();
   }, [operation.scope, dependencyIds]);
@@ -245,27 +262,29 @@ export function ResearchTaskPanel({
       <p>
         负责人：{name(task.leadId)} · 审阅人：{name(task.reviewerId)}
       </p>
-      <p>
-        截止：{planDate(task.schedule.hardDeadline) || "未设置"}
-        {task.schedule.hardDeadline && !task.schedule.hardDeadline.confirmed
-          ? "（待确认）"
-          : ""}
-      </p>
-      <details>
-        <summary>时间与依赖</summary>
-        <p>承诺时间：{planDate(task.schedule.committed) || "未提供"}</p>
-        <p>
-          前置成果：
-          {task.dependencies
-            .map(
-              (d) =>
-                `${depTitles[d.taskId] ?? d.taskId}${
-                  d.requiredRevision ? ` · 第${d.requiredRevision}版` : ""
-                }`,
-            )
-            .join("；") || "无"}
-        </p>
-      </details>
+      <div className="research-task-schedule" aria-label="时间安排">
+        {[
+          { label: "建议", value: task.schedule.suggested },
+          { label: "承诺", value: task.schedule.committed },
+          { label: "截止", value: task.schedule.hardDeadline },
+        ].map((point) => (
+          <div key={point.label} className={point.value ? "is-set" : undefined}>
+            <span>{point.label}</span>
+            <strong>
+              {planDate(point.value) || "未设置"}
+              {point.label === "截止" && point.value && !point.value.confirmed
+                ? "（待确认）"
+                : ""}
+            </strong>
+          </div>
+        ))}
+        {task.dependencies.length > 0 && (
+          <p className="research-task-deps">
+            前置：
+            {task.dependencies.map((d) => depTitles[d.taskId] ?? d.taskId).join("、")}
+          </p>
+        )}
+      </div>
       <p>
         真实承接：
         {assignments
@@ -291,7 +310,8 @@ export function ResearchTaskPanel({
                   confirm({
                     title: "撤销这次承接邀请？",
                     okText: "撤销邀请",
-                    content: "对方将不能接受这次邀请。已有成果会保留，任务归属会随之更新。",
+                    content:
+                      "对方将不能接受这次邀请。已有成果会保留，任务归属会随之更新。",
                     onOk: () =>
                       command(() =>
                         researchApi("cancelInvitation", {
@@ -320,10 +340,12 @@ export function ResearchTaskPanel({
             aria-label="承接成员"
             placeholder="选择本实验室成员"
             value={inviteId || undefined}
-            options={(members.data?.data || []).filter(m => m.id !== actor?.member.id).map((m) => ({
-              value: m.id,
-              label: m.displayName,
-            }))}
+            options={(members.data?.data || [])
+              .filter((m) => m.id !== actor?.member.id)
+              .map((m) => ({
+                value: m.id,
+                label: m.displayName,
+              }))}
             onChange={setInviteId}
             disabled={busy}
           />
@@ -371,7 +393,12 @@ export function ResearchTaskPanel({
           </Button>
         </details>
       )}
-      {allowed("withdraw") && !supportsTaskHandoffs() && <Alert type="info" message="当前后台还未支持任务转交，请联系课题组维护者更新服务。" />}
+      {allowed("withdraw") && !supportsTaskHandoffs() && (
+        <Alert
+          type="info"
+          message="当前后台还未支持任务转交，请联系课题组维护者更新服务。"
+        />
+      )}
       {allowed("withdraw") && supportsTaskHandoffs() && (
         <details className="research-task-operation">
           <summary>转交任务</summary>
@@ -380,10 +407,12 @@ export function ResearchTaskPanel({
             aria-label="承接成员"
             placeholder="选择转交的成员"
             value={transferToMemberId || undefined}
-            options={(members.data?.data || []).filter(m => m.id !== actor?.member.id).map((m) => ({
-              value: m.id,
-              label: m.displayName,
-            }))}
+            options={(members.data?.data || [])
+              .filter((m) => m.id !== actor?.member.id)
+              .map((m) => ({
+                value: m.id,
+                label: m.displayName,
+              }))}
             onChange={setTransferToMemberId}
             disabled={busy}
           />
@@ -440,7 +469,7 @@ export function ResearchTaskPanel({
       {artifacts?.map((artifact) => (
         <TaskArtifactDownload key={artifact.id} artifact={artifact} />
       ))}
-      {allowed("upload") && (
+      {allowed("upload") && !embedded && (
         <label className="block border p-3">
           上传为科研输入材料（TXT/PDF/PNG，最多 10 MiB）
           <input
@@ -492,7 +521,7 @@ export function ResearchTaskPanel({
           onChanged={refresh}
         />
       ))}
-      {allowed("submit") && (
+      {allowed("submit") && !embedded && (
         <div>
           <Input.TextArea
             aria-label="交付摘要"

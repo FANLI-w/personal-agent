@@ -1,21 +1,23 @@
-import { TaskExecutionStatus } from "./TaskExecutionStatus";
-import { TaskKnowledgePanel } from "./TaskKnowledgePanel";
-import { TaskArchivePanel } from "./TaskArchivePanel";
-import { researchScopeLabels } from "./research-library-api";
+import "./task-work-page.scss";
+
 import { Alert, Button, Checkbox, Input, Select } from "antd";
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 import type {
   DshTaskState,
   TaskTarget,
 } from "../../../../integrations/deepseek-harness/desktop/task-workspace";
 import { researchApi } from "./api";
-import { useResearchRead } from "./useResearchRead";
-import { usePersonalOperation } from "./usePersonalOperation";
+import { LocalLibraryPicker } from "./LocalLibraryPicker";
+import { researchScopeLabels } from "./research-library-api";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { taskEventRows } from "./task-dsh-events";
-import { LocalLibraryPicker } from "./LocalLibraryPicker";
-import "./task-work-page.scss";
-import { Link, useNavigate } from "react-router-dom";
+import { TaskArchivePanel } from "./TaskArchivePanel";
+import { TaskExecutionStatus } from "./TaskExecutionStatus";
+import { TaskKnowledgePanel } from "./TaskKnowledgePanel";
+import { usePersonalOperation } from "./usePersonalOperation";
+import { useResearchRead } from "./useResearchRead";
 import { nativeWorkbenchTaskPath } from "./workbench-links";
 
 const phases = {
@@ -81,15 +83,18 @@ function keyPoints(text: string) {
 
 const richText = /```|(^|\n)#{1,6}\s|(^|\n)\|/;
 
-function Points({ text }: { text: string }) {
+function Points({ text, checklist }: { text: string; checklist?: boolean }) {
   const points = keyPoints(text),
     shown = points.slice(0, 5);
   if (richText.test(text)) return <SafeMessageMarkdown text={text} />;
   return (
     <>
-      <ul>
+      <ul className={checklist ? "is-checklist" : undefined}>
         {shown.map((point, index) => (
-          <li key={index}>{point}</li>
+          <li key={index}>
+            {checklist && <span className="task-work-check" aria-hidden />}
+            {point}
+          </li>
         ))}
       </ul>
       {points.length > shown.length && (
@@ -118,20 +123,24 @@ function progressNote(state: DshTaskState) {
   return "";
 }
 
-/** Goal and acceptance stay open, but only as short points. */
+/** The first thing anyone needs: what this task is for and what counts as done. */
 function TaskBrief({ goal, acceptance }: { goal: string; acceptance: string }) {
-  const groups = [
-    { label: "目标", text: goal },
-    { label: "验收", text: acceptance },
-  ].filter((group) => group.text.trim());
   return (
-    <section className="task-work-brief" aria-label="目标与交付要求">
-      {groups.map((group) => (
-        <div key={group.label}>
-          <h3>{group.label}</h3>
-          <Points text={group.text} />
+    <section className="task-work-brief" aria-label="目标与验收">
+      {goal.trim() && (
+        <div className="task-work-goal">
+          <h3>目标</h3>
+          <Points text={goal} />
         </div>
-      ))}
+      )}
+      {acceptance.trim() && (
+        <div className="task-work-acceptance">
+          <h3>
+            验收标准<span>逐条对照，全部满足才算完成</span>
+          </h3>
+          <Points text={acceptance} checklist />
+        </div>
+      )}
     </section>
   );
 }
@@ -155,16 +164,13 @@ export function TaskWorkPage({
     [busy, setBusy] = useState(false),
     [connectionError, setConnectionError] = useState("");
   const [note, setNote] = useState(""),
-    [summary, setSummary] = useState(""),
+    [noteText, setNoteText] = useState(""),
     [preview, setPreview] = useState("");
   const [libraryOpen, setLibraryOpen] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]),
-    [collection, setCollection] = useState(""),
+  const [collection, setCollection] = useState(""),
     [notice, setNotice] = useState("");
   const flight = useRef(false),
-    noteLoaded = useRef(false),
-    summaryTouched = useRef(false),
-    autoSummary = useRef("");
+    noteLoaded = useRef(false);
   const transcript = useRef<HTMLDivElement>(null),
     materialsRef = useRef<HTMLElement>(null),
     planRef = useRef<HTMLElement>(null),
@@ -175,16 +181,13 @@ export function TaskWorkPage({
     setSection({});
     setState(undefined);
     setNote("");
-    setSummary("");
+    setNoteText("");
     setPreview("");
-    setSelected([]);
     setCollection("");
     setNotice("");
     setError("");
     setConnectionError("");
     noteLoaded.current = false;
-    summaryTouched.current = false;
-    autoSummary.current = "";
   }, [operation.scope]);
   const detail = useResearchRead(async (signal) => {
     if (kind === "personal") {
@@ -211,7 +214,7 @@ export function TaskWorkPage({
         query: { limit: 100 },
       }),
     `task-library:${collection}`,
-    section.materials === true && !!collection,
+    section.materials === true && Boolean(collection),
   );
   const task = detail.data?.task,
     actions: string[] = task?.allowedActions || [];
@@ -220,9 +223,10 @@ export function TaskWorkPage({
       ? actions.includes("submit")
       : actions.some((a) => ["run", "submit"].includes(a));
   const version = task && "version" in task ? task.version : undefined;
-  const canStart = kind === "research" && actions.includes("start") && !!version;
-  const canClaim = kind === "research" && actions.includes("claim") && !!version;
-  const canActivate = kind === "personal" && actions.includes("activate") && !!version;
+  const canStart = kind === "research" && actions.includes("start") && Boolean(version);
+  const canClaim = kind === "research" && actions.includes("claim") && Boolean(version);
+  const canActivate =
+    kind === "personal" && actions.includes("activate") && Boolean(version);
   const isOpen = (id: string) => {
     if (section[id] !== undefined) return section[id];
     if (id === "plan") return !canWork;
@@ -250,25 +254,7 @@ export function TaskWorkPage({
       if (next && !noteLoaded.current) {
         // A saved note wins; otherwise start from the phase so the box is never blank.
         setNote(next.binding.note || progressNote(next));
-        if (next.binding.delivery?.status === "pending") {
-          setSummary(next.binding.delivery.summary);
-          setSelected(next.binding.delivery.names);
-        }
         noteLoaded.current = true;
-      }
-      // The assistant already wrote the result; retyping it into the summary is
-      // busywork. Fill it once and keep refreshing only while it stays untouched.
-      const reply = taskEventRows(next?.events || [])
-        .filter((row) => row.role === "assistant" && row.text.trim())
-        .at(-1);
-      if (reply) {
-        const text = reply.text.trim().slice(0, 8000);
-        setSummary((current) => {
-          if (summaryTouched.current) return current;
-          if (current && current !== autoSummary.current) return current;
-          autoSummary.current = text;
-          return text;
-        });
       }
     }
   };
@@ -374,92 +360,62 @@ export function TaskWorkPage({
       if (isCurrent())
         setNotice("已将选定版本保存到本任务目录，相同内容的已选素材会复用本地副本。");
     });
+  // What this task produced is what gets submitted; the material it read is not.
+  const inputNames = new Set([
+    ...(state?.binding.sources || []).map((source) => source.localName),
+    ...(state?.binding.localMaterials || []).map((source) => source.localName),
+  ]);
+  const outputs = (state?.files || []).filter((file) => !inputNames.has(file.name));
+  const submitted = state?.binding.delivery;
   const submit = () =>
     command(async () => {
       const { isCurrent } = operation.capture();
-      await bridge!.taskSubmit(target, summary, kind === "personal" ? [] : selected);
+      const names = kind === "personal" ? [] : outputs.map((file) => file.name);
+      // The reviewer needs the file list, not a second essay.
+      const summary = [
+        names.length
+          ? `提交 ${names.length} 个文件：${names.join("、")}`
+          : "提交本任务成果",
+        noteText.trim(),
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      await bridge!.taskSubmit(target, summary, names);
       if (isCurrent()) {
         setNotice("成果已提交，等待验收。");
         setSection((value) => ({ ...value, plan: true, materials: false }));
       }
     });
-  // An existing workspace always decides the next step: the work already started.
-  const next = state
-    ? state.phase === "running"
-      ? {
-          hint: "助手正在工作台执行。工具确认和完整轨迹都在工作台完成。",
-          label: "去工作台看进度",
-          run: async () => navigate(nativeWorkbenchTaskPath(taskId, kind)),
-        }
-      : {
-          hint: "本轮已结束。核对文件与工具记录，选定成果后提交验收。",
-          label: "核对成果并提交",
-          run: async () => reveal("materials"),
-        }
-    : !canWork
-    ? canStart
-      ? {
-          hint: "这项任务还没开始。开始后就能在本机文件夹里动手，不需要先上传材料。",
-          label: "开始这一步",
-          run: start,
-        }
-      : canClaim
-      ? {
-          hint: "还没有承接人。确认认领后就可以开始。",
-          label: "确认认领",
-          run: claim,
-        }
-      : canActivate
-      ? {
-          hint: "任务还是草案。确认后才会建群并邀请参与人。",
-          label: "确认任务并开始",
-          run: start,
-        }
-      : {
-          hint: "先看下面的安排，确认承接范围后再开始。",
-          label: "看安排与验收",
-          run: async () => reveal("plan"),
-        }
-    : bridge?.taskOpen
-    ? {
-        hint: "选择一个已有的工作文件夹就能开始，文件留在本机。",
-        label: "选择本地工作文件夹",
-        run: () => openWorkspace(true),
-      }
-    : {
-        hint: "本机执行需要新版 Windows 客户端，安排与验收仍可使用。",
-        label: "看安排与验收",
-        run: async () => reveal("plan"),
-      };
-  // Only the text we filled ourselves is worth labelling as prefilled.
-  const prefilled = !!summary && summary === autoSummary.current;
   return (
     <section className="task-work-page" aria-label="任务工作页">
       <header className="task-work-heading">
         <div>
           <h2>{task?.title || "正在读取任务…"}</h2>
         </div>
-        {!!(connectionError || state) && (
+        {Boolean(connectionError || state) && (
           <span>
             {connectionError ? "连接中断 · 进度待核对" : phases[state!.phase]}
           </span>
         )}
       </header>
       <TaskExecutionStatus target={target} />
-      <div className="task-work-next" role="status">
-        <strong>下一步</strong>
-        <p>{next.hint}</p>
-        <div className="task-work-next-actions">
+      {!state && (canStart || canClaim || canActivate) && (
+        <div className="task-work-start" role="status">
           <Button
             type="primary"
             loading={busy}
             disabled={!task}
-            onClick={() => void next.run()}
+            onClick={() => void (canClaim ? claim() : start())}
           >
-            {next.label}
+            {canStart ? "开始这一步" : canClaim ? "确认认领" : "确认任务并开始"}
           </Button>
+          <span>
+            {canActivate
+              ? "确认后才会建群并邀请参与人。"
+              : "开始后就能在本机文件夹里动手，不需要先上传材料。"}
+          </span>
         </div>
-      </div>
+      )}
       {(error || detail.error || connectionError) && (
         <Alert
           type="error"
@@ -574,12 +530,11 @@ export function TaskWorkPage({
                     <Button
                       size="small"
                       onClick={() => {
-                        summaryTouched.current = true;
-                        setSummary(row.text.slice(0, 8000));
+                        setNoteText(row.text.trim().slice(0, 500));
                         setSection((value) => ({ ...value, materials: true }));
                       }}
                     >
-                      用作成果摘要
+                      用作提交说明
                     </Button>
                   )}
                 </article>
@@ -667,29 +622,121 @@ export function TaskWorkPage({
       <Section
         title="成果与提交"
         hint={
-          state ? `${state.files.length} 个文件 · 归档与提交是两件事` : "先建立工作区"
+          submitted
+            ? `已提交 ${submitted.names.length} 个文件`
+            : outputs.length
+            ? `${outputs.length} 个产出文件`
+            : "还没有产出文件"
         }
         open={isOpen("materials")}
         onToggle={() => toggle("materials")}
         nodeRef={materialsRef}
       >
-        <div className="task-work-materials">
-          {!state && (
-            <p className="task-work-muted">
-              先在「工作」里选择工作文件夹，这里才会列出可归档的成果。
-            </p>
-          )}
-          {!!state?.binding.localMaterials?.length && (
-            <details>
-              <summary>补充的本地素材（仅本机）</summary>
-              {state.binding.localMaterials.map((s) => (
-                <p key={`${s.localName}:${s.sha256}`}>
-                  {s.filename} → {s.localName}
-                </p>
-              ))}
-            </details>
-          )}
-          <h3>按需取用共享资料</h3>
+        {!state && (
+          <p className="task-work-muted">
+            先在「工作」里选好工作文件夹，这里会列出这次产出的文件。
+          </p>
+        )}
+        {Boolean(state) && !outputs.length && (
+          <p className="task-work-muted">工作文件夹里还没有产出文件。</p>
+        )}
+        {outputs.map((file) => (
+          <div className="task-work-file" key={file.name}>
+            <span title={file.name}>
+              {file.name} · {file.size} 字节
+            </span>
+            <div className="task-material-actions">
+              <Button
+                disabled={busy}
+                onClick={() =>
+                  void command(() => bridge!.taskReveal(target, file.name))
+                }
+              >
+                在文件夹中显示
+              </Button>
+              <Button
+                disabled={busy}
+                onClick={() =>
+                  void command(async () => {
+                    const { isCurrent } = operation.capture();
+                    const output = await bridge!.taskOutput(target, file.name);
+                    if (isCurrent())
+                      setPreview(output.preview || "此格式请在文件夹中打开查看。");
+                  })
+                }
+              >
+                查看文字
+              </Button>
+            </div>
+          </div>
+        ))}
+        {preview && <pre className="task-work-preview">{preview}</pre>}
+        {submitted ? (
+          <div className="task-work-submitted">
+            <strong>已提交，等待验收</strong>
+            <p>{submitted.names.join("、") || "已提交文字说明"}</p>
+            <small>{submitted.summary}</small>
+          </div>
+        ) : (
+          <>
+            <div className="task-material-actions">
+              <Input
+                aria-label="补充说明"
+                placeholder="补一句说明（可留空）"
+                maxLength={500}
+                value={noteText}
+                disabled={busy}
+                onChange={(e) => setNoteText(e.target.value)}
+              />
+              <Button
+                type="primary"
+                loading={busy}
+                disabled={
+                  !bridge?.taskSubmit ||
+                  !state ||
+                  (kind === "research" && !outputs.length) ||
+                  !actions.includes("submit")
+                }
+                onClick={() => void submit()}
+              >
+                提交这些文件
+              </Button>
+            </div>
+            {state?.binding.delivery?.versionConflict && (
+              <Alert
+                type="warning"
+                message="提交时任务已被更新"
+                description="先到「安排与验收」核对变更；确认仍按这一版成果提交后，使用最新任务版本重试。已上传文件会继续复用。"
+                action={
+                  <Button
+                    disabled={busy || !actions.includes("submit")}
+                    onClick={() =>
+                      void command(async () => {
+                        await bridge!.taskRebase(target);
+                        const delivery = state.binding.delivery!;
+                        await bridge!.taskSubmit(
+                          target,
+                          delivery.summary,
+                          delivery.names,
+                        );
+                        setSection((value) => ({
+                          ...value,
+                          plan: true,
+                          materials: false,
+                        }));
+                        setNotice("成果已提交，等待验收。");
+                      })
+                    }
+                  >
+                    已核对，重新提交此版
+                  </Button>
+                }
+              />
+            )}
+          </>
+        )}
+        <details className="task-work-more">
+          <summary>取用共享资料（可选）</summary>
           <p>只把你选定的版本取到本机，不必先上传本地素材。</p>
           {detail.data?.artifacts.map((a) => (
             <div className="task-work-file" key={a.id}>
@@ -740,150 +787,36 @@ export function TaskWorkPage({
               </Button>
             </div>
           ))}
-          {!!state?.binding.sources.length && (
+          {state !== undefined && state.binding.sources.length > 0 && (
             <details>
               <summary>已选入的资料版本</summary>
-              {state.binding.sources.map((s) => (
-                <p key={`${s.kind}:${s.id}:${s.version}`}>
-                  {s.filename} · v{s.version} · {s.localName}
+              {state.binding.sources.map((source) => (
+                <p key={`${source.kind}:${source.id}:${source.version}`}>
+                  {source.filename} · v{source.version} · {source.localName}
                 </p>
               ))}
             </details>
           )}
-          <h3>工作文件与成果</h3>
-          <p>勾选要归档或提交的成果，勾选本身不会上传。</p>
-          {state?.files.map((f) => (
-            <div className="task-work-file" key={f.name}>
-              <Checkbox
-                disabled={busy}
-                checked={selected.includes(f.name)}
-                onChange={(e) =>
-                  setSelected((v) =>
-                    e.target.checked ? [...v, f.name] : v.filter((n) => n !== f.name),
-                  )
-                }
-              >
-                <span title={f.name}>
-                  {state.binding.localMaterials?.find((s) => s.localName === f.name)
-                    ?.filename ||
-                    state.binding.sources.find((s) => s.localName === f.name)
-                      ?.filename ||
-                    f.name}{" "}
-                  · {f.size} 字节
-                </span>
-              </Checkbox>
-              <div className="task-material-actions">
-                <Button
-                  disabled={busy}
-                  onClick={() => void command(() => bridge!.taskReveal(target, f.name))}
-                >
-                  在文件夹中显示
-                </Button>
-                <Button
-                  disabled={busy}
-                  onClick={() =>
-                    void command(async () => {
-                      const { isCurrent } = operation.capture();
-                      const output = await bridge!.taskOutput(target, f.name);
-                      if (isCurrent())
-                        setPreview(
-                          output.preview ||
-                            "此格式可在文件夹中打开查看，并归档原件到资料集合。",
-                        );
-                    })
-                  }
-                >
-                  查看文字
-                </Button>
-              </div>
-            </div>
-          ))}
-          {preview && <pre className="task-work-preview">{preview}</pre>}
+        </details>
+        <details className="task-work-more">
+          <summary>归档到资料（可选）</summary>
+          <p className="task-work-muted">
+            PPT、Word、Excel 原件请先归档，再在提交说明里写明集合与文件名。
+          </p>
           <TaskArchivePanel
             target={target}
             state={state}
-            selected={selected}
+            selected={outputs.map((file) => file.name)}
             collections={collections.data?.data || []}
             busy={busy}
             command={command}
             refreshCollections={collections.refresh}
           />
-          <h3>提交任务验收</h3>
-          {kind === "research" && (
-            <p>
-              任务附件支持 TXT/Markdown/CSV/TSV/JSON/PDF/PNG，每份最多 10
-              MiB。PPT、Word、Excel 原件请先归档，再在成果摘要中注明集合与文件名。
-            </p>
-          )}
-          {kind === "personal" && (
-            <p>
-              提交文字摘要；PPT、Word、Excel 原件请先归档，在摘要里写明集合与文件名。
-            </p>
-          )}
-          {prefilled && (
-            <p className="task-work-muted">
-              已按助手最后一轮回复预填，可直接在上面改。
-            </p>
-          )}
-          <Input.TextArea
-            aria-label="成果摘要"
-            rows={5}
-            maxLength={8000}
-            placeholder="说明结果、引用来源与仍需核对的内容。"
-            value={summary}
-            onChange={(e) => {
-              summaryTouched.current = true;
-              setSummary(e.target.value);
-            }}
-          />
-          {state?.binding.delivery?.versionConflict && (
-            <Alert
-              type="warning"
-              message="提交时任务已被更新"
-              description="先到「安排与验收」核对变更；确认仍按这一版成果提交后，使用最新任务版本重试。已上传文件会继续复用。"
-              action={
-                <Button
-                  disabled={busy || !actions.includes("submit")}
-                  onClick={() =>
-                    void command(async () => {
-                      await bridge!.taskRebase(target);
-                      const d = state.binding.delivery!;
-                      await bridge!.taskSubmit(target, d.summary, d.names);
-                      setSection((value) => ({
-                        ...value,
-                        plan: true,
-                        materials: false,
-                      }));
-                      setNotice("成果已提交，等待验收。");
-                    })
-                  }
-                >
-                  已核对，重新提交此版
-                </Button>
-              }
-            />
-          )}
-          <Button
-            type="primary"
-            loading={busy}
-            disabled={
-              !bridge?.taskSubmit ||
-              !state ||
-              !summary.trim() ||
-              (kind === "research" &&
-                selected.some((n) => !/\.(txt|md|csv|tsv|json|pdf|png)$/i.test(n))) ||
-              (!actions.includes("submit") &&
-                state?.binding.delivery?.status !== "pending")
-            }
-            onClick={() => void submit()}
-          >
-            提交成果，等待验收
-          </Button>
-        </div>
+        </details>
       </Section>
       <Section
-        title="安排与验收"
-        hint="承接、依赖、交付记录与审阅"
+        title="安排"
+        hint="负责人、时间与承接"
         open={isOpen("plan")}
         onToggle={() => toggle("plan")}
         nodeRef={planRef}
@@ -901,7 +834,7 @@ export function TaskWorkPage({
         onToggle={() => toggle("knowledge")}
       >
         <TaskKnowledgePanel
-          key={kind + ":" + taskId}
+          key={`${kind}:${taskId}`}
           target={target}
           state={state}
           canWork={canWork}
@@ -917,7 +850,7 @@ export function TaskWorkPage({
           setLibraryOpen(false);
           void command(async () => {
             const { isCurrent } = operation.capture();
-            await bridge!.taskImportLibrary!(target, rels);
+            await bridge!.taskImportLibrary(target, rels);
             if (isCurrent())
               setNotice(
                 `已从本地资料夹复制 ${rels.length} 个文件到工作文件夹，未上传。`,
