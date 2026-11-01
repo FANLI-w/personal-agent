@@ -3,6 +3,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { researchApi } from "./api";
+import {
+  composePptTemplate,
+  isPptTemplate,
+  parsePptTemplate,
+  pptStartPrompt,
+  pptTemplateTitle,
+} from "./ppt-template";
 import { useResearchStore } from "./store";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchRead } from "./useResearchRead";
@@ -45,29 +52,35 @@ export function LabStandards() {
   const [editing, setEditing] = useState<{
     id?: string;
     version: number;
+    mode: "rule" | "ppt";
+    /** A rule keeps its title; a PPT template keeps only the name after the prefix. */
     title: string;
     content: string;
+    /** One file per line, only for PPT templates. */
+    files: string;
   }>();
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
   const [notice, setNotice] = useState("");
   const data = read.data?.data;
   const records = data?.records || [];
+  const templates = records.filter((r) => isPptTemplate(r.title));
+  const rules = records.filter((r) => !isPptTemplate(r.title));
   const groups = [
     {
       key: "active",
       label: "生效中",
-      items: records.filter((r) => r.status === "active"),
+      items: rules.filter((r) => r.status === "active"),
     },
     {
       key: "candidate",
       label: "待负责人确认",
-      items: records.filter((r) => r.status === "candidate"),
+      items: rules.filter((r) => r.status === "candidate"),
     },
     {
       key: "revoked",
       label: "已撤回",
-      items: records.filter((r) => r.status === "revoked"),
+      items: rules.filter((r) => r.status === "revoked"),
     },
   ].filter((group) => group.items.length);
   const labCollections = (collections.data?.data || []).filter(
@@ -77,8 +90,18 @@ export function LabStandards() {
     action: "save" | "confirm" | "revoke",
     record?: { id: string; version: number; title: string; content: string },
   ) => {
-    const draft = record || editing;
+    const draft = record
+      ? {
+          id: record.id,
+          version: record.version,
+          mode: "rule" as const,
+          title: record.title,
+          content: record.content,
+          files: "",
+        }
+      : editing;
     if (!draft) return;
+    const template = !record && draft.mode === "ppt";
     const captured = operation.capture();
     setBusy(true);
     setFailure("");
@@ -88,8 +111,14 @@ export function LabStandards() {
         body: {
           scope: "lab",
           kind: "rule",
-          title: draft.title.trim(),
-          content: draft.content.trim(),
+          title: template ? pptTemplateTitle(draft.title) : draft.title.trim(),
+          content: template
+            ? composePptTemplate({
+                name: draft.title,
+                requirements: draft.content,
+                files: draft.files.split("\n"),
+              })
+            : draft.content.trim(),
           recordId: draft.id ?? null,
           expectedVersion: draft.version,
           action,
@@ -100,20 +129,30 @@ export function LabStandards() {
       setEditing(undefined);
       setNotice(
         action === "revoke"
-          ? "已撤回，这条规则不会再进入新任务。"
+          ? "已撤回，这条不会再进入新任务。"
           : action === "confirm"
-          ? "已确认生效，之后的任务会带上这条规则。"
+          ? "已确认生效，之后的任务会带上它。"
           : data?.canPublish
-          ? "已保存并生效，之后的任务会带上这条规则。"
+          ? "已保存并生效，之后的任务会带上它。"
           : "已提交，负责人确认后生效。",
       );
       await read.refresh();
     } catch (e) {
       if (captured.isCurrent())
-        setFailure(e instanceof Error ? e.message : "规则未保存，内容已保留。");
+        setFailure(e instanceof Error ? e.message : "未保存，内容已保留。");
     } finally {
       if (captured.isCurrent()) setBusy(false);
     }
+  };
+  // Starting a deck reuses the template's requirements instead of retyping them.
+  const startWithTemplate = (record: { title: string; content: string }) => {
+    const template = parsePptTemplate(record.title, record.content);
+    navigate(
+      `/workbench?${new URLSearchParams({
+        view: "tasks",
+        draft: pptStartPrompt(template),
+      })}`,
+    );
   };
   if (!supported)
     return (
@@ -170,7 +209,15 @@ export function LabStandards() {
               <Button
                 type="primary"
                 disabled={busy || Boolean(editing)}
-                onClick={() => setEditing({ version: 0, title: "", content: "" })}
+                onClick={() =>
+                  setEditing({
+                    version: 0,
+                    mode: "rule",
+                    title: "",
+                    content: "",
+                    files: "",
+                  })
+                }
               >
                 新增规则
               </Button>
@@ -179,9 +226,13 @@ export function LabStandards() {
           {editing && (
             <div className="workspace-standards-editor" aria-label="编辑课题组规则">
               <Input
-                aria-label="规则标题"
+                aria-label={editing.mode === "ppt" ? "模板名称" : "规则标题"}
                 maxLength={80}
-                placeholder="一句话说明这条约定，例如：项目书按 7 个小节写"
+                placeholder={
+                  editing.mode === "ppt"
+                    ? "模板名称，例如：组会汇报 / 项目申报答辩"
+                    : "一句话说明这条约定，例如：项目书按 7 个小节写"
+                }
                 value={editing.title}
                 disabled={busy}
                 onChange={(e) =>
@@ -189,16 +240,35 @@ export function LabStandards() {
                 }
               />
               <Input.TextArea
-                aria-label="规则正文"
+                aria-label={editing.mode === "ppt" ? "模板要求" : "规则正文"}
                 rows={4}
                 maxLength={2000}
-                placeholder="写清楚要求本身，例如：摘要 300 字以内；引用统一 GB/T 7714；结果先给结论再给证据。"
+                placeholder={
+                  editing.mode === "ppt"
+                    ? "每次都要重复说的要求：受众、页数、每页信息量、配色、字体、结构（背景-方法-结果-结论）、图表风格。"
+                    : "写清楚要求本身，例如：摘要 300 字以内；引用统一 GB/T 7714；结果先给结论再给证据。"
+                }
                 value={editing.content}
                 disabled={busy}
                 onChange={(e) =>
                   setEditing((s) => s && { ...s, content: e.target.value })
                 }
               />
+              {editing.mode === "ppt" && (
+                <Input.TextArea
+                  aria-label="要准备的文件"
+                  rows={3}
+                  maxLength={1000}
+                  placeholder={
+                    "这次要放进工作文件夹的文件，每行一个：\n组会母版.pptx\n实验室介绍.pptx\n成果统计.xlsx"
+                  }
+                  value={editing.files}
+                  disabled={busy}
+                  onChange={(e) =>
+                    setEditing((s) => s && { ...s, files: e.target.value })
+                  }
+                />
+              )}
               <div>
                 <Button
                   type="primary"
@@ -246,8 +316,10 @@ export function LabStandards() {
                           setEditing({
                             id: record.id,
                             version: record.version,
+                            mode: "rule",
                             title: record.title,
                             content: record.content,
+                            files: "",
                           })
                         }
                       >
@@ -278,6 +350,109 @@ export function LabStandards() {
               ))}
             </section>
           ))}
+          <div className="workspace-standards-heading">
+            <div>
+              <h3>PPT 工作模板</h3>
+              <p>
+                把每次都要重说一遍的要求存下来：受众、页数、配色、字体、结构，加上这次要准备的文件。
+                下次点「用它开始」，要求自动带进任务，你只补本次变化。
+              </p>
+            </div>
+            {data.canPublish && (
+              <Button
+                disabled={busy || Boolean(editing)}
+                onClick={() =>
+                  setEditing({
+                    version: 0,
+                    mode: "ppt",
+                    title: "",
+                    content: "",
+                    files: "",
+                  })
+                }
+              >
+                新增 PPT 模板
+              </Button>
+            )}
+          </div>
+          {!templates.length && (
+            <p className="workspace-muted">
+              还没有 PPT
+              模板。挑一次做得满意的汇报，把要求和要用的文件记下来，下次就不用重新讲了。
+            </p>
+          )}
+          {templates.map((record) => {
+            const template = parsePptTemplate(record.title, record.content);
+            return (
+              <article className="workspace-standards-record" key={record.id}>
+                <header>
+                  <strong>{template.name}</strong>
+                  <span className={statusClasses[record.status]}>
+                    {statusLabels[record.status]}
+                  </span>
+                  <small>
+                    v{record.version} · {record.authorName} ·{" "}
+                    {new Date(record.updatedAt).toLocaleString("zh-CN")}
+                  </small>
+                </header>
+                <p>{template.requirements}</p>
+                {template.files.length > 0 && (
+                  <p className="workspace-standards-files">
+                    要准备：{template.files.join(" · ")}
+                  </p>
+                )}
+                <div className="workspace-standards-actions">
+                  {record.status === "active" && (
+                    <Button
+                      size="small"
+                      type="primary"
+                      disabled={busy}
+                      onClick={() => startWithTemplate(record)}
+                    >
+                      用它开始
+                    </Button>
+                  )}
+                  {record.allowedActions.includes("revise") && (
+                    <Button
+                      size="small"
+                      disabled={busy}
+                      onClick={() =>
+                        setEditing({
+                          id: record.id,
+                          version: record.version,
+                          mode: "ppt",
+                          title: template.name,
+                          content: template.requirements,
+                          files: template.files.join("\n"),
+                        })
+                      }
+                    >
+                      修改
+                    </Button>
+                  )}
+                  {record.allowedActions.includes("confirm") && (
+                    <Button
+                      size="small"
+                      disabled={busy}
+                      onClick={() => void submit("confirm", record)}
+                    >
+                      确认生效
+                    </Button>
+                  )}
+                  {record.allowedActions.includes("revoke") && (
+                    <Button
+                      size="small"
+                      danger
+                      disabled={busy}
+                      onClick={() => void submit("revoke", record)}
+                    >
+                      撤回
+                    </Button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
           <div className="workspace-standards-heading">
             <div>
               <h3>模板与范文</h3>

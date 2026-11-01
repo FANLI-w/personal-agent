@@ -135,7 +135,7 @@ export function DesktopWorkbench() {
   const relocated = relocatedWorkspace(params);
   // Two front doors only: the task list and the team overview. Saved planning
   // links land on the list and open the assistant instead of a third tab.
-  const { tab, planning, planId, requestId, filter } = workbenchView(params);
+  const { tab, planning, planId, requestId, draft, filter } = workbenchView(params);
   const [planningLaunch, setPlanningLaunch] = useState(0);
   const [taskLaunch, setTaskLaunch] = useState(0);
   const [planningExpanded, setPlanningExpanded] = useState(false);
@@ -571,6 +571,7 @@ export function DesktopWorkbench() {
           onExpandedChange={setPlanningExpanded}
           planId={planId}
           requestId={requestId}
+          draft={draft}
           onCreated={() => {
             setWorkbenchRevision((value) => value + 1);
             void read.refresh();

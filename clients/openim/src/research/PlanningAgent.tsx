@@ -65,6 +65,8 @@ type Props = {
   focus: number;
   /** Bumped by "新建任务": open a clean thread instead of the last one. */
   fresh?: number;
+  /** A work template hands over a prepared message instead of retyping it. */
+  draft?: string;
   planId?: string;
   requestId?: string;
   onExpandedChange: (expanded: boolean) => void;
@@ -110,6 +112,7 @@ function PlanningAgentSession({
   hidden,
   focus,
   fresh,
+  draft,
   planId: adoptPlan,
   requestId: adoptRequest,
   onExpandedChange,
@@ -143,6 +146,7 @@ function PlanningAgentSession({
   const input = useRef<TextAreaRef>(null),
     messages = useRef<HTMLDivElement>(null),
     locked = useRef(false);
+  const appliedDraft = useRef<string>();
   const latest = useRef(history);
   latest.current = history;
   const thread = history.threads.find((t) => t.id === history.active)!;
@@ -221,6 +225,26 @@ function PlanningAgentSession({
       input.current?.focus();
     }
   }, [focus]);
+  useEffect(() => {
+    const text = draft?.trim();
+    if (!text || appliedDraft.current === text) return;
+    appliedDraft.current = text;
+    setExpanded(true);
+    setHistory((h) => {
+      const active = h.threads.find((t) => t.id === h.active);
+      // An untouched thread takes the text; anything already said gets a new one.
+      if (active && !active.messages.length && !active.planId && !active.requestId)
+        return {
+          ...h,
+          threads: h.threads.map((t) =>
+            t.id === h.active ? { ...t, draft: text } : t,
+          ),
+        };
+      const next = { ...newPlannerThread(), draft: text };
+      return { active: next.id, threads: [next, ...h.threads].slice(0, 20) };
+    });
+    window.requestAnimationFrame(() => input.current?.focus());
+  }, [draft]);
   useEffect(() => {
     if (!fresh) return;
     setExpanded(true);

@@ -12,6 +12,8 @@ export type WorkbenchView = {
   planning: boolean;
   planId?: string;
   requestId?: string;
+  /** A template can hand the assistant a prepared message. */
+  draft?: string;
   filter: WorkbenchFilter;
 };
 
@@ -22,7 +24,8 @@ export function workbenchView(params: URLSearchParams): WorkbenchView {
   const requested = params.get("view");
   const tab: WorkbenchTab = requested === "team" ? "team" : "tasks";
   const planId = id(params.get("plan")),
-    requestId = id(params.get("planning"));
+    requestId = id(params.get("planning")),
+    draft = params.get("draft")?.trim();
   return {
     tab,
     // Older links pointed at a planning tab; keep them landing on the assistant.
@@ -31,6 +34,7 @@ export function workbenchView(params: URLSearchParams): WorkbenchView {
       (requested === "planning" || Boolean(planId) || Boolean(requestId)),
     planId,
     requestId,
+    draft: draft ? draft.slice(0, 3000) : undefined,
     filter: params.get("category") === "completed" ? "completed" : "all",
   };
 }
