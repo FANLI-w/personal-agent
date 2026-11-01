@@ -1,8 +1,11 @@
 import { Alert, Button, Input } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import type { LocalLibraryStatus } from "@/types/localLibrary";
+
 import { researchApi } from "./api";
+import { LocalLibraryPicker } from "./LocalLibraryPicker";
 import {
   composePptTemplate,
   isPptTemplate,
@@ -62,6 +65,9 @@ export function LabStandards() {
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
   const [notice, setNotice] = useState("");
+  const [library, setLibrary] = useState<LocalLibraryStatus>();
+  const [libraryBusy, setLibraryBusy] = useState(false);
+  const [picking, setPicking] = useState(false);
   const data = read.data?.data;
   const records = data?.records || [];
   const templates = records.filter((r) => isPptTemplate(r.title));
@@ -154,6 +160,41 @@ export function LabStandards() {
       })}`,
     );
   };
+  const readLibrary = async () => {
+    const bridge = window.electronAPI?.localLibrary;
+    if (!bridge) {
+      setLibrary({ registered: false });
+      return;
+    }
+    try {
+      setLibrary(await bridge.status());
+    } catch {
+      setLibrary({ registered: false });
+    }
+  };
+  useEffect(() => {
+    void readLibrary();
+  }, []);
+  const pickLibrary = async () => {
+    const bridge = window.electronAPI?.localLibrary;
+    if (!bridge) return;
+    setLibraryBusy(true);
+    setFailure("");
+    try {
+      const manifest = await bridge.pick();
+      if (manifest)
+        setNotice(
+          `已登记「${manifest.name}」，共 ${manifest.files.length} 个可用文件${
+            manifest.truncated ? "（列表已截断）" : ""
+          }。`,
+        );
+      await readLibrary();
+    } catch (e) {
+      setFailure(e instanceof Error ? e.message : "无法读取这个文件夹。");
+    } finally {
+      setLibraryBusy(false);
+    }
+  };
   if (!supported)
     return (
       <div className="library-workspace-content">
@@ -177,6 +218,28 @@ export function LabStandards() {
           个人任务只带平台规则，不继承课题组约定。
         </p>
       </div>
+      <div className="workspace-standards-heading">
+        <div>
+          <h3>本地资料文件夹</h3>
+          <p>
+            只记录路径，不上传、不复制。模板里的文件从这里选，任务里一键复制进工作文件夹。
+          </p>
+        </div>
+        <Button loading={libraryBusy} onClick={() => void pickLibrary()}>
+          {library?.registered ? "更换文件夹" : "选择文件夹"}
+        </Button>
+      </div>
+      {library?.registered ? (
+        <p className="workspace-muted">
+          {library.available
+            ? `当前：${library.name} · ${library.root}`
+            : `登记的「${library.name}」现在打不开，可能被移动或断开；点「更换文件夹」重新选一次。`}
+        </p>
+      ) : (
+        <p className="workspace-muted">
+          还没有登记。选一次实验室资料所在的文件夹即可，之后不用再选。
+        </p>
+      )}
       {read.error && (
         <Alert
           type="error"
@@ -255,19 +318,33 @@ export function LabStandards() {
                 }
               />
               {editing.mode === "ppt" && (
-                <Input.TextArea
-                  aria-label="要准备的文件"
-                  rows={3}
-                  maxLength={1000}
-                  placeholder={
-                    "这次要放进工作文件夹的文件，每行一个：\n组会母版.pptx\n实验室介绍.pptx\n成果统计.xlsx"
-                  }
-                  value={editing.files}
-                  disabled={busy}
-                  onChange={(e) =>
-                    setEditing((s) => s && { ...s, files: e.target.value })
-                  }
-                />
+                <>
+                  <Input.TextArea
+                    aria-label="要准备的文件"
+                    rows={3}
+                    maxLength={1000}
+                    placeholder={
+                      "这次要放进工作文件夹的文件，每行一个：\n组会母版.pptx\n实验室介绍.pptx\n成果统计.xlsx"
+                    }
+                    value={editing.files}
+                    disabled={busy}
+                    onChange={(e) =>
+                      setEditing((s) => s && { ...s, files: e.target.value })
+                    }
+                  />
+                  <div className="workspace-standards-actions">
+                    <Button
+                      size="small"
+                      disabled={busy || !library?.registered}
+                      onClick={() => setPicking(true)}
+                    >
+                      从本地资料文件夹选择
+                    </Button>
+                    <span className="workspace-muted">
+                      选完写成相对路径，换机器只要目录结构相同就能用。
+                    </span>
+                  </div>
+                </>
               )}
               <div>
                 <Button
@@ -480,6 +557,19 @@ export function LabStandards() {
           )}
         </>
       )}
+      <LocalLibraryPicker
+        open={picking}
+        selected={(editing?.files || "")
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)}
+        confirmLabel="填进模板"
+        onClose={() => setPicking(false)}
+        onPick={(rels) => {
+          setEditing((s) => s && { ...s, files: rels.join("\n") });
+          setPicking(false);
+        }}
+      />
     </section>
   );
 }

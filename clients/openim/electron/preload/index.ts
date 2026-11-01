@@ -176,8 +176,14 @@ const Api: IElectronAPI = {
   getDataPath,
   getVersion: () => process.version,
   getPlatform,
+  localLibrary: {
+    status: () => ipcRenderer.invoke("local-library-status"),
+    pick: () => ipcRenderer.invoke("local-library-pick"),
+    scan: () => ipcRenderer.invoke("local-library-scan"),
+  },
   localDsh: {
       taskAddLocal: target => ipcRenderer.invoke('task-dsh-add-local', target),
+      taskImportLibrary: (target, rels) => ipcRenderer.invoke('task-dsh-import-library', target, rels),
       taskReveal: (target, name) => ipcRenderer.invoke('task-dsh-reveal', target, name),
       taskArchive: (target, selection, rebase) => ipcRenderer.invoke('task-dsh-archive', target, selection, rebase),
       taskOpen: (target, pick) => ipcRenderer.invoke('task-dsh-open', target, pick),

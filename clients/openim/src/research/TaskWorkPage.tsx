@@ -1,7 +1,7 @@
-import { TaskExecutionStatus } from './TaskExecutionStatus';
-import { TaskKnowledgePanel } from './TaskKnowledgePanel';
-import { TaskArchivePanel } from './TaskArchivePanel';
-import { researchScopeLabels } from './research-library-api';
+import { TaskExecutionStatus } from "./TaskExecutionStatus";
+import { TaskKnowledgePanel } from "./TaskKnowledgePanel";
+import { TaskArchivePanel } from "./TaskArchivePanel";
+import { researchScopeLabels } from "./research-library-api";
 import { Alert, Button, Checkbox, Input, Select } from "antd";
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import type {
@@ -13,9 +13,10 @@ import { useResearchRead } from "./useResearchRead";
 import { usePersonalOperation } from "./usePersonalOperation";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { taskEventRows } from "./task-dsh-events";
+import { LocalLibraryPicker } from "./LocalLibraryPicker";
 import "./task-work-page.scss";
 import { Link, useNavigate } from "react-router-dom";
-import { nativeWorkbenchTaskPath } from './workbench-links';
+import { nativeWorkbenchTaskPath } from "./workbench-links";
 
 const phases = {
   ready: "可以开始",
@@ -156,6 +157,7 @@ export function TaskWorkPage({
   const [note, setNote] = useState(""),
     [summary, setSummary] = useState(""),
     [preview, setPreview] = useState("");
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]),
     [collection, setCollection] = useState(""),
     [notice, setNotice] = useState("");
@@ -171,8 +173,15 @@ export function TaskWorkPage({
     flight.current = false;
     setBusy(false);
     setSection({});
-    setState(undefined); setNote(''); setSummary(''); setPreview('');
-    setSelected([]); setCollection(''); setNotice(''); setError(''); setConnectionError('');
+    setState(undefined);
+    setNote("");
+    setSummary("");
+    setPreview("");
+    setSelected([]);
+    setCollection("");
+    setNotice("");
+    setError("");
+    setConnectionError("");
     noteLoaded.current = false;
     summaryTouched.current = false;
     autoSummary.current = "";
@@ -213,8 +222,7 @@ export function TaskWorkPage({
   const version = task && "version" in task ? task.version : undefined;
   const canStart = kind === "research" && actions.includes("start") && !!version;
   const canClaim = kind === "research" && actions.includes("claim") && !!version;
-  const canActivate =
-    kind === "personal" && actions.includes("activate") && !!version;
+  const canActivate = kind === "personal" && actions.includes("activate") && !!version;
   const isOpen = (id: string) => {
     if (section[id] !== undefined) return section[id];
     if (id === "plan") return !canWork;
@@ -363,12 +371,13 @@ export function TaskWorkPage({
     command(async () => {
       const { isCurrent } = operation.capture();
       await bridge!.taskImport(target, source);
-      if (isCurrent()) setNotice("已将选定版本保存到本任务目录，相同内容的已选素材会复用本地副本。");
+      if (isCurrent())
+        setNotice("已将选定版本保存到本任务目录，相同内容的已选素材会复用本地副本。");
     });
   const submit = () =>
     command(async () => {
       const { isCurrent } = operation.capture();
-      await bridge!.taskSubmit(target, summary, kind === 'personal' ? [] : selected);
+      await bridge!.taskSubmit(target, summary, kind === "personal" ? [] : selected);
       if (isCurrent()) {
         setNotice("成果已提交，等待验收。");
         setSection((value) => ({ ...value, plan: true, materials: false }));
@@ -432,9 +441,7 @@ export function TaskWorkPage({
         </div>
         {!!(connectionError || state) && (
           <span>
-            {connectionError
-              ? "连接中断 · 进度待核对"
-              : phases[state!.phase]}
+            {connectionError ? "连接中断 · 进度待核对" : phases[state!.phase]}
           </span>
         )}
       </header>
@@ -443,7 +450,12 @@ export function TaskWorkPage({
         <strong>下一步</strong>
         <p>{next.hint}</p>
         <div className="task-work-next-actions">
-          <Button type="primary" loading={busy} disabled={!task} onClick={() => void next.run()}>
+          <Button
+            type="primary"
+            loading={busy}
+            disabled={!task}
+            onClick={() => void next.run()}
+          >
             {next.label}
           </Button>
         </div>
@@ -479,7 +491,11 @@ export function TaskWorkPage({
             </p>
             {canWork && bridge?.taskOpen && (
               <div className="task-material-actions">
-                <Button type="primary" disabled={busy} onClick={() => void openWorkspace(true)}>
+                <Button
+                  type="primary"
+                  disabled={busy}
+                  onClick={() => void openWorkspace(true)}
+                >
                   选择本地工作文件夹
                 </Button>
                 <Button disabled={busy} onClick={() => void openWorkspace()}>
@@ -491,13 +507,36 @@ export function TaskWorkPage({
         ) : (
           <>
             <div className="task-material-actions">
-              <Button disabled={busy || !canWork || state.phase === 'running'} onClick={() => void command(async () => {
-                const { isCurrent } = operation.capture();
-                const added = await bridge!.taskAddLocal(target);
-                if (added && isCurrent()) setNotice('素材已加入本机工作文件夹，未上传到资料服务。');
-              })}>添加本地素材</Button>
-              <Button disabled={busy} onClick={() => void command(() => bridge!.taskReveal(target))}>打开工作文件夹</Button>
-              <Button onClick={() => reveal("materials")}>取用共享资料 / 归档成果</Button>
+              <Button
+                disabled={busy || !canWork || state.phase === "running"}
+                onClick={() =>
+                  void command(async () => {
+                    const { isCurrent } = operation.capture();
+                    const added = await bridge!.taskAddLocal(target);
+                    if (added && isCurrent())
+                      setNotice("素材已加入本机工作文件夹，未上传到资料服务。");
+                  })
+                }
+              >
+                添加本地素材
+              </Button>
+              {bridge?.taskImportLibrary && (
+                <Button
+                  disabled={busy || !canWork || state.phase === "running"}
+                  onClick={() => setLibraryOpen(true)}
+                >
+                  从本地资料夹取用
+                </Button>
+              )}
+              <Button
+                disabled={busy}
+                onClick={() => void command(() => bridge!.taskReveal(target))}
+              >
+                打开工作文件夹
+              </Button>
+              <Button onClick={() => reveal("materials")}>
+                取用共享资料 / 归档成果
+              </Button>
             </div>
             <p className="task-work-muted">
               本地文件是主要工作材料，补充素材只复制到本机；使用模型时，读取的相关内容可能作为上下文发送。
@@ -507,8 +546,7 @@ export function TaskWorkPage({
               ref={transcript}
               onScroll={() => {
                 const e = transcript.current!;
-                follow.current =
-                  e.scrollHeight - e.scrollTop - e.clientHeight < 70;
+                follow.current = e.scrollHeight - e.scrollTop - e.clientHeight < 70;
               }}
             >
               {state.hasMore && (
@@ -517,10 +555,7 @@ export function TaskWorkPage({
                 </p>
               )}
               {rows.map((row) => (
-                <article
-                  key={row.seq}
-                  className={`task-work-message ${row.role}`}
-                >
+                <article key={row.seq} className={`task-work-message ${row.role}`}>
                   <strong>
                     {row.role === "user"
                       ? "你"
@@ -555,7 +590,9 @@ export function TaskWorkPage({
                   message="工具正在等待你确认"
                   description={
                     <>
-                      请到 <Link to={nativeWorkbenchTaskPath(taskId, kind)}>工作台</Link>选择“
+                      请到{" "}
+                      <Link to={nativeWorkbenchTaskPath(taskId, kind)}>工作台</Link>
+                      选择“
                       {state.binding.sessionTitle || task?.title}
                       ”会话，核对操作并允许一次或拒绝，然后回到此任务继续查看。
                     </>
@@ -629,7 +666,9 @@ export function TaskWorkPage({
       </Section>
       <Section
         title="成果与提交"
-        hint={state ? `${state.files.length} 个文件 · 归档与提交是两件事` : "先建立工作区"}
+        hint={
+          state ? `${state.files.length} 个文件 · 归档与提交是两件事` : "先建立工作区"
+        }
         open={isOpen("materials")}
         onToggle={() => toggle("materials")}
         nodeRef={materialsRef}
@@ -640,9 +679,16 @@ export function TaskWorkPage({
               先在「工作」里选择工作文件夹，这里才会列出可归档的成果。
             </p>
           )}
-          {!!state?.binding.localMaterials?.length && <details><summary>补充的本地素材（仅本机）</summary>
-            {state.binding.localMaterials.map(s => <p key={`${s.localName}:${s.sha256}`}>{s.filename} → {s.localName}</p>)}
-          </details>}
+          {!!state?.binding.localMaterials?.length && (
+            <details>
+              <summary>补充的本地素材（仅本机）</summary>
+              {state.binding.localMaterials.map((s) => (
+                <p key={`${s.localName}:${s.sha256}`}>
+                  {s.filename} → {s.localName}
+                </p>
+              ))}
+            </details>
+          )}
           <h3>按需取用共享资料</h3>
           <p>只把你选定的版本取到本机，不必先上传本地素材。</p>
           {detail.data?.artifacts.map((a) => (
@@ -651,9 +697,7 @@ export function TaskWorkPage({
                 {a.filename} · v{a.version}
               </span>
               <Button
-                disabled={
-                  !state || busy || !canWork || a.accessStatus === "revoked"
-                }
+                disabled={!state || busy || !canWork || a.accessStatus === "revoked"}
                 onClick={() =>
                   void importFile({
                     kind: "artifact",
@@ -671,10 +715,12 @@ export function TaskWorkPage({
             placeholder="选择资料板块中的资料集"
             value={collection || undefined}
             onChange={setCollection}
-            options={collections.data?.data.filter(c => !c.externalSource).map((c) => ({
-              value: c.id,
-              label: `${c.name} · ${researchScopeLabels[c.scope]}`,
-            }))}
+            options={collections.data?.data
+              .filter((c) => !c.externalSource)
+              .map((c) => ({
+                value: c.id,
+                label: `${c.name} · ${researchScopeLabels[c.scope]}`,
+              }))}
           />
           {(collections.error || library.error) && (
             <Alert type="error" message={collections.error || library.error} />
@@ -713,38 +759,66 @@ export function TaskWorkPage({
                 checked={selected.includes(f.name)}
                 onChange={(e) =>
                   setSelected((v) =>
-                    e.target.checked
-                      ? [...v, f.name]
-                      : v.filter((n) => n !== f.name),
+                    e.target.checked ? [...v, f.name] : v.filter((n) => n !== f.name),
                   )
                 }
               >
-                <span title={f.name}>{state.binding.localMaterials?.find(s => s.localName === f.name)?.filename || state.binding.sources.find(s => s.localName === f.name)?.filename || f.name} · {f.size} 字节</span>
+                <span title={f.name}>
+                  {state.binding.localMaterials?.find((s) => s.localName === f.name)
+                    ?.filename ||
+                    state.binding.sources.find((s) => s.localName === f.name)
+                      ?.filename ||
+                    f.name}{" "}
+                  · {f.size} 字节
+                </span>
               </Checkbox>
-              <div className="task-material-actions"><Button disabled={busy} onClick={() => void command(() => bridge!.taskReveal(target, f.name))}>在文件夹中显示</Button><Button
-                disabled={busy}
-                onClick={() =>
-                  void command(async () => {
-                    const { isCurrent } = operation.capture();
-                    const output = await bridge!.taskOutput(target, f.name);
-                    if (isCurrent()) setPreview(
-                      output.preview ||
-                        "此格式可在文件夹中打开查看，并归档原件到资料集合。",
-                    );
-                  })
-                }
-              >
-                查看文字
-              </Button></div>
+              <div className="task-material-actions">
+                <Button
+                  disabled={busy}
+                  onClick={() => void command(() => bridge!.taskReveal(target, f.name))}
+                >
+                  在文件夹中显示
+                </Button>
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    void command(async () => {
+                      const { isCurrent } = operation.capture();
+                      const output = await bridge!.taskOutput(target, f.name);
+                      if (isCurrent())
+                        setPreview(
+                          output.preview ||
+                            "此格式可在文件夹中打开查看，并归档原件到资料集合。",
+                        );
+                    })
+                  }
+                >
+                  查看文字
+                </Button>
+              </div>
             </div>
           ))}
           {preview && <pre className="task-work-preview">{preview}</pre>}
-          <TaskArchivePanel target={target} state={state} selected={selected} collections={collections.data?.data || []}
-            busy={busy} command={command} refreshCollections={collections.refresh} />
+          <TaskArchivePanel
+            target={target}
+            state={state}
+            selected={selected}
+            collections={collections.data?.data || []}
+            busy={busy}
+            command={command}
+            refreshCollections={collections.refresh}
+          />
           <h3>提交任务验收</h3>
-          {kind === 'research' && <p>任务附件支持 TXT/Markdown/CSV/TSV/JSON/PDF/PNG，每份最多 10 MiB。PPT、Word、Excel 原件请先归档，再在成果摘要中注明集合与文件名。</p>}
+          {kind === "research" && (
+            <p>
+              任务附件支持 TXT/Markdown/CSV/TSV/JSON/PDF/PNG，每份最多 10
+              MiB。PPT、Word、Excel 原件请先归档，再在成果摘要中注明集合与文件名。
+            </p>
+          )}
           {kind === "personal" && (
-            <p>提交文字摘要；PPT、Word、Excel 原件请先归档，在摘要里写明集合与文件名。</p>
+            <p>
+              提交文字摘要；PPT、Word、Excel 原件请先归档，在摘要里写明集合与文件名。
+            </p>
           )}
           {prefilled && (
             <p className="task-work-muted">
@@ -775,7 +849,11 @@ export function TaskWorkPage({
                       await bridge!.taskRebase(target);
                       const d = state.binding.delivery!;
                       await bridge!.taskSubmit(target, d.summary, d.names);
-                      setSection((value) => ({ ...value, plan: true, materials: false }));
+                      setSection((value) => ({
+                        ...value,
+                        plan: true,
+                        materials: false,
+                      }));
                       setNotice("成果已提交，等待验收。");
                     })
                   }
@@ -792,7 +870,8 @@ export function TaskWorkPage({
               !bridge?.taskSubmit ||
               !state ||
               !summary.trim() ||
-              (kind === 'research' && selected.some(n => !/\.(txt|md|csv|tsv|json|pdf|png)$/i.test(n))) ||
+              (kind === "research" &&
+                selected.some((n) => !/\.(txt|md|csv|tsv|json|pdf|png)$/i.test(n))) ||
               (!actions.includes("submit") &&
                 state?.binding.delivery?.status !== "pending")
             }
@@ -821,8 +900,31 @@ export function TaskWorkPage({
         open={isOpen("knowledge")}
         onToggle={() => toggle("knowledge")}
       >
-        <TaskKnowledgePanel key={kind + ':' + taskId} target={target} state={state} canWork={canWork} busy={busy} command={command} />
+        <TaskKnowledgePanel
+          key={kind + ":" + taskId}
+          target={target}
+          state={state}
+          canWork={canWork}
+          busy={busy}
+          command={command}
+        />
       </Section>
+      <LocalLibraryPicker
+        open={libraryOpen}
+        confirmLabel="复制到工作文件夹"
+        onClose={() => setLibraryOpen(false)}
+        onPick={(rels) => {
+          setLibraryOpen(false);
+          void command(async () => {
+            const { isCurrent } = operation.capture();
+            await bridge!.taskImportLibrary!(target, rels);
+            if (isCurrent())
+              setNotice(
+                `已从本地资料夹复制 ${rels.length} 个文件到工作文件夹，未上传。`,
+              );
+          });
+        }}
+      />
     </section>
   );
 }

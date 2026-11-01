@@ -2639,3 +2639,17 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 边界：文件仍是本机的，模板只登记"要准备哪些文件"，不复制、不上传；画图参考图暂时靠把图片放进工作文件夹，下一步再做「参考图 + 风格说明」的本地索引。
 
 安装包 0.10.85 构建 12 分 52 秒（rcedit 又报一次 `Unable to commit changes` 后重试成功，本次 `win-unpacked` 没有残留 `*.tmp`，包体积正常）：`clients/openim/release/Base/0.10.85/AcceptCat_0.10.85.exe`（405,075,589 字节，SHA256 `64b0e349f0f1a1e068499a79993aa468f85198db16a2cc8d68c034e210b70554`，FileVersion 0.10.85），asar 内已核对「PPT 工作模板」「用它开始」。本次没有后台改动，已部署的 0.40.0 即可用。
+
+## 2026-11-01 本地资料文件夹：登记路径、模板选文件、任务一键复制（0.10.86）
+
+负责人确认文件「主要在本机文件夹，少量飞书但本地都有副本，先以本地为主」，并要求把这条路做出来。这一版全在桌面端，不动后台：
+
+- **登记本地资料文件夹**（`electron/utils/localLibrary.ts` + `main/localLibraryManage.ts`）：选一次目录，只在 `userData/local-library.json` 记一个路径，不上传、不复制。扫描按扩展名白名单（pptx/docx/pdf/xlsx/csv/md/txt/图片等）、跳过隐藏目录与 `node_modules/.git`、最多 2000 个文件或 6 层或 6 秒，超出标记 `truncated` 让界面提示用搜索缩小范围。IPC 只接受主窗口调用。
+- **模板里从资料夹选文件**：`LocalLibraryPicker` 列出文件（名称+相对路径+大小，可搜索多选），选完写成**相对路径**填进模板正文；换机器只要目录结构相同就能用，同事之间共享模板也不必互发文件。
+- **任务里一键复制**：`task-dsh-import-library` 接收相对路径，主进程用 `resolveInRoot` 校验必须落在登记目录内（`..` 一律拒绝），再交给已有的 `importLocal` 复制进任务工作文件夹并记 sha256；工作台「工作」区新增「从本地资料夹取用」按钮，最多 20 个/次，运行中会拒绝。
+
+边界：不监听文件夹变化（移动/删除后要重新扫描）；不做飞书索引；不做项目分组——这三项按负责人意见等试用后再定。安全上只认已登记根目录、跳过符号链接、只读白名单扩展名，路径不出主进程。
+
+验证：新增 `tests/local-library.test.mjs` 3 项（越界路径拒绝、文件名提取、扫描只列文档图片且返回相对路径），客户端 `tsc --noEmit` 与 `tsc -p tsconfig.electron-check.json` 均通过；`tests/workbench-view`、`lab-standards`、`ppt-template`、`directory-navigation`、`task-notice-card` 共 23 项通过。安装包 0.10.86 见下。
+
+安装包 0.10.86 构建 11 分 13 秒，`clients/openim/release/Base/0.10.86/AcceptCat_0.10.86.exe`（405,078,396 字节，SHA256 `309f3ccd6e645b79200c99e248866c23d37ea80ba19f6bb7c515d213b6745975`，FileVersion 0.10.86），`win-unpacked` 无残留临时文件。本次无后台改动。

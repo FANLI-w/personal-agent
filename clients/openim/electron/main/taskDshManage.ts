@@ -7,6 +7,7 @@ import type { ArchiveSelection } from '../../../../integrations/deepseek-harness
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { authority } from "./localFolderManage";
+import { localLibraryPaths } from "./localLibraryManage";
 import type { dshAccount } from "./localDshAccount";
 import type {
   TaskContext,
@@ -363,6 +364,18 @@ export function registerTaskDshBridge(
   ipcMain.handle("task-dsh-status", async (event, target: TaskTarget) => {
     const a = await authorized(event, target);
     return a.store.status(target);
+  });
+  ipcMain.handle('task-dsh-import-library', async (event, target: TaskTarget, rels: string[]) => {
+    const a = await authorized(event, target, true);
+    // Paths arrive relative to the registered folder; the main process resolves them.
+    const files = await localLibraryPaths(Array.isArray(rels) ? rels.filter(r => typeof r === 'string') : []);
+    if (!files.length) throw Error('请先选择要从本地资料夹取用的文件。');
+    await a.coordinator.idle(target);
+    await authorized(event, target, true);
+    await a.c.account.valid();
+    if ((await a.store.status(target))?.phase === 'running') throw Error('请等本轮结束后添加素材。');
+    await a.store.importLocal(target, files);
+    return true;
   });
   ipcMain.handle('task-dsh-add-local', async (event, target: TaskTarget) => {
     const a = await authorized(event, target, true);
