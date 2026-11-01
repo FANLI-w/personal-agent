@@ -2665,3 +2665,7 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 验证：`apps/api` + `apps/web` + `packages/contracts` 59 文件 795 项通过（新增 `library-index.spec.ts` 4 项：成员建/负责人改、同项目同路径拒绝、绝对与越界路径拒绝、推荐唯一、版本冲突与幂等撤回、匿名 401）；客户端 `tsc --noEmit`、electron `tsc` 通过；新增 `tests/library-index.test.mjs` 3 项并入 desktop.yml。注意：新增迁移后所有「旧 schema 升级」用例都要同时回滚 032，已批量更新 15 个 spec 的迁移计数与 10 个 spec 的模拟降级脚本。安装包 0.10.87 见下。
 
 安装包 0.10.87 构建 11 分 20 秒，`clients/openim/release/Base/0.10.87/AcceptCat_0.10.87.exe`（405,079,223 字节，SHA256 `0ed28f161615606b7775c276c4c73a9fdaaf32b8e74c3d30fb38e62a9e9d2a6f`，FileVersion 0.10.87）。该页签要生效需要部署后台（契约 0.41.0 + 迁移 032）。
+
+## 2026-11-01 两个入口都加上「新建」
+
+负责人看截图说「右上角两个应该是每个都加一个新建两个字吧」。于是「个人任务 / 课题组任务」改为「**新建个人任务 / 新建课题组任务**」，空状态文案里的指引同步改成新名字。0.10.88 构建 13 分 21 秒，`clients/openim/release/Base/0.10.88/AcceptCat_0.10.88.exe`（405,078,570 字节，SHA256 `f454c1e2073734181ab3327a74eb99fd0e3c5f20ccc28b241688bd1d18a7be84`，FileVersion 0.10.88）。纯客户端改动。

@@ -83,9 +83,9 @@ test("the page keeps only the two tabs and names the two kinds of task", async (
   assert.match(page, /label: "团队"/);
   assert.doesNotMatch(page, /label: "计划"/);
   assert.doesNotMatch(page, /label: "定时"/);
-  // The two entries say what they make, so the difference is visible before clicking.
-  assert.match(page, /课题组任务/);
-  assert.match(page, /个人任务/);
+  // Both entries start with 新建 and say what they make.
+  assert.match(page, /新建课题组任务/);
+  assert.match(page, /新建个人任务/);
   assert.doesNotMatch(page, />\s*新建任务\s*</);
   // 课题组任务 expands the assistant instead of opening a form.
   assert.match(page, /setPlanningLaunch\(\(value\) => value \+ 1\)/);

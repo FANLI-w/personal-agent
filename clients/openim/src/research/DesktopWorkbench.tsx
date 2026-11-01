@@ -307,7 +307,7 @@ export function DesktopWorkbench() {
           {tab === "tasks" && (
             <>
               <Button disabled={!supported} onClick={startPersonalTask}>
-                个人任务
+                新建个人任务
               </Button>
               <span
                 title={
@@ -317,7 +317,7 @@ export function DesktopWorkbench() {
                 }
               >
                 <Button type="primary" disabled={!assistantReady} onClick={startTask}>
-                  课题组任务
+                  新建课题组任务
                 </Button>
               </span>
             </>
@@ -450,7 +450,7 @@ export function DesktopWorkbench() {
                       : "暂时没有要推进的任务"}
                   </h2>
                   <p>
-                    聊天中的协作建议会在这里确认；新建课题组任务跟下面的助手说一句，只给自己的点「个人任务」。
+                    聊天中的协作建议会在这里确认；新建课题组任务跟下面的助手说一句，只给自己的点「新建个人任务」。
                   </p>
                 </div>
               )}
@@ -553,7 +553,7 @@ export function DesktopWorkbench() {
                 <div className="workspace-empty">
                   <h2>把事情交代清楚，一起推进</h2>
                   <p>
-                    跟下面的任务助手说一句要做的事，它会整理成课题组任务；只给自己的点上方「个人任务」，也可以选左侧任务看目标、成员和结果。
+                    跟下面的任务助手说一句要做的事，它会整理成课题组任务；只给自己的点上方「新建个人任务」，也可以选左侧任务看目标、成员和结果。
                   </p>
                 </div>
               )}
