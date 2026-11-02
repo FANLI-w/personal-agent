@@ -1,0 +1,148 @@
+.library-index {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 26px 26px;
+  font-size: 13px;
+  line-height: 1.7;
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  p {
+    margin: 0;
+    color: #5c6a75;
+  }
+  h3 {
+    margin: 12px 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #42535f;
+  }
+}
+
+.library-index-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid #e4eaf0;
+  border-radius: 10px;
+  background: #f8fbfd;
+
+  p {
+    font-size: 12px;
+  }
+}
+
+.library-index-folder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px dashed #d8e2ea;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #5c6a75;
+
+  strong {
+    color: #26343d;
+  }
+}
+
+.library-index-empty {
+  padding: 16px;
+  border: 1px dashed #d8e2ea;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #6d7e8b;
+}
+
+.library-index-row {
+  border: 1px solid #e6ebf0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: #fff;
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+
+    strong {
+      font-size: 13px;
+      font-weight: 600;
+    }
+  }
+
+  p {
+    margin: 6px 0 4px;
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+
+  small {
+    color: #8a97a1;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+}
+
+.library-index-local {
+  margin-left: auto;
+  font-size: 11px;
+  color: #2f7a55;
+
+  &.is-missing {
+    color: #b45309;
+  }
+}
+
+.library-index-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.library-index-hint {
+  font-size: 11px;
+  color: #8a97a1;
+}
+
+.library-index-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #cfe3f2;
+  border-radius: 10px;
+  background: #f6fbff;
+}
+
+.library-index-editor-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 720px) {
+  .library-index {
+    padding: 14px;
+  }
+  .library-index-head,
+  .library-index-editor-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

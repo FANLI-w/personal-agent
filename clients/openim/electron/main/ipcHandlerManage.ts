@@ -18,6 +18,7 @@ import { changeLanguage } from "../i18n";
 import {registerSkillBridge} from "./skillManage";
 import { registerZoteroBridge } from "./zoteroManage";
 import { registerLocalFolderBridge } from "./localFolderManage";
+import { registerLocalLibraryBridge } from "./localLibraryManage";
 import { registerChatHistoryBridge } from "./chatHistoryManage";
 import { registerPeerLibraryBridge } from "./peerLibraryManage";
 import { registerImageClipboardBridge } from "./imageClipboardManage";
@@ -73,6 +74,7 @@ const readPreference = (key: unknown) => {
 export const setIpcMainListener = () => {
   registerLocalDshBridge();
   registerLocalFolderBridge();
+  registerLocalLibraryBridge();
   registerChatHistoryBridge();
   registerPeerLibraryBridge();
   registerImageClipboardBridge();

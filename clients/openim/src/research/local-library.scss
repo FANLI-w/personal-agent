@@ -1,0 +1,47 @@
+.local-library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 46vh;
+  overflow: auto;
+  margin: 10px 0;
+}
+
+.local-library-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:hover {
+    background: #f5f8fa;
+  }
+
+  > span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  strong {
+    font-size: 13px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  small {
+    font-size: 11px;
+    color: #8a97a1;
+    overflow-wrap: anywhere;
+  }
+
+  em {
+    margin-left: auto;
+    font-style: normal;
+    font-size: 11px;
+    color: #8a97a1;
+    white-space: nowrap;
+  }
+}

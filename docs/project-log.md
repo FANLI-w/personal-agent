@@ -2577,3 +2577,108 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 消息整条是邀请时（service、无 turnId、只有一个 task 引用）不再先渲染正文再渲染卡片，而是把正文放进卡片里，避免标题重复两遍；其它带 task 引用的消息保留正文并在下面追加卡片，`artifact` 等仍留在「相关材料」折叠区。判断逻辑抽到纯函数 `isTaskNotice` / `splitTaskResources` / `taskStatusLabel` / `legacyTaskInvitation`，后者识别旧服务端的纯文本邀请模板，让尚未部署新后台时也能得到一张卡片（按钮为「去任务待办」）。
 
 验证：`apps/api` 39 文件 414 项通过（`task-handoffs.spec` 新增断言：邀请消息只有一个 task 引用、version=1、不含私有目标文本）；`clients/openim` 新增 `tests/task-notice-card.test.mjs` 5 项通过并加入 desktop.yml；两端 typecheck 通过，新文件 eslint 干净。客户端 0.10.80 已打包（`AcceptCat_0.10.80.exe`，SHA256 `37621dc73a1b2d4eff44dd470668898b84da8b96fdb950affa862cefb01a8460`）。未部署后台，未做真机双端验收。
+
+## 2026-10-31 任务页只留两个入口，新建任务交给助手
+
+负责人发来任务页截图并标注两点：①「新建任务的时候就不要用原来那种填很多空的界面了，直接就用共用这个资料助手，让它新建」；②「进来的时候可以不把这个输入框露外面，这样就挤压了其他内容的面积，只用露出来一个任务助手，用户可以点了这里再出来，或者点新建任务的时候让助手出来」。截图上还从「待办」向「计划 / 定时 / 团队」画了箭头，追问后负责人选定：**标签栏只留「待办 / 团队」**，计划并进任务助手，定时并进待办列表；新建任务时**原地展开助手成对话**，不再弹表单。
+
+原实现是四个 `Segmented` 选项（待办/计划/定时/团队）占一整行 `.workspace-toolbar`，`PlanningAgent` 无论展开与否都渲染头部按钮和一整块输入框（收起时仍占约 110px），「新建任务」打开一个含名称/目标/联系人/预选 Agent 的 `Modal`。
+
+改法：视图判定抽成纯函数 `clients/openim/src/research/workbench-view.ts`，`tab` 只有 `tasks`/`team`，`view=planning`、`plan`、`planning` 一律落到待办并把助手打开（`PlanningAgent` 新增 `fresh`，从「新建任务」进入时另开一段对话，空对话保留）。标签从独立一行挪进标题行，只剩「待办 / 团队」；「计划记录」改成标题行按钮 + 右侧 `Drawer`（`PlanningHistory` 新增 `onOpen` 回调，选中后关抽屉、展开助手并接入该计划）；「新建任务」清掉 URL 上的计划参数后展开助手并聚焦输入框，只有后台还不支持助手（契约 <0.23 或 <0.32）时才回退到原表单，表单文案同步为「直接建群并把成员拉进来」。
+
+`PlanningAgent` 去掉 `full` 整页形态（`WorkbenchSections.tsx` 随之删除）：收起时只渲染一行入口 `.planning-agent-entry`（机器人图标 + 助手名 + 一句提示 + 上箭头），点开才出现头部按钮、消息与输入框；「专注任务规划」按钮删除，展开即占满内容区，收起恢复列表。同时把标题行里的 `Segmented` 高度对齐 40px。
+
+边界与代价：`定时` 没有独立标签后，定时卡片仍在待办列表的「定时安排」分组，管理（暂停/恢复/新建提醒）在「我的助理 → 任务与提醒」，`/workbench?view=scheduled` 旧链接改为跳待办（`directory-navigation` 断言同步）；助手建的是课题组研究任务（计划确认后创建），个人任务表单只剩回退路径——如果之后仍要「个人任务」入口需要另加。
+
+验证：客户端 `tsc --noEmit` 通过；新增 `tests/workbench-view.test.mjs`（4 项）并加入 desktop.yml，`directory-navigation` 更新；聊天相关 62 项、规划相关 49 项、桌面工作流 3 项通过；`vite build` 通过（注意 `vite build` 也会被本机安全删除守卫按 dist-electron 的 62 项删除拦下，需 `CODEBUDDY_SAFE_DELETE_BULK_THRESHOLD=200000`）。安装包 0.10.81 构建 9 分 11 秒，`clients/openim/release/Base/0.10.81/AcceptCat_0.10.81.exe`（405,073,432 字节，SHA256 `ff0a35623a7cf42b58449325533cdc73e2d651a9708773fc51c70ee3df0ae4de`，FileVersion 0.10.81），产物内已核对新文案与 `.planning-agent-entry` 样式。未部署后台（本次无后台改动），未做真机双端验收。
+
+## 2026-10-31 补「个人任务」入口：一句话建，不再回到旧表单
+
+负责人看过改版后问「这里的助手是只能添加课题组任务吗？那个人的任务应该怎么办」。核对确认：底部助手是课题组规划助手，`planRequest` 请求里带 `labId`、确认后走 `confirmPlan` 在 `tasks` 里建研究任务，所以它只能建课题组任务；个人任务（`personal_work_tasks`）当时只剩三条来路——聊天里对自己的助理说「帮我分析…」委派给专家 Agent（`recordDelegateWork`）、群聊协调回复（`recordAssistantAnswerWork`）、以及后台不支持助手时才出现的旧表单，任务页上没有直接入口。
+
+负责人选择「加个人任务入口 + 一句话表单」。改法：标题行在「新建任务」左侧加「个人任务」，打开的是精简后的弹窗——只留「要做什么」（一句话，必填）和「一起参与的联系人（可留空）」；任务名由新增的纯函数 `personalTaskTitle` 从第一句生成（去 `- * + ·` 与 `1.`/`1、` 编号、截到第一个 `。！？!?；;`，不足两字则整句保留、最长 60 字），提交体固定 `agentContactId: null`，要请 Agent 处理时在任务详情的「请 Agent 处理」里再选。「新建任务」在后台不支持助手（契约 <0.23/<0.32）时的回退复用同一张表单，标题显示为「新建任务」，说明文案改成「先按个人任务建」。
+
+验证：客户端 `tsc --noEmit` 通过；`tests/workbench-view.test.mjs` 扩到 5 项（新增 `personalTaskTitle` 的取句/去编号/短句/空串/60 字截断，以及页面仍有 `个人任务` 入口、表单不再有「任务名称」字段）；`vite build` 通过。安装包 0.10.82 构建 9 分 40 秒，`clients/openim/release/Base/0.10.82/AcceptCat_0.10.82.exe`（405,074,532 字节，SHA256 `92741f1891b02a1dc35c86b1ec770ba24b67dfb26a0877866b1437134f2d41bf`，FileVersion 0.10.82），已在 asar 内核对「新建个人任务」「只给自己或朋友安排」文案。本次仍无后台改动。
+
+## 2026-10-31 任务页两个入口改成自解释的名字
+
+负责人看着新截图说「那是不是应该改成新建团队任务啊，不然不知道和个人任务有什么区别」——并排的「新建任务 / 个人任务」看不出前者是课题组任务。改法：主按钮改叫「课题组任务」、次按钮保持「个人任务」，两者都是名词短语、一眼能对比。没有用「团队任务」这个词，是因为应用里这个群体统一叫课题组，连团队标签页自己的筛选都是「课题组可见 / 我参与的」；要换成「团队任务」只需改这一个字符串。
+
+同时删掉上一版留下的回退分支：后台不支持助手（契约 <0.23/<0.32）时，「课题组任务」直接禁用并在 `title` 里说明「这台服务器还没有任务助手，暂时只能建个人任务」，不再退回到个人任务表单——那张一句话表单现在只服务个人任务，标题固定「新建个人任务」。列表与详情空状态文案同步点明两个入口的分工。
+
+验证：客户端 `tsc --noEmit` 通过；`tests/workbench-view.test.mjs` 第 4 项改为断言页面出现「课题组任务」「个人任务」、不再出现裸的「新建任务」、课题组任务走 `setPlanningLaunch` 且在 `!assistantReady` 时禁用；5 项全过。
+
+安装包 0.10.83 首次构建耗时 15 分 17 秒：rcedit 报 `Unable to commit changes` 后重试成功（元数据核对 FileVersion 0.10.83 正确），但它在 `win-unpacked` 里留下 229MB 的 `RCXD908.tmp`，被 NSIS 一起打进安装包（484MB）。清掉临时文件后用 `electron-builder --prepackaged release/Base/0.10.83/win-unpacked` 只重打安装器，得到正常体积 `clients/openim/release/Base/0.10.83/AcceptCat_0.10.83.exe`（405,075,923 字节，SHA256 `11a40c319f1e87128484a2f942d1b1905d55dde2ef31ca6bd8fdbcdc4d69e05c`）。以后遇到 rcedit 失败要检查 `win-unpacked` 里有没有 `*.tmp` 残留，否则包会莫名变大。仍无后台改动。
+
+## 2026-10-31 资料页新增「课题组规范」，规则终于能在任务外看和改
+
+负责人先问「资料库里面会保存课题组的一些底层逻辑吗，比如写论文的风格、写项目书应该怎么写、写专利的模板什么的，都怎么设计的，我如果想看的话是怎么看」，随后说「可以加吧，不然真的不知道怎么用的感觉。很乱比如我要更新或者有新的资料什么的，不知道怎么改，也不知道我用的时候是用的什么样的规则」。
+
+核对结论：资料库只存文件；「底层逻辑」分三层——平台基本规则与课题组/项目规则（`work_context_records`，`WorkRule` 的 scope=lab/project、kind=rule/memory）、18 个默认角色文档（`agents/roles/*`，persona.md + work.md + meta.json + SKILL.md，编译成 `research-skills/role-catalog`）、19 个内置方法（`agents/skills/*`，经「内置方法」预览后装私人副本）。角色文档在「通讯录 → 助手 → 角色文件」可看可导出；规则此前只能从某个任务的「规则与记忆」进入，所以没人知道自己实际按什么写。
+
+后台：新增 `labWorkRules`（GET `/lab/work-rules`）与 `saveLabWorkRule`（POST 同路径），只接受 `scope=lab, kind=rule`；`canPublish=isLabManager`，负责人保存即 `active`、成员保存为 `candidate`，确认/撤回复用版本校验、幂等键与不可变修订（`work_context_records` + `work_context_revisions`）。`WorkRule.sourceTaskId` 改为可空，任务外创建的课题组规则没有来源任务；任务内 `workContext` 仍按 `scope_id=labId` 带出同一批记录。契约升到 **0.40.0**，重新导出 openapi/examples，`apps/web/tests/contracts.spec.ts` 的版本断言同步。
+
+客户端：`资料` 页新增第四个页签「课题组规范」（`LabStandards.tsx` + `library-workspace.scss`）。内容依次是：规则/资料的区别说明（规则自动进任务、资料只是参考、个人任务只带平台规则）、平台基本规则（v 号 + 正文）、课题组规则按状态分组（生效中 / 待负责人确认 / 已撤回，显示版本、作者、时间，带修改 / 确认生效 / 撤回）、「模板与范文」列出课题组范围的资料集并给「去资料库上传或更新」。页签用 `availability.supports(40)` 门禁，未部署新后台时不显示，避免出现点不开的死页。
+
+验证：`apps/api` + `apps/web` + `packages/contracts` 共 58 文件 789 项通过（`work-context.spec` 新增用例覆盖成员提候选、负责人确认、确认时篡改正文被忽略、版本冲突 409、撤回后 409、scope/kind 伪造 400、匿名 401、lab 列表与任务上下文一致）；客户端 `tsc --noEmit` 通过；新增 `clients/openim/tests/lab-standards.test.mjs` 2 项并加入 desktop.yml。安装包 0.10.84 构建 12 分钟，`clients/openim/release/Base/0.10.84/AcceptCat_0.10.84.exe`（405,074,190 字节，SHA256 `2da1533bb95b75b18277fa4a53d79caf0f89699d1c514d2199852f8daf0a497c`，FileVersion 0.10.84），asar 内已核对「课题组规范」文案。**该页签要生效需要部署后台（契约 0.40.0），后台提交 `3688abb`，源码包 `D://deepseek-agent//.runtime//lab-standards-20261031//source.tar.gz`（37,718,665 字节，SHA256 `030b82f3aaf8a30826f232af2b592d48e0ba81760a788534b1c7ae09bd851991`）。**
+
+## 2026-11-01 后台升到 0.40.0，「课题组规范」页签上线
+
+负责人完成部署后从本机复核：`/api/v1/health/ready` 返回 `contractVersion 0.40.0`，database/storage/authentication 全 ok；匿名访问 `/api/v1/lab/work-rules` 返回 401 `UNAUTHENTICATED`（此前是 404，说明路由已注册且鉴权生效），`/api/v1/work-context/research/{id}` 仍为 401。客户端 0.10.84 的 `supports(40)` 门禁因此放行，资料页出现「课题组规范」页签。旧版客户端只按自己需要的版本号判断，不受契约升版影响，只是看不到这个页签。
+
+## 2026-11-01 资料页去掉「同事资料」，PPT 工作模板上线（0.10.85）
+
+负责人反馈：「同事资料这里先不要了吧，好像没啥用的感觉」；并说明真实痛点是——做项目书/专利要挨个找同事要资料，每次写 PPT、项目书、画图都要重新讲一遍要求、重新发参考图；实验室还需要一个集中维护文件体系的地方。追问后确认：文件**主要在本机文件夹**（少量飞书但本地都有副本），**PPT 最烦**。
+
+第一批（本次）：
+- 资料页去掉「同事资料」页签，`panel=peers` 的旧链接落回资料库（`PeerLibraryPanel` 仍被聊天里的「同事资料」入口使用，组件保留）。
+- 新增 PPT 工作模板：模板本质是**一条课题组规则**，标题用固定前缀 `PPT 模板｜<名称>`，正文分「要求」和「需要准备的文件」两段，因此直接复用已上线的课题组规则接口（版本、候选、撤回、共享），不新增后台表、不需要再部署。
+- 「资料 → 课题组规范」页新增「PPT 工作模板」区：新增/修改模板（名称 + 要求 + 每行一个文件）、按状态显示、撤回；生效中的模板有「用它开始」——把要求与文件清单拼成一段话，跳到任务页让助手新开对话并预填（`/workbench?view=tasks&draft=…`），人只补「本次变化」。
+- 客户端新增 `ppt-template.ts` 纯函数（前缀、组装/解析、起始提示词）与 `tests/ppt-template.test.mjs` 5 项；`workbench-view.ts` 支持 `draft` 参数，`PlanningAgent` 新增 `draft`（未动过的对话直接填入，已经聊过的另开一段）。
+
+边界：文件仍是本机的，模板只登记"要准备哪些文件"，不复制、不上传；画图参考图暂时靠把图片放进工作文件夹，下一步再做「参考图 + 风格说明」的本地索引。
+
+安装包 0.10.85 构建 12 分 52 秒（rcedit 又报一次 `Unable to commit changes` 后重试成功，本次 `win-unpacked` 没有残留 `*.tmp`，包体积正常）：`clients/openim/release/Base/0.10.85/AcceptCat_0.10.85.exe`（405,075,589 字节，SHA256 `64b0e349f0f1a1e068499a79993aa468f85198db16a2cc8d68c034e210b70554`，FileVersion 0.10.85），asar 内已核对「PPT 工作模板」「用它开始」。本次没有后台改动，已部署的 0.40.0 即可用。
+
+## 2026-11-01 本地资料文件夹：登记路径、模板选文件、任务一键复制（0.10.86）
+
+负责人确认文件「主要在本机文件夹，少量飞书但本地都有副本，先以本地为主」，并要求把这条路做出来。这一版全在桌面端，不动后台：
+
+- **登记本地资料文件夹**（`electron/utils/localLibrary.ts` + `main/localLibraryManage.ts`）：选一次目录，只在 `userData/local-library.json` 记一个路径，不上传、不复制。扫描按扩展名白名单（pptx/docx/pdf/xlsx/csv/md/txt/图片等）、跳过隐藏目录与 `node_modules/.git`、最多 2000 个文件或 6 层或 6 秒，超出标记 `truncated` 让界面提示用搜索缩小范围。IPC 只接受主窗口调用。
+- **模板里从资料夹选文件**：`LocalLibraryPicker` 列出文件（名称+相对路径+大小，可搜索多选），选完写成**相对路径**填进模板正文；换机器只要目录结构相同就能用，同事之间共享模板也不必互发文件。
+- **任务里一键复制**：`task-dsh-import-library` 接收相对路径，主进程用 `resolveInRoot` 校验必须落在登记目录内（`..` 一律拒绝），再交给已有的 `importLocal` 复制进任务工作文件夹并记 sha256；工作台「工作」区新增「从本地资料夹取用」按钮，最多 20 个/次，运行中会拒绝。
+
+边界：不监听文件夹变化（移动/删除后要重新扫描）；不做飞书索引；不做项目分组——这三项按负责人意见等试用后再定。安全上只认已登记根目录、跳过符号链接、只读白名单扩展名，路径不出主进程。
+
+验证：新增 `tests/local-library.test.mjs` 3 项（越界路径拒绝、文件名提取、扫描只列文档图片且返回相对路径），客户端 `tsc --noEmit` 与 `tsc -p tsconfig.electron-check.json` 均通过；`tests/workbench-view`、`lab-standards`、`ppt-template`、`directory-navigation`、`task-notice-card` 共 23 项通过。安装包 0.10.86 见下。
+
+安装包 0.10.86 构建 11 分 13 秒，`clients/openim/release/Base/0.10.86/AcceptCat_0.10.86.exe`（405,078,396 字节，SHA256 `309f3ccd6e645b79200c99e248866c23d37ea80ba19f6bb7c515d213b6745975`，FileVersion 0.10.86），`win-unpacked` 无残留临时文件。本次无后台改动。
+
+## 2026-11-01 资料索引：云端只存指针，原件留在本地（0.10.87，需要部署）
+
+负责人问「是不是要把资料传到云仓库、让同事看到，这样是不是增加复杂度」，并确认「文件都放在本地，网上只放文件名、路径和摘要」这条路。核对后确认不采用飞书链接方案（要登录、权限在飞书侧、无法校验版本）。
+
+后台（契约 **0.41.0**，迁移 **032**）：新增 `library_index_entries`（id/lab_id/project/rel_path/status/version/updated_at/document，STRICT，唯一键 `(lab_id, project, rel_path)`）。两条路由 `GET/POST /api/v1/library/index`，stage `INDEX1`：成员可新增自己的条目，维护人或课题组负责人可改/撤回；`recommended` 在同一项目同一用途内唯一（服务端把旧的清掉并升版）；撤回保留原指针只改状态；幂等键、版本校验、不可变修订沿用既有模式；`relPath` 必须是相对路径（拒绝绝对路径、盘符和 `..`）。
+
+客户端：`资料 → 资料索引`（`supports(41)` 门禁，未部署不显示）。按项目分组列出条目：文件名、用途（母版/参考样例/事实依据/图与素材/其他）、摘要、维护人、更新时间、是否推荐；每条显示**本地状态**（本地有 / 本地缺 / 本地一致 / 本地版本不同），`校验本地版本` 会读本机文件算 sha256 与条目比对。新增/修改条目时「从本地资料文件夹选择」自动填文件名、相对路径和哈希，原件不上传。
+
+验证：`apps/api` + `apps/web` + `packages/contracts` 59 文件 795 项通过（新增 `library-index.spec.ts` 4 项：成员建/负责人改、同项目同路径拒绝、绝对与越界路径拒绝、推荐唯一、版本冲突与幂等撤回、匿名 401）；客户端 `tsc --noEmit`、electron `tsc` 通过；新增 `tests/library-index.test.mjs` 3 项并入 desktop.yml。注意：新增迁移后所有「旧 schema 升级」用例都要同时回滚 032，已批量更新 15 个 spec 的迁移计数与 10 个 spec 的模拟降级脚本。安装包 0.10.87 见下。
+
+安装包 0.10.87 构建 11 分 20 秒，`clients/openim/release/Base/0.10.87/AcceptCat_0.10.87.exe`（405,079,223 字节，SHA256 `0ed28f161615606b7775c276c4c73a9fdaaf32b8e74c3d30fb38e62a9e9d2a6f`，FileVersion 0.10.87）。该页签要生效需要部署后台（契约 0.41.0 + 迁移 032）。
+
+## 2026-11-01 两个入口都加上「新建」
+
+负责人看截图说「右上角两个应该是每个都加一个新建两个字吧」。于是「个人任务 / 课题组任务」改为「**新建个人任务 / 新建课题组任务**」，空状态文案里的指引同步改成新名字。0.10.88 构建 13 分 21 秒，`clients/openim/release/Base/0.10.88/AcceptCat_0.10.88.exe`（405,078,570 字节，SHA256 `f454c1e2073734181ab3327a74eb99fd0e3c5f20ccc28b241688bd1d18a7be84`，FileVersion 0.10.88）。纯客户端改动。
+
+## 2026-11-01 任务详情页按四张截图的意见重排（0.10.89）
+
+负责人分两批发了四张截图，意见集中在“信息顺序”和“到处都要填表”：
+
+1. **目标与验收上移**（第一部分）：「下一步」横幅整块删除，只有真正需要动作（开始/认领/确认）时保留一行按钮；目标与验收成为页面第一块，验收改成带勾选框的清单，并写明「逐条对照，全部满足才算完成」。
+2. **成果与提交简化**（第二部分）：去掉勾选成果、资料集下拉、成果摘要大文本框；改为「列出这次产出的文件 + 一个提交按钮 + 已提交文件清单」。产出文件由 `state.files` 减去已选入的资料/本机素材推导，不再让人勾；提交摘要自动生成（`提交 N 个文件：…`），可留一句补充说明。取用共享资料与归档到资料各自收进一个折叠区。
+3. **安排与验收 → 安排**（第三部分）：验收已经在页面顶部，这里不再重复；`embedded` 时隐藏「上传为科研输入材料」和「提交交付」两个表单（与成果与提交重复）；时间从一行「截止：未设置」改成**建议 / 承诺 / 截止**三个带标签的时间点，外加前置任务名。
+4. **规则与记忆**（第四部分）：整块压成一行摘要（平台规则版本、课题组 N 条、项目约定 M 条、待确认、个人记忆、方法数），下面三个折叠：具体规则（只读）、上次交接、高级（个人记忆开关与方法选择）。删掉搜索框、新增/编辑规则表单、版本记录、管理我的记忆、工作索引、会话列表、上下文回执。
+
+验证：客户端 `tsc --noEmit` 通过；新增 `tests/task-work-page.test.mjs` 4 项（无下一步、提交只有一个按钮且排除输入文件、安排不再重复验收且时间点带标签、规则面板无输入框）并加入 desktop.yml。安装包 0.10.89 见下。纯客户端改动。
+
+安装包 0.10.89 构建 10 分 02 秒，`clients/openim/release/Base/0.10.89/AcceptCat_0.10.89.exe`（405,077,491 字节，SHA256 `1c826bbc38d8d217a86e76ddd6d7f60d7b90babb08167b44a94587e2256caa97`，FileVersion 0.10.89）。

@@ -21,5 +21,6 @@ export * from './feishu-library.js'
 export * from './local-dsh.js'
 
 export * from './work-context.js'
+export * from './library-index.js'
 
 export * from "./team-work.js"

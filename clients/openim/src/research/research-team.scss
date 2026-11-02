@@ -215,6 +215,47 @@
   font-size: 13px;
   line-height: 1.75;
 }
+.research-task-schedule {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 22px;
+  padding: 10px 12px;
+  border: 1px solid #e6ebf0;
+  border-radius: 10px;
+  background: #fbfcfd;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 96px;
+    padding-left: 10px;
+    border-left: 2px solid #e2e8ee;
+
+    &.is-set {
+      border-left-color: #7fb2d6;
+    }
+
+    span {
+      font-size: 11px;
+      color: #8a97a1;
+    }
+
+    strong {
+      font-size: 13px;
+      font-weight: 500;
+      color: #33424d;
+    }
+  }
+
+  .research-task-deps {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 12px;
+    color: #6d7e8b;
+  }
+}
 .research-task-next {
   background: #eff7fc;
   border-radius: 12px;
