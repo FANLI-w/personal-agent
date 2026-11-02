@@ -1,7 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { getWebContents } from "./windowManage";
 import {
   hashLibraryFile,
   resolveInRoot,
@@ -28,10 +27,10 @@ async function writeSettings(value: Settings) {
   await fs.writeFile(settingsFile(), JSON.stringify(value), "utf8");
 }
 
-/** Only the app window may read this; it is a local path, never an account fact. */
+/** Only a window of this app may read it; it is a local path, not an account fact. */
 function assertSender(event: Electron.IpcMainInvokeEvent) {
-  const contents = getWebContents();
-  if (!contents || event.sender !== contents)
+  const window = BrowserWindow.fromWebContents(event.sender);
+  if (!window || window.isDestroyed())
     throw new Error("本地资料文件夹只能在这个窗口里使用。");
 }
 
