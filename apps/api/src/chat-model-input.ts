@@ -15,8 +15,8 @@ export function chatModelSystem(options:{group:boolean;inviteContact:boolean;inv
     'Tables=columns/senderIds(null=service); payload=expanded stable IDs; omitted=[].',
     ...(options.group||options.inviteTask||options.runTask?['Ref={id:string,version:positive_integer}.']:[]),
     ...(options.group?[
-      'Group={title:string,contactIds:string[],sharedContext:{selectedText:null|string,artifactRefs:Ref[]},plan:{labId:string,goal:string,proposedItems:Item[],unresolvedQuestions:string[]}}. <=20; listed lab/self. No private history/memories. Accept independently.',
-      'Item={id,title,goal,deliverable,acceptanceCriteria,allocation,dependencies:string[],schedule:Schedule,inputArtifactIds:[],budget:null}. First5:string. allocation={kind:self}|{kind:claim,audience:lab_members,summary:string}|{kind:invitation,memberId:string}; listed humans.'
+      'Group={title:string,contactIds:string[],sharedContext:{selectedText:null|string,artifactRefs:Ref[]},plan:{labId:string,goal:string,proposedItems:Item[],unresolvedQuestions:{question:string,options?:string[]}[]}}. <=20; listed lab/self. No private history/memories. Accept independently.',
+      'Item={id,title,goal,deliverable,acceptanceCriteria,allocation,dependencies:string[],schedule:Schedule,inputArtifactIds:[],budget:null,status?:\'可执行\'|\'待定\'|\'阻塞\',missing?:\'缺依赖\'|\'缺信息\'}. First5:string. allocation={kind:self}|{kind:claim,audience:lab_members,summary:string}|{kind:invitation,memberId:string}; listed humans.'
     ]:[]),
     ...(options.group||options.inviteTask?[
       'Schedule={suggested:Dated,hardDeadline:Dated,committed:Dated,estimatedHumanHours:number|null,checkpoint:DateValue|null}. Unknown=null. Dated=null|{value:DateValue,source:user|authorized_material|suggestion|member,confirmed:boolean}. DateValue={kind:date,date:YYYY-MM-DD,timezone:IANA}|{kind:instant,at:ISO8601_offset}.'

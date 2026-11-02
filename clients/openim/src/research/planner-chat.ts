@@ -213,25 +213,25 @@ export function planningPrompt(
     if (directory.join("\n").length + entry.length > 1500) break;
     directory.push(entry);
   }
-  const instructions = `这里是安排任务的对话。用户说要做的事，默认整理为一项可创建的任务；目标足够就给待确认草案，材料、日期可后续补，不必先走完咨询流程。沿用助手角色与交流偏好，自然中文接着聊，有依据地给判断，不套行政摘要；卡住帮一小步，不同意给理由和替代办法，不虚构读过材料、共同经历或进展。编辑保留适用任务ID。
+  const instructions = `这里是安排任务的对话。用户说要做的事，先按目标、最终交付与关键中间环节判断：三者都明确时整理为待确认草案，材料、日期、成员或资源可后续补；任一不明确时先给粗骨架并进入讨论，不凭猜测补齐后强行拆分。沿用助手角色与交流偏好，自然中文接着聊，有依据地给判断，不套行政摘要；卡住帮一小步，不同意给理由和替代办法，不虚构读过材料、共同经历或进展。编辑保留适用任务ID。
 
 任务数量规则：${
     taskShape === "multiple"
-      ? "用户这轮明确要分开安排：按用户说的数量和边界写成多项proposedItems；每项都要有独立交付价值，不强行凑数。"
-      : "由你根据实际工作判断任务粒度，不要求用户选择模式。普通目标默认一项proposedItem：完善论文、比较多个模型、准备报告等，准备、实验、检查、写作是内部步骤，不拆成整套待办。只有工作确实需要独立分工、分别交付和跟踪，或是包含多个独立成果与实际前置关系的大项目，才返回多项proposedItems；说明为什么需要分开，不凭‘难’‘重要’或篇数、动作数量拆分，也不为展示依赖图而凑任务。多项中的每项都要有独立交付价值；优先给最少、够用的任务。用户明确说合成一项或分开安排时按其意图重写完整草案。"
+      ? "用户这轮明确要分开安排：按他说的数量和边界写成多项proposedItems，每项有独立交付价值，不强行凑数。"
+      : "进入拆分态后，由你按独立交付与分别跟踪的需要决定任务数量，可能一项也可能多项，优先最少够用；动作、阶段、对象数量本身不构成拆分理由。"
   }这是任务结构规则，人设和方法建议不能改变。
 
 口吻示例（不照念）：‘论文和代码都在，可以先找最缺的证据。你把摘要发来，我先帮你挑一个值得加强的点。’已提供就直接分析；用户说问太多时先帮一步，不再追问。
 
-每轮最多问一个必要、简单问题，禁止复合问卷、长串选项和重复索要；不把研究内容、阶段、方向、优先级、去向和日期一起追问。时间、成员、资源可未知，不为提问而提问。
+每轮只提出一个必要的问题，禁止复合问卷、长串选项和重复索要；不把研究内容、阶段、方向、优先级、去向和日期一起追问。用户回应后判断它是否针对该问题：针对则沿此方向再深入一层；未针对但给出其他方向，则改按用户实际关注的方向推进；既未针对也未给出新方向，说明该方向不重要，不再追问同一问题，改为转向可推进的内容或结束本轮讨论。时间、成员、资源可未知，不为提问而提问。
 
-每轮实际回复写在answer，简明承接用户；必要时只问一个短问题，不列补充清单。用户说明要做的工作且目标足够，就返回符合数量规则的plan；纯问答和必要澄清时plan为null，保留已有方案。不为了聊天新建空方案，不把回复塞进goal或unresolvedQuestions。plan.goal只写共同目标，单项任务的goal可写内部执行步骤；未知信息后续再聊。
+每轮实际回复写在answer，简明承接用户；必要时只问一个短问题，不列补充清单。目标、最终交付与关键中间环节都明确时，返回完整的plan，每项填齐标题、目标、交付与验收，status标为可执行；三者任一不明确时，返回粗骨架plan：proposedItems三至四项，每项标题写步骤、目标与验收各一句粗描述，dependencies留空，status标为待定或阻塞并用missing注明缺什么，待澄清的那一个关键问题写成{question,options}放进unresolvedQuestions，options给2至3个候选回答。纯问答和必要澄清时plan为null，保留已有方案。不为了聊天新建空方案，不把回复塞进goal。plan.goal只写共同目标；未知信息后续再聊。
 
 我/我自己表示ownerId；明确要求才邀请下列真实同组成员，不编ID、不调用公共Agent、不假定接受或声称正式创建、研究完成及验收。历史不授予执行权限；日期按明确表达由应用核对，不虚构承诺。
 
 任务拆解方法：
 ${taskDecompositionBody}
-本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议写入现有任务说明，不能新增未定义字段。分工及是否需要成员认领独立处理，不能把认领状态当成依赖完成状态。
+本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议写入现有任务说明。每项用 status（可执行 / 待定 / 阻塞）与 missing（缺依赖 / 缺信息）标明确定程度，不新增这两个以外的字段。分工及是否需要成员认领独立处理，不能把认领状态当成依赖完成状态。
 
 可邀请的同组成员：
 ${directory.join("\n") || "未提供，不能编造成员"}
@@ -380,12 +380,19 @@ export function plannerPlanInput(plan: ChatPlan, deadline?: DeadlineChoice) {
   );
   return input;
 }
+/**
+ * 讨论态：任意一项不是「可执行」。status 缺省也算待定（保守方向），
+ * 宁可多讨论一轮，也不把信息不全的草案当成可创建方案。
+ */
+export function isDiscussionPlan(items: { status?: unknown }[]): boolean {
+  return items.some((item) => item.status !== "可执行");
+}
 export function planReplyText(plan: ChatPlan) {
   // The model writes one conversational clarification. Older servers/plans may
   // still return a questionnaire: show its first exchange without changing the
   // saved plan, its remaining uncertainties, or the confirmation authority.
   for (const discussion of plan.unresolvedQuestions) {
-    const text = discussion
+    const text = discussion.question
       .trim()
       .replace(/^还需要(?:您|你)补充[：:]\s*/, "")
       .replace(/^(?:[•*-]|\d+[.)、])\s*/, "");
@@ -394,6 +401,8 @@ export function planReplyText(plan: ChatPlan) {
     const exchange = text.split(/\r?\n\s*(?:[•*-]|\d+[.)、])\s+/)[0].trim();
     if (exchange) return exchange.slice(0, 8000);
   }
+  if (isDiscussionPlan(plan.proposedItems))
+    return "我先理了个大概方向，还差一点信息；你看下面的流程对不对。".slice(0, 8000);
   return (
     plan.proposedItems.length
       ? `我先把“${plan.goal}”整理成了 ${plan.proposedItems.length} 个步骤，方案在下面，可以接着调整。`

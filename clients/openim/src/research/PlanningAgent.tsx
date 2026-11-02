@@ -34,6 +34,7 @@ import {
   plannerCacheKey,
   plannerDeadline,
   plannerPlanInput,
+  isDiscussionPlan,
   plannerTaskShape,
   planningPrompt,
   plannerReplyMessage,
@@ -429,6 +430,9 @@ function PlanningAgentSession({
       problems = [e instanceof Error ? e.message : "方案暂不可确认"];
     }
   }
+  // 只有草案阶段才可能进讨论态；已确认的方案按拆分态照实显示。
+  const discussion =
+    !!preview && current?.status === "draft" && isDiscussionPlan(preview.proposedItems);
   const frozen =
     !!thread.sending ||
     !!thread.creating ||
@@ -886,6 +890,96 @@ function PlanningAgentSession({
           <p role="status">正在读取当前方案…</p>
         )}
         {current && preview && !!preview.proposedItems.length && (
+          discussion ? (
+            <article
+              className="planning-chat-discussion"
+              aria-label="讨论中的任务方向"
+            >
+              <header>
+                <span>小鲸鱼的理解</span>
+                <b>讨论中</b>
+              </header>
+              <div className="discussion-panel">
+                <div className="discussion-row">
+                  <span>目标</span>
+                  <p>{current.goal}</p>
+                </div>
+                <div className="discussion-row">
+                  <span>流程</span>
+                  <div className="discussion-flow">
+                    {preview.proposedItems.map((step, index) => (
+                      <span className="discussion-step" key={step.id}>
+                        {index > 0 && <i aria-hidden="true">→</i>}
+                        <em
+                          className={
+                            step.status === "阻塞"
+                              ? "is-blocked"
+                              : step.status === "可执行"
+                              ? "is-ready"
+                              : "is-pending"
+                          }
+                        >
+                          {step.title}
+                        </em>
+                      </span>
+                    ))}
+                    {!!preview.proposedItems.at(-1)?.deliverable.trim() && (
+                      <span className="discussion-step">
+                        <i aria-hidden="true">→</i>
+                        <em className="is-ready">
+                          {preview.proposedItems.at(-1)!.deliverable}
+                        </em>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="discussion-legend">
+                  <span>
+                    <em className="is-blocked">阻塞</em>缺关键信息
+                  </span>
+                  <span>
+                    <em className="is-pending">待定</em>可后续补
+                  </span>
+                </div>
+              </div>
+              {!!preview.unresolvedQuestions.length && (
+                <div className="discussion-question">
+                  <span>需要你先确认一件事</span>
+                  <p>{preview.unresolvedQuestions[0].question}</p>
+                  {!!preview.unresolvedQuestions[0].options?.length && (
+                    <div className="discussion-options">
+                      {preview.unresolvedQuestions[0].options?.map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          className="discussion-option"
+                          onClick={() =>
+                            update((t) => ({ ...t, draft: option }))
+                          }
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {preview.unresolvedQuestions.length > 1 && (
+                    <details>
+                      <summary>
+                        还有 {preview.unresolvedQuestions.length - 1} 个待确认
+                      </summary>
+                      {preview.unresolvedQuestions.slice(1).map((q, i) => (
+                        <p key={i}>{q.question}</p>
+                      ))}
+                    </details>
+                  )}
+                </div>
+              )}
+              <footer className="discussion-meta">
+                <span>讨论中 · 版本 {current.version}</span>
+                <span>未创建任何任务</span>
+              </footer>
+            </article>
+          ) : (
           <article className="planning-chat-plan" aria-label="当前任务方案">
             <header>
               <span>
@@ -966,7 +1060,7 @@ function PlanningAgentSession({
               <details>
                 <summary>方案中暂未确定的信息</summary>
                 {preview.unresolvedQuestions.map((q, i) => (
-                  <p key={i}>{q}</p>
+                  <p key={i}>{q.question}</p>
                 ))}
               </details>
             )}
@@ -1039,6 +1133,7 @@ function PlanningAgentSession({
               </div>
             )}
           </article>
+          )
         )}
         {current && !preview && !!problems.length && (
           <Alert

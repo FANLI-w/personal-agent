@@ -36,7 +36,7 @@ describe('planning model content and server-owned fields', () => {
     expect(parsePlanningOutput(reply(copied), 'lab_synthetic').plan).toEqual(draft())
   })
   it('continues an early conversation with no tasks and keeps the actual response', () => {
-    const plan = { goal: 'Synthetic existing work', proposedItems: [], unresolvedQuestions: ['A synthetic next step.'] }
+    const plan = { goal: 'Synthetic existing work', proposedItems: [], unresolvedQuestions: [{ question: 'A synthetic next step.' }] }
     expect(parsePlanningOutput('```json\n' + reply(plan) + '\n```', 'lab_synthetic').plan).toEqual({ ...plan, labId: 'lab_synthetic' })
   })
   it('rejects missing research fields, unsupported dependency aliases, unsafe IDs and unknown actions', () => {

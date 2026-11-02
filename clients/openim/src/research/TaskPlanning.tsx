@@ -1272,13 +1272,16 @@ export function TaskPlanning({
                   maxLength={8000}
                   disabled={busy}
                   placeholder="每行一条；未知条件先列出来"
-                  value={draft.unresolvedQuestions.join("\n")}
+                  value={draft.unresolvedQuestions
+                    .map((q) => q.question)
+                    .join("\n")}
                   onChange={(e) =>
                     edit({
                       ...draft,
                       unresolvedQuestions: e.target.value
                         .split("\n")
-                        .filter((line) => line.trim()),
+                        .filter((line) => line.trim())
+                        .map((question) => ({ question })),
                     })
                   }
                 />

@@ -11,6 +11,7 @@ import {
   plannerDeadline,
   needsDeadlineClarification,
   plannerPlanInput,
+  isDiscussionPlan,
   plannerTaskShape,
   isPlannerCreateCommand,
   createPlannerTasks,
@@ -43,6 +44,7 @@ const makePlan = () => ({
     deliverable: "材料" + n,
     acceptanceCriteria: "可复核",
     allocation: { kind: "self" },
+    status: "可执行",
     dependencies: [],
     schedule: schedule(),
     inputArtifactIds: [],
@@ -245,16 +247,23 @@ test("automatic sizing is the default; object counts, complaints and quotes do n
 });
 test("task input treats a stated goal as a draft and keeps task count outside editable personality", () => {
   const automatic = planningPrompt([], "完善现有论文", []).prompt;
-  assert(automatic.includes("普通目标默认一项"));
-  assert(automatic.includes("独立分工、分别交付和跟踪"));
-  assert(automatic.includes("不要求用户选择模式"));
-  assert(automatic.includes("不凭‘难’‘重要’"));
-  assert(automatic.includes("用户明确说合成一项或分开安排时按其意图重写完整草案"));
+  assert(automatic.includes("先按目标、最终交付与关键中间环节判断"));
+  assert(automatic.includes("进入拆分态后"));
+  assert(automatic.includes("可能一项也可能多项"));
+  assert(automatic.includes("动作、阶段、对象数量本身不构成拆分理由"));
   assert(automatic.includes("人设和方法建议不能改变"));
   const split = planningPrompt([], "分别安排", [], undefined, "", "multiple").prompt;
   assert(split.includes("用户这轮明确要分开安排"));
   assert(split.includes("不强行凑数"));
-  assert(!split.includes("普通目标默认一项"));
+  assert(!split.includes("进入拆分态后"));
+});
+test("讨论态判断：status 缺省按待定处理，只有全部可执行才算拆分态", () => {
+  const item = (status) => ({ ...makePlan().proposedItems[0], status });
+  assert.equal(isDiscussionPlan([item("可执行")]), false);
+  assert.equal(isDiscussionPlan([item("可执行"), item("可执行")]), false);
+  assert.equal(isDiscussionPlan([item("待定")]), true);
+  assert.equal(isDiscussionPlan([item("阻塞")]), true);
+  assert.equal(isDiscussionPlan([item(undefined)]), true);
 });
 test("a stated deadline edits the reviewed draft in place and keeps its task count", async () => {
   for (const failure of [undefined, "edit", "confirm"]) {
@@ -453,31 +462,40 @@ test("a conversational clarification is shown as the reply without an internal g
   plan.goal = "继续已有研究（内部草案目标）";
   plan.proposedItems = [];
   plan.unresolvedQuestions = [
-    "可以，我们从已有工作继续。先说说这项研究主要想解决什么问题？",
+    { question: "可以，我们从已有工作继续。先说说这项研究主要想解决什么问题？" },
   ];
-  assert.equal(planReplyText(plan), plan.unresolvedQuestions[0]);
+  assert.equal(planReplyText(plan), plan.unresolvedQuestions[0].question);
   assert(!planReplyText(plan).includes(plan.goal));
   assert(!planReplyText(plan).includes("还需要您补充"));
 });
 
 test("legacy multi-question plans present one exchange while preserving every saved uncertainty", () => {
   const plan = makePlan();
-  plan.unresolvedQuestions = ["研究重点是什么？", "何时交付？", "谁来参与？"];
+  plan.unresolvedQuestions = [
+    { question: "研究重点是什么？" },
+    { question: "何时交付？" },
+    { question: "谁来参与？" },
+  ];
   const original = structuredClone(plan);
   assert.equal(planReplyText(plan), "研究重点是什么？");
   assert.deepEqual(plan, original);
-  plan.unresolvedQuestions = ["还需要您补充：\n1. 研究重点是什么？\n2. 何时交付？"];
+  plan.unresolvedQuestions = [
+    { question: "还需要您补充：\n1. 研究重点是什么？\n2. 何时交付？" },
+  ];
   assert.equal(planReplyText(plan), "研究重点是什么？");
-  plan.unresolvedQuestions = ["还需要您补充：", "研究重点是什么？"];
+  plan.unresolvedQuestions = [
+    { question: "还需要您补充：" },
+    { question: "研究重点是什么？" },
+  ];
   assert.equal(planReplyText(plan), "研究重点是什么？");
 });
 
 test("scientific quotations, question marks and URLs in one exchange are not sliced into broken text", () => {
   const plan = makePlan();
   plan.unresolvedQuestions = [
-    "我们先看“what if?”的对照思路，参考 https://example.org/paper?view=abstract 。你最想验证哪个解释？",
+    { question: "我们先看“what if?”的对照思路，参考 https://example.org/paper?view=abstract 。你最想验证哪个解释？" },
   ];
-  assert.equal(planReplyText(plan), plan.unresolvedQuestions[0]);
+  assert.equal(planReplyText(plan), plan.unresolvedQuestions[0].question);
 });
 
 test("a reply with no uncertainty does not invent questions, dates, participants or completed work", () => {

@@ -326,6 +326,191 @@
     color: #6d7e8b;
     font-size: 12px;
   }
+  /* 讨论态：目标 + 流程 + 一个待确认问题；不画依赖图、不给创建按钮 */
+  .planning-chat-discussion {
+    max-width: 940px;
+    margin: 8px 0 18px;
+    border: 1px solid #dce8f1;
+    border-radius: 16px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+  .planning-chat-discussion > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 13px 18px;
+    background: #f7fbfe;
+  }
+  .planning-chat-discussion > header > span {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .planning-chat-discussion > header > b {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border: 1px solid #d3e7f5;
+    border-radius: 999px;
+    background: #eef7fd;
+    color: #3f7ea6;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .discussion-panel {
+    position: relative;
+    margin: 14px 18px 0;
+    padding: 4px 14px 30px;
+    border: 1px solid #e6eef5;
+    border-radius: 12px;
+    background: #fbfdff;
+  }
+  .discussion-row {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid #edf1f5;
+  }
+  .discussion-row:first-child {
+    border-top: 0;
+  }
+  .discussion-row > span {
+    flex: none;
+    width: 40px;
+    color: #6a8ba0;
+    font-size: 12px;
+  }
+  .discussion-row > p {
+    flex: 1;
+    margin: 0;
+    color: #22313a;
+    line-height: 1.75;
+  }
+  .discussion-flow {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .discussion-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .discussion-step > i {
+    color: #9fb8c8;
+    font-style: normal;
+  }
+  .discussion-step > em {
+    padding: 3px 9px;
+    border: 1px solid #d3e7f5;
+    border-radius: 8px;
+    background: #eef7fd;
+    color: #2f5c7d;
+    font-size: 12px;
+    font-style: normal;
+  }
+  .discussion-step > em.is-blocked {
+    border-color: #f0d2cf;
+    background: #fdf2f1;
+    color: #bf5551;
+  }
+  .discussion-step > em.is-pending {
+    border-color: #f0dfb8;
+    background: #fff8e6;
+    color: #a8701a;
+  }
+  .discussion-step > em.is-ready {
+    border-color: #d6e9dd;
+    background: #f1f8f3;
+    color: #527e64;
+  }
+  .discussion-legend {
+    position: absolute;
+    right: 12px;
+    bottom: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: #8a97a1;
+    font-size: 10px;
+  }
+  .discussion-legend > span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .discussion-legend em {
+    padding: 0 5px;
+    border: 1px solid #d3e7f5;
+    border-radius: 5px;
+    font-size: 10px;
+    font-style: normal;
+  }
+  .discussion-legend em.is-blocked {
+    border-color: #f0d2cf;
+    background: #fdf2f1;
+    color: #bf5551;
+  }
+  .discussion-legend em.is-pending {
+    border-color: #f0dfb8;
+    background: #fff8e6;
+    color: #a8701a;
+  }
+  .discussion-question {
+    margin: 12px 18px 0;
+    padding: 12px 14px;
+    border: 1px solid #d9e8f5;
+    border-radius: 12px;
+    background: #f4faff;
+  }
+  .discussion-question > span {
+    display: block;
+    margin-bottom: 6px;
+    color: #3f7ea6;
+    font-size: 11px;
+  }
+  .discussion-question > p {
+    margin: 0;
+    color: #22313a;
+    line-height: 1.75;
+  }
+  .discussion-question details {
+    margin-top: 8px;
+    color: #6d7e8b;
+    font-size: 12px;
+  }
+  .discussion-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .discussion-option {
+    padding: 7px 14px;
+    border: 1px solid #d3e7f5;
+    border-radius: 999px;
+    background: #fff;
+    color: #2f5c7d;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .discussion-option:hover {
+    border-color: #5b9ecb;
+    background: #f7fbfe;
+  }
+  .discussion-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 11px 18px;
+    border-top: 1px solid #edf1f5;
+    color: #6d7e8b;
+    font-size: 11px;
+  }
   .planning-created-actions {
     padding: 14px 18px;
     display: flex;
