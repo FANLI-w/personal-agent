@@ -11,8 +11,8 @@ import {
   plannerDeadline,
   needsDeadlineClarification,
   plannerPlanInput,
+  isDiscussionPlan,
   plannerTaskShape,
-  plannerTaskInput,
   isPlannerCreateCommand,
   createPlannerTasks,
   stopPlannerRequest,
@@ -44,6 +44,7 @@ const makePlan = () => ({
     deliverable: "材料" + n,
     acceptanceCriteria: "可复核",
     allocation: { kind: "self" },
+    status: "可执行",
     dependencies: [],
     schedule: schedule(),
     inputArtifactIds: [],
@@ -228,190 +229,133 @@ test("automatic sizing is the default; object counts, complaints and quotes do n
     "他说创建7个任务",
     "请创建7个任务？",
     "请创建“7个任务”",
+    "不要拆分任务",
+    "不要创建多个任务",
+    "合并成一个任务",
+    "我只要一个任务",
+    "改为小王负责",
+    "继续修改说明",
   ])
     assert.equal(plannerTaskShape(text), "auto");
-  for (const text of ["拆成两个任务", "请帮我创建3项任务", "分别创建多个任务"])
+  for (const text of [
+    "拆成两个任务",
+    "请帮我创建3项任务",
+    "分别创建多个任务",
+    "改成3项任务",
+  ])
     assert.equal(plannerTaskShape(text), "multiple");
-  assert.equal(plannerTaskShape("不要拆分任务", "multiple"), "single");
-  assert.equal(plannerTaskShape("不要创建多个任务", "multiple"), "single");
-  assert.equal(plannerTaskShape("合并成一个任务", "multiple"), "single");
-  assert.equal(plannerTaskShape("我只要一个任务", "multiple"), "single");
-  assert.equal(plannerTaskShape("改成3项任务"), "multiple");
-  assert.equal(plannerTaskShape("改为小王负责", "multiple"), "multiple");
-  assert.equal(plannerTaskShape("继续修改说明", "multiple"), "multiple");
 });
 test("task input treats a stated goal as a draft and keeps task count outside editable personality", () => {
   const automatic = planningPrompt([], "完善现有论文", []).prompt;
-  assert(automatic.includes("普通目标默认一项"));
-  assert(automatic.includes("独立分工、分别交付和跟踪"));
-  assert(automatic.includes("不要求用户选择模式"));
-  assert(automatic.includes("不凭‘难’‘重要’"));
-  const single = planningPrompt([], "完善现有论文", [], undefined, "", "single").prompt;
-  assert(single.includes("目标足够就给待确认草案"));
-  assert(single.includes("proposedItems必须只有一项"));
-  assert(single.includes("人设和方法建议不能改变"));
-  assert(
-    planningPrompt([], "分别安排", [], undefined, "", "multiple").prompt.includes(
-      "用户已明确要求分开创建",
-    ),
-  );
+  assert(automatic.includes("先按目标、最终交付与关键中间环节判断"));
+  assert(automatic.includes("进入拆分态后"));
+  assert(automatic.includes("可能一项也可能多项"));
+  assert(automatic.includes("动作、阶段、对象数量本身不构成拆分理由"));
+  assert(automatic.includes("人设和方法建议不能改变"));
+  const split = planningPrompt([], "分别安排", [], undefined, "", "multiple").prompt;
+  assert(split.includes("用户这轮明确要分开安排"));
+  assert(split.includes("不强行凑数"));
+  assert(!split.includes("进入拆分态后"));
 });
-test("seven generated steps become one reviewed task with every title, purpose, deliverable and criterion retained", () => {
-  const plan = makePlan();
-  plan.proposedItems = Array.from({ length: 7 }, (_, i) => ({
-    ...structuredClone(plan.proposedItems[0]),
-    id: `step_${i + 1}`,
-    title: `步骤${i + 1}`,
-    goal: `目的${i + 1}`,
-    deliverable: `交付${i + 1}`,
-    acceptanceCriteria: `标准${i + 1}`,
-    dependencies: i ? [`step_${i}`] : [],
-  }));
-  const original = structuredClone(plan),
-    merged = plannerPlanInput(plan, undefined, "single");
-  assert.equal(merged.proposedItems.length, 1);
-  assert.deepEqual(plan, original);
-  assert.equal(merged.proposedItems[0].title, plan.goal);
-  for (let i = 1; i <= 7; i++) {
-    assert(merged.proposedItems[0].goal.includes(`步骤${i}`));
-    assert(merged.proposedItems[0].goal.includes(`目的${i}`));
-    assert(merged.proposedItems[0].deliverable.includes(`交付${i}`));
-    assert(merged.proposedItems[0].acceptanceCriteria.includes(`标准${i}`));
-  }
-  assert(merged.proposedItems[0].goal.includes("前置步骤：6"));
-  assert.deepEqual(merged.proposedItems[0].dependencies, []);
-  assert.equal(plannerPlanInput(plan, undefined, "multiple").proposedItems.length, 7);
+test("讨论态判断：status 缺省按待定处理，只有全部可执行才算拆分态", () => {
+  const item = (status) => ({ ...makePlan().proposedItems[0], status });
+  assert.equal(isDiscussionPlan([item("可执行")]), false);
+  assert.equal(isDiscussionPlan([item("可执行"), item("可执行")]), false);
+  assert.equal(isDiscussionPlan([item("待定")]), true);
+  assert.equal(isDiscussionPlan([item("阻塞")]), true);
+  assert.equal(isDiscussionPlan([item(undefined)]), true);
 });
-test("combining cannot hide invalid graphs, different authority, incompatible dates or oversized content", () => {
-  const cycle = makePlan();
-  cycle.proposedItems[0].dependencies = ["step_2"];
-  cycle.proposedItems[1].dependencies = ["step_1"];
-  assert.throws(() => plannerPlanInput(cycle, undefined, "single"), /循环/);
-  const missing = makePlan();
-  missing.proposedItems[0].dependencies = ["unknown"];
-  assert.throws(() => plannerPlanInput(missing, undefined, "single"), /无效/);
-  const mixed = makePlan();
-  mixed.proposedItems[1].allocation = { kind: "invitation", memberId: "other" };
-  assert.throws(() => plannerPlanInput(mixed, undefined, "single"), /分工/);
-  const publicRun = makePlan();
-  publicRun.proposedItems.forEach((item) => {
-    item.allocation = {
-      kind: "public_agent",
-      capability: null,
-      humanLeadId: "actor_qa",
-      missingReason: "not available",
-    };
-  });
-  assert.throws(() => plannerPlanInput(publicRun, undefined, "single"), /执行授权/);
-  const dated = plannerPlanInput(makePlan(), { date: "2026-11-01", target: 0 });
-  assert.throws(() => plannerTaskInput(dated, "single"), /日程/);
-  const long = makePlan();
-  long.proposedItems.forEach((item) => (item.goal = "文".repeat(7000)));
-  assert.throws(() => plannerPlanInput(long, undefined, "single"), /容量/);
-  assert.equal(long.proposedItems[0].goal.length, 7000);
-});
-test("a common or final explicit deadline survives a one-task preview without inferred dates", () => {
-  for (const target of ["all", "final"]) {
-    const merged = plannerPlanInput(
-      makePlan(),
-      { date: "2026-11-01", target },
-      "single",
-    );
-    assert.equal(
-      merged.proposedItems[0].schedule.hardDeadline.value.date,
-      "2026-11-01",
-    );
-    assert.equal(merged.proposedItems[0].schedule.committed, null);
-  }
-});
-test("the single-task preview is the exact draft edit confirmed, including lost edit and confirmation receipts", async () => {
+test("a stated deadline edits the reviewed draft in place and keeps its task count", async () => {
   for (const failure of [undefined, "edit", "confirm"]) {
     const plan = makePlan(),
       f = fake(plan, failure),
-      intent = { key: "single_task_confirmation", plan, taskShape: "single" };
+      intent = {
+        key: "deadline_task_confirmation",
+        plan,
+        deadline: { date: "2026-11-01", target: "final" },
+      };
     if (failure)
       await assert.rejects(
         createPlannerTasks(f.call, intent, () => true),
         /reply lost/,
       );
     const result = await createPlannerTasks(f.call, intent, () => true);
-    assert.equal(result.taskIds.length, 1);
-    assert.equal(result.plan.proposedItems.length, 1);
-    assert.deepEqual(
-      result.plan.proposedItems,
-      plannerPlanInput(plan, undefined, "single").proposedItems,
+    assert.equal(result.taskIds.length, plan.proposedItems.length);
+    assert.equal(result.plan.proposedItems.length, plan.proposedItems.length);
+    assert.equal(
+      result.plan.proposedItems.at(-1).schedule.hardDeadline.value.date,
+      "2026-11-01",
     );
+    assert.equal(result.plan.proposedItems[0].schedule.committed, null);
     assert.equal(f.calls.filter((call) => call.name === "editPlan").length, 1);
     assert.equal(f.calls.filter((call) => call.name === "confirmPlan").length, 1);
     assert.equal(result.plan.version, 3);
   }
 });
-test("legacy pending multi-task writes cannot be resumed, while already-created task links reconcile unchanged", async () => {
+test("a pending write without a shape confirms the reviewed count and reconciles created links", async () => {
   const plan = makePlan(),
     f = fake(plan),
     legacy = { key: "legacy_confirmation", plan };
-  await assert.rejects(
-    createPlannerTasks(f.call, legacy, () => true),
-    /重新核对任务数量/,
-  );
-  assert.equal(f.calls.length, 1);
+  const result = await createPlannerTasks(f.call, legacy, () => true);
+  assert.equal(result.taskIds.length, 2);
   const completed = fake(plan, "confirm");
   await assert.rejects(
-    createPlannerTasks(
-      completed.call,
-      { ...legacy, taskShape: "multiple" },
-      () => true,
-    ),
+    createPlannerTasks(completed.call, legacy, () => true),
     /reply lost/,
   );
-  const result = await createPlannerTasks(completed.call, legacy, () => true);
-  assert.equal(result.taskIds.length, 2);
+  const reconciled = await createPlannerTasks(completed.call, legacy, () => true);
+  assert.equal(reconciled.taskIds.length, 2);
   assert.equal(completed.calls.filter((call) => call.name === "confirmPlan").length, 1);
 });
-test("task grouping stays with its account-scoped transcript and pending reviewed snapshot", () => {
-  const thread = newPlannerThread();
-  thread.taskShape = "multiple";
-  thread.creating = {
-    key: "synthetic_confirmation",
-    plan: makePlan(),
-    taskShape: "single",
-  };
-  const restored = readPlannerHistory(
-    JSON.stringify({ active: thread.id, threads: [thread] }),
-  );
-  assert.equal(restored.threads[0].taskShape, "single");
-  assert.equal(restored.threads[0].creating.taskShape, "single");
-  assert.equal(
-    readPlannerHistory(
-      JSON.stringify({
-        active: thread.id,
-        threads: [{ ...thread, taskShape: "invalid" }],
-      }),
+test("old transcripts keep their conversation but drop a pending one-task merge write", () => {
+  const thread = { ...newPlannerThread(), id: "thread_legacy" };
+  const raw = (creating, shape) =>
+    JSON.stringify({
+      active: thread.id,
+      threads: [{ ...thread, ...(shape ? { taskShape: shape } : {}), creating }],
+    });
+  const merged = readPlannerHistory(
+    raw(
+      { key: "synthetic_confirmation", plan: makePlan(), taskShape: "single" },
+      "single",
     ),
-    undefined,
-  );
+  ).threads[0];
+  assert.equal(merged.creating, undefined);
+  assert.equal("taskShape" in merged, false);
+  const reviewed = readPlannerHistory(
+    raw(
+      { key: "synthetic_confirmation", plan: makePlan(), taskShape: "multiple" },
+      "multiple",
+    ),
+  ).threads[0];
+  assert.equal(reviewed.creating.plan.proposedItems.length, 2);
+  assert.equal("taskShape" in reviewed.creating, false);
 });
-test("old previews stay stable but new requests ignore button-only flags and respect actual user corrections", () => {
-  for (const taskShape of [undefined, "single", "multiple", "auto"]) {
-    const thread = { ...newPlannerThread(), taskShape };
-    const restore = () =>
-      readPlannerHistory(JSON.stringify({ active: thread.id, threads: [thread] }))
-        .threads[0];
-    assert.equal(restore().taskShape, taskShape || "auto");
-    assert.equal(plannerTaskShape("继续完善安排"), "auto");
-    thread.messages = [{ id: "user_split", role: "user", text: "拆成三个任务" }];
-    assert.equal(plannerTaskShape(thread.messages.at(-1).text), "multiple");
-    thread.messages.push({ id: "user_combine", role: "user", text: "合并成一个任务" });
-    assert.equal(plannerTaskShape(thread.messages.at(-1).text), "single");
-    assert.equal(plannerTaskShape("这次分开安排好些"), "auto"); // Let the model read natural corrections in context.
-    thread.creating = {
-      key: "synthetic_confirmation",
-      plan: makePlan(),
-      taskShape: "auto",
-    };
-    assert.equal(restore().creating.taskShape, "auto");
-    assert.equal(restore().taskShape, "auto");
-  }
+test("a reviewed snapshot survives in its account-scoped transcript, while an invalid one is dropped", () => {
+  const thread = { ...newPlannerThread(), id: "thread_snapshot" };
+  thread.creating = { key: "synthetic_confirmation", plan: makePlan() };
+  const restore = (creating) =>
+    readPlannerHistory(
+      JSON.stringify({ active: thread.id, threads: [{ ...thread, creating }] }),
+    );
+  assert.equal(
+    restore(thread.creating).threads[0].creating.key,
+    "synthetic_confirmation",
+  );
+  assert.equal(restore({ ...thread.creating, key: "short" }), undefined);
+});
+test("new requests carry no stored shape, and explicit merge or split wording is left to the model", () => {
+  const thread = { ...newPlannerThread(), id: "thread_shape" };
+  const restore = () =>
+    readPlannerHistory(JSON.stringify({ active: thread.id, threads: [thread] }))
+      .threads[0];
+  assert.equal("taskShape" in restore(), false);
+  assert.equal(plannerTaskShape("继续完善安排"), "auto");
+  thread.messages = [{ id: "user_split", role: "user", text: "拆成三个任务" }];
+  assert.equal(plannerTaskShape(thread.messages.at(-1).text), "multiple");
+  thread.messages.push({ id: "user_combine", role: "user", text: "合并成一个任务" });
+  assert.equal(plannerTaskShape(thread.messages.at(-1).text), "auto");
+  assert.equal(plannerTaskShape("这次分开安排好些"), "auto"); // Let the model read natural corrections in context.
 });
 test("automatic sizing previews and confirms the exact model draft count, with no silent merge or extra task", async () => {
   for (const count of [1, 3]) {
@@ -421,10 +365,10 @@ test("automatic sizing previews and confirms the exact model draft count, with n
       id: `step_${i + 1}`,
       title: `独立交付${i + 1}`,
     }));
-    const preview = plannerPlanInput(plan, undefined, "auto");
+    const preview = plannerPlanInput(plan, undefined);
     assert.deepEqual(preview.proposedItems, plan.proposedItems);
     const f = fake(plan, "confirm"),
-      intent = { key: "auto_confirmation_key", plan, taskShape: "auto" };
+      intent = { key: "auto_confirmation_key", plan };
     await assert.rejects(
       createPlannerTasks(f.call, intent, () => true),
       /reply lost/,
@@ -436,15 +380,20 @@ test("automatic sizing previews and confirms the exact model draft count, with n
     assert.equal(f.calls.filter((c) => c.name === "confirmPlan").length, 1);
   }
 });
-test("planner has no manual sizing switch; both preview and confirmation default to automatic", () => {
+test("planner has no manual sizing switch and no client-side merge of a reviewed draft", () => {
   const source = readFileSync(
     new URL("../src/research/PlanningAgent.tsx", import.meta.url),
+    "utf8",
+  );
+  const core = readFileSync(
+    new URL("../src/research/planner-chat.ts", import.meta.url),
     "utf8",
   );
   assert(!source.includes("planning-task-shape"));
   assert(!source.includes("合为一项任务"));
   assert(!source.includes("改为多项任务"));
-  assert(source.includes('taskShape: thread.taskShape || "auto"'));
+  assert(!core.includes("plannerTaskInput"));
+  assert(core.includes('export type PlannerTaskShape = "auto" | "multiple"'));
   assert(source.includes("const taskShape = plannerTaskShape(text);"));
   assert(!source.includes("plannerTaskShape(text, thread.taskShape)"));
 });
@@ -513,31 +462,40 @@ test("a conversational clarification is shown as the reply without an internal g
   plan.goal = "继续已有研究（内部草案目标）";
   plan.proposedItems = [];
   plan.unresolvedQuestions = [
-    "可以，我们从已有工作继续。先说说这项研究主要想解决什么问题？",
+    { question: "可以，我们从已有工作继续。先说说这项研究主要想解决什么问题？" },
   ];
-  assert.equal(planReplyText(plan), plan.unresolvedQuestions[0]);
+  assert.equal(planReplyText(plan), plan.unresolvedQuestions[0].question);
   assert(!planReplyText(plan).includes(plan.goal));
   assert(!planReplyText(plan).includes("还需要您补充"));
 });
 
 test("legacy multi-question plans present one exchange while preserving every saved uncertainty", () => {
   const plan = makePlan();
-  plan.unresolvedQuestions = ["研究重点是什么？", "何时交付？", "谁来参与？"];
+  plan.unresolvedQuestions = [
+    { question: "研究重点是什么？" },
+    { question: "何时交付？" },
+    { question: "谁来参与？" },
+  ];
   const original = structuredClone(plan);
   assert.equal(planReplyText(plan), "研究重点是什么？");
   assert.deepEqual(plan, original);
-  plan.unresolvedQuestions = ["还需要您补充：\n1. 研究重点是什么？\n2. 何时交付？"];
+  plan.unresolvedQuestions = [
+    { question: "还需要您补充：\n1. 研究重点是什么？\n2. 何时交付？" },
+  ];
   assert.equal(planReplyText(plan), "研究重点是什么？");
-  plan.unresolvedQuestions = ["还需要您补充：", "研究重点是什么？"];
+  plan.unresolvedQuestions = [
+    { question: "还需要您补充：" },
+    { question: "研究重点是什么？" },
+  ];
   assert.equal(planReplyText(plan), "研究重点是什么？");
 });
 
 test("scientific quotations, question marks and URLs in one exchange are not sliced into broken text", () => {
   const plan = makePlan();
   plan.unresolvedQuestions = [
-    "我们先看“what if?”的对照思路，参考 https://example.org/paper?view=abstract 。你最想验证哪个解释？",
+    { question: "我们先看“what if?”的对照思路，参考 https://example.org/paper?view=abstract 。你最想验证哪个解释？" },
   ];
-  assert.equal(planReplyText(plan), plan.unresolvedQuestions[0]);
+  assert.equal(planReplyText(plan), plan.unresolvedQuestions[0].question);
 });
 
 test("a reply with no uncertainty does not invent questions, dates, participants or completed work", () => {
@@ -622,7 +580,7 @@ test("creation rechecks the exact reviewed version and uses one stable confirmat
     f = fake(p);
   const out = await createPlannerTasks(
     f.call,
-    { key: "stable_confirmation_123", plan: p, taskShape: "multiple" },
+    { key: "stable_confirmation_123", plan: p },
     () => true,
   );
   assert.deepEqual(out.taskIds, ["task_1", "task_2"]);
@@ -639,7 +597,7 @@ test("a stale reviewed version cannot confirm unseen changes", async () => {
   await assert.rejects(
     createPlannerTasks(
       f.call,
-      { key: "stable_confirmation_123", plan: p, taskShape: "multiple" },
+      { key: "stable_confirmation_123", plan: p },
       () => true,
     ),
     /其他窗口/,
@@ -649,7 +607,7 @@ test("a stale reviewed version cannot confirm unseen changes", async () => {
 test("uncertain confirmation is reconciled to real task links without a second confirmation", async () => {
   const p = makePlan(),
     f = fake(p, "confirm"),
-    intent = { key: "stable_confirmation_123", plan: p, taskShape: "multiple" };
+    intent = { key: "stable_confirmation_123", plan: p };
   await assert.rejects(
     createPlannerTasks(f.call, intent, () => true),
     /reply lost/,
@@ -664,7 +622,6 @@ test("an acknowledged date edit with a lost reply is resumed once and confirmed 
     intent = {
       key: "stable_confirmation_123",
       plan: p,
-      taskShape: "multiple",
       deadline: { date: "2026-10-23", target: "final" },
     };
   await assert.rejects(
@@ -691,7 +648,7 @@ test("account or thread cancellation after a read prevents all mutations", async
   await assert.rejects(
     createPlannerTasks(
       api,
-      { key: "stable_confirmation_123", plan: p, taskShape: "multiple" },
+      { key: "stable_confirmation_123", plan: p },
       () => active,
     ),
     /已切换/,

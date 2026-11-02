@@ -76295,6 +76295,21 @@
                               "type": "null"
                             }
                           ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "可执行",
+                            "待定",
+                            "阻塞"
+                          ]
+                        },
+                        "missing": {
+                          "type": "string",
+                          "enum": [
+                            "缺依赖",
+                            "缺信息"
+                          ]
                         }
                       },
                       "required": [
@@ -76316,9 +76331,36 @@
                     "maxItems": 50,
                     "type": "array",
                     "items": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 8000
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 8000
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "question": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 8000
+                            },
+                            "options": {
+                              "maxItems": 6,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              }
+                            }
+                          },
+                          "required": [
+                            "question"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
                     }
                   }
                 },
@@ -76868,6 +76910,21 @@
                                     "type": "null"
                                   }
                                 ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "可执行",
+                                  "待定",
+                                  "阻塞"
+                                ]
+                              },
+                              "missing": {
+                                "type": "string",
+                                "enum": [
+                                  "缺依赖",
+                                  "缺信息"
+                                ]
                               }
                             },
                             "required": [
@@ -76889,9 +76946,36 @@
                           "maxItems": 50,
                           "type": "array",
                           "items": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 8000
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 8000
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "question": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 8000
+                                  },
+                                  "options": {
+                                    "maxItems": 6,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "question"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
                           }
                         },
                         "conclusionRefs": {
@@ -81694,6 +81778,21 @@
                                     "type": "null"
                                   }
                                 ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "可执行",
+                                  "待定",
+                                  "阻塞"
+                                ]
+                              },
+                              "missing": {
+                                "type": "string",
+                                "enum": [
+                                  "缺依赖",
+                                  "缺信息"
+                                ]
                               }
                             },
                             "required": [
@@ -81715,9 +81814,36 @@
                           "maxItems": 50,
                           "type": "array",
                           "items": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 8000
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 8000
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "question": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 8000
+                                  },
+                                  "options": {
+                                    "maxItems": 6,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "question"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
                           }
                         },
                         "conclusionRefs": {
@@ -82540,6 +82666,21 @@
                               "type": "null"
                             }
                           ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "可执行",
+                            "待定",
+                            "阻塞"
+                          ]
+                        },
+                        "missing": {
+                          "type": "string",
+                          "enum": [
+                            "缺依赖",
+                            "缺信息"
+                          ]
                         }
                       },
                       "required": [
@@ -82561,9 +82702,36 @@
                     "maxItems": 50,
                     "type": "array",
                     "items": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 8000
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 8000
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "question": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 8000
+                            },
+                            "options": {
+                              "maxItems": 6,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              }
+                            }
+                          },
+                          "required": [
+                            "question"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
                     }
                   }
                 },
@@ -83115,6 +83283,21 @@
                                     "type": "null"
                                   }
                                 ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "可执行",
+                                  "待定",
+                                  "阻塞"
+                                ]
+                              },
+                              "missing": {
+                                "type": "string",
+                                "enum": [
+                                  "缺依赖",
+                                  "缺信息"
+                                ]
                               }
                             },
                             "required": [
@@ -83136,9 +83319,36 @@
                           "maxItems": 50,
                           "type": "array",
                           "items": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 8000
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 8000
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "question": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 8000
+                                  },
+                                  "options": {
+                                    "maxItems": 6,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "question"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
                           }
                         },
                         "conclusionRefs": {
@@ -83964,6 +84174,21 @@
                                         "type": "null"
                                       }
                                     ]
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "可执行",
+                                      "待定",
+                                      "阻塞"
+                                    ]
+                                  },
+                                  "missing": {
+                                    "type": "string",
+                                    "enum": [
+                                      "缺依赖",
+                                      "缺信息"
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -83985,9 +84210,36 @@
                               "maxItems": 50,
                               "type": "array",
                               "items": {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 8000
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 8000
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "question": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 8000
+                                      },
+                                      "options": {
+                                        "maxItems": 6,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "question"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
                               }
                             },
                             "conclusionRefs": {
@@ -100979,6 +101231,21 @@
                                                     "type": "null"
                                                   }
                                                 ]
+                                              },
+                                              "status": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "可执行",
+                                                  "待定",
+                                                  "阻塞"
+                                                ]
+                                              },
+                                              "missing": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "缺依赖",
+                                                  "缺信息"
+                                                ]
                                               }
                                             },
                                             "required": [
@@ -101000,9 +101267,36 @@
                                           "maxItems": 50,
                                           "type": "array",
                                           "items": {
-                                            "type": "string",
-                                            "minLength": 1,
-                                            "maxLength": 8000
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 8000
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "question": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 8000
+                                                  },
+                                                  "options": {
+                                                    "maxItems": 6,
+                                                    "type": "array",
+                                                    "items": {
+                                                      "type": "string",
+                                                      "minLength": 1,
+                                                      "maxLength": 200
+                                                    }
+                                                  }
+                                                },
+                                                "required": [
+                                                  "question"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
                                           }
                                         },
                                         "conclusionRefs": {
@@ -103773,6 +104067,21 @@
                                                     "type": "null"
                                                   }
                                                 ]
+                                              },
+                                              "status": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "可执行",
+                                                  "待定",
+                                                  "阻塞"
+                                                ]
+                                              },
+                                              "missing": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "缺依赖",
+                                                  "缺信息"
+                                                ]
                                               }
                                             },
                                             "required": [
@@ -103794,9 +104103,36 @@
                                           "maxItems": 50,
                                           "type": "array",
                                           "items": {
-                                            "type": "string",
-                                            "minLength": 1,
-                                            "maxLength": 8000
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 8000
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "question": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 8000
+                                                  },
+                                                  "options": {
+                                                    "maxItems": 6,
+                                                    "type": "array",
+                                                    "items": {
+                                                      "type": "string",
+                                                      "minLength": 1,
+                                                      "maxLength": 200
+                                                    }
+                                                  }
+                                                },
+                                                "required": [
+                                                  "question"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
                                           }
                                         },
                                         "conclusionRefs": {
@@ -110165,6 +110501,21 @@
                                                     "type": "null"
                                                   }
                                                 ]
+                                              },
+                                              "status": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "可执行",
+                                                  "待定",
+                                                  "阻塞"
+                                                ]
+                                              },
+                                              "missing": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "缺依赖",
+                                                  "缺信息"
+                                                ]
                                               }
                                             },
                                             "required": [
@@ -110186,9 +110537,36 @@
                                           "maxItems": 50,
                                           "type": "array",
                                           "items": {
-                                            "type": "string",
-                                            "minLength": 1,
-                                            "maxLength": 8000
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 8000
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "question": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 8000
+                                                  },
+                                                  "options": {
+                                                    "maxItems": 6,
+                                                    "type": "array",
+                                                    "items": {
+                                                      "type": "string",
+                                                      "minLength": 1,
+                                                      "maxLength": 200
+                                                    }
+                                                  }
+                                                },
+                                                "required": [
+                                                  "question"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
                                           }
                                         },
                                         "conclusionRefs": {

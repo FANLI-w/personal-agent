@@ -306,7 +306,9 @@
           }
         ],
         "unresolvedQuestions": [
-          "交付日期待确认"
+          {
+            "question": "交付日期待确认"
+          }
         ],
         "id": "plan_synthetic",
         "ownerId": "member_A",
@@ -343,7 +345,9 @@
           }
         ],
         "unresolvedQuestions": [
-          "交付日期待确认"
+          {
+            "question": "交付日期待确认"
+          }
         ],
         "id": "plan_synthetic",
         "ownerId": "member_A",
