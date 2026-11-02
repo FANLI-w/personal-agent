@@ -1273,7 +1273,7 @@ export function TaskPlanning({
                   disabled={busy}
                   placeholder="每行一条；未知条件先列出来"
                   value={draft.unresolvedQuestions
-                    .map((q) => q.question)
+                    .map((q) => (typeof q === "string" ? q : q.question))
                     .join("\n")}
                   onChange={(e) =>
                     edit({

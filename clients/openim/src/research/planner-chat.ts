@@ -381,6 +381,15 @@ export function plannerPlanInput(plan: ChatPlan, deadline?: DeadlineChoice) {
   return input;
 }
 /**
+ * 待澄清问题可能是纯文本（旧数据/旧模型），也可能是 {question, options} 结构。
+ * 统一取文本，避免各处重复判断。
+ */
+export const planQuestionText = (value: string | { question: string }) =>
+  typeof value === "string" ? value : value.question;
+export const planQuestionOptions = (
+  value: string | { question: string; options?: string[] },
+) => (typeof value === "string" ? undefined : value.options);
+/**
  * 讨论态：任意一项不是「可执行」。status 缺省也算待定（保守方向），
  * 宁可多讨论一轮，也不把信息不全的草案当成可创建方案。
  */
@@ -392,7 +401,7 @@ export function planReplyText(plan: ChatPlan) {
   // still return a questionnaire: show its first exchange without changing the
   // saved plan, its remaining uncertainties, or the confirmation authority.
   for (const discussion of plan.unresolvedQuestions) {
-    const text = discussion.question
+    const text = planQuestionText(discussion)
       .trim()
       .replace(/^还需要(?:您|你)补充[：:]\s*/, "")
       .replace(/^(?:[•*-]|\d+[.)、])\s*/, "");

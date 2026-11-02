@@ -35,6 +35,8 @@ import {
   plannerDeadline,
   plannerPlanInput,
   isDiscussionPlan,
+  planQuestionText,
+  planQuestionOptions,
   plannerTaskShape,
   planningPrompt,
   plannerReplyMessage,
@@ -945,10 +947,10 @@ function PlanningAgentSession({
               {!!preview.unresolvedQuestions.length && (
                 <div className="discussion-question">
                   <span>需要你先确认一件事</span>
-                  <p>{preview.unresolvedQuestions[0].question}</p>
-                  {!!preview.unresolvedQuestions[0].options?.length && (
+                  <p>{planQuestionText(preview.unresolvedQuestions[0])}</p>
+                  {!!planQuestionOptions(preview.unresolvedQuestions[0])?.length && (
                     <div className="discussion-options">
-                      {preview.unresolvedQuestions[0].options?.map((option) => (
+                      {planQuestionOptions(preview.unresolvedQuestions[0])?.map((option) => (
                         <button
                           key={option}
                           type="button"
@@ -968,7 +970,7 @@ function PlanningAgentSession({
                         还有 {preview.unresolvedQuestions.length - 1} 个待确认
                       </summary>
                       {preview.unresolvedQuestions.slice(1).map((q, i) => (
-                        <p key={i}>{q.question}</p>
+                        <p key={i}>{planQuestionText(q)}</p>
                       ))}
                     </details>
                   )}
@@ -1060,7 +1062,7 @@ function PlanningAgentSession({
               <details>
                 <summary>方案中暂未确定的信息</summary>
                 {preview.unresolvedQuestions.map((q, i) => (
-                  <p key={i}>{q.question}</p>
+                  <p key={i}>{planQuestionText(q)}</p>
                 ))}
               </details>
             )}
