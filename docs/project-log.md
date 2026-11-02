@@ -2682,3 +2682,20 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 验证：客户端 `tsc --noEmit` 通过；新增 `tests/task-work-page.test.mjs` 4 项（无下一步、提交只有一个按钮且排除输入文件、安排不再重复验收且时间点带标签、规则面板无输入框）并加入 desktop.yml。安装包 0.10.89 见下。纯客户端改动。
 
 安装包 0.10.89 构建 10 分 02 秒，`clients/openim/release/Base/0.10.89/AcceptCat_0.10.89.exe`（405,077,491 字节，SHA256 `1c826bbc38d8d217a86e76ddd6d7f60d7b90babb08167b44a94587e2256caa97`，FileVersion 0.10.89）。
+
+## 2026-11-02 合并到 main 并发布 0.10.90
+
+负责人问「能不能把所有修改合并到 main，同时发布 release，是不是直接覆盖」。结论：main 不能覆盖，release 也不覆盖旧版本。实际做法与结果：
+
+**合并顺序（必须按 base 链走）**：#155（群聊直接入群）→ #156（任务邀请卡片）→ #158（任务入口、个人任务、课题组规范、PPT 模板、本地资料夹、资料索引、任务页重排）。#156 和 #158 原本的 base 是上一层分支，合并前用 `gh pr edit --base main` 改基再合。合并后 `main = ebc4a3e`。
+
+**合并前修掉的三个红**：
+1. `electron/main/localLibraryManage.ts` 引了 `./windowManage`，把 `koffi` 原生模块带进 `task-material-bridge` 的 esbuild 打包入口，报 `No loader is configured for ".node"`；改为只用 `BrowserWindow.fromWebContents(event.sender)` 做来源校验，不再依赖 windowManage。
+2. `tests/service-status-bridge.test.mjs` 的 IPC 桩列表没有新模块，补 `["localLibraryManage", ["registerLocalLibraryBridge"]]`。
+3. `deploy/openim/tests/production.test.mjs` 仍断言 `max(version)=31`，改成 32（新增迁移 032 后必须同步）。
+
+**发布**：tag `v0.10.90` 指向 `ebc4a3e`，新建 release（不覆盖旧的 v0.10.75），资产 `AcceptCat_0.10.90.exe`（405,077,750 字节）、`.blockmap`、`latest.yml`、`SHA256SUMS.txt`；安装包 SHA256 `0adb33ce0bac6179ed46b32c8c04f77c3edcca91f721abb6a09bf604e88364cf`。下载链接与 Latest 标记已复核。
+
+**踩到的坑（重要）**：首次打包时 rcedit 报 `Unable to commit changes` 并重试，失败的那次在 `release/Base/<版本>/win-unpacked/` 留下一个约 229 MB 的 `RCX*.tmp`，被 NSIS 一起打进安装包，包体从 405 MB 涨到 484 MB。处理：删掉 `win-unpacked/*.tmp` 与旧 exe，再用 `electron-builder --projectDir .electron-runtime --config <绝对路径>/electron-builder.json5 --config.electronVersion 43.8.4 --config.directories.output <绝对路径>/release/Base/<版本> --win --x64 --publish never` 重新封装（约 3 分钟，不必重跑完整构建）。**以后安装包体积突然多 80 MB 左右，先查这个 tmp。**
+
+**CI 状态**：`ebc4a3e`（main 顶端）Foundation checks 与 Windows desktop package 均通过；中间的 `21d0d57`（合并 #155 时）Foundation 失败，原因是那时树里还是「迁移号断言 31」的旧测试，修复在 #158 里，已被后续提交覆盖。
