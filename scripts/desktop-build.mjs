@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runPnpm } from '../clients/openim/scripts/workspace-build.mjs';
+import { prepareTools } from './desktop-tools.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const client = path.join(root, 'clients/openim');
@@ -40,4 +41,8 @@ runPnpm(root, ['install', '--frozen-lockfile']);
 runPnpm(root, ['run', 'build:desktop-deps']);
 runPnpm(client, ['install', '--ignore-workspace', '--frozen-lockfile']);
 runPnpm(client, ['run', 'check:workspace']);
-if (mode === 'win') runPnpm(client, ['run', 'build:win']);
+if (mode === 'win') {
+  // Pinned third-party binaries: tectonic for LaTeX, and the research plugin tarball.
+  await prepareTools(client);
+  runPnpm(client, ['run', 'build:win']);
+}

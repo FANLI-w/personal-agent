@@ -56,6 +56,8 @@
     extraResources: [
       // electron-build.mjs builds from .electron-runtime; the verified vendor tree is its sibling.
       { from: "../.dsh-runtime", to: "dsh", filter: ["**/*", "**/.*"] },
+      // Pinned tools fetched by scripts/desktop-tools.mjs: tectonic and the research plugin tarball.
+      { from: "../tools", to: "tools", filter: ["**/*", "!.cache/**"] },
       {
         from: "node_modules/@openim/electron-client-sdk/assets/win_${arch}/",
         to: "app.asar.unpacked/node_modules/@openim/electron-client-sdk/assets/win_${arch}",
