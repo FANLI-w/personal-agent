@@ -2722,3 +2722,5 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 **边界与已知限制**：插件更新只跟软件版本走（要新插件就发新版）；pinned pnpm 路径是 DSH 内部结构，已按 0.2.1-rc.3 固定并做了存在性检查，DSH 升级时要复核；tectonic 首次编译仍需要联网取宏包（默认 bundle 2.8 GB，按需下载并缓存）。
 
 安装包 0.10.91 重打后 `clients/openim/release/Base/0.10.91/AcceptCat_0.10.91.exe`（418,881,588 字节，SHA256 `8dc52983b6931a1ff294f745079a59c43bde973905b325ea5fa7d63506ea9c54`，FileVersion 0.10.91）。第一次打包时 `extraResources` 用了 `from: "tools"`，而构建的 projectDir 是 `.electron-runtime`，导致工具没进包（包体仍是 405 MB）；改成 `from: "../tools"` 后包体 418.9 MB，`resources/tools/{tectonic,plugins}` 齐全，包内 `tectonic.exe --version` 输出 `Tectonic 0.17.0`，无 rcedit 残留 tmp。
+
+**发布**：PR #164 合并后 `main = 445b8ec`，tag `v0.10.91` 指向同一提交，release 含 `AcceptCat_0.10.91.exe`（418,881,588 字节）、blockmap、`latest.yml`、`SHA256SUMS.txt`，已标 Latest。未合并的旧 PR（#160/#159/#157/#154/#149 部署回执、#90/#83/#82/#81 旧功能）保持原状，未处理。
