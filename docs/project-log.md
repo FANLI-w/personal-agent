@@ -2699,3 +2699,26 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 **踩到的坑（重要）**：首次打包时 rcedit 报 `Unable to commit changes` 并重试，失败的那次在 `release/Base/<版本>/win-unpacked/` 留下一个约 229 MB 的 `RCX*.tmp`，被 NSIS 一起打进安装包，包体从 405 MB 涨到 484 MB。处理：删掉 `win-unpacked/*.tmp` 与旧 exe，再用 `electron-builder --projectDir .electron-runtime --config <绝对路径>/electron-builder.json5 --config.electronVersion 43.8.4 --config.directories.output <绝对路径>/release/Base/<版本> --win --x64 --publish never` 重新封装（约 3 分钟，不必重跑完整构建）。**以后安装包体积突然多 80 MB 左右，先查这个 tmp。**
 
 **CI 状态**：`ebc4a3e`（main 顶端）Foundation checks 与 Windows desktop package 均通过；中间的 `21d0d57`（合并 #155 时）Foundation 失败，原因是那时树里还是「迁移号断言 31」的旧测试，修复在 #158 里，已被后续提交覆盖。
+
+## 2026-11-03 内置 LaTeX 编译器与科研插件（0.10.91）
+
+负责人定了两件事：插件**随软件一起更新**（不做静默跟 GitHub），tectonic **接受首次编译联网下宏包**（不预置 TeX bundle）。
+
+**1. 固定版本的第三方工具**（`scripts/desktop-tools.mjs`，构建时由 `desktop-build.mjs win` 调用）：
+
+| 工具 | 版本 | 校验 | 落地 |
+|---|---|---|---|
+| tectonic | 0.17.0（msvc） | 下载 zip 的 SHA256 `f61ce51f…845f` | 解出 `tools/tectonic/tectonic.exe`（51.5 MB，单文件，实测 `--version` 输出 `Tectonic 0.17.0`） |
+| dsh-research-workbench | 0.3.3 | tgz 的 SHA256 `a7b0d4ac…4ac1` | `tools/plugins/dsh-research-workbench-0.3.3.tgz` |
+
+校验失败直接中止构建；已校验的文件会复用，重复构建不联网。`tools/` 已加进 `clients/openim/.gitignore`，二进制不进仓库。`electron-builder.json5` 的 win `extraResources` 增加 `{ from: "tools", to: "tools", filter: ["**/*", "!.cache/**"] }`。
+
+**2. tectonic 进 DSH 子进程 PATH**：`runtimeEnvironment(home, source, toolsDir?)` 新增第三个参数，把 `<runtime>/../tools/tectonic` 前置到 PATH；调用点传 `path.resolve(directory, "..", "tools")`，开发态是 `clients/openim/tools`，安装后是 `resources/tools`。插件直接调 `tectonic` 即可，不需要写死路径。
+
+**3. 科研插件默认安装**（`electron/utils/dshPlugin.ts`）：DSH 启动前若 profile 已存在，比对 `node_modules/dsh-research-workbench/package.json` 的版本与内置版本，不一致就用 **DSH 自带的 pnpm**（`resources/runtime/primary-runtime/dependencies/pnpm/bin/pnpm.mjs`，通过 `DeepSeek Harness.exe --expose-internals` + `ELECTRON_RUN_AS_NODE=1` 运行，实测 11.21.0）执行 `pnpm add file:<tarball> --offline --ignore-scripts`，然后只在 `dsh.profile.bundles` 里补一项。**manifest 与 lockfile 由 pnpm 写，我们不手改**；profile 尚未创建（首次启动）时跳过，启动后再试一次并重启 DSH 一次。
+
+本地验证：在临时 home 上跑通——`bundles` 变为 `[dsh-base, dsh-web-app, dsh-research-workbench]`，`dependencies` 记录 `file:…/dsh-research-workbench-0.3.3.tgz`，`node_modules` 里版本 0.3.3。未在负责人真实 profile 上执行。
+
+**边界与已知限制**：插件更新只跟软件版本走（要新插件就发新版）；pinned pnpm 路径是 DSH 内部结构，已按 0.2.1-rc.3 固定并做了存在性检查，DSH 升级时要复核；tectonic 首次编译仍需要联网取宏包（默认 bundle 2.8 GB，按需下载并缓存）。
+
+安装包 0.10.91 重打后 `clients/openim/release/Base/0.10.91/AcceptCat_0.10.91.exe`（418,881,588 字节，SHA256 `8dc52983b6931a1ff294f745079a59c43bde973905b325ea5fa7d63506ea9c54`，FileVersion 0.10.91）。第一次打包时 `extraResources` 用了 `from: "tools"`，而构建的 projectDir 是 `.electron-runtime`，导致工具没进包（包体仍是 405 MB）；改成 `from: "../tools"` 后包体 418.9 MB，`resources/tools/{tectonic,plugins}` 齐全，包内 `tectonic.exe --version` 输出 `Tectonic 0.17.0`，无 rcedit 残留 tmp。

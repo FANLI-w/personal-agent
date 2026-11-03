@@ -26,11 +26,16 @@ export function readyUrl(line: string): string | undefined {
   return url.href;
 }
 
-export function runtimeEnvironment(home: string, source = process.env) {
+export function runtimeEnvironment(home: string, source = process.env, toolsDir?: string) {
   const env: NodeJS.ProcessEnv = {};
   for (const key of ["PATH", "SystemRoot", "WINDIR", "TEMP", "TMP", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "COMSPEC", "PATHEXT", "PROGRAMFILES", "PROGRAMFILES(X86)"]) {
     const actual = Object.keys(source).find((name) => name.toLowerCase() === key.toLowerCase());
     if (actual) env[actual] = source[actual];
+  }
+  // Bundled tools (tectonic) sit next to the runtime so plugins can call them by name.
+  if (toolsDir) {
+    const pathKey = Object.keys(env).find((name) => name.toLowerCase() === "path") ?? "PATH";
+    env[pathKey] = [path.join(toolsDir, "tectonic"), env[pathKey]].filter(Boolean).join(path.delimiter);
   }
   return { ...env, ELECTRON_RUN_AS_NODE: "1", DSH_HOME: home };
 }
@@ -87,7 +92,10 @@ export class LocalDshRuntime {
         "--profile", "web", ...(this.connection ? ["--patch", this.connection.patch] : []), "--no-open", "--host", "127.0.0.1", "--port", "0",
       ], {
         cwd: this.state.home,
-        env: { ...runtimeEnvironment(this.state.home), ...(this.connection ? { ACCEPTCAT_DSH_TOKEN: this.connection.token } : {}) },
+        env: {
+          ...runtimeEnvironment(this.state.home, process.env, path.resolve(this.state.directory, "..", "tools")),
+          ...(this.connection ? { ACCEPTCAT_DSH_TOKEN: this.connection.token } : {}),
+        },
         windowsHide: true, shell: false, stdio: ["ignore", "pipe", "pipe"],
       });
       this.child = child;

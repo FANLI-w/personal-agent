@@ -41,3 +41,5 @@ yarn.lock
 # sdk core
 open-im-sdk-core.*
 OpenIM_*
+# Pinned third-party binaries fetched by scripts/desktop-tools.mjs
+tools/

@@ -5,6 +5,7 @@ import { authority } from "./localFolderManage";
 import { dshAccount, createDshRelay } from "./localDshAccount";
 import { registerTaskDshBridge } from './taskDshManage';
 import type { DshBounds } from "../../src/types/localDsh";
+import { ensureResearchPlugin, researchPlugin } from "../utils/dshPlugin";
 // Built independently by vite.config.ts; the packaged module has no repository-relative imports.
 const { LocalDshRuntime, prepareAccountProfile, dshBrowserCompatibility } = require("./localDshRuntime") as typeof import("../../../../integrations/deepseek-harness/desktop/local-runtime");
 
@@ -86,7 +87,20 @@ export function registerLocalDshBridge() {
         runtime = new LocalDshRuntime(directory, home,
           () => { if (runtime.state.phase !== 'running') disposeView(); }, { patch, token: connection.secret });
       }
-      const url = await runtime.start();
+      // The research plugin ships inside the installer. DSH installs it through its
+      // own pnpm so the profile and its lockfile stay DSH's; a fresh profile only
+      // appears after the first start, so that case is retried and reloaded once.
+      const tarball = path.join(path.resolve(directory, ".."), "tools", "plugins", `${researchPlugin.name}-${researchPlugin.version}.tgz`);
+      const ensure = () => ensureResearchPlugin({ runtime: directory, home: runtime.state.home, tarball }).catch(() => ({ changed: false, reason: "安装失败" }));
+      const first = await ensure();
+      let url = await runtime.start();
+      if (first.reason === "profile 尚未创建") {
+        const retry = await ensure();
+        if (retry.changed) {
+          await runtime.stop();
+          url = await runtime.start();
+        }
+      }
       // Do not mount a late startup over another conversation or a replaced document.
       if (epoch !== generation || authority(event).contents !== auth.contents || runtime.state.phase !== "running") return;
       await next.valid();
