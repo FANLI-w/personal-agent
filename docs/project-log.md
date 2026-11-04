@@ -2734,3 +2734,13 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 附件恢复覆盖 REQUEST_TIMEOUT/INVALID_RESPONSE 的可恢复分类、原内容/原幂等键重试和会话切换取消请求，加入桌面 CI。根完整 CI 按现有 CI=true 串行配置通过（70 文件869项及生产入口）；首次并行两项附件解析相关失败保留日志，未放宽生产解析限制。客户端双类型、56项聊天/附件/传输、9项打包守卫、41项本地DSH检查通过；补充的普通成员邀请后 IM 同步检查通过；合成身份/文件的双尺寸组件交互通过，不等于真实账号/模型验收。
 
 客户端候选 0.10.92 已构建：`clients/openim/release/Base/0.10.92/AcceptCat_0.10.92.exe`，418,881,147字节，SHA256 `353876f3939e4a31d2eab1031391077900bc58abf291b76ffbd0d7f0d4ebd5ba`；更新清单、包内工具及隐藏窗口独立配置启动检查通过，启动日志保留既有 electron-log 重复 initialize 告警。产品代码提交8faaa91，后续仅回执。公开 Latest 仍为0.10.91；main 未合、后台未部署、Release 未公开、未操作真实客户端。细节与证据见 [本批说明](development/group-member-invites-20261104.md)，运行记录保存在 `D:\deepseek-agent\.runtime\group-member-invites-20261104`。
+
+## 2026-11-04 群成员邀请后台独立部署（0.41.0 / 032 不升版）
+
+负责人在PR168交付后打开已登录阿里云Workbench，授权部署本批后台。从GitHub直接获取 `6359c2087a76db04ce9b2e37c6d6b79437d591df`，核对HEAD/干净工作区；三个Foundation与Windows打包CI部署前全部SUCCESS。复用修好的Dockerfile、025字节双断言和完整Compose覆盖链，追加group-member-invites-20261104/images.yaml，只更新API/worker，未新建SSH凭据或改网络、Nginx、证书。
+
+2026-11-04 11:08:31至11:08:52（北京时间）切换，镜像 `research-openim-api:group-member-invites-20261104` / `sha256:96f0ea92ca9c758a3856923b121debed17faa7f2902b4c53f1584b7455308bc1`。排空队列、停worker/API、静止一致备份、恢复副本及正式库迁移各两次通过，schema032/113表不变、9份原件/36份配置输入保全。备份 `/srv/research-openim-backups/group-member-invites-20261104-20261104T030832Z/research.tar.gz`，SHA256 `b367585d5fb9c4c4666ec0639e2b5363a58ecd545247744700fd65bc8ea0f510`。
+
+API healthy、worker running、两者restart=0，492份镜像输入与固定提交匹配、运行编译产物核对通过。其余六容器ID/镜像/状态逐字相同，摘要 `83bddb0a518402f5fbf7ef1d023e0bd8d75493ba30387ffbd4af5332bde50922`；ready公网200/0.41.0，database/storage/authentication全ok；匿名会话/资料索引/邀请接口401。首次匿名邀请探针漏必填幂等头，收到VALIDATION_ERROR后仅改探针，原日志保留；无正式切换失败或实际回退。
+
+未合main、未公开新Release；0.10.92仍是本机测试包。真实同事邀请自己的助理/联系人由负责人验收，未代建群、发消息或调用模型。详见 [部署回执](deployment/group-member-invites-20261104.md)，完整运维记录在服务器本批ops目录；本机脱敏证据在 `D:\deepseek-agent\.runtime\group-member-invites-deploy-20261104`。

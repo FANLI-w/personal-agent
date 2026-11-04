@@ -63,7 +63,7 @@ node scripts/electron-smoke.mjs "release/Base/0.10.92/win-unpacked/AcceptCat.exe
 - 包内 DSH、科研插件与 tectonic 齐全，后者实际输出 `Tectonic 0.17.0`，无 rcedit 残留 tmp，见 `package-assets.json`。启动日志保留既有 electron-log 重复 initialize 告警，没有将其算作本批修复。
 - 仅已提交源码的归档：证据目录 `source-8faaa91.tar.gz`，SHA256 `95553bdaac4a51afb51ff81e86dad3fa09ed347d3bceb70689d94c80001f75da`，供后续独立后台部署准备，不含本机配置或构建产物。
 
-**后台需要独立更新**：API 和 worker 应成对使用本批已提交源码构建镜像，沿用目前线上完整 Compose 覆盖链、停写一致备份与隔离迁移核验。契约 **0.41.0**、schema **032** 不变，仍须核对迁移校验（包括既有 025 字节兼容处理）；不能拿旧目录或未提交文件覆盖生产。部署后再核对 ready、匿名 401、两容器版本及其余六容器不变。本批尚未执行。
+**后台独立部署已完成**：负责人授权后，**2026-11-04 11:08:52（北京时间）已从 PR168 / 6359c20 成对更新 API/worker**，沿用完整 Compose 覆盖链、停写一致备份与恢复副本核验；契约 **0.41.0**、schema **032** 不变，025 字节校验、ready、匿名 401、两容器版本与其他六容器保全均通过。实际镜像、备份和失败探针记录见 [部署回执](../deployment/group-member-invites-20261104.md)。main 合并与公开 Release 仍未执行。
 
 ## 负责人真实验收
 
