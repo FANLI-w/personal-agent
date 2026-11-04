@@ -2754,3 +2754,9 @@ API healthy、worker running、两者restart=0，492份镜像输入与固定提�
 46项客户端规划检查、真实隔离HTTP/SQLite重启流程和客户端类型通过；根CI 70文件870项与生产入口检查通过。隐藏IAB的真实讨论组件/样式用合成数据验证旧计划提示、重新梳理、候选填入和缺问题恢复，1280×720、console error/warn为空。原测试暴露投影补confirm动作后已修复，失败与夹具记录保留。详情见[说明](development/planner-two-state-compatibility.md)，证据在D:\deepseek-agent\.runtime\planner-two-state-investigation-20261104。
 
 本批客户端完整Web/Electron构建及静态资源检查通过；未生成新安装包、部署、合并或公开。首次文档检查与构建重建dist-electron并发产生ENOENT，保留原日志后在构建结束时串行复查通过。现网仍6359c20/contract0.41/schema032，旧0.10.92测试包不含本修复，真实模型/用户账号待验收。
+
+## 2026-11-04 两态规划发布成品复核更正
+
+同事指出 GitHub 合并而本地打包未同步。此前仅根据 main/tag 含 PR163 推断 0.10.91 已含两态界面，结论错误，撤回。直接从与公开 Release digest 完全一致的 0.10.91 EXE（8dc52983…ea9c54）提取 app.asar，其 SHA256 9374cca6…7061b 与本机已安装和当时 win-unpacked 三者相同；包内没有讨论组件/样式/粗骨架规则，仍有旧合成一项逻辑。证明发布成品遗漏更新，尚不能区分打包源码未同步与旧构建产物复用。没有安装、重启或修改真实客户端。
+
+原 0.10.92 候选 EXE 同样解包，归档与 win-unpacked 摘要一致，已有 PR163 的讨论组件/样式/规则；未公开，不含 PR169 的额外修复。旧计划状态缺省与后台提示/确认不一致仍是独立发现，PR169 分开说明，不能再用来推断发布包已更新或取代成品核验。main 不需要重复合 PR163；后续应固定同步提交完整重建并核对 EXE 里的实际代码。证据位于 Git 外 D:\deepseek-agent\.runtime\planner-two-state-package-audit-20261104，详见两态规划复核说明。本次只更正文档/PR，没有发版或部署。
