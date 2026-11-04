@@ -18,6 +18,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { takeFeishuPlanning } from "./feishu-planning";
 import { DependencyGraph } from "./DependencyGraph";
+import { PlanningDiscussion } from "./PlanningDiscussion";
 import taskDecompositionSkill from "@skills/task-decomposition/SKILL.md?raw";
 import { researchApi, ResearchApiError } from "./api";
 import { useResearchStore } from "./store";
@@ -36,7 +37,6 @@ import {
   plannerPlanInput,
   isDiscussionPlan,
   planQuestionText,
-  planQuestionOptions,
   plannerTaskShape,
   planningPrompt,
   plannerReplyMessage,
@@ -510,6 +510,7 @@ function PlanningAgentSession({
         current.status !== "draft" ||
         !!thread.taskIds?.length ||
         problems.length ||
+        discussion ||
         processing ||
         thread.sending)
     )
@@ -544,13 +545,13 @@ function PlanningAgentSession({
       if (isCurrent()) onCreated();
     });
   };
-  const send = (retrying = false) => {
+  const send = (retrying = false, suppliedText?: string) => {
     const retry =
       retrying && result && canRetryPlannerReply(result)
         ? plannerRetryInput(thread.messages)
         : undefined;
     if (retrying && !retry) return;
-    const text = retry ? retry.text : thread.draft.trim();
+    const text = retry ? retry.text : (suppliedText ?? thread.draft).trim();
     if (!text || busy || frozen || !available) return;
     if (thread.messages.length >= 56) {
       setFailure("这段对话已较长，请新建对话继续；原有方案仍保留。");
@@ -598,11 +599,11 @@ function PlanningAgentSession({
       return;
     }
     if (isPlannerCreateCommand(text)) {
-      if (!current || current.status !== "draft" || problems.length || processing) {
+      if (!current || current.status !== "draft" || problems.length || processing || discussion) {
         setFailure(
           processing
             ? "这轮还在回复，稍等方案出来就能创建。"
-            : problems[0] || "我们还在讨论思路，等有具体步骤后就能创建任务。",
+            : discussion ? "方案仍在讨论中，请先核对待澄清问题；未标注状态的旧方案可以按新版规则重新梳理。" : problems[0] || "我们还在讨论思路，等有具体步骤后就能创建任务。",
         );
         return;
       }
@@ -893,94 +894,13 @@ function PlanningAgentSession({
         )}
         {current && preview && !!preview.proposedItems.length && (
           discussion ? (
-            <article
-              className="planning-chat-discussion"
-              aria-label="讨论中的任务方向"
-            >
-              <header>
-                <span>小鲸鱼的理解</span>
-                <b>讨论中</b>
-              </header>
-              <div className="discussion-panel">
-                <div className="discussion-row">
-                  <span>目标</span>
-                  <p>{current.goal}</p>
-                </div>
-                <div className="discussion-row">
-                  <span>流程</span>
-                  <div className="discussion-flow">
-                    {preview.proposedItems.map((step, index) => (
-                      <span className="discussion-step" key={step.id}>
-                        {index > 0 && <i aria-hidden="true">→</i>}
-                        <em
-                          className={
-                            step.status === "阻塞"
-                              ? "is-blocked"
-                              : step.status === "可执行"
-                              ? "is-ready"
-                              : "is-pending"
-                          }
-                        >
-                          {step.title}
-                        </em>
-                      </span>
-                    ))}
-                    {!!preview.proposedItems.at(-1)?.deliverable.trim() && (
-                      <span className="discussion-step">
-                        <i aria-hidden="true">→</i>
-                        <em className="is-ready">
-                          {preview.proposedItems.at(-1)!.deliverable}
-                        </em>
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="discussion-legend">
-                  <span>
-                    <em className="is-blocked">阻塞</em>缺关键信息
-                  </span>
-                  <span>
-                    <em className="is-pending">待定</em>可后续补
-                  </span>
-                </div>
-              </div>
-              {!!preview.unresolvedQuestions.length && (
-                <div className="discussion-question">
-                  <span>需要你先确认一件事</span>
-                  <p>{planQuestionText(preview.unresolvedQuestions[0])}</p>
-                  {!!planQuestionOptions(preview.unresolvedQuestions[0])?.length && (
-                    <div className="discussion-options">
-                      {planQuestionOptions(preview.unresolvedQuestions[0])?.map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          className="discussion-option"
-                          onClick={() =>
-                            update((t) => ({ ...t, draft: option }))
-                          }
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {preview.unresolvedQuestions.length > 1 && (
-                    <details>
-                      <summary>
-                        还有 {preview.unresolvedQuestions.length - 1} 个待确认
-                      </summary>
-                      {preview.unresolvedQuestions.slice(1).map((q, i) => (
-                        <p key={i}>{planQuestionText(q)}</p>
-                      ))}
-                    </details>
-                  )}
-                </div>
-              )}
-              <footer className="discussion-meta">
-                <span>讨论中 · 版本 {current.version}</span>
-                <span>未创建任何任务</span>
-              </footer>
-            </article>
+            <PlanningDiscussion
+              plan={preview}
+              version={current.version}
+              disabled={!available || !conversationAvailable || busy || frozen || processing || plan.loading}
+              onOption={(option) => update((t) => ({ ...t, draft: option }))}
+              onReassess={() => send(false, "请保留当前计划的目标和已有内容，按两态规划重新核对：信息充分就给可确认方案；确有关键缺项时给粗骨架，并只提出一个需要我回答的问题和候选回答。不要创建任务。")}
+            />
           ) : (
           <article className="planning-chat-plan" aria-label="当前任务方案">
             <header>

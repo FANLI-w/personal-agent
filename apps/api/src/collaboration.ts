@@ -195,6 +195,11 @@ export class Collaboration {
     if (schedule.committed !== null && (!allowCommitment || schedule.committed.source !== 'member' || !schedule.committed.confirmed)) fail('VALIDATION_ERROR')
     if (schedule.hardDeadline && (!schedule.hardDeadline.confirmed || !['user', 'authorized_material'].includes(schedule.hardDeadline.source))) fail('VALIDATION_ERROR')
   }
+  canConfirmPlan(plan: Pick<PlanModel,'status'|'proposedItems'>) {
+    // Legacy manually reviewed drafts lack state metadata; keep their API
+    // contract. Explicit two-state discussions are not confirmable anywhere.
+    return plan.status==='draft'&&!plan.proposedItems.some(item=>item.status&&item.status!=='可执行')
+  }
   validatePlan(plan: RequestFor<'createPlan'>['body']) {
     this.sameLab(plan.labId)
     const ids = new Set(plan.proposedItems.map(item => item.id))
@@ -420,7 +425,7 @@ export class Collaboration {
     },
     confirmPlan: ({ params, body }) => {
       const plan = this.plan(params.id); this.checkVersion(plan.version, body.expectedVersion)
-      if (plan.status !== 'draft') fail('INVALID_STATE')
+      if (!this.canConfirmPlan(plan)) fail('INVALID_STATE')
       this.validatePlan(plan)
       new ReuseService(this).validatePlanRange(params.id,plan)
       if (!plan.proposedItems.length) fail('VALIDATION_ERROR')

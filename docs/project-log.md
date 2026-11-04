@@ -2744,3 +2744,13 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 API healthy、worker running、两者restart=0，492份镜像输入与固定提交匹配、运行编译产物核对通过。其余六容器ID/镜像/状态逐字相同，摘要 `83bddb0a518402f5fbf7ef1d023e0bd8d75493ba30387ffbd4af5332bde50922`；ready公网200/0.41.0，database/storage/authentication全ok；匿名会话/资料索引/邀请接口401。首次匿名邀请探针漏必填幂等头，收到VALIDATION_ERROR后仅改探针，原日志保留；无正式切换失败或实际回退。
 
 未合main、未公开新Release；0.10.92仍是本机测试包。真实同事邀请自己的助理/联系人由负责人验收，未代建群、发消息或调用模型。详见 [部署回执](deployment/group-member-invites-20261104.md)，完整运维记录在服务器本批ops目录；本机脱敏证据在 `D:\deepseek-agent\.runtime\group-member-invites-deploy-20261104`。
+
+## 2026-11-04 两态任务规划存量兼容检查与修复（待审未上线）
+
+负责人确认按同事PR163的两态规划核对。PR已合main且0.10.91含此界面；原实例只读元数据核实截图对应10-26创建的v2旧计划，4步全无status/missing、问题0、任务0，历史请求没有新规则。新界面保守地将缺省状态当讨论，却统一画成待定且无问题/恢复入口，所以不是“没合设计”，而是存量兼容缺口。没有改该真实计划或调用模型。
+
+新分支fix/planner-two-state-compat从main/445b8ec创建并普通merge PR168/be6742a，保留现网群邀请修复。补中性未知状态、显式重新梳理和缺问题恢复；对齐后台system/客户端/Skill的粗骨架与plan:null规则；统一worker/读回投影/确认接口，并在前端文字确认和helper阻止讨论态创建，旧成功回执仍可核对。待定继续讨论、全部可执行再确认，草案几项就创建几项，不恢复single合并。旧手工API无状态数据保持原结构兼容。
+
+46项客户端规划检查、真实隔离HTTP/SQLite重启流程和客户端类型通过；根CI 70文件870项与生产入口检查通过。隐藏IAB的真实讨论组件/样式用合成数据验证旧计划提示、重新梳理、候选填入和缺问题恢复，1280×720、console error/warn为空。原测试暴露投影补confirm动作后已修复，失败与夹具记录保留。详情见[说明](development/planner-two-state-compatibility.md)，证据在D:\deepseek-agent\.runtime\planner-two-state-investigation-20261104。
+
+本批客户端完整Web/Electron构建及静态资源检查通过；未生成新安装包、部署、合并或公开。首次文档检查与构建重建dist-electron并发产生ENOENT，保留原日志后在构建结束时串行复查通过。现网仍6359c20/contract0.41/schema032，旧0.10.92测试包不含本修复，真实模型/用户账号待验收。
