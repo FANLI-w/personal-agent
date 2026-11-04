@@ -2771,3 +2771,12 @@ API healthy、worker running、两者restart=0，492份镜像输入与固定提�
 北京时间13:19:36公开稳定Latest v0.10.93（Release433540893），tag精确指实际构建3c6c858。EXE418882614字节，SHA256 e0bd3378b99c6a9bf8bf6c96ec0845d66e7891cf6a943bcf1380ec44380f6240；四附件先上传草稿核对远端SHA256/大小后才公开，匿名Latest、两份小附件下载摘要、EXE HEAD200/大小一致。旧0.10.91公开包和0.10.92测试包保留。
 
 本次未部署后台；现网仍群邀请批次6359c20、contract0.41/schema032，ready三项ok/harness not_verified。PR169服务端规划修复待单独部署，发布说明已标明；真实模型、账号、多端与安装体验仍由负责人验收。首页下载更新至0.10.93，完整[发布回执](deployment/acceptcat-0.10.93-release.md)记录摘要、失败与检查范围；Git外证据D:\deepseek-agent\.runtime\release-0.10.93-20261104。
+## 2026-11-04 0.10.93 配套两态规划后台已部署
+
+负责人要求更新后台并重开已登录Workbench。精确fetch tag源码3c6c8584ef8f6b4949e5e70aa07a4da5ca88fafb，复用已修Dockerfile/完整Compose覆盖链，仅更新API/worker；新镜像research-openim-api:planner-two-state-20261104，完整ID sha256:ba0be028d75f7b070b524831b009d6c3e0660719829daad1659a1c5301bd14a6。492份镜像输入、同源Skill和运行中编译文件核对通过，原群邀请编译产物保持；无网络、无生产挂载的4文件47项隔离回归通过。
+
+北京时间15:02:58停worker、15:02:59停API，15:03:21核验可用。静止备份及实际恢复校验、恢复副本与正式库各两次迁移均通过；schema032/113表不变，9份原件、37份配置/secret输入及全部原行数据在切换前迁移保全，私人凭据/默认、飞书范围、社区关闭状态保持。备份/srv/research-openim-backups/planner-two-state-20261104-20261104T070300Z/research.tar.gz，SHA256 2f40b1e52c5df2c7be0d9ba0641be36f49909ec2fd7b458059552e2d86f39be2。
+
+API healthy、worker running、均restart0；其他六容器ID/镜像/状态逐字未变（摘要83bddb0a518402f5fbf7ef1d023e0bd8d75493ba30387ffbd4af5332bde50922）。公网ready200/contract0.41.0，database/storage/authentication全ok，harness仍not_verified；匿名会话、session、资料索引、任务确认和邀请均401。本机独立公网请求相符。未创建生产合成账号/计划/任务或请求真实模型，真实验收由负责人用0.10.93显式重新梳理旧计划并确认可执行草案。
+
+旧镜像96f0ea92保留为兼容回退点，恢复副本上的旧0.41只读校验通过；无实际回退或恢复旧数据。上轮浏览器准备被终止时只读；重新登录后恢复，npm两个依赖自动重试后构建通过，正式source/build/preflight/isolated-tests/deploy/post-check全部退出0。敏感完整证据留服务器本批ops目录，脱敏证据D:\deepseek-agent\.runtime\planner-two-state-deploy-20261104。Release说明补配套后台状态，四个安装附件摘要/大小未变，首页残留0.10.75指针同步改为实际0.10.93。详见[部署回执](deployment/planner-two-state-20261104.md)。
