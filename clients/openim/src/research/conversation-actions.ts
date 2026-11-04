@@ -4,6 +4,8 @@ import { IMSDK } from "@/layout/MainContentWrap";
 import { useConversationStore } from "@/store";
 import { researchApi } from "./api";
 import { withRequestDeadline } from "./request-deadline";
+import { forgetCachedHistory } from '@/pages/chat/queryChat/chat-history-cache';
+import { invalidateChatConversation } from './chat-record-cache';
 
 export type ConversationActionScope = {
   conversation: ConversationItem;
@@ -82,6 +84,9 @@ export async function deleteIMConversation(scope: ConversationActionScope) {
   await sdkCall(scope, () =>
     IMSDK.deleteConversationAndDeleteAllMsg(scope.conversation.conversationID),
   );
+  await forgetCachedHistory(scope.conversation.conversationID, scope.researchConversationId, scope.isCurrent);
+  assertCurrent(scope);
+  if (scope.researchConversationId) invalidateChatConversation(scope.researchConversationId);
   useConversationStore.setState((state) => ({
     lastConversationID: state.lastConversationID === scope.conversation.conversationID
       ? undefined : state.lastConversationID,

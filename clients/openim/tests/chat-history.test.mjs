@@ -211,9 +211,12 @@ test("every channel the preload calls has a main-process handler", async () => {
     "forget",
     "open",
     "page",
+    "readRecord",
     "remove",
+    "removeRecord",
     "revoke",
     "savePage",
+    "saveRecord",
   ]);
   for (const channel of called)
     assert.ok(
@@ -222,4 +225,32 @@ test("every channel the preload calls has a main-process handler", async () => {
         : main.includes(`"${channel}",`),
       `no handler for chat-history-${channel}`,
     );
+});
+
+test('complete research text and quoted text survive a database reopen, isolated by account and service', async t => {
+  const {root, db} = await open(t);
+  const value = {fact: {id: 'fact', text: 'Synthetic full answer'}, details: {withdrawn: false, replyTo: {text: 'Synthetic quoted question'}}};
+  db.saveRecord('business-group', 'message', 'fact', value);
+  const restarted = new ChatHistoryDatabase(root, service, 'member_A');
+  const other = new ChatHistoryDatabase(root, service, 'member_B');
+  const otherService = new ChatHistoryDatabase(root, 'https://other.example.org', 'member_A');
+  try {
+    assert.deepEqual(restarted.readRecord('business-group', 'message', 'fact'), value);
+    assert.equal(other.readRecord('business-group', 'message', 'fact'), null);
+    assert.equal(otherService.readRecord('business-group', 'message', 'fact'), null);
+  } finally {restarted.close();other.close();otherService.close();}
+});
+
+test('a delayed body fetch cannot undo a persisted withdrawal, even after reopening', async t => {
+  const {root, db} = await open(t);
+  const original = {fact: {text: 'Synthetic original'}, details: {withdrawn: false}};
+  const tombstone = {fact: {text: '这条消息已撤回'}, details: {withdrawn: true}};
+  db.saveRecord('group', 'message', 'fact', tombstone);
+  const restarted = new ChatHistoryDatabase(root, service, 'member_A');
+  try {
+    assert.deepEqual(restarted.saveRecord('group', 'message', 'fact', original), tombstone);
+    assert.deepEqual(restarted.readRecord('group', 'message', 'fact'), tombstone);
+    restarted.forget('group');
+    assert.equal(restarted.readRecord('group', 'message', 'fact'), null);
+  } finally {restarted.close();}
 });

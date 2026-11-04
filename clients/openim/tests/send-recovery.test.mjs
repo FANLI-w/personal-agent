@@ -110,8 +110,13 @@ test("handoff capability follows the backend version and is cleared with the acc
   version = "0.39.0";
   await api.researchApi("session");
   assert.equal(api.supportsTaskHandoffs(), true);
+  assert.equal(api.supportsTranscriptSync(), false);
+  version = '0.42.0';
+  await api.researchApi('session');
+  assert.equal(api.supportsTranscriptSync(), true);
   api.clearResearchSession();
   assert.equal(api.supportsTaskHandoffs(), false);
+  assert.equal(api.supportsTranscriptSync(), false);
 });
 
 test("a missing session response is bounded and never dispatches the mutation", async (t) => {

@@ -114,6 +114,55 @@ async function setup(enabled = true, representativeMembers = 0) {
   return { dir, db, config, app, clients, accounts, call, contacts, human, agent, publicAgent, personal, ask, groupProposal, proposeAction, connect }
 }
 
+describe('local transcript change synchronization',()=>{
+  it('returns only changed snapshots, keeps private turns requester-only, and never starts a model',async()=>{
+    const s=await setup(),sent=await s.ask(s.personal.id,s.agent('member_A').id)
+    const known=[{messageId:sent.message.id,revision:null}]
+    const sync=(value:unknown,actor=0,id=s.personal.id)=>s.call('chatTranscriptSync',null,{id},actor,'?known='+encodeURIComponent(JSON.stringify(value)))
+    const first=await sync(known)
+    expect(first.status,first.raw).toBe(200)
+    expect(first.value.data.changes).toHaveLength(1)
+    const snapshot=first.value.data.changes[0]
+    expect(snapshot.details.message).toMatchObject({id:sent.message.id,text:sent.message.text})
+    expect(snapshot.turns.map((turn:{id:string})=>turn.id)).toEqual([sent.turn.id])
+    expect(snapshot.revision).toMatch(/^[a-f0-9]{64}$/)
+    expect((await sync([{messageId:sent.message.id,revision:snapshot.revision}])).value.data).toEqual({changes:[],unavailableIds:[]})
+    expect((await sync(known,1)).status).toBe(404)
+    expect((await s.call('chatTurn',null,{id:sent.turn.id})).value.data.status).toBe('queued')
+    expect(s.db.prepare('SELECT count(*) n FROM execution_jobs').get()!.n).toBe(0)
+    const {group,agents}=await colleagueGroup(s)
+    const addressed=address([agents[0]!]),asked=await s.call('sendChatMessage',{...addressed,intent:'ask_agent',agentContactId:agents[0]!.id,budget},{id:group.id})
+    const shared=await sync([{messageId:asked.value.data.message.id,revision:null}],1,group.id)
+    expect(shared.status,shared.raw).toBe(200)
+    expect(shared.value.data.changes[0].requests).toHaveLength(1)
+    expect(shared.value.data.changes[0].turns).toEqual([])
+    expect(shared.value.data.changes[0].details.message.turnId).toBeNull()
+  })
+  it('synchronizes withdrawals and quoted source changes, then sends no unchanged bodies',async()=>{
+    const s=await setup(),sent=await s.ask(s.personal.id,s.agent('member_A').id)
+    const follow=await s.call('agentChatMessage',{text:'Synthetic follow-up',replyToMessageId:sent.message.id},{id:s.personal.id})
+    const ids=[sent.message.id,follow.value.data.message.id]
+    const sync=(known:unknown)=>s.call('chatTranscriptSync',null,{id:s.personal.id},0,'?known='+encodeURIComponent(JSON.stringify(known)))
+    const first=await sync(ids.map(messageId=>({messageId,revision:null})))
+    const known=first.value.data.changes.map((item:{details:{message:{id:string}};revision:string})=>({messageId:item.details.message.id,revision:item.revision}))
+    expect((await s.call('withdrawChatMessage',{expectedVersion:1},{id:s.personal.id,messageId:sent.message.id})).status).toBe(200)
+    const next=await sync(known)
+    expect(next.status,next.raw).toBe(200);expect(next.value.data.changes).toHaveLength(2)
+    const withdrawn=next.value.data.changes.find((item:{details:{message:{id:string}}})=>item.details.message.id===sent.message.id)
+    expect(withdrawn.details).toMatchObject({withdrawn:true,message:{text:'这条消息已撤回',turnId:null}})
+    const quoted=next.value.data.changes.find((item:{details:{message:{id:string}}})=>item.details.message.id===follow.value.data.message.id)
+    expect(quoted.details.replyTo).toMatchObject({withdrawn:true,text:'这条消息已撤回'})
+    expect((await sync(next.value.data.changes.map((item:{details:{message:{id:string}};revision:string})=>({messageId:item.details.message.id,revision:item.revision})))).value.data.changes).toEqual([])
+  })
+  it('bounds and validates batches, and reports unavailable message IDs without exposing their contents',async()=>{
+    const s=await setup(),sync=(known:string)=>s.call('chatTranscriptSync',null,{id:s.personal.id},0,'?known='+encodeURIComponent(known))
+    expect((await sync('not JSON')).status).toBe(400)
+    expect((await sync(JSON.stringify(Array.from({length:41},(_,i)=>({messageId:'synthetic_'+i,revision:null}))))).status).toBe(400)
+    expect((await sync(JSON.stringify([{messageId:'same',revision:null},{messageId:'same',revision:null}]))).status).toBe(400)
+    expect((await sync(JSON.stringify([{messageId:'unknown_synthetic',revision:null}]))).value.data).toEqual({changes:[],unavailableIds:['unknown_synthetic']})
+  })
+})
+
 describe('group Agent mentions and shared status',()=>{
   it('uses bounded plain conversation for addressed legacy groups and preserves a quoted support request across query words',{timeout:20000},async()=>{
     const s=await setup(),{group,agents}=await colleagueGroup(s)

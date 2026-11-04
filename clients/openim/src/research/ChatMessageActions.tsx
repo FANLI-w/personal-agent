@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Input, Modal, Radio } from "antd";
 import { MessageStatus, MessageType, type MessageItem } from "@openim/wasm-client-sdk";
 import { readChatMessage } from "./chat-message-read";
+import { saveChatRecord, dropChatRecord } from './chat-record-cache';
+import { removeCachedHistory } from '@/pages/chat/queryChat/chat-history-cache';
 import { IMSDK } from "@/layout/MainContentWrap";
 import { useConversationStore, useUserStore } from "@/store";
 import { useResearchStore } from "./store";
@@ -99,6 +101,7 @@ export function ChatMessageActions() {
                   pointer.messageId,
                   pointer.sequence,
                   operation.signal,
+                  true,
                 )
               : undefined;
           if (source?.details?.withdrawn)
@@ -146,12 +149,13 @@ export function ChatMessageActions() {
             if (!detail.data.withdrawn) {
               if (!detail.data.allowedActions.includes("withdraw"))
                 throw new Error("当前已不能撤回这条消息，请重新核对。");
-              await researchApi("withdrawChatMessage", {
+              const withdrawn = await researchApi("withdrawChatMessage", {
                 params: { id: pointer.conversationId, messageId: pointer.messageId },
                 body: { expectedVersion: detail.data.version },
                 idempotencyKey: operationKey.current,
                 signal: operation.signal,
               });
+              if (current()) await saveChatRecord(pointer.conversationId, 'message', pointer.messageId, {fact: withdrawn.data.message, details: withdrawn.data});
             }
           } else
             await withRequestDeadline(
@@ -176,6 +180,10 @@ export function ChatMessageActions() {
             operation.signal,
           );
           if (current()) {
+            await removeCachedHistory(conversation.conversationID, [id], current);
+            const pointer = researchPointer(entry.message);
+            if (pointer && current()) await dropChatRecord(pointer.conversationId, 'message', pointer.messageId);
+            if (!current()) return;
             const hidden = [
               ...new Set([...useChatTimeline.getState().hidden, id]),
             ].slice(-2000);
