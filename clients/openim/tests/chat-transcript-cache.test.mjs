@@ -109,3 +109,31 @@ test('an atomic snapshot restores completed Agent receipts after restart without
   assert.equal((await afterRetry.readChatTurn('group','retried-turn')).data.status,'queued');
   assert.equal(calls,0);
 });
+
+test('a late sync response cannot undo an acknowledged retry and immediately requests a fresh revision', {timeout:5000}, async t=>{
+  const f=await fixture(t),reader=f.load();
+  const previous={id:'old-turn',conversationId:'group',inputMessageId:'m1',agentContactId:'agent',status:'failed',failure:'MODEL_FAILED',availability:{status:'available',reason:null},outputMessageId:null,usage:null,budget:{maxTokens:4000,maxSeconds:90},remainingBudget:{maxTokens:3000,maxSeconds:60},allowedActions:['retry'],version:2,createdAt:'2026-11-04T00:00:00Z',updatedAt:'2026-11-04T00:00:01Z'};
+  const oldSnapshot={details:{...detail(),message:{...fact(),origin:'human',turnId:previous.id},replyTo:null},requests:[],turns:[previous],revision:'d'.repeat(64)};
+  await reader.saveTranscriptSnapshot('group',oldSnapshot,1);
+  const next={...previous,id:'new-turn',status:'queued',failure:null,allowedActions:['cancel'],version:1};
+  const nextSnapshot={...oldSnapshot,details:{...oldSnapshot.details,message:{...oldSnapshot.details.message,turnId:next.id}},turns:[next],revision:'e'.repeat(64)};
+  let calls=0,finish,startedResolve,acceptedResolve;
+  const started=new Promise(resolve=>{startedResolve=resolve;});
+  const accepted=new Promise(resolve=>{acceptedResolve=resolve;});
+  const observed=[];
+  const stopListener=reader.onChatRecordChange(change=>{if(change.kind!=='message')return;const current=f.db.readRecord('group','message','m1');observed.push(current?.fact?.turnId);if(current?.revision===nextSnapshot.revision)acceptedResolve();});t.after(stopListener);
+  transcriptFixture.api=async name=>{
+    assert.equal(name,'chatTranscriptSync');calls++;
+    if(calls===1)return new Promise(resolve=>{finish=resolve;startedResolve();});
+    return {data:{changes:[nextSnapshot],unavailableIds:[]}};
+  };
+  const stop=reader.watchTranscriptMessage('group','m1');t.after(stop);
+  await started;
+  await reader.cacheChatTurnResult(next,1,true);
+  reader.requestTranscriptSync('group');
+  finish({data:{changes:[oldSnapshot],unavailableIds:[]}});
+  await accepted;
+  assert.equal(calls,2);
+  assert.ok(!observed.includes(previous.id));
+  assert.equal((await reader.readChatMessage('group','m1',1)).fact.turnId,next.id);
+});

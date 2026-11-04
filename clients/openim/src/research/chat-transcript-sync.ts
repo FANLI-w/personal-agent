@@ -1,6 +1,6 @@
 import { researchApi, ResearchApiError, supportsTranscriptSync } from "./api";
 import { useResearchStore } from "./store";
-import { cachedChatRecord, dropChatRecord } from "./chat-record-cache";
+import { cachedChatRecord, dropChatRecord, chatRecordEpoch } from "./chat-record-cache";
 import { parseMessageSnapshot, saveTranscriptSnapshot } from "./chat-message-read";
 
 // One bounded synchronizer per conversation, rather than one poll per bubble.
@@ -14,16 +14,20 @@ type Watch = {
   timer?: ReturnType<typeof setTimeout>;
   controller?: AbortController;
   unsupported?: boolean;
+  requestAgain?: boolean;
 };
 const watches = new Map<string, Watch>();
 export function requestTranscriptSync(conversation: string) {
   for (const watch of watches.values()) {
     if (
       watch.conversation !== conversation ||
-      watch.generation !== useResearchStore.getState().generation ||
-      watch.controller
+      watch.generation !== useResearchStore.getState().generation
     )
       continue;
+    if (watch.controller) {
+      watch.requestAgain = true;
+      continue;
+    }
     clearTimeout(watch.timer);
     watch.timer = setTimeout(() => void sync(watch), 0);
   }
@@ -41,6 +45,12 @@ async function sync(watch: Watch) {
     return;
   }
   const controller = new AbortController();
+  const checkpoints = new Map(
+    [...watch.ids.keys()].map((id) => [
+      id,
+      chatRecordEpoch(watch.conversation, "message", id),
+    ]),
+  );
   let failed = false;
   watch.controller = controller;
   try {
@@ -97,9 +107,16 @@ async function sync(watch: Watch) {
       )
         return;
       await Promise.all(
-        result.data.changes.map((snapshot) =>
-          saveTranscriptSnapshot(watch.conversation, snapshot, watch.generation),
-        ),
+        result.data.changes.map((snapshot) => {
+          const id = snapshot.details.message.id;
+          if (
+            chatRecordEpoch(watch.conversation, "message", id) !== checkpoints.get(id)
+          ) {
+            watch.requestAgain = true;
+            return;
+          }
+          return saveTranscriptSnapshot(watch.conversation, snapshot, watch.generation);
+        }),
       );
       for (const snapshot of result.data.changes) {
         const id = snapshot.details.message.id;
@@ -112,9 +129,15 @@ async function sync(watch: Watch) {
         else watch.active.delete(id);
       }
       await Promise.all(
-        result.data.unavailableIds.map((id) =>
-          dropChatRecord(watch.conversation, "message", id),
-        ),
+        result.data.unavailableIds.map((id) => {
+          if (
+            chatRecordEpoch(watch.conversation, "message", id) !== checkpoints.get(id)
+          ) {
+            watch.requestAgain = true;
+            return;
+          }
+          return dropChatRecord(watch.conversation, "message", id);
+        }),
       );
     }
   } catch (error) {
@@ -128,9 +151,15 @@ async function sync(watch: Watch) {
       [401, 403, 404].includes(error.status)
     ) {
       await Promise.all(
-        [...watch.ids.keys()].map((id) =>
-          dropChatRecord(watch.conversation, "message", id),
-        ),
+        [...watch.ids.keys()].map((id) => {
+          if (
+            chatRecordEpoch(watch.conversation, "message", id) !== checkpoints.get(id)
+          ) {
+            watch.requestAgain = true;
+            return;
+          }
+          return dropChatRecord(watch.conversation, "message", id);
+        }),
       );
     }
   } finally {
@@ -142,8 +171,9 @@ async function sync(watch: Watch) {
     )
       watch.timer = setTimeout(
         () => void sync(watch),
-        !failed && watch.active.size ? 5000 : 30000,
+        watch.requestAgain ? 0 : !failed && watch.active.size ? 5000 : 30000,
       );
+    watch.requestAgain = false;
   }
 }
 export function watchTranscriptMessage(conversation: string, messageId: string) {
@@ -169,9 +199,13 @@ export function watchTranscriptMessage(conversation: string, messageId: string) 
       document.removeEventListener?.("visibilitychange", resume);
     };
   }
+  const added = !watch.ids.has(messageId);
   watch.ids.set(messageId, (watch.ids.get(messageId) ?? 0) + 1);
-  if (!watch.timer && !watch.controller)
+  if (added && watch.controller) watch.requestAgain = true;
+  if ((!watch.timer || added) && !watch.controller) {
+    clearTimeout(watch.timer);
     watch.timer = setTimeout(() => void sync(watch!), 300);
+  }
   return () => {
     const count = (watch!.ids.get(messageId) ?? 1) - 1;
     if (count) watch!.ids.set(messageId, count);

@@ -32,6 +32,14 @@ function scope() {
 }
 const key = (conversation: string, kind: ChatRecordKind, id: string) =>
   JSON.stringify([conversation, kind, id]);
+export function chatRecordEpoch(
+  conversation: string,
+  kind: ChatRecordKind,
+  id: string,
+) {
+  scope();
+  return epochs.get(key(conversation, kind, id)) ?? 0;
+}
 export function seedChatRecord(
   conversation: string,
   kind: ChatRecordKind,
