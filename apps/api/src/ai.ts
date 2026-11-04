@@ -86,7 +86,7 @@ export class AiService {
   }
   getPlanning(id:string){
     const row=this.row(id),req=this.planningAccess(row),p=PlanningRequest.parse(JSON.parse(String(row.document)))
-    if(p.reply){if(p.reply.intent==='draft'){p.reply.plan=req.replyMode==='conversation'&&p.status==='ready'?null:p.planId?this.c.plan(p.planId):null;p.reply.readAt=instant();p.reply.actions=p.reply.plan?.status==='draft'?[{object:'plan',ref:{id:p.reply.plan.id,version:p.reply.plan.version},action:'confirm'}]:[]}
+    if(p.reply){if(p.reply.intent==='draft'){p.reply.plan=req.replyMode==='conversation'&&p.status==='ready'?null:p.planId?this.c.plan(p.planId):null;p.reply.readAt=instant();p.reply.actions=p.reply.plan&&this.c.canConfirmPlan(p.reply.plan)?[{object:'plan',ref:{id:p.reply.plan.id,version:p.reply.plan.version},action:'confirm'}]:[]}
       else p.reply=this.facts(p.reply.intent,req.taskIds)
       if(req.replyMode==='conversation'&&typeof req.conversationAnswer==='string'&&['ready','draft'].includes(p.status))p.reply.message=req.conversationAnswer
     }

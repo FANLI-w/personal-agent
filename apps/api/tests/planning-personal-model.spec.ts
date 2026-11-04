@@ -41,6 +41,40 @@ async function setup(){
   return {db,config,call,ok,personal,lab,planBody,planning,detail,worker,restart:async()=>{await app.close();app=createServer(config);url=await app.listen({host:'127.0.0.1',port:0})}}
 }
 describe('owned personal planning with real HTTP and isolated synthetic credentials',{timeout:30000},()=>{
+  it('preserves an old plan for explicit reassessment and only confirms the executable revision',async()=>{
+    const s=await setup();await s.personal()
+    const item={id:'step_qa',title:'Synthetic step',goal:'Synthetic goal',deliverable:'Synthetic report',acceptanceCriteria:'Review sources',allocation:{kind:'self'},dependencies:[],schedule,inputArtifactIds:[],budget:null}
+    const legacy=await s.ok('createPlan',{labId:'lab_synthetic',goal:'Synthetic legacy goal',proposedItems:[item],unresolvedQuestions:[]})
+    const tasksBefore=Number(s.db.prepare('SELECT count(*) n FROM tasks').get()!.n)
+    const job=await s.ok('planRequest',{...s.planBody,replyMode:'conversation',plan:{id:legacy.id,version:legacy.version}})
+    await s.worker(async input=>{
+      expect(input.system).toContain('a rough skeleton for discussion')
+      expect(input.system).not.toContain('For discussion, advice or one essential question return plan:null')
+      return {...output(),text:JSON.stringify({answer:'Synthetic question about the evidence.',plan:{goal:legacy.goal,proposedItems:[{...item,status:'待定',missing:'缺信息'}],unresolvedQuestions:[{question:'Synthetic evidence choice?',options:['A','B']}]}})}
+    }).tick()
+    await s.restart()
+    const discussion=(await s.detail(job.id)).reply
+    expect(discussion.plan).toMatchObject({id:legacy.id,version:2,proposedItems:[{id:item.id,status:'待定'}],unresolvedQuestions:[{question:'Synthetic evidence choice?',options:['A','B']}]})
+    expect(discussion.actions).toEqual([])
+    for(const state of ['待定','阻塞']){
+      const p=await s.ok('getPlan',null,{id:legacy.id})
+      const blocked=await s.ok('editPlan',{labId:p.labId,goal:p.goal,proposedItems:[{...item,status:state,missing:'缺信息'}],unresolvedQuestions:p.unresolvedQuestions,expectedVersion:p.version},{id:p.id})
+      const denied=await s.call('confirmPlan',{expectedVersion:blocked.version},{id:p.id})
+      expect(denied.value.error.code).toBe('INVALID_STATE')
+      expect(Number(s.db.prepare('SELECT count(*) n FROM tasks').get()!.n)).toBe(tasksBefore)
+    }
+    const prior=await s.ok('getPlan',null,{id:legacy.id})
+    const next=await s.ok('planRequest',{...s.planBody,replyMode:'conversation',plan:{id:prior.id,version:prior.version}})
+    await s.worker(async()=>({...output(),text:JSON.stringify({answer:'Synthetic ready draft.',plan:{goal:legacy.goal,proposedItems:[{...item,status:'可执行'}],unresolvedQuestions:[]}})})).tick()
+    const ready=(await s.detail(next.id)).reply.plan
+    expect(Number(s.db.prepare('SELECT count(*) n FROM tasks').get()!.n)).toBe(tasksBefore)
+    const created=await s.ok('confirmPlan',{expectedVersion:ready.version},{id:ready.id})
+    expect(created.taskIds).toHaveLength(1)
+    expect(created.plan.proposedItems[0].id).toBe(item.id)
+    // Unmarked legacy/manual drafts still use their original API contract.
+    const manual=await s.ok('createPlan',{labId:'lab_synthetic',goal:'Synthetic manually reviewed draft',proposedItems:[item],unresolvedQuestions:[]})
+    expect((await s.ok('confirmPlan',{expectedVersion:manual.version},{id:manual.id})).taskIds).toHaveLength(1)
+  })
   it('keeps discussion separate from plan revisions and returns the actual answer after restart, with no task creation',async()=>{
     const s=await setup();await s.personal()
     const counts=()=>['plans','tasks','assignments'].map(table=>Number(s.db.prepare('SELECT count(*) n FROM '+table).get()!.n))

@@ -83580,7 +83580,7 @@
     "/api/v1/plans/{id}/confirm": {
       "post": {
         "operationId": "confirmPlan",
-        "description": "Owner; draft; validate graph, authorized inputs and public capability. One transaction: plan version, stable item/task IDs, assignments, events, outbox, idempotency result.",
+        "description": "Owner; draft; explicit pending/blocked planning steps cannot be confirmed (INVALID_STATE). Legacy drafts without step-state metadata retain structural validation compatibility. Validate graph, authorized inputs and public capability. One transaction: plan version, stable item/task IDs, assignments, events, outbox, idempotency result.",
         "x-stage": "B1",
         "x-implemented": true,
         "security": [

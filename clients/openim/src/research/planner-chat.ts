@@ -396,6 +396,16 @@ export const planQuestionOptions = (
 export function isDiscussionPlan(items: { status?: unknown }[]): boolean {
   return items.some((item) => item.status !== "可执行");
 }
+/** Missing legacy metadata is not evidence that the research itself is blocked. */
+export function plannerDiscussionIssue(
+  plan: Pick<ChatPlan, "proposedItems" | "unresolvedQuestions">,
+) {
+  if (!isDiscussionPlan(plan.proposedItems)) return;
+  if (plan.proposedItems.some((item) => !item.status))
+    return "这份方案未标注新版规划状态，不能据此判断哪些步骤需要讨论。原内容已保留，请按新版规则重新梳理后再确认。";
+  if (!plan.unresolvedQuestions.some((q) => planQuestionText(q).trim()))
+    return "助手还没有说明需要你确认的问题。可以继续补充意见，或重新梳理，让助手指出当前最需要确认的一件事。";
+}
 export function planReplyText(plan: ChatPlan) {
   // The model writes one conversational clarification. Older servers/plans may
   // still return a questionnaire: show its first exchange without changing the
@@ -512,6 +522,11 @@ export async function createPlannerTasks(
   }
   if (current.status !== "draft")
     throw new Error("这个计划已不能继续创建任务，请重新查看。");
+  if (
+    isDiscussionPlan(current.proposedItems) ||
+    isDiscussionPlan(intent.plan.proposedItems)
+  )
+    throw new Error("方案仍在讨论中，请先重新梳理并核对可执行草案，再确认创建任务。");
   let draft = current;
   if (
     current.version === intent.plan.version &&

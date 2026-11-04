@@ -82,6 +82,7 @@ for (const { lost, count } of [
         deliverable: `Deliverable ${i + 1}`,
         acceptanceCriteria: `Criterion ${i + 1}`,
         allocation: { kind: "self" },
+        status: "可执行",
         dependencies: i ? [`step_${i}`] : [],
         schedule: {
           suggested: null,

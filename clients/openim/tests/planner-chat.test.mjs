@@ -12,6 +12,7 @@ import {
   needsDeadlineClarification,
   plannerPlanInput,
   isDiscussionPlan,
+  plannerDiscussionIssue,
   plannerTaskShape,
   isPlannerCreateCommand,
   createPlannerTasks,
@@ -265,6 +266,57 @@ test("讨论态判断：status 缺省按待定处理，只有全部可执行才�
   assert.equal(isDiscussionPlan([item("阻塞")]), true);
   assert.equal(isDiscussionPlan([item(undefined)]), true);
 });
+
+test("legacy states and a missing discussion question have explicit recovery without inventing a blocker", () => {
+  const legacy = makePlan();
+  legacy.proposedItems.forEach((item) => delete item.status);
+  assert.match(plannerDiscussionIssue(legacy), /未标注新版规划状态/);
+  assert.equal(legacy.unresolvedQuestions.length, 0);
+  const discussion = makePlan();
+  discussion.proposedItems[0].status = "待定";
+  assert.match(plannerDiscussionIssue(discussion), /没有说明需要你确认的问题/);
+  discussion.unresolvedQuestions = [
+    { question: "Synthetic choice?", options: ["A", "B"] },
+  ];
+  assert.equal(plannerDiscussionIssue(discussion), undefined);
+  assert.equal(plannerDiscussionIssue(makePlan()), undefined);
+});
+
+test("discussion and legacy snapshots cannot issue confirm, but an already acknowledged legacy confirmation can reconcile", async () => {
+  for (const status of [undefined, "待定", "阻塞"]) {
+    const plan = makePlan();
+    if (status) plan.proposedItems[0].status = status;
+    else delete plan.proposedItems[0].status;
+    const calls = [];
+    await assert.rejects(
+      createPlannerTasks(
+        async (name) => {
+          calls.push(name);
+          return { data: plan };
+        },
+        { key: "synthetic_discussion_confirmation", plan },
+        () => true,
+      ),
+      /仍在讨论/,
+    );
+    assert.deepEqual(calls, ["getPlan"]);
+  }
+  const legacy = makePlan();
+  legacy.proposedItems.forEach((item) => delete item.status);
+  const calls = [];
+  const result = await createPlannerTasks(
+    async (name) => {
+      calls.push(name);
+      return name === "getPlan"
+        ? { data: { ...legacy, status: "confirmed", version: 2 } }
+        : { data: { steps: [{ taskId: "task_qa" }] } };
+    },
+    { key: "synthetic_acknowledged_confirmation", plan: legacy },
+    () => true,
+  );
+  assert.deepEqual(result.taskIds, ["task_qa"]);
+  assert.deepEqual(calls, ["getPlan", "planTasks"]);
+});
 test("a stated deadline edits the reviewed draft in place and keeps its task count", async () => {
   for (const failure of [undefined, "edit", "confirm"]) {
     const plan = makePlan(),
@@ -493,7 +545,10 @@ test("legacy multi-question plans present one exchange while preserving every sa
 test("scientific quotations, question marks and URLs in one exchange are not sliced into broken text", () => {
   const plan = makePlan();
   plan.unresolvedQuestions = [
-    { question: "我们先看“what if?”的对照思路，参考 https://example.org/paper?view=abstract 。你最想验证哪个解释？" },
+    {
+      question:
+        "我们先看“what if?”的对照思路，参考 https://example.org/paper?view=abstract 。你最想验证哪个解释？",
+    },
   ];
   assert.equal(planReplyText(plan), plan.unresolvedQuestions[0].question);
 });
@@ -595,11 +650,7 @@ test("a stale reviewed version cannot confirm unseen changes", async () => {
     changed = { ...p, version: 2, goal: "其他窗口的修改" },
     f = fake(changed);
   await assert.rejects(
-    createPlannerTasks(
-      f.call,
-      { key: "stable_confirmation_123", plan: p },
-      () => true,
-    ),
+    createPlannerTasks(f.call, { key: "stable_confirmation_123", plan: p }, () => true),
     /其他窗口/,
   );
   assert.equal(f.calls.filter((c) => c.name === "confirmPlan").length, 0);
@@ -646,11 +697,7 @@ test("account or thread cancellation after a read prevents all mutations", async
     return v;
   };
   await assert.rejects(
-    createPlannerTasks(
-      api,
-      { key: "stable_confirmation_123", plan: p },
-      () => active,
-    ),
+    createPlannerTasks(api, { key: "stable_confirmation_123", plan: p }, () => active),
     /已切换/,
   );
   assert.equal(f.calls.length, 1);
