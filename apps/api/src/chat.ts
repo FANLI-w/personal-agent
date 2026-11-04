@@ -25,6 +25,7 @@ import type { FileDocument, ParsedAgentFile } from './agent-files.js'
 import type { AgentFileSelection } from '@research-agent-platform/contracts'
 import { personalCommands,handleMemory,memory,memorySettings,ownLocalMemoryScope,personalMemoryContext,memoryCommand } from './personal-memories.js'
 import { agentStyleCommand } from './agent-style.js'
+import { socialGroupContacts } from './group-membership.js'
 import { handleFollowup,followup,followupCommand } from './personal-followups.js'
 import { personalWorkRequest,assistantDirectoryFingerprint,unsupportedCollaboration } from './personal-assistant.js'
 import { isAgentCreationCommand, legacyTurnDocument } from './agent-creation.js'
@@ -111,11 +112,12 @@ export class ChatService {
     // human browser membership. Agent-only acceptance must not reveal history.
     const joined = this.db.prepare("SELECT 1 FROM chat_members WHERE conversation_id=? AND status='joined' AND contact_id=?").get(id, self)
     if (!joined) fail('NOT_FOUND')
-    if(social&&!socialContactAllowed(this,String(row.owner_id),self))fail('NOT_FOUND')
+    const socialContacts=social?socialGroupContacts(this,id):undefined
+    if(socialContacts&&!socialContacts.has(self))fail('NOT_FOUND')
     const value = Conversation.parse(decode(row.document))
     value.members = this.db.prepare('SELECT contact_id,role,status,version FROM chat_members WHERE conversation_id=? ORDER BY contact_id').all(id).map(r => ConversationMember.parse({ contactId: r.contact_id, role: r.role, status: r.status, version: r.version }))
-    if(social)for(const member of value.members)if(!socialContactAllowed(this,value.ownerMemberId,member.contactId))member.status='revoked'
-    value.allowedActions = value.kind === 'group' && value.ownerMemberId === this.c.actor.id ? ['send', 'invite', 'manage'] : value.members.some(m => m.contactId === self && m.status === 'joined') ? ['send'] : []
+    if(socialContacts)for(const member of value.members)if(!socialContacts.has(member.contactId))member.status='revoked'
+    value.allowedActions = value.kind === 'group' ? value.ownerMemberId === this.c.actor.id ? ['send', 'invite', 'manage'] : ['send', 'invite'] : ['send']
     if(value.ownerMemberId===this.c.actor.id)value.allowedActions.push('manage_memory')
     // Task association is an ACL-filtered directory, not a grant.
     value.taskIds = value.taskIds.filter(taskId => { try { this.c.taskRow(taskId); return true } catch { return false } })
@@ -383,9 +385,12 @@ export class ChatService {
       this.validateGroupInput(payload,groupId)
       return
     }
-    if (group.kind !== 'group' || (payload.kind !== 'run_task' && group.ownerMemberId !== this.c.actor.id)) fail('FORBIDDEN')
+    if (group.kind !== 'group' || (!['run_task','invite_contact'].includes(payload.kind) && group.ownerMemberId !== this.c.actor.id)) fail('FORBIDDEN')
     const contact = this.contact(payload.contactId)
-    if(payload.kind==='invite_contact'&&isSocialGroup(this,group.id)){if(!socialContactAllowed(this,group.ownerMemberId,contact.id))fail('FORBIDDEN');return}
+    if(payload.kind==='invite_contact'){
+      if(!group.allowedActions.includes('invite'))fail('FORBIDDEN')
+      if(isSocialGroup(this,group.id)){if(!socialContactAllowed(this,this.c.actor.id,contact.id))fail('FORBIDDEN');return}
+    }
     if(!this.teamContact(contact))fail('FORBIDDEN')
     if (payload.kind === 'invite_contact') return
     if (!group.members.some(m => m.contactId === contact.id && m.status === 'joined')) fail('NOT_FOUND')
@@ -497,7 +502,7 @@ export class ChatService {
     if (name === 'chatTurn' || name === 'chatTurnProgress' || name === 'cancelChatTurn' || name === 'retryChatTurn') this.turn(id!)
     else if (name === 'decideChatAction') this.action(id!)
     else if (name === 'decideChatInvitation') this.invitation(id!)
-    else if (id) {const group=this.conversation(id, false);if(name==='imInviteContact'&&(group.kind!=='group'||group.ownerMemberId!==this.c.actor.id))fail('FORBIDDEN')}
+    else if (id) {const group=this.conversation(id, false);if(name==='imInviteContact'&&!group.allowedActions.includes('invite'))fail('FORBIDDEN')}
   }
   run(name: ChatCommand, req: Request, parsedFile?:ParsedAgentFile, onlyCached=false): unknown {
     this.ensureContacts(); this.authorize(name, req)
