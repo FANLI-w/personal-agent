@@ -30,6 +30,31 @@ async function setup(){
  return {db,config,people,call,ok,own,accept,human,tick,restart:async()=>{await app.close();app=createServer(config);url=await app.listen({host:'127.0.0.1',port:0})},chat:(actor=0)=>new ChatService(serviceFor(db,people[actor]!.id,config).c,config)}
 }
 describe('social workspace actual HTTP/SQLite; model and IM transport deliberately synthetic',{timeout:45000},()=>{
+ it('lets a joined cross-space colleague invite their own assistant and contacts without granting task or lab access',async()=>{
+  const s=await setup(),colleague=await s.human(1),third=await s.human(2)
+  await s.accept(colleague.id);await s.accept(third.id,1,2)
+  const assistant=await s.ok('createPersonalAgent',profile,{},1)
+  let group=await s.ok('imCreateGroup',{title:'成员可以拉人和自己的助手',contactIds:[colleague.id],plan:null,sharedContext:{selectedText:null,artifactRefs:[]}})
+  expect((await s.ok('chatConversation',null,{id:group.id},1)).allowedActions).toContain('invite')
+  expect((await s.call('chatConversation',null,{id:group.id},2)).status).toBe(404)
+  group=await s.ok('imInviteContact',{contactId:assistant.id,expectedConversationVersion:group.version},{id:group.id},1)
+  expect(group.members.find((m:{contactId:string})=>m.contactId===assistant.id).status).toBe('joined')
+  const command={contactId:third.id,expectedConversationVersion:group.version},key=randomUUID()
+  group=await s.ok('imInviteContact',command,{id:group.id},1,'',key)
+  expect((await s.ok('imInviteContact',command,{id:group.id},1,'',key)).version).toBe(group.version)
+  expect((await s.ok('chatConversation',null,{id:group.id},2)).allowedActions).toEqual(['send','invite'])
+  expect(group.members.filter((m:{status:string})=>m.status==='joined')).toHaveLength(4)
+  expect(s.db.prepare('SELECT count(*) n FROM chat_invitations WHERE conversation_id=?').get(group.id)!.n).toBe(0)
+  expect(s.db.prepare('SELECT count(*) n FROM personal_work_tasks').get()!.n).toBe(0)
+  expect(s.db.prepare('SELECT lab_id FROM members WHERE id=?').get(s.people[2]!.id)!.lab_id).not.toBe(s.db.prepare('SELECT lab_id FROM members WHERE id=?').get(s.people[0]!.id)!.lab_id)
+  // Friendship is still checked live: the whole route through this colleague
+  // disappears after the owner withdraws it, including old idempotent receipts.
+  const relationship=(await s.ok('chatContact',null,{id:colleague.id})).relationship
+  await s.ok('revokeContact',{expectedVersion:relationship.version},{id:colleague.id})
+  expect((await s.call('chatConversation',null,{id:group.id},1)).status).toBe(404)
+  expect((await s.call('chatConversation',null,{id:group.id},2)).status).toBe(404)
+  expect((await s.call('imInviteContact',command,{id:group.id},1,'',key)).status).toBe(404)
+ })
  it('requires explicit publication and real cross-space friendship; withdrawal invalidates cached discovery',async()=>{
   const s=await setup(),other=await s.own(1),agent=await s.ok('createPersonalAgent',profile,{},1)
   await s.ok('createPersonalMemory',{topic:'私有偏好',content:'PRIVATE_MEMORY_NEVER_PUBLIC',scope:'general'},{},1)

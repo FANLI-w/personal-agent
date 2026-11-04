@@ -47,6 +47,8 @@ export function ResearchGroupPicker({
           : Promise.reject(new Error("当前群权限未同步，请重新打开群聊。"))
         : undefined,
     ]);
+    if (group && !group.data.allowedActions.includes("invite"))
+      throw new Error("当前账号没有邀请权限，请刷新群聊后重试。");
     return { contacts, group: group?.data };
   }, `group-picker:${groupID || "new"}:${mapping?.researchConversationId || ""}`);
   const contacts = read.data?.contacts || [];
@@ -123,7 +125,7 @@ export function ResearchGroupPicker({
         )}
       </div>
       <p className="px-3 py-2 text-xs text-[var(--sub-text)]">
-        邀请需要对方或智能体所属成员接受后才会入群。
+        选中的联系人和智能体会直接入群；已加入的成员也可以邀请。
       </p>
     </div>
   );

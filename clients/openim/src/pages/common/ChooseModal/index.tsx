@@ -259,7 +259,7 @@ export const ChooseContact: FC<ChooseContactProps> = ({
             if (!operation.isCurrent()) return;
             if (type === "INVITE_TO_GROUP") {
               if (!canonical.allowedActions.includes("invite"))
-                throw new Error("仅群主可以邀请成员。");
+                throw new Error("当前账号没有邀请权限，请刷新群聊后重试。");
               // Only an existing member is skipped. A legacy pending invite can
               // be selected again and becomes a joined member immediately.
               if (
