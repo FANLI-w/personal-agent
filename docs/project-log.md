@@ -2794,3 +2794,15 @@ API healthy、worker running、均restart0；其他六容器ID/镜像/状态逐�
 所有失败保留：独立客户端冻结安装漏ignore-workspace被保护中止；新增API测试括号/ChatRequest查询类型未同步；首轮完整CI因Web契约固定0.41及CHAT1固定72失败，更新为0.42/73后完整CI通过，未改期限。UI夹具TSX/JSX设置错误后修正，后续检查发现缓存到达前可多发最新页重试、已缓存后仍残留旧错误提示，修正实际hook后通过。追加回执重试检查的初稿误把已完成回答当成输入消息，修正合成输入/回答关联后通过；没有为该夹具改写旧回答逻辑。证据 `D:/deepseek-agent/.runtime/chat-history-complete-20261104`，说明[完整聊天记录本地优先](development/chat-transcript-local-first.md)。
 
 本批尚未合并/部署/发包，公开Latest本次重新核对仍v0.10.93；线上0.41沿上批回执，未新inspect。现有安装包不会自动获得修复；系统级断网冷启动、实际安装和真实双客户端留待配套版本验收。未改变DSH文件/PDF、模型设置或任务流程。
+
+## 2026-11-04 18:35 聊天记录配套后台0.42独立部署
+
+负责人明确授权更新后台。通过已登录原ECS Workbench fetch固定PR172源码3aa30302d2c266722966a7145cc339af0c3759ce（主实现f5093f6、客户端收尾d12858b），核对HEAD和干净checkout；复用已修Dockerfile/025字节断言和完整Compose覆盖链，只更新API/worker。新镜像research-openim-api:chat-transcript-20261104，完整ID sha256:0e2837232c5b5d019a27c3ad96d0915823fa316119b3c563fe68fb2a5c5494e3。493份镜像输入、契约0.42、新编译同步路由以及运行中的编译摘要核对通过；保留原群邀请/两态规划实现。远端3aa3030四项CI全部成功，服务器无网络/无生产挂载的3文件77项隔离测试通过。
+
+北京时间18:34:56排空停worker/API，18:35:18切换核验通过。静止一致备份/srv/research-openim-backups/chat-transcript-20261104-20261104T103458Z/research.tar.gz，SHA256 4c3a8a58b5170b5fd1acaf0b77ffc165d0d192ff8b94651d93c009b2f48ba267。实际解包恢复验证，恢复副本与正式库各两次幂等迁移核验，schema032/113表不变；全部原行、9份原件、38份配置输入保全。API healthy、worker running、均restart0；其他六容器ID/镜像/状态摘要前后同为83bddb0a518402f5fbf7ef1d023e0bd8d75493ba30387ffbd4af5332bde50922。环境/挂载/网络/端口等设置未变，未清库或重建账号。
+
+公网ready200/contract0.42.0，database/storage/authentication全ok，harness仍not_verified；匿名新transcript-sync、资料索引、会话/session、任务确认/邀请均401，本机独立公网检查相符。未创建生产合成数据或调用真实模型，真实账号/双客户端行为待负责人配套新包验收。旧ba0be028镜像保留，恢复副本上旧0.41只读兼容检查通过；无实际回退。
+
+source/build/preflight/isolated-tests/deploy/post-check最终退出0。首次只读post-check成功但外层shell展开变量导致空退出码留证，保留initial-wrapper原日志并用Python subprocess重新完成同一只读核验；没有重复切换或迁移。证明文本换行排版修正、本机误读一个不存在旧文档路径均留说明，无生产影响；终端证明截图本次成功且未含会话凭据。敏感基线只留服务器ops，脱敏证据D:/deepseek-agent/.runtime/chat-transcript-deploy-20261104，详见[部署回执](deployment/chat-transcript-20261104.md)。
+
+本批只部署后台，没有合并PR172、构建新安装包或发布Release；公开客户端仍0.10.93。完整本地正文/历史分页修复仍需交付PR172客户端，不能将后台上线称为旧安装包已修好。当前状态及实现说明已按后台已部署/客户端待交付分开更新。
