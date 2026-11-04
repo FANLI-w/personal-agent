@@ -84,7 +84,7 @@ DSH 随安装包提供，登录后自动连接当前 AcceptCat 账号的模型�
 
 | 版本入口 | 当前状态 |
 | --- | --- |
-| **最新公开桌面试用版：0.10.75** | Windows x64 安装包已发布：[下载 AcceptCat_0.10.75.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.75/AcceptCat_0.10.75.exe)，约405 MB。任务页收成一个「下一步」、目标与验收按要点展开、成果摘要自动预填，任务可直接带着背景进工作台；保留原生模型设置、本地材料与共享归档。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.75) · [交付范围](docs/deployment/acceptcat-0.10.75.md) |
+| **最新公开桌面试用版：0.10.93** | Windows x64 安装包已发布：[下载 AcceptCat_0.10.93.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.93/AcceptCat_0.10.93.exe)，约419 MB。包含两态任务规划、旧计划重新梳理入口、群成员邀请自己的助理与联系人、附件阅读重试；保留工作台原生文件/PDF和模型设置。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.93) · [交付与后台边界](docs/deployment/acceptcat-0.10.93-release.md) |
 | **飞书只读本人试点** | 文档快照与命名多维表格论文库代码已包含，配套后台及飞书 0.2.0 已部署；指定论文库的真实读取、私人绑定和 DSH 试读已完成。飞书应用仍仅罗岩本人可用，其他成员不会因安装客户端而自动获得权限。[试点记录与边界](docs/deployment/acceptcat-0.10.27.md) |
 | **后台模型运行层：DSH 0.2.1-rc.2** | 已部署并验证现有模型的真实短句回复，保留现有账号、资料与模型设置；已有客户端无需重装。[部署说明](docs/deployment/harness-0.2.1-rc.2-20261020.md) |
 | **历史公开版本** | 原 v0.10.73、v0.10.71、v0.10.70、v0.10.61 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.75 |
