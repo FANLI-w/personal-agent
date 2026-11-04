@@ -32,7 +32,8 @@
 | 两套冻结依赖安装 | 根 pnpm 11.21.0、客户端 pnpm 10.28.0 通过，锁文件未改 |
 | 修复前后定向回归 | `before.log` 三项失败；`after-focused.log` 三项通过 |
 | 根完整 CI | `root-ci-serial.log` / `.exit` 为 0；70 文件、869 项及生产入口检查通过 |
-| 首次 CI 失败 | `root-ci.log`：两项既有附件解析测试超时；未改解析预算，按现有 Windows CI 串行配置复跑通过 |
+| 首次 CI 失败 | `root-ci.log`：两项附件解析相关测试失败，首项返回 FILE_PARSE_TIMEOUT，另项未得到 turn；未改解析预算，按现有 Windows CI 串行配置复跑通过 |
+| 普通成员邀请后同步 IM | `member-im-sync.log`，1 项通过；真实业务写入/同步路径和合成管理适配器回调，不是线上 IM 验收 |
 | 客户端双类型 | `client-typecheck.log`、`electron-typecheck.log` 通过 |
 | 聊天、成员、附件、传输 | `client-chat-gate.log`，56 项通过，含 3 项附件恢复测试 |
 | 打包守卫 / 本地 DSH | `client-build-guards.log` 9 项、`client-local-dsh.log` 41 项通过 |
@@ -54,7 +55,13 @@ node scripts/electron-smoke.mjs "release/Base/0.10.92/win-unpacked/AcceptCat.exe
 
 新工作副本完整准备入口仍为仓库根目录 `corepack pnpm@11.21.0 run desktop:win`，默认不发布。
 
-构建状态：进行中。候选预期路径 `clients/openim/release/Base/0.10.92/AcceptCat_0.10.92.exe`，完成后补充实际大小、SHA256、更新检查与隔离烟测结果。未安装到负责人真实客户端。
+构建已完成，产品代码提交 `8faaa91`（后续提交仅更新回执）：
+
+- 安装包：`D:\deepseek-agent\acceptcat-group-invite-fix\clients\openim\release\Base\0.10.92\AcceptCat_0.10.92.exe`，418,881,147 字节，FileVersion 0.10.92。
+- SHA256：`353876f3939e4a31d2eab1031391077900bc58abf291b76ffbd0d7f0d4ebd5ba`；同目录含 `.exe.blockmap`、`latest.yml`、`SHA256SUMS.txt`。
+- `windows-build.exit = 0`；`windows-update-check.log` 通过；`electron-smoke.log` 显示 `OPENIM_ELECTRON_READY` 和启动检查通过，使用独立临时配置并隐藏窗口，未安装到负责人真实客户端。
+- 包内 DSH、科研插件与 tectonic 齐全，后者实际输出 `Tectonic 0.17.0`，无 rcedit 残留 tmp，见 `package-assets.json`。启动日志保留既有 electron-log 重复 initialize 告警，没有将其算作本批修复。
+- 仅已提交源码的归档：证据目录 `source-8faaa91.tar.gz`，SHA256 `95553bdaac4a51afb51ff81e86dad3fa09ed347d3bceb70689d94c80001f75da`，供后续独立后台部署准备，不含本机配置或构建产物。
 
 **后台需要独立更新**：API 和 worker 应成对使用本批已提交源码构建镜像，沿用目前线上完整 Compose 覆盖链、停写一致备份与隔离迁移核验。契约 **0.41.0**、schema **032** 不变，仍须核对迁移校验（包括既有 025 字节兼容处理）；不能拿旧目录或未提交文件覆盖生产。部署后再核对 ready、匿名 401、两容器版本及其余六容器不变。本批尚未执行。
 

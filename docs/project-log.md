@@ -2731,6 +2731,6 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 
 根因是会话 allowedActions、imInviteContact 授权和动作验证三处群主限制，以及社交群按群主通讯录过滤成员。修复后已加入真人可邀请本人有权使用的联系人/智能体，直接 joined；跨空间成员沿已加入真人的有效联系关系授权，Agent 入群不让未加入的所有者取得群权限。管理/移除与私人记忆权限、任务/资料/课题组边界保留；失效关系及移除后幂等回放重新验权。契约仍 0.41.0/schema032，无迁移，必须另行部署 API/worker 才能生效。
 
-附件恢复覆盖 REQUEST_TIMEOUT/INVALID_RESPONSE 的可恢复分类、原内容/原幂等键重试和会话切换取消请求，加入桌面 CI。根完整 CI 按现有 CI=true 串行配置通过（70 文件869项及生产入口）；首次并行两项附件解析超时保留日志，未放宽生产解析限制。客户端双类型、56项聊天/附件/传输、9项打包守卫、41项本地DSH检查通过；合成身份/文件的双尺寸组件交互通过，不等于真实账号/模型验收。
+附件恢复覆盖 REQUEST_TIMEOUT/INVALID_RESPONSE 的可恢复分类、原内容/原幂等键重试和会话切换取消请求，加入桌面 CI。根完整 CI 按现有 CI=true 串行配置通过（70 文件869项及生产入口）；首次并行两项附件解析相关失败保留日志，未放宽生产解析限制。客户端双类型、56项聊天/附件/传输、9项打包守卫、41项本地DSH检查通过；补充的普通成员邀请后 IM 同步检查通过；合成身份/文件的双尺寸组件交互通过，不等于真实账号/模型验收。
 
-客户端候选版本 0.10.92 正在本机打包，公开 Latest 仍为0.10.91。main 未合、后台未部署、Release 未公开、未操作真实客户端。细节与证据见 [本批说明](development/group-member-invites-20261104.md)，运行记录保存在 `D:\deepseek-agent\.runtime\group-member-invites-20261104`。
+客户端候选 0.10.92 已构建：`clients/openim/release/Base/0.10.92/AcceptCat_0.10.92.exe`，418,881,147字节，SHA256 `353876f3939e4a31d2eab1031391077900bc58abf291b76ffbd0d7f0d4ebd5ba`；更新清单、包内工具及隐藏窗口独立配置启动检查通过，启动日志保留既有 electron-log 重复 initialize 告警。产品代码提交8faaa91，后续仅回执。公开 Latest 仍为0.10.91；main 未合、后台未部署、Release 未公开、未操作真实客户端。细节与证据见 [本批说明](development/group-member-invites-20261104.md)，运行记录保存在 `D:\deepseek-agent\.runtime\group-member-invites-20261104`。
