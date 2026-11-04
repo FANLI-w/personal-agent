@@ -210,11 +210,33 @@ describe('OpenIM bridge with explicit synthetic management adapter, not live ser
     expect((await s.request('imConversations',null,{},2)).value.data.conversations).toEqual([])
     expect((await s.request('imInviteContact',{contactId:s.human('member_C').id,expectedConversationVersion:group.version+1},{id:group.id})).status).toBe(409)
     group=(await s.request('chatConversation',null,{id:group.id})).value.data
-    expect((await s.request('imInviteContact',{contactId:s.human('member_C').id,expectedConversationVersion:group.version},{id:group.id},1)).status).toBe(403)
+    const memberView=(await s.request('chatConversation',null,{id:group.id},1)).value.data as Conversation
+    expect(memberView.allowedActions).toContain('invite')
+    expect(memberView.allowedActions).not.toContain('manage')
     const inviteKey=randomUUID(),command={contactId:s.human('member_C').id,expectedConversationVersion:group.version}
-    expect((await s.request('imInviteContact',command,{id:group.id},0,inviteKey)).status).toBe(200)
-    expect((await s.request('imInviteContact',command,{id:group.id},0,inviteKey)).status).toBe(200)
+    expect((await s.request('imInviteContact',command,{id:group.id},1,inviteKey)).status).toBe(200)
+    expect((await s.request('imInviteContact',command,{id:group.id},1,inviteKey)).status).toBe(200)
     expect(s.db.prepare('SELECT count(*) n FROM chat_invitations WHERE conversation_id=?').get(group.id)!.n).toBe(0)
+  })
+  it('lets a joined colleague add their own assistant while keeping management and replay member-scoped',async()=>{
+    const s=await setup();await s.request('imSession',{platformID:5},{},1)
+    let group=(await s.request('imCreateGroup',{title:'同事邀请自己的助手',contactIds:[s.human('member_B').id,s.agent('member_C').id],sharedContext:context,plan:null})).value.data as Conversation
+    const initialMapping=(await s.request('imSyncConversation',{}, {id:group.id},1)).value.data
+    expect(initialMapping.transportStatus).toBe('ready')
+    // An Agent membership never grants its absent owner access to the group.
+    expect((await s.request('imInviteContact',{contactId:s.human('member_C').id,expectedConversationVersion:group.version},{id:group.id},2)).status).toBe(404)
+    const key=randomUUID(),command={contactId:s.agent('member_B').id,expectedConversationVersion:group.version}
+    const added=await s.request('imInviteContact',command,{id:group.id},1,key)
+    expect(added.status,added.raw).toBe(200);group=added.value.data
+    expect(group.members.find(m=>m.contactId===s.agent('member_B').id)!.status).toBe('joined')
+    expect((await s.request('imSyncConversation',{}, {id:group.id},1)).value.data.transportStatus).toBe('ready')
+    expect(s.groups.get(initialMapping.groupID)!.some(m=>m.userID===s.identity(s.agent('member_B').id,1))).toBe(true)
+    expect((await s.request('imInviteContact',command,{id:group.id},1,key)).value.data.version).toBe(group.version)
+    expect((await s.request('imInviteContact',{...command,expectedConversationVersion:group.version-1},{id:group.id},1)).status).toBe(409)
+    expect((await s.request('revokeChatMember',{expectedVersion:group.members.find(m=>m.contactId===s.human('member_A').id)!.version,expectedConversationVersion:group.version,reason:'普通成员不能移除群主'},{id:group.id,contactId:s.human('member_A').id},1)).status).toBe(403)
+    const member=group.members.find(m=>m.contactId===s.human('member_B').id)!
+    expect((await s.request('revokeChatMember',{expectedVersion:member.version,expectedConversationVersion:group.version,reason:'群主移除同事'},{id:group.id,contactId:member.contactId})).status).toBe(200)
+    expect((await s.request('imInviteContact',command,{id:group.id},1,key)).status).toBe(404)
   })
   it('uses admin-only IM owner, reconciles joined recipients and rejects native role/registration bypasses',async()=>{
     const s=await setup();await s.request('imSession',{platformID:5});await s.request('imSession',{platformID:5},{},1)

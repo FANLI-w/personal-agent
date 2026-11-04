@@ -2724,3 +2724,13 @@ typecheck、typecheck:electron、build:web 通过；local-dsh 41 项（含新增
 安装包 0.10.91 重打后 `clients/openim/release/Base/0.10.91/AcceptCat_0.10.91.exe`（418,881,588 字节，SHA256 `8dc52983b6931a1ff294f745079a59c43bde973905b325ea5fa7d63506ea9c54`，FileVersion 0.10.91）。第一次打包时 `extraResources` 用了 `from: "tools"`，而构建的 projectDir 是 `.electron-runtime`，导致工具没进包（包体仍是 405 MB）；改成 `from: "../tools"` 后包体 418.9 MB，`resources/tools/{tectonic,plugins}` 齐全，包内 `tectonic.exe --version` 输出 `Tectonic 0.17.0`，无 rcedit 残留 tmp。
 
 **发布**：PR #164 合并后 `main = 445b8ec`，tag `v0.10.91` 指向同一提交，release 含 `AcceptCat_0.10.91.exe`（418,881,588 字节）、blockmap、`latest.yml`、`SHA256SUMS.txt`，已标 Latest。未合并的旧 PR（#160/#159/#157/#154/#149 部署回执、#90/#83/#82/#81 旧功能）保持原状，未处理。
+
+## 2026-11-04 普通群成员邀请与附件恢复（功能分支，待审）
+
+负责人明确不纳入 PR #35，并要求修复被邀请同事不能添加自己的助理和其他人的问题。从最新 main/445b8ec 建独立工作副本 `acceptcat-group-invite-fix`、分支 `fix/group-member-invites`；普通 merge 整合 #167（含 #165/#166），提取 #36 的附件恢复补丁及测试，没有覆盖旧开发目录或批量处理其他 PR。
+
+根因是会话 allowedActions、imInviteContact 授权和动作验证三处群主限制，以及社交群按群主通讯录过滤成员。修复后已加入真人可邀请本人有权使用的联系人/智能体，直接 joined；跨空间成员沿已加入真人的有效联系关系授权，Agent 入群不让未加入的所有者取得群权限。管理/移除与私人记忆权限、任务/资料/课题组边界保留；失效关系及移除后幂等回放重新验权。契约仍 0.41.0/schema032，无迁移，必须另行部署 API/worker 才能生效。
+
+附件恢复覆盖 REQUEST_TIMEOUT/INVALID_RESPONSE 的可恢复分类、原内容/原幂等键重试和会话切换取消请求，加入桌面 CI。根完整 CI 按现有 CI=true 串行配置通过（70 文件869项及生产入口）；首次并行两项附件解析超时保留日志，未放宽生产解析限制。客户端双类型、56项聊天/附件/传输、9项打包守卫、41项本地DSH检查通过；合成身份/文件的双尺寸组件交互通过，不等于真实账号/模型验收。
+
+客户端候选版本 0.10.92 正在本机打包，公开 Latest 仍为0.10.91。main 未合、后台未部署、Release 未公开、未操作真实客户端。细节与证据见 [本批说明](development/group-member-invites-20261104.md)，运行记录保存在 `D:\deepseek-agent\.runtime\group-member-invites-20261104`。

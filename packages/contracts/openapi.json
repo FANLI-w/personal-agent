@@ -47572,7 +47572,7 @@
     "/api/v1/im/conversations/{id}/invite": {
       "post": {
         "operationId": "imInviteContact",
-        "description": "Current research group owner only; exact conversation version. Adds a human or private Agent as a joined member directly, with no pending invitation. Does not accept contact relationships or task commitment; same-origin, CSRF and authorized idempotent replay.",
+        "description": "Any currently joined human group member with invite permission; exact conversation version. Adds a human or private Agent as a joined member directly, with no pending invitation. Cross-space invitations require the inviter own or currently accepted contact authority; only joined humans can extend that authority in the group. Does not accept contact relationships, grant lab/material access or accept task commitment; same-origin, CSRF and authorized idempotent replay. Member removal and management remain owner-only.",
         "x-stage": "IM1",
         "x-implemented": true,
         "security": [
