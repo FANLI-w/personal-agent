@@ -2826,3 +2826,9 @@ source/build/preflight/isolated-tests/deploy/post-check最终退出0。首次只
 负责人安装0.10.94后工作台报pnpm退出1，旧GitHub3d2805c/0.3.1离线tarball缺失。用0.10.94 EXE提取的模块和合成旧锁/旧模块、.ignored两场景真实复现；不是Key、后台或账号库问题。上一批实测的是新profile，漏测旧profile升级，已在0.10.94回执注明边界。隔离尝试verify_deps_before_run=false同样失败，日志保留，不作为修复。
 
 从main/2df856a建fix/dsh-legacy-plugin-upgrade；参数改为dsh-research-workbench@file:明确替换旧依赖，由pnpm维护锁，不清库或删profile。真实附带pnpm11.28.5在空store/离线两场景成功升0.4.0；其他插件、bundle/自定义配置、会话及资料哨兵不变。19项插件检查通过，既有类型/DSH和构建检查继续；CI前置固定DSH与工具准备以实际运行该回归。候选版本0.10.95尚未合并/发布，旧资产保留，后台/模型/缓存代码及插件资产不变。证据D:/deepseek-agent/.runtime/dsh-legacy-plugin-upgrade-20261105，说明见development/dsh-legacy-plugin-upgrade.md。
+
+## 2026-11-05 0.10.95 旧 GitHub 科研插件升级修复已公开
+
+2026/11/5 15:37:13 公开稳定 Latest v0.10.95（Release434891459），PR175 四项成功后普通合并为 1baf294b707207ec7b7b9d3acd4de53b583aef82 并从该干净 main 重建/tag。固定并校验插件0.4.0原包，显式 name@file 替换旧GitHub0.3.1依赖；19项含真实 pnpm 空store离线升级、EXE提取模块两条回归、成品旧profile升级后实际DSH加载/会话读取、完整聊天缓存跨进程及隔离启动均通过。1653 份输入/129 份构建文件核对，EXE 421224009 字节，SHA256 ddccfa6b80058f9b29d462a6b75b9b92c4e803682b675dee86d2fa1a027ca888。草稿四资产与远端digest一致后公开，匿名Latest/附件校验及旧四资产保留已确认。
+
+根70文件874项与客户端CI最终成功；PR/main Windows 的既有 dialogue-context 测试首次各一条30秒超时（873/1），本地原文件9项与失败作业同码/原时限重跑成功，保留失败日志、不认定根因。实际0.10.94模块运行新增回归两场景失败，确认原bug；上一批漏了旧profile升级，未清库/删除用户锁或配置。完整缓存模块字节与0.10.94一致，后台0.42及模型/提示词未改，未操作私人客户端/模型/Office，真实安装待负责人复验。见[发布回执](deployment/acceptcat-0.10.95-release.md)，证据D:/deepseek-agent/.runtime/release-0.10.95-20261105及dsh-legacy-plugin-upgrade-20261105。
