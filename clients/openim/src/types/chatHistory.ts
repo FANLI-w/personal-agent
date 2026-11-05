@@ -15,6 +15,7 @@ export type ChatHistoryPage = {
 };
 
 export type ChatHistoryLease = { lease: string; memberId: string };
+export type ChatRecordKind = "message" | "turn" | "group-status";
 
 export type ChatHistoryBridge = {
   /** Opens this account's transcript; `null` when there is no verified session. */
@@ -39,4 +40,23 @@ export type ChatHistoryBridge = {
   ) => Promise<void>;
   remove: (lease: string, messageIds: string[]) => Promise<void>;
   forget: (lease: string, conversation: string) => Promise<void>;
+  readRecord: (
+    lease: string,
+    conversation: string,
+    kind: ChatRecordKind,
+    id: string,
+  ) => Promise<unknown>;
+  saveRecord: (
+    lease: string,
+    conversation: string,
+    kind: ChatRecordKind,
+    id: string,
+    value: unknown,
+  ) => Promise<unknown>;
+  removeRecord: (
+    lease: string,
+    conversation: string,
+    kind: ChatRecordKind,
+    id: string,
+  ) => Promise<void>;
 };

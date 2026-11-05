@@ -1,6 +1,6 @@
 import { Button } from "antd";
 import { useContext, useEffect } from "react";
-import { researchApi } from "./api";
+import { supportsTranscriptSync } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import { useResearchStore } from "./store";
 import { AgentProgressHistory, registerAgentProgress } from "./agent-progress";
@@ -8,6 +8,8 @@ import { groupAgentStatusText } from "./group-agent-status";
 import { ResearchTurnStatus } from "./ResearchTurnStatus";
 import type { GroupAgentStatus } from "@research-agent-platform/contracts";
 import { useGroupChatRoster, groupContactDescription } from "./GroupChatRoster";
+import { readGroupStatuses, readChatTurn, activeChatTurn } from './chat-message-read';
+import { useChatRecordChanges } from './useChatRecordChanges';
 
 export function GroupMessageStatuses({ conversationId, messageId, imID, own, inputText }: {
   conversationId:string; messageId:string; imID:string; own:boolean; inputText:string;
@@ -17,9 +19,12 @@ export function GroupMessageStatuses({ conversationId, messageId, imID, own, inp
   const actorId = useResearchStore(s => s.actor?.member.id);
   const roster = useGroupChatRoster();
   const read = useResearchRead(
-    signal => researchApi("chatMessageAgentStatuses", { params:{id:conversationId,messageId},signal }),
+    () => readGroupStatuses(conversationId, messageId),
     `${imID}:group-status:${conversationId}:${messageId}`,
+    true,
+    { poll: value => !supportsTranscriptSync() && (!value || value.data.requests.some(r => ['queued','running','waiting_input'].includes(r.status))), keepDataOnError: true },
   );
+  useChatRecordChanges(conversationId, 'group-status', messageId, read.refresh, read.invalidate);
   useEffect(() => {
     // Only the requester restores private progress. Other members use this
     // status receipt and canonical group replies, never the private turn API.
@@ -47,7 +52,8 @@ export function GroupMessageStatuses({ conversationId, messageId, imID, own, inp
 
 function OwnAgentControls({ request, conversationId, imID, refresh }: { request: GroupAgentStatus; conversationId: string; imID: string; refresh: () => Promise<void> }) {
   const generation = useResearchStore(s => s.generation);
-  const detail = useResearchRead(signal => researchApi("chatTurn", { params: { id: request.id }, signal }), `${imID}:own-group-turn:${request.id}`);
+  const detail = useResearchRead(() => readChatTurn(conversationId, request.id), `${imID}:own-group-turn:${request.id}`, true, {poll: value => !supportsTranscriptSync() && activeChatTurn(value), keepDataOnError: true});
+  useChatRecordChanges(conversationId, 'turn', request.id, detail.refresh, detail.invalidate);
   if (detail.error) return <button type="button" className="chat-agent-detail-button" onClick={() => void detail.refresh()}>重新读取操作状态</button>;
   if (!detail.data || detail.data.data.conversationId !== conversationId || detail.data.data.agentContactId !== request.agentContactId) return null;
   return <ResearchTurnStatus turn={detail.data.data} compact hideLabel onRetried={next => {

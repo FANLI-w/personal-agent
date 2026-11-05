@@ -35,6 +35,7 @@ export function useHistoryMessageList() {
   const [historyError, setHistoryError] = useState("");
   /** Where the visible transcript came from: the local cache, or nothing yet. */
   const [historySource, setHistorySource] = useState<HistorySource>("");
+  const [cacheChecked, setCacheChecked] = useState(false);
   const sdkReady = useUserStore(
     (state) =>
       !state.isLogining &&
@@ -61,6 +62,7 @@ export function useHistoryMessageList() {
   /** Failed read attempts for the conversation on screen. */
   const retryAttempt = useRef(0);
   const actorGeneration = useResearchStore((state) => state.generation);
+  const renderedFor = useRef({conversationID, actorGeneration});
 
   useEffect(() => {
     mounted.current = true;
@@ -72,7 +74,7 @@ export function useHistoryMessageList() {
 
   const { loading: moreOldLoading, runAsync: getMoreOldMessages } = useRequest(
     async (loadMore = true) => {
-      if (!conversationID || !latestCanRead.current) return;
+      if (!conversationID) return;
       if (loadingPage.current) return;
       loadingPage.current = true;
       const reqConversationID = conversationID;
@@ -92,6 +94,26 @@ export function useHistoryMessageList() {
         const anchor = loadMore
           ? latestLoadState.current.messageList[0]?.clientMsgID || ""
           : "";
+        // Older pages obey exactly the same local-first rule as the first page.
+        // A partial local chain is shown now; its next gap can be filled later.
+        if (loadMore && anchor) {
+          const cached = await readCachedHistory(reqConversationID, SPLIT_COUNT, anchor);
+          if (cached?.messages.length && mounted.current && historyGeneration === loadGeneration.current && generation === useResearchStore.getState().generation) {
+            const previous = latestLoadState.current;
+            const ids = new Set(previous.messageList.map(m => m.clientMsgID));
+            const messages = new Map([...cached.messages, ...previous.messageList].map(m => [m.clientMsgID, m]));
+            const next = {...previous, initLoading: false, hasMoreOld: !cached.reachedStart,
+              messageList: [...messages.values()].sort((a,b) => a.sendTime-b.sendTime || (a.seq||0)-(b.seq||0)),
+              firstItemIndex: previous.firstItemIndex-cached.messages.filter(m => !ids.has(m.clientMsgID)).length};
+            latestLoadState.current = next; setLoadState(next); setHistorySource('cache'); setHistoryError('');
+            return;
+          }
+          if (cached?.reachedStart) { setLoadState(previous => ({...previous, hasMoreOld: false})); return; }
+        }
+        if (!latestCanRead.current) {
+          setHistoryError('本机没有这部分历史记录，连接后可继续读取。');
+          return;
+        }
         const { data } = await withRequestDeadline(
           () =>
             IMSDK.getAdvancedHistoryMessageList({
@@ -171,6 +193,7 @@ export function useHistoryMessageList() {
       if (!conversationID) return;
       const cached = await readCachedHistory(conversationID, SPLIT_COUNT);
       if (!mounted.current || generation !== loadGeneration.current) return;
+      setCacheChecked(true);
       if (!cached?.messages.length) {
         // Nothing cached. A slow login is not an outage, so say only what is
         // true: offline only when the machine really is, "connecting" otherwise.
@@ -202,21 +225,24 @@ export function useHistoryMessageList() {
       latestLoadState.current = nextState;
       setLoadState(nextState);
       setHistorySource("cache");
+      setHistoryError("");
     },
     [conversationID],
   );
 
   const loadHistoryMessages = useCallback(() => {
+    renderedFor.current = {conversationID, actorGeneration};
     loadGeneration.current++;
     loadingPage.current = false;
     verifiedFor.current = "";
     retryAttempt.current = 0;
     setHistoryError("");
     setHistorySource("");
+    setCacheChecked(false);
     latestLoadState.current = INITIAL_LOAD_STATE;
     setLoadState(INITIAL_LOAD_STATE);
     void hydrateFromCache(loadGeneration.current);
-  }, [hydrateFromCache]);
+  }, [hydrateFromCache, conversationID, actorGeneration]);
 
   /**
    * Verification is the one call the cache cannot make: read the newest page
@@ -247,6 +273,7 @@ export function useHistoryMessageList() {
    */
   useEffect(() => {
     if (!conversationID || !canRead) return;
+    if (!cacheChecked) return;
     if (loadState.messageList.length || moreOldLoading) return;
     if (verifiedFor.current === conversationID) return;
     const delay = RETRY_DELAYS[retryAttempt.current];
@@ -258,6 +285,7 @@ export function useHistoryMessageList() {
     return () => clearTimeout(timer);
   }, [
     conversationID,
+    cacheChecked,
     canRead,
     loadState.messageList.length,
     moreOldLoading,
@@ -336,7 +364,7 @@ export function useHistoryMessageList() {
 
   return {
     SPLIT_COUNT,
-    loadState,
+    loadState: renderedFor.current.conversationID === conversationID && renderedFor.current.actorGeneration === actorGeneration ? loadState : INITIAL_LOAD_STATE,
     latestLoadState,
     conversationID,
     moreOldLoading,

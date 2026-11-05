@@ -20,7 +20,9 @@ export const researchMode = import.meta.env.VITE_RESEARCH_MODE !== "false";
 let csrfToken = "";
 let actorVerified = false;
 let taskHandoffs = false;
+let transcriptSync = false;
 export const supportsTaskHandoffs = () => taskHandoffs;
+export const supportsTranscriptSync = () => transcriptSync;
 const slots = new Map<string, string>();
 // Requests belong to the login that started them, including session/CSRF
 // preparation. A transport may still finish after abort, so the signal checks
@@ -182,6 +184,7 @@ async function requestResearchApi<K extends RouteName>(
   const result = parsedResult.data as ResponseFor<K>;
   const version = response.headers?.get?.('X-Contract-Version')?.split('.').map(Number);
   if (version) taskHandoffs = version[0] > 0 || version[1] >= 39;
+  if (version) transcriptSync = version[0] === 0 && version[1] >= 42;
   if (name === "session") {
     csrfToken = (result as ResponseFor<"session">).data.csrfToken;
     actorVerified = true;
@@ -250,6 +253,7 @@ export function clearResearchSession() {
 
 function resetResearchSession(except?: AbortController) {
   taskHandoffs = false;
+  transcriptSync = false;
   csrfToken = "";
   slots.clear();
   actorVerified = false;

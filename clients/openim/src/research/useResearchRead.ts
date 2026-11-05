@@ -8,6 +8,7 @@ export function useResearchRead<T>(
   read: (signal: AbortSignal) => Promise<T>,
   identity: string,
   enabled = true,
+  options: { poll?: false | ((value: T | undefined) => boolean); keepDataOnError?: boolean } = {},
 ) {
   const actorGeneration = useResearchStore((s) => s.generation);
   const scope = `${actorGeneration}:${identity}`;
@@ -16,6 +17,9 @@ export function useResearchRead<T>(
   const [pending, setPending] = useState<string>();
   const reader = useRef(read);
   reader.current = read;
+  const settings = useRef(options);
+  settings.current = options;
+  const lastValue = useRef<T>();
   const generation = useRef(0);
   const ticket = useRef(0);
   const key = useRef(scope);
@@ -67,12 +71,13 @@ export function useResearchRead<T>(
         );
         if (isCurrent()) {
           setResult({ identity: requestIdentity, value });
+          lastValue.current = value;
           setError(undefined);
         }
       } catch (failure) {
         flight.failure = failure;
         if (isCurrent()) {
-          setResult(undefined);
+          if (!settings.current.keepDataOnError) setResult(undefined);
           nextPollAt.current = Date.now() + 15000;
           setError({
             identity: requestIdentity,
@@ -107,16 +112,24 @@ export function useResearchRead<T>(
     )
       throw flight.failure;
   }, [refresh]);
+  const invalidate = useCallback((clear = false) => {
+    generation.current++; ticket.current++;
+    inFlight.current?.controller.abort(); inFlight.current = undefined;
+    if (clear) { setResult(undefined); lastValue.current = undefined; }
+    setPending(undefined);
+  }, []);
   useEffect(() => {
     generation.current++;
     active.current = enabled;
     nextPollAt.current = 0;
     setResult(undefined);
+    lastValue.current = undefined;
     setError(undefined);
     setPending(undefined);
     if (!enabled) return;
     void refresh();
     const interval = setInterval(() => {
+      if (settings.current.poll === false || (typeof settings.current.poll === 'function' && !settings.current.poll(lastValue.current))) return;
       if (document.visibilityState === "visible" && Date.now() >= nextPollAt.current)
         void refresh();
     }, 5000);
@@ -136,5 +149,6 @@ export function useResearchRead<T>(
     loading: enabled && pending === scope,
     refresh,
     refreshChecked,
+    invalidate,
   };
 }

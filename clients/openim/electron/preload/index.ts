@@ -221,6 +221,12 @@ const Api: IElectronAPI = {
       ipcRenderer.invoke("chat-history-remove", lease, messageIds),
     forget: (lease, conversation) =>
       ipcRenderer.invoke("chat-history-forget", lease, conversation),
+    readRecord: (lease, conversation, kind, id) =>
+      ipcRenderer.invoke("chat-history-readRecord", lease, conversation, kind, id),
+    saveRecord: (lease, conversation, kind, id, value) =>
+      ipcRenderer.invoke("chat-history-saveRecord", lease, conversation, kind, id, value),
+    removeRecord: (lease, conversation, kind, id) =>
+      ipcRenderer.invoke("chat-history-removeRecord", lease, conversation, kind, id),
   },
   setMessageUnreadCount: (count) => ipcRenderer.invoke("set-message-unread-count", count),
   getSystemVersion: process.getSystemVersion,

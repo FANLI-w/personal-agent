@@ -82,6 +82,7 @@ function sessionMemberId(current: Credentials) {
 
 export function registerChatHistoryBridge() {
   const leases = new Map<string, Lease>();
+  const operations = new Map<string, Promise<unknown>>();
   const dispose = (key: string) => {
     leases.get(key)?.db.close();
     leases.delete(key);
@@ -178,15 +179,22 @@ export function registerChatHistoryBridge() {
     "revoke",
     "remove",
     "forget",
+    "readRecord",
+    "saveRecord",
+    "removeRecord",
   ];
   for (const method of methods)
     ipcMain.handle(
       `chat-history-${method}`,
       async (event, lease: string, ...args: unknown[]) => {
-        const current = await authorize(event, lease);
-        return (
-          current.db[method] as unknown as (...values: unknown[]) => unknown
-        ).apply(current.db, args);
+        // Credential reads are async. Preserve IPC arrival order so an old
+        // snapshot cannot land after a newer tombstone or local deletion.
+        const operation = (operations.get(lease) ?? Promise.resolve()).catch(() => {}).then(async () => {
+          const current = await authorize(event, lease);
+          return (current.db[method] as unknown as (...values: unknown[]) => unknown).apply(current.db, args);
+        });
+        operations.set(lease, operation);
+        try { return await operation; } finally { if (operations.get(lease) === operation) operations.delete(lease); }
       },
     );
 }

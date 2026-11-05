@@ -64,6 +64,11 @@ export const ChatMessageDetails = z.strictObject({ message: ChatMessage, withdra
 export type ChatMessageDetails = z.infer<typeof ChatMessageDetails>
 export const GroupAgentStatus = AgentTurn.pick({ id:true, agentContactId:true, status:true, failure:true, outputMessageId:true, updatedAt:true }).extend({ displayName:Title })
 export type GroupAgentStatus = z.infer<typeof GroupAgentStatus>
+// A local transcript keeps complete authorized snapshots. The revision covers
+// tombstones, independently authorized quotes and public/private status changes.
+export const TranscriptSnapshot = z.strictObject({ details: ChatMessageDetails, requests: z.array(GroupAgentStatus).max(5), turns: z.array(AgentTurn).max(5), revision: z.string().regex(/^[a-f0-9]{64}$/) })
+export const TranscriptSyncInput = z.array(z.strictObject({ messageId: Id, revision: z.string().regex(/^[a-f0-9]{64}$/).nullable() })).min(1).max(40)
+export type TranscriptSnapshot = z.infer<typeof TranscriptSnapshot>
 export type Contact = z.infer<typeof Contact>
 export type ContactRequest = z.infer<typeof ContactRequest>
 export type ContactProfile = z.infer<typeof ContactProfile>
@@ -84,6 +89,7 @@ function route<P extends z.ZodType, Q extends z.ZodType, B extends z.ZodType, R 
   return { method, path: `/api/v1${path}`, stage: 'CHAT1' as const, implemented: true, access: 'session', status, rule, idempotent: method !== 'GET', request: z.strictObject({ params, query, body, headers: method === 'GET' ? empty : headers }), response, errors: ErrorResponse, errorStatuses: errorStatus }
 }
 export const chatRoutes = {
+  chatTranscriptSync: route('GET', '/chat/conversations/{id}/transcript-sync', id, z.strictObject({ known: z.string().min(1).max(12000) }), z.null(), data(z.strictObject({ changes: z.array(TranscriptSnapshot).max(40), unavailableIds: z.array(Id).max(40) })), 200, 'Read-only bounded batch. known is a JSON array of up to 40 messageId/revision pairs. Reauthorize conversation, every message and quote. Return complete snapshots only when their revision changed; private turns only to their requester. Unavailable IDs invalidate local snapshots. No synthetic data, mutation or model calls.'),
   chatMessageDetails: route('GET', '/chat/conversations/{id}/messages/{messageId}/details', z.strictObject({id:Id,messageId:Id}), empty, z.null(), data(ChatMessageDetails), 200, 'Current conversation and message authority; reply source independently reauthorized. Additive endpoint keeps legacy strict message payloads unchanged.'),
   withdrawChatMessage: route('POST', '/chat/conversations/{id}/messages/{messageId}/withdraw', z.strictObject({id:Id,messageId:Id}), empty, z.strictObject({expectedVersion:Version}), data(ChatMessageDetails), 200, 'Own human message within two minutes, exact version and idempotency key. Tombstone shared message and fence all dependent in-flight turns; preserve audit and already delivered replies. Does not undo executed tasks or copies.'),
   deletePersonalAgent: route('POST', '/chat/agents/{id}/delete', id, empty, z.strictObject({ expectedVersion: Version }), data(z.strictObject({ id: Id, deletedAt: Instant })), 200, 'Exact profile version and owning specialist only. Soft-delete once, fence outstanding replies/planning, cancel its schedules and erase external credential. Keep messages/tasks/materials; never delete a human account or the system coordinator. Replay reauthorizes owner; deleted agents cannot be reused or called.'),

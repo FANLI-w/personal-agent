@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import type { MessageItem } from "@openim/wasm-client-sdk";
-import type { ChatHistoryPage } from "../../src/types/chatHistory";
+import type { ChatHistoryPage, ChatRecordKind } from "../../src/types/chatHistory";
 
 type Statement = {
   run(...values: unknown[]): unknown;
@@ -97,7 +97,8 @@ export class ChatHistoryDatabase {
       CREATE INDEX IF NOT EXISTS messages_order ON messages(conversation,time,seq,id);
       CREATE TABLE IF NOT EXISTS edges(conversation TEXT NOT NULL,newer TEXT NOT NULL,older TEXT NOT NULL,PRIMARY KEY(conversation,newer));
       CREATE TABLE IF NOT EXISTS meta(conversation TEXT NOT NULL,key TEXT NOT NULL,value TEXT NOT NULL,PRIMARY KEY(conversation,key));
-      CREATE TABLE IF NOT EXISTS overlay(id TEXT PRIMARY KEY,kind TEXT NOT NULL,payload TEXT NOT NULL,checked INTEGER NOT NULL);`);
+      CREATE TABLE IF NOT EXISTS overlay(id TEXT PRIMARY KEY,kind TEXT NOT NULL,payload TEXT NOT NULL,checked INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS research_records(conversation TEXT NOT NULL,kind TEXT NOT NULL,id TEXT NOT NULL,format INTEGER NOT NULL,payload TEXT NOT NULL,PRIMARY KEY(conversation,kind,id));`);
   }
 
   close() {
@@ -242,8 +243,33 @@ export class ChatHistoryDatabase {
     this.db
       .prepare("DELETE FROM overlay WHERE id IN (SELECT id FROM messages WHERE conversation=?)")
       .run(conversation);
-    for (const table of ["messages", "edges", "meta"])
+    for (const table of ["messages", "edges", "meta", "research_records"])
       this.db.prepare(`DELETE FROM ${table} WHERE conversation=?`).run(conversation);
+  }
+
+  readRecord(conversation: string, kind: ChatRecordKind, id: string): unknown {
+    this.recordKey(conversation, kind, id);
+    const row = this.db.prepare('SELECT payload FROM research_records WHERE conversation=? AND kind=? AND id=? AND format=1').get(conversation, kind, id);
+    return row ? JSON.parse(String(row.payload)) : null;
+  }
+
+  saveRecord(conversation: string, kind: ChatRecordKind, id: string, value: unknown) {
+    this.recordKey(conversation, kind, id);
+    // A late pre-withdrawal read must not resurrect a tombstone learned here.
+    const previous = this.readRecord(conversation, kind, id) as { details?: { withdrawn?: boolean } } | null;
+    if (kind === 'message' && previous?.details?.withdrawn && !(value as typeof previous)?.details?.withdrawn) return previous;
+    this.db.prepare('INSERT INTO research_records VALUES(?,?,?,1,?) ON CONFLICT(conversation,kind,id) DO UPDATE SET format=1,payload=excluded.payload').run(conversation, kind, id, encode(value));
+    return value;
+  }
+
+  removeRecord(conversation: string, kind: ChatRecordKind, id: string) {
+    this.recordKey(conversation, kind, id);
+    this.db.prepare('DELETE FROM research_records WHERE conversation=? AND kind=? AND id=?').run(conversation, kind, id);
+  }
+
+  private recordKey(conversation: string, kind: ChatRecordKind, id: string) {
+    key(conversation, '会话'); key(id, '消息');
+    if (!['message', 'turn', 'group-status'].includes(kind)) throw new Error('无效的聊天缓存类型。');
   }
 
   private writeFact(id: string, kind: Fact["kind"], patch: unknown) {
