@@ -2771,3 +2771,58 @@ API healthy、worker running、两者restart=0，492份镜像输入与固定提�
 北京时间13:19:36公开稳定Latest v0.10.93（Release433540893），tag精确指实际构建3c6c858。EXE418882614字节，SHA256 e0bd3378b99c6a9bf8bf6c96ec0845d66e7891cf6a943bcf1380ec44380f6240；四附件先上传草稿核对远端SHA256/大小后才公开，匿名Latest、两份小附件下载摘要、EXE HEAD200/大小一致。旧0.10.91公开包和0.10.92测试包保留。
 
 本次未部署后台；现网仍群邀请批次6359c20、contract0.41/schema032，ready三项ok/harness not_verified。PR169服务端规划修复待单独部署，发布说明已标明；真实模型、账号、多端与安装体验仍由负责人验收。首页下载更新至0.10.93，完整[发布回执](deployment/acceptcat-0.10.93-release.md)记录摘要、失败与检查范围；Git外证据D:\deepseek-agent\.runtime\release-0.10.93-20261104。
+## 2026-11-04 0.10.93 配套两态规划后台已部署
+
+负责人要求更新后台并重开已登录Workbench。精确fetch tag源码3c6c8584ef8f6b4949e5e70aa07a4da5ca88fafb，复用已修Dockerfile/完整Compose覆盖链，仅更新API/worker；新镜像research-openim-api:planner-two-state-20261104，完整ID sha256:ba0be028d75f7b070b524831b009d6c3e0660719829daad1659a1c5301bd14a6。492份镜像输入、同源Skill和运行中编译文件核对通过，原群邀请编译产物保持；无网络、无生产挂载的4文件47项隔离回归通过。
+
+北京时间15:02:58停worker、15:02:59停API，15:03:21核验可用。静止备份及实际恢复校验、恢复副本与正式库各两次迁移均通过；schema032/113表不变，9份原件、37份配置/secret输入及全部原行数据在切换前迁移保全，私人凭据/默认、飞书范围、社区关闭状态保持。备份/srv/research-openim-backups/planner-two-state-20261104-20261104T070300Z/research.tar.gz，SHA256 2f40b1e52c5df2c7be0d9ba0641be36f49909ec2fd7b458059552e2d86f39be2。
+
+API healthy、worker running、均restart0；其他六容器ID/镜像/状态逐字未变（摘要83bddb0a518402f5fbf7ef1d023e0bd8d75493ba30387ffbd4af5332bde50922）。公网ready200/contract0.41.0，database/storage/authentication全ok，harness仍not_verified；匿名会话、session、资料索引、任务确认和邀请均401。本机独立公网请求相符。未创建生产合成账号/计划/任务或请求真实模型，真实验收由负责人用0.10.93显式重新梳理旧计划并确认可执行草案。
+
+旧镜像96f0ea92保留为兼容回退点，恢复副本上的旧0.41只读校验通过；无实际回退或恢复旧数据。上轮浏览器准备被终止时只读；重新登录后恢复，npm两个依赖自动重试后构建通过，正式source/build/preflight/isolated-tests/deploy/post-check全部退出0。敏感完整证据留服务器本批ops目录，脱敏证据D:\deepseek-agent\.runtime\planner-two-state-deploy-20261104。Release说明补配套后台状态，四个安装附件摘要/大小未变，首页残留0.10.75指针同步改为实际0.10.93。详见[部署回执](deployment/planner-two-state-20261104.md)。
+
+## 2026-11-04 完整聊天记录本地优先（功能分支，未合并部署）
+
+负责人追问旧账号和缓存问题，明确不要求操作私人客户端复现。只读代码检查先区分整库032迁移与旧JSON兼容：已有统一迁移，不存在“每账号数据库每次重新同步”的必要。进一步查明可见“正在加载消息”来自科研正文读取：本地只存SDK引用，readChatMessage仍回API，useResearchRead五秒逐消息轮询，旧页没先查本地；不应通过清库或重注册处理。此前将第一批列表缓存等同完整聊天记录缓存的表述不准确。
+
+从fetch后的main/b9ce932建`fix/chat-history-complete-local`；主修复f5093f6、客户端同步收尾d12858b，产品 **d12858b529bc2ec9dc2ad8312601228f5cd6da62**。每服务/账号的原SQLite保留旧表并新增research_records，保存完整正文、引用和状态快照；完整快照一次写入，辅助索引可以重建。打开与上翻均先读本地；正文/引用/完成态退出逐消息轮询，增量变更按会话合并。新增GET transcript-sync，契约0.42、schema032/113表不变；消息和引用逐项重新验权，私人turn仅请求人返回。客户端按版本标志门控并在退出清除；0.41可继续缓存正文，新增批同步必须配套部署0.42。
+
+补写缓存失败提示、主进程IPC串行次序、删除消息与会话的本地清理、账号切换同次渲染隔离；撤回不能被迟到原文覆盖。本人重试/取消先把实际返回存进本地并立即唤醒同步，保留旧回答与原请求关系。旧版仅存指针的记录第一次仍要联网补取，之后不会为读取已缓存正文再逐条请求。没有新建账号、清理数据、调用真实模型或操作私人客户端。
+
+冻结安装后根CI **70文件874项**、生产三项、B0真实进程和Web生产隔离通过；客户端renderer/Electron类型通过，**87项**缓存、引用、会话动作、群提及、发送恢复、附件与传输检查通过。根CI在主修复完成后运行，收尾只改客户端同步及其测试；新增晚到批同步不能覆盖已确认重试的检查。真实SQLite验证重开恢复、账号/服务隔离、并发去重、晚到/撤回及部分辅助写入恢复；Fastify inject和独立SQLite验证批增量、引用变化、越权/批上限/私人turn隔离及不启动模型。隔离Edge（Playwright，Browser插件未提供）运行实际消息与分页hooks/组件，SDK/API/IPC边界与辅助卡片为合成夹具；1280×800、1024×768，已读40条再模拟业务服务不可用并重新加载，正文API请求0、旧页SDK请求0、独立最新页核对1次；换合成账号没有旧正文。pageerror0，保留Router警告与故意503，不称真实桌面/双账号验收。
+
+所有失败保留：独立客户端冻结安装漏ignore-workspace被保护中止；新增API测试括号/ChatRequest查询类型未同步；首轮完整CI因Web契约固定0.41及CHAT1固定72失败，更新为0.42/73后完整CI通过，未改期限。UI夹具TSX/JSX设置错误后修正，后续检查发现缓存到达前可多发最新页重试、已缓存后仍残留旧错误提示，修正实际hook后通过。追加回执重试检查的初稿误把已完成回答当成输入消息，修正合成输入/回答关联后通过；没有为该夹具改写旧回答逻辑。证据 `D:/deepseek-agent/.runtime/chat-history-complete-20261104`，说明[完整聊天记录本地优先](development/chat-transcript-local-first.md)。
+
+本批尚未合并/部署/发包，公开Latest本次重新核对仍v0.10.93；线上0.41沿上批回执，未新inspect。现有安装包不会自动获得修复；系统级断网冷启动、实际安装和真实双客户端留待配套版本验收。未改变DSH文件/PDF、模型设置或任务流程。
+
+## 2026-11-04 18:35 聊天记录配套后台0.42独立部署
+
+负责人明确授权更新后台。通过已登录原ECS Workbench fetch固定PR172源码3aa30302d2c266722966a7145cc339af0c3759ce（主实现f5093f6、客户端收尾d12858b），核对HEAD和干净checkout；复用已修Dockerfile/025字节断言和完整Compose覆盖链，只更新API/worker。新镜像research-openim-api:chat-transcript-20261104，完整ID sha256:0e2837232c5b5d019a27c3ad96d0915823fa316119b3c563fe68fb2a5c5494e3。493份镜像输入、契约0.42、新编译同步路由以及运行中的编译摘要核对通过；保留原群邀请/两态规划实现。远端3aa3030四项CI全部成功，服务器无网络/无生产挂载的3文件77项隔离测试通过。
+
+北京时间18:34:56排空停worker/API，18:35:18切换核验通过。静止一致备份/srv/research-openim-backups/chat-transcript-20261104-20261104T103458Z/research.tar.gz，SHA256 4c3a8a58b5170b5fd1acaf0b77ffc165d0d192ff8b94651d93c009b2f48ba267。实际解包恢复验证，恢复副本与正式库各两次幂等迁移核验，schema032/113表不变；全部原行、9份原件、38份配置输入保全。API healthy、worker running、均restart0；其他六容器ID/镜像/状态摘要前后同为83bddb0a518402f5fbf7ef1d023e0bd8d75493ba30387ffbd4af5332bde50922。环境/挂载/网络/端口等设置未变，未清库或重建账号。
+
+公网ready200/contract0.42.0，database/storage/authentication全ok，harness仍not_verified；匿名新transcript-sync、资料索引、会话/session、任务确认/邀请均401，本机独立公网检查相符。未创建生产合成数据或调用真实模型，真实账号/双客户端行为待负责人配套新包验收。旧ba0be028镜像保留，恢复副本上旧0.41只读兼容检查通过；无实际回退。
+
+source/build/preflight/isolated-tests/deploy/post-check最终退出0。首次只读post-check成功但外层shell展开变量导致空退出码留证，保留initial-wrapper原日志并用Python subprocess重新完成同一只读核验；没有重复切换或迁移。证明文本换行排版修正、本机误读一个不存在旧文档路径均留说明，无生产影响；终端证明截图本次成功且未含会话凭据。敏感基线只留服务器ops，脱敏证据D:/deepseek-agent/.runtime/chat-transcript-deploy-20261104，详见[部署回执](deployment/chat-transcript-20261104.md)。
+
+本批只部署后台，没有合并PR172、构建新安装包或发布Release；公开客户端仍0.10.93。完整本地正文/历史分页修复仍需交付PR172客户端，不能将后台上线称为旧安装包已修好。当前状态及实现说明已按后台已部署/客户端待交付分开更新。
+
+## 2026-11-05 授权整合聊天缓存与科研插件0.4.0（发布准备）
+
+负责人授权合并PR172、打包发布新版并内置其科研插件更新。四项CI全成功，连接器merge权限403后改用已登录gh和expected-head保护普通合并，main为43e35e7c7b71d54a38ca22ac1e80207b15d9cdd2。从该main新建release/0.10.94-chat-cache-plugin，保留完整缓存提交链。固定插件官方v0.4.0 / 4572c4b3，3083842字节tgz摘要583de48caac441a2fe97c316a09e08fa13b23af512a7b9b7435643316b594585；源码、lib/helper及Copy的Office MIT许可保留，不改上游tgz。
+
+客户端0.10.94准备包括插件不降级、安装后实际版本核对、禁止运行中替换依赖、首次profile先停子进程后补装、错误不吞掉。补装边界测试17项通过；初稿跨VM数组原型断言和同步close夹具错误保留日志后修正，未改生产逻辑使错误夹具通过。其余类型、完整CI、构建、成品解包和隔离安装验证继续；此时未发布0.10.94，没有改线上0.42或私人客户端。说明见research-plugin-0.4.0.md，证据在Git外D:/deepseek-agent/.runtime/release-0.10.94-20261105。
+
+## 2026-11-05 0.10.94 已公开，成品缓存/插件直接核验
+
+负责人授权PR172合并和新Release，并内置科研插件更新。PR172普通合并43e35e7，PR173最终c34238d四项CI成功后合并为d574aa5c6a99e1932f0cfd087567c68e5990f8c7，即实际构建/tag。冻结1650份输入完整重建，直接从EXE核对129份构建文件、缓存表/IPC/批同步和插件0.4.0官方摘要；EXE 421224202字节、SHA256 e103bef308a033f2cd74292ec4cb4136dfd2a55a8ce43b14d3caa08c6cbf5483。从EXE提取的缓存模块在随包Electron独立进程写入/重开恢复正文和引用、账号/服务隔离、撤回与分页/删除通过；实际成品插件模块在独立DSH home离线安装/加载0.4.0，匿名403/有效临时会话读取200，重复不重装。
+
+根70文件874项、生产三项/B0/Web、客户端双类型/9守卫/79回归和41DSH检查、隔离缓存界面40条/正文0API/旧页0SDK均通过。PR四项和main包检查通过；main Windows旧库迁移首轮20秒超时，同码定向785ms/仅失败作业重跑通过，未放宽阈值。其余失败和探针参数错误均留原日志；无生产或用户文件操作。
+
+北京时间2026/11/5 12:09:19公开稳定Latest v0.10.94（Release434767134），四资产草稿大小/SHA256核对后才公开，匿名Latest/小附件摘要/EXE HEAD验证通过。旧版资产保留，后台公网仍0.42、三项ok/harness not_verified，本批无部署或提示词/模型设置更改。证据D:/deepseek-agent/.runtime/release-0.10.94-20261105，完整边界见[发布回执](deployment/acceptcat-0.10.94-release.md)。真实账号双端、系统级断网和复杂Office材料由负责人验收；科研插件沿上游本机目录和80MiB上传范围，不称按AcceptCat账号隔离的资料库。
+
+## 2026-11-05 旧GitHub科研插件升级故障修复准备
+
+负责人安装0.10.94后工作台报pnpm退出1，旧GitHub3d2805c/0.3.1离线tarball缺失。用0.10.94 EXE提取的模块和合成旧锁/旧模块、.ignored两场景真实复现；不是Key、后台或账号库问题。上一批实测的是新profile，漏测旧profile升级，已在0.10.94回执注明边界。隔离尝试verify_deps_before_run=false同样失败，日志保留，不作为修复。
+
+从main/2df856a建fix/dsh-legacy-plugin-upgrade；参数改为dsh-research-workbench@file:明确替换旧依赖，由pnpm维护锁，不清库或删profile。真实附带pnpm11.28.5在空store/离线两场景成功升0.4.0；其他插件、bundle/自定义配置、会话及资料哨兵不变。19项插件检查通过，既有类型/DSH和构建检查继续；CI前置固定DSH与工具准备以实际运行该回归。候选版本0.10.95尚未合并/发布，旧资产保留，后台/模型/缓存代码及插件资产不变。证据D:/deepseek-agent/.runtime/dsh-legacy-plugin-upgrade-20261105，说明见development/dsh-legacy-plugin-upgrade.md。

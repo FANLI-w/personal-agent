@@ -31,6 +31,9 @@ const managed = (await esbuild.build({entryPoints:[path.join(client,'electron/ma
     build.onLoad({filter:/localFolderManage\.ts$/},()=>({contents:'export const authority=e=>({contents:e.sender});',loader:'js'}));
     build.onLoad({filter:/localDshAccount\.ts$/},()=>({contents:'export const dshAccount=()=>globalThis.fixtureAccount;export const createDshRelay=async()=>({baseURL:"http://127.0.0.1:1",secret:"synthetic",close:async()=>{}});',loader:'js'}));
     build.onLoad({filter:/taskDshManage\.ts$/},()=>({contents:'export const registerTaskDshBridge=()=>{};',loader:'js'}));
+    // This fixture tests the frame/account boundary, not package installation.
+    // The real bootstrap has separate filesystem/process tests in dsh-plugin.
+    build.onLoad({filter:/dshPlugin\.ts$/},()=>({contents:'export const researchPlugin={name:"dsh-research-workbench",version:"0.4.0"};export const ensureResearchPlugin=async()=>({changed:false});',loader:'js'}));
   }}],
 })).outputFiles[0].text;
 

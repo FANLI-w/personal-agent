@@ -1,7 +1,7 @@
 import { Alert, Button } from "antd";
 import { OpenImResearchPointer } from "@research-agent-platform/contracts";
 import { IMessageItemProps } from "@/pages/chat/queryChat/MessageItem";
-import { researchApi } from "./api";
+import { researchApi, supportsTranscriptSync } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import { ResearchActionCard } from "./ResearchActionCard";
 import { LegacyTaskInviteCard, ResearchTaskCard } from "./ResearchTaskCard";
@@ -28,7 +28,9 @@ import { ContinueAgentFileReadingButton } from "./ContinueAgentFileReadingButton
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { ResearchReadSummary } from "./ResearchReadSummary";
 import { GroupMessageStatuses } from "./GroupMessageStatuses";
-import { readChatMessage } from "./chat-message-read";
+import { readChatMessage, readChatTurn, activeChatTurn } from "./chat-message-read";
+import { useChatRecordChanges } from './useChatRecordChanges';
+import { watchTranscriptMessage } from './chat-transcript-sync';
 import { locateMessage, timelineScope } from "./chat-timeline";
 
 export default function ResearchMessageRender({
@@ -60,6 +62,7 @@ export default function ResearchMessageRender({
     parsed = OpenImResearchPointer.safeParse(null);
   }
   const pointer = parsed.success ? parsed.data : null;
+  useEffect(() => pointer ? watchTranscriptMessage(pointer.conversationId, pointer.messageId) : undefined, [pointer?.conversationId, pointer?.messageId, actorGeneration]);
   const read = useResearchRead(
     async (signal) => {
       if (!pointer) throw new Error("该自定义消息不是可读取的科研回执");
@@ -76,7 +79,9 @@ export default function ResearchMessageRender({
         : message.clientMsgID
     }`,
     !!pointer && !!imID,
+    { poll: false, keepDataOnError: true },
   );
+  useChatRecordChanges(pointer?.conversationId, 'message', pointer?.messageId, read.refresh, read.invalidate);
   // Most everyday messages have no collaboration suggestions. Read the body
   // first; an optional suggestion error must not hide an authorized message.
   const actionIds = read.data?.fact.actionIds || [];
@@ -89,6 +94,7 @@ export default function ResearchMessageRender({
       }),
     `${imID}:actions:${pointer?.conversationId}:${actionIds.join(",")}`,
     !!read.data && actionIds.length > 0 && !!imID,
+    { poll: false },
   );
   const readableActions =
     actions.data?.data.filter((action) => actionIds.includes(action.id)) || [];
@@ -132,10 +138,12 @@ export default function ResearchMessageRender({
   ]);
   const turnId = currentRetry?.id || read.data?.fact.turnId;
   const turn = useResearchRead(
-    (signal) => researchApi("chatTurn", { params: { id: turnId || "" }, signal }),
+    () => readChatTurn(pointer!.conversationId, turnId || ''),
     `${imID}:${turnId || ""}`,
     !!turnId,
+    { poll: value => !supportsTranscriptSync() && activeChatTurn(value), keepDataOnError: true },
   );
+  useChatRecordChanges(pointer?.conversationId, 'turn', turnId ?? undefined, turn.refresh, turn.invalidate);
   const currentTurn = turn.data?.data || currentRetry;
   const fileRead = currentTurn?.fileRead;
   const fileCoverage = fileRead ? agentFileReadCoverage(fileRead) : undefined;
@@ -343,7 +351,7 @@ export default function ResearchMessageRender({
       {!isGroup && turn.error && (
         <p className="text-xs text-red-700">AI 请求状态暂时无法读取：{turn.error}</p>
       )}
-      {isGroup && imID && read.data?.fact.origin === "human" && (
+      {isGroup && imID && read.data?.fact.origin === "human" && !read.data.details?.withdrawn && (
         <GroupMessageStatuses
           conversationId={read.data.fact.conversationId}
           messageId={read.data.fact.id}

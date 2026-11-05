@@ -47978,6 +47978,1383 @@
         }
       }
     },
+    "/api/v1/chat/conversations/{id}/transcript-sync": {
+      "get": {
+        "operationId": "chatTranscriptSync",
+        "description": "Read-only bounded batch. known is a JSON array of up to 40 messageId/revision pairs. Reauthorize conversation, every message and quote. Return complete snapshots only when their revision changed; private turns only to their requester. Unavailable IDs invalidate local snapshots. No synthetic data, mutation or model calls.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "known",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 12000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "changes": {
+                          "maxItems": 40,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "details": {
+                                "type": "object",
+                                "properties": {
+                                  "message": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                      },
+                                      "conversationId": {
+                                        "type": "string",
+                                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                      },
+                                      "sequence": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "senderContactId": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "origin": {
+                                        "type": "string",
+                                        "enum": [
+                                          "human",
+                                          "model",
+                                          "service"
+                                        ]
+                                      },
+                                      "files": {
+                                        "maxItems": 1,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "messageId": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "filename": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 200
+                                            },
+                                            "mediaType": {
+                                              "type": "string",
+                                              "enum": [
+                                                "application/pdf",
+                                                "text/plain",
+                                                "text/markdown",
+                                                "text/csv"
+                                              ]
+                                            },
+                                            "byteLength": {
+                                              "type": "integer",
+                                              "minimum": 1,
+                                              "maximum": 10485760
+                                            },
+                                            "sha256": {
+                                              "type": "string",
+                                              "pattern": "^[a-f0-9]{64}$"
+                                            },
+                                            "pageCount": {
+                                              "type": "integer",
+                                              "minimum": 1,
+                                              "maximum": 200
+                                            },
+                                            "characterCount": {
+                                              "type": "integer",
+                                              "minimum": 1,
+                                              "maximum": 200000
+                                            }
+                                          },
+                                          "required": [
+                                            "messageId",
+                                            "filename",
+                                            "mediaType",
+                                            "byteLength",
+                                            "sha256",
+                                            "pageCount",
+                                            "characterCount"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "text": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 8000
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "mentions": {
+                                        "maxItems": 20,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "contactId": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "start": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "end": {
+                                              "type": "integer",
+                                              "exclusiveMinimum": 0,
+                                              "maximum": 9007199254740991
+                                            }
+                                          },
+                                          "required": [
+                                            "contactId",
+                                            "start",
+                                            "end"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "resources": {
+                                        "maxItems": 20,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "enum": [
+                                                "plan",
+                                                "task",
+                                                "assignment",
+                                                "run",
+                                                "deliverable",
+                                                "artifact"
+                                              ]
+                                            },
+                                            "ref": {
+                                              "type": "object",
+                                              "properties": {
+                                                "id": {
+                                                  "type": "string",
+                                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                                },
+                                                "version": {
+                                                  "type": "integer",
+                                                  "minimum": 1,
+                                                  "maximum": 9007199254740991
+                                                }
+                                              },
+                                              "required": [
+                                                "id",
+                                                "version"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "ref"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "actionIds": {
+                                        "maxItems": 10,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                        }
+                                      },
+                                      "turnId": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "createdAt": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "conversationId",
+                                      "sequence",
+                                      "senderContactId",
+                                      "origin",
+                                      "text",
+                                      "mentions",
+                                      "resources",
+                                      "actionIds",
+                                      "turnId",
+                                      "createdAt"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "withdrawn": {
+                                    "type": "boolean"
+                                  },
+                                  "version": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "allowedActions": {
+                                    "maxItems": 1,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "const": "withdraw"
+                                    }
+                                  },
+                                  "replyTo": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "messageId": {
+                                            "type": "string",
+                                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                          },
+                                          "sequence": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "senderContactId": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          },
+                                          "text": {
+                                            "type": "string",
+                                            "maxLength": 500
+                                          },
+                                          "withdrawn": {
+                                            "type": "boolean"
+                                          }
+                                        },
+                                        "required": [
+                                          "messageId",
+                                          "sequence",
+                                          "senderContactId",
+                                          "text",
+                                          "withdrawn"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "message",
+                                  "withdrawn",
+                                  "version",
+                                  "allowedActions",
+                                  "replyTo"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "requests": {
+                                "maxItems": 5,
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                    },
+                                    "agentContactId": {
+                                      "type": "string",
+                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                    },
+                                    "status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "queued",
+                                        "running",
+                                        "waiting_input",
+                                        "succeeded",
+                                        "unavailable",
+                                        "failed",
+                                        "interrupted",
+                                        "cancelled"
+                                      ]
+                                    },
+                                    "failure": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "MODEL_UNAVAILABLE",
+                                            "INVALID_MODEL_OUTPUT",
+                                            "MODEL_FAILED",
+                                            "LEASE_EXPIRED_USAGE_UNCERTAIN",
+                                            "AUTHORITY_CHANGED",
+                                            "INPUT_CHANGED",
+                                            "BUDGET_EXCEEDED",
+                                            "AGENT_LIMIT_REACHED"
+                                          ]
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "outputMessageId": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "updatedAt": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    },
+                                    "displayName": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "agentContactId",
+                                    "status",
+                                    "failure",
+                                    "outputMessageId",
+                                    "updatedAt",
+                                    "displayName"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "turns": {
+                                "maxItems": 5,
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                    },
+                                    "conversationId": {
+                                      "type": "string",
+                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                    },
+                                    "inputMessageId": {
+                                      "type": "string",
+                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                    },
+                                    "agentContactId": {
+                                      "type": "string",
+                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                    },
+                                    "purpose": {
+                                      "type": "string",
+                                      "enum": [
+                                        "reply",
+                                        "create_agent"
+                                      ]
+                                    },
+                                    "createdAgent": {
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "contactId": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "conversationId": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "displayName": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 200
+                                            },
+                                            "reused": {
+                                              "type": "boolean"
+                                            }
+                                          },
+                                          "required": [
+                                            "contactId",
+                                            "conversationId",
+                                            "displayName",
+                                            "reused"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "fileRead": {
+                                      "type": "object",
+                                      "properties": {
+                                        "messageId": {
+                                          "type": "string",
+                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                        },
+                                        "filename": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        },
+                                        "pageCount": {
+                                          "type": "integer",
+                                          "minimum": 1,
+                                          "maximum": 200
+                                        },
+                                        "characterCount": {
+                                          "type": "integer",
+                                          "minimum": 1,
+                                          "maximum": 200000
+                                        },
+                                        "ranges": {
+                                          "maxItems": 20,
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "pageNumber": {
+                                                "type": "integer",
+                                                "minimum": 1,
+                                                "maximum": 200
+                                              },
+                                              "start": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              },
+                                              "end": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "pageNumber",
+                                              "start",
+                                              "end"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "partial": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "messageId",
+                                        "filename",
+                                        "pageCount",
+                                        "characterCount",
+                                        "ranges",
+                                        "partial"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "libraryRead": {
+                                      "type": "object",
+                                      "properties": {
+                                        "status": {
+                                          "type": "string",
+                                          "enum": [
+                                            "excerpts",
+                                            "no_match",
+                                            "budget_limited"
+                                          ]
+                                        },
+                                        "retrieval": {
+                                          "type": "string",
+                                          "enum": [
+                                            "keyword",
+                                            "overview"
+                                          ]
+                                        },
+                                        "collectionCount": {
+                                          "type": "integer",
+                                          "minimum": 1,
+                                          "maximum": 20
+                                        },
+                                        "characterCount": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 10000
+                                        },
+                                        "sources": {
+                                          "maxItems": 20,
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "label": {
+                                                "type": "string",
+                                                "pattern": "^R(?:[1-9]|1[0-9]|20)$"
+                                              },
+                                              "filename": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200
+                                              },
+                                              "citation": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "collectionId": {
+                                                    "type": "string",
+                                                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                                  },
+                                                  "collectionVersion": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "maximum": 9007199254740991
+                                                  },
+                                                  "sourceId": {
+                                                    "type": "string",
+                                                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                                  },
+                                                  "version": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "maximum": 9007199254740991
+                                                  },
+                                                  "sha256": {
+                                                    "type": "string",
+                                                    "pattern": "^[a-f0-9]{64}$"
+                                                  },
+                                                  "pageNumber": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "maximum": 200
+                                                  },
+                                                  "start": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                  },
+                                                  "end": {
+                                                    "type": "integer",
+                                                    "exclusiveMinimum": 0,
+                                                    "maximum": 9007199254740991
+                                                  }
+                                                },
+                                                "required": [
+                                                  "collectionId",
+                                                  "collectionVersion",
+                                                  "sourceId",
+                                                  "version",
+                                                  "sha256",
+                                                  "pageNumber",
+                                                  "start",
+                                                  "end"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "label",
+                                              "filename",
+                                              "citation"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "omittedSources": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 20
+                                        }
+                                      },
+                                      "required": [
+                                        "status",
+                                        "retrieval",
+                                        "collectionCount",
+                                        "characterCount",
+                                        "sources",
+                                        "omittedSources"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "assistantReceipt": {
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "work_task"
+                                            },
+                                            "taskId": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "conversationId": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "string",
+                                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "proposed",
+                                                "ready"
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "taskId",
+                                            "conversationId",
+                                            "status"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "delegate"
+                                            },
+                                            "contactId": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "conversationId": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "displayName": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 200
+                                            },
+                                            "reused": {
+                                              "type": "boolean"
+                                            },
+                                            "messageId": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "turnId": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "queued",
+                                                "unavailable"
+                                              ]
+                                            },
+                                            "budget": {
+                                              "type": "object",
+                                              "properties": {
+                                                "maxTokens": {
+                                                  "type": "integer",
+                                                  "exclusiveMinimum": 0,
+                                                  "maximum": 9007199254740991
+                                                },
+                                                "maxSeconds": {
+                                                  "type": "integer",
+                                                  "exclusiveMinimum": 0,
+                                                  "maximum": 9007199254740991
+                                                }
+                                              },
+                                              "required": [
+                                                "maxTokens",
+                                                "maxSeconds"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "contactId",
+                                            "conversationId",
+                                            "displayName",
+                                            "reused",
+                                            "messageId",
+                                            "turnId",
+                                            "status",
+                                            "budget"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "collaborate"
+                                            },
+                                            "planId": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "actionIds": {
+                                              "minItems": 1,
+                                              "maxItems": 5,
+                                              "type": "array",
+                                              "items": {
+                                                "type": "string",
+                                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                              }
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "planId",
+                                            "actionIds"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      ]
+                                    },
+                                    "memoryReceipt": {
+                                      "type": "object",
+                                      "properties": {
+                                        "operation": {
+                                          "type": "string",
+                                          "enum": [
+                                            "saved",
+                                            "corrected",
+                                            "forgotten",
+                                            "candidate",
+                                            "clarify"
+                                          ]
+                                        },
+                                        "memoryId": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "topic": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "status": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "confirmed",
+                                                "candidate",
+                                                "revoked"
+                                              ]
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "version": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "question": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "operation",
+                                        "memoryId",
+                                        "topic",
+                                        "status",
+                                        "version",
+                                        "question"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "followupReceipt": {
+                                      "type": "object",
+                                      "properties": {
+                                        "operation": {
+                                          "type": "string",
+                                          "enum": [
+                                            "created",
+                                            "clarify"
+                                          ]
+                                        },
+                                        "followupId": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "dueAt": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "format": "date-time",
+                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "timeZone": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 100
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "question": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "operation",
+                                        "followupId",
+                                        "dueAt",
+                                        "timeZone",
+                                        "question"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "queued",
+                                        "running",
+                                        "waiting_input",
+                                        "succeeded",
+                                        "unavailable",
+                                        "failed",
+                                        "interrupted",
+                                        "cancelled"
+                                      ]
+                                    },
+                                    "failure": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            "MODEL_UNAVAILABLE",
+                                            "INVALID_MODEL_OUTPUT",
+                                            "MODEL_FAILED",
+                                            "LEASE_EXPIRED_USAGE_UNCERTAIN",
+                                            "AUTHORITY_CHANGED",
+                                            "INPUT_CHANGED",
+                                            "BUDGET_EXCEEDED",
+                                            "AGENT_LIMIT_REACHED"
+                                          ]
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "availability": {
+                                      "type": "object",
+                                      "properties": {
+                                        "status": {
+                                          "type": "string",
+                                          "enum": [
+                                            "available",
+                                            "unavailable",
+                                            "disabled"
+                                          ]
+                                        },
+                                        "reason": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "enum": [
+                                                "platform_disabled",
+                                                "lab_disabled",
+                                                "missing_credentials",
+                                                "capability_unavailable",
+                                                "owner_authorization_required",
+                                                "not_connected"
+                                              ]
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "status",
+                                        "reason"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "outputMessageId": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "usage": {
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "inputTokens": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 9007199254740991
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            },
+                                            "outputTokens": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 9007199254740991
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            },
+                                            "elapsedMs": {
+                                              "type": "number",
+                                              "minimum": 0
+                                            },
+                                            "cost": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "number",
+                                                  "minimum": 0
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            },
+                                            "currency": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "string",
+                                                  "maxLength": 10
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "inputTokens",
+                                            "outputTokens",
+                                            "elapsedMs",
+                                            "cost",
+                                            "currency"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "budget": {
+                                      "type": "object",
+                                      "properties": {
+                                        "maxTokens": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0,
+                                          "maximum": 1000000
+                                        },
+                                        "maxSeconds": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0,
+                                          "maximum": 86400
+                                        }
+                                      },
+                                      "required": [
+                                        "maxTokens",
+                                        "maxSeconds"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "remainingBudget": {
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "maxTokens": {
+                                              "type": "integer",
+                                              "exclusiveMinimum": 0,
+                                              "maximum": 1000000
+                                            },
+                                            "maxSeconds": {
+                                              "type": "integer",
+                                              "exclusiveMinimum": 0,
+                                              "maximum": 86400
+                                            }
+                                          },
+                                          "required": [
+                                            "maxTokens",
+                                            "maxSeconds"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "allowedActions": {
+                                      "maxItems": 2,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "enum": [
+                                          "cancel",
+                                          "retry"
+                                        ]
+                                      }
+                                    },
+                                    "version": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "createdAt": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    },
+                                    "updatedAt": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "conversationId",
+                                    "inputMessageId",
+                                    "agentContactId",
+                                    "status",
+                                    "failure",
+                                    "availability",
+                                    "outputMessageId",
+                                    "usage",
+                                    "budget",
+                                    "remainingBudget",
+                                    "allowedActions",
+                                    "version",
+                                    "createdAt",
+                                    "updatedAt"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "revision": {
+                                "type": "string",
+                                "pattern": "^[a-f0-9]{64}$"
+                              }
+                            },
+                            "required": [
+                              "details",
+                              "requests",
+                              "turns",
+                              "revision"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "unavailableIds": {
+                          "maxItems": 40,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          }
+                        }
+                      },
+                      "required": [
+                        "changes",
+                        "unavailableIds"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "changes": [],
+                    "unavailableIds": []
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/chat/conversations/{id}/messages/{messageId}/details": {
       "get": {
         "operationId": "chatMessageDetails",

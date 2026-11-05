@@ -7,6 +7,8 @@ import { researchApi } from "./api";
 import { useResearchStore } from "./store";
 import { turnGuidance } from "./turn-guidance";
 import { AgentFileReadSummary } from "./AgentFileReadSummary";
+import { cacheChatTurnResult } from './chat-message-read';
+import { requestTranscriptSync } from './chat-transcript-sync';
 
 type RetryConfirmation = {
   turnId: string;
@@ -92,6 +94,9 @@ export function ResearchTurnStatus({
       )
         throw new Error("重试响应与当前请求不一致，请刷新后核对。");
       if (isCurrent()) {
+        await cacheChatTurnResult(result.data, actorGeneration, true);
+        if (!isCurrent()) return;
+        requestTranscriptSync(turn.conversationId);
         setConfirmation(undefined);
         onRetried?.(result.data);
       }
@@ -119,7 +124,10 @@ export function ResearchTurnStatus({
     try {
       const result = await researchApi("cancelChatTurn", { params: { id: intent.id }, body: { expectedVersion: intent.version }, idempotencyKey: intent.key });
       if (result.data.id !== turn.id || result.data.conversationId !== turn.conversationId) throw new Error("停止结果尚未确认，请核对状态。");
-      if (current()) onRetried?.(result.data);
+      if (current()) {
+        await cacheChatTurnResult(result.data, actorGeneration);
+        if (current()) {requestTranscriptSync(turn.conversationId); onRetried?.(result.data);}
+      }
     } catch (error) {
       if (current()) setFailure({ scope, message: error instanceof Error ? error.message : "停止结果尚未确认，请重试。" });
     } finally { if (current()) setBusy(false); }

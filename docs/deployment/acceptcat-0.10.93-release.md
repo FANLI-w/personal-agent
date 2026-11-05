@@ -45,7 +45,7 @@
 
 ## 后台与验收边界
 
-此次只合并、构建和发布，**未部署 ECS**。群邀请后台仍为此前已部署的 `6359c20` / `group-member-invites-20261104`；公网 ready 0.41.0，database/storage/authentication 均 ok，harness 为 not_verified。**PR169 的服务端 system、确认接口与动作投影仍需单独部署**；发布说明已写清，客户端本身有讨论态检查。契约 0.41.0、schema032，无新迁移。
+13:19 的发布阶段只合并、构建和公开安装包，没有顺带部署 ECS。负责人随后单独授权，**15:03:21 已从同一固定提交 3c6c858 更新配套 API/worker**，PR169 的服务端 system、确认接口与动作投影已在线；见[后台部署回执](planner-two-state-20261104.md)。契约仍 0.41.0、schema032，无新迁移，群邀请修复保留。公网 database/storage/authentication 均 ok，harness 为 not_verified。Release 说明同步补该事实，四附件未变。
 
 未运行真实账号/付费模型、代建群、代创建科研任务或安装到负责人客户端。原生启动与合成流程不能代替真实规划效果、双账号群聊或安装体验。未纳入手机 PR90 或负责人排除的 PR35。
 

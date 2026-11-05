@@ -47,6 +47,12 @@ jobs:
           node-version: '24'
       - name: Build dependencies before the isolated client install
         run: corepack pnpm@11.21.0 run desktop:prepare
+      - name: Stage pinned DSH and tools for offline plugin upgrade tests
+        run: |
+          node integrations/deepseek-harness/desktop/stage-runtime.mjs clients/openim
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --input-type=module -e "import {prepareTools} from './scripts/desktop-tools.mjs'; await prepareTools('clients/openim');"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Check client types and build failure guards
         working-directory: clients/openim
         run: |
@@ -57,6 +63,8 @@ jobs:
           corepack pnpm@10.28.0 run test:build
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:local-dsh
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          corepack pnpm@10.28.0 run test:dsh-plugin
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:chat-history
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

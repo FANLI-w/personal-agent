@@ -11,6 +11,9 @@ import { readChatMessage } from "@/research/chat-message-read";
 import { useResearchRead } from "@/research/useResearchRead";
 import { useResearchStore } from "@/research/store";
 import { useConversationStore } from "@/store";
+import { useChatRecordChanges } from '@/research/useChatRecordChanges';
+import { watchTranscriptMessage } from '@/research/chat-transcript-sync';
+import { useEffect } from 'react';
 
 export default function QuoteMessageRender({ message }: IMessageItemProps) {
   const quote = message.quoteElem;
@@ -25,9 +28,12 @@ export default function QuoteMessageRender({ message }: IMessageItemProps) {
       ),
     `quote:${pointer?.messageId}`,
     !!pointer,
+    { poll: false, keepDataOnError: true },
   );
+  useChatRecordChanges(pointer?.conversationId, 'message', pointer?.messageId, source.refresh, source.invalidate);
   const generation = useResearchStore((s) => s.generation),
     id = useConversationStore((s) => s.currentConversation?.conversationID || "");
+  useEffect(() => pointer ? watchTranscriptMessage(pointer.conversationId, pointer.messageId) : undefined, [pointer?.conversationId, pointer?.messageId, generation]);
   return (
     <div className={styles.bubble}>
       <SafeMessageMarkdown text={quote?.text || ""} />

@@ -4442,6 +4442,30 @@
         }
       }
     },
+    "chatTranscriptSync": {
+      "contractVersion": "0.43.0",
+      "synthetic": true,
+      "method": "GET",
+      "path": "/api/v1/chat/conversations/{id}/transcript-sync",
+      "stage": "CHAT1",
+      "status": 200,
+      "request": {
+        "params": {
+          "id": "synthetic"
+        },
+        "query": {
+          "known": "synthetic"
+        },
+        "body": null,
+        "headers": {}
+      },
+      "response": {
+        "data": {
+          "changes": [],
+          "unavailableIds": []
+        }
+      }
+    },
     "chatMessageDetails": {
       "contractVersion": "0.43.0",
       "synthetic": true,

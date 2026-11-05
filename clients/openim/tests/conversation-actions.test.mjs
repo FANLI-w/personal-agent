@@ -43,7 +43,7 @@ async function fixture(overrides = {}) {
     isPinned: false,
     recvMsgOpt: 0,
   };
-  const calls = { read: 0, writes: [], api: [], updates: 0, deletes: [] };
+  const calls = { read: 0, writes: [], api: [], updates: 0, deletes: [], forgotten: [], invalidated: [] };
   let state = { conversationList: [conversation, { conversationID: "chat-keep" }] };
   let current = true;
   const controller = new AbortController();
@@ -85,6 +85,8 @@ async function fixture(overrides = {}) {
     },
     "./api": { researchApi: api },
     "./request-deadline": deadline,
+    '@/pages/chat/queryChat/chat-history-cache': {forgetCachedHistory: async (...args) => {if(args[2]()) calls.forgotten.push(args.slice(0,2));}},
+    './chat-record-cache': {invalidateChatConversation: id => calls.invalidated.push(id)},
   });
   return {
     ...actions,
@@ -201,11 +203,21 @@ test("stale deletion confirmation and fixed assistant never call destructive SDK
   assert.equal(f.calls.read, 0);
 });
 
-test("deleting confirmed IM chat removes only its row and leaves research records untouched", async () => {
+test("deleting confirmed IM chat clears its local transcripts without deleting server research data", async () => {
   const f = await fixture();
   await f.deleteIMConversation(f.scope);
   assert.equal(f.calls.deletes[0], "chat-a");
   assert.equal(f.state().conversationList.length, 1);
   assert.equal(f.state().conversationList[0].conversationID, "chat-keep");
   assert.equal(f.calls.api.length, 0);
+  assert.equal(f.calls.forgotten.length, 1);
+  assert.equal(f.calls.forgotten[0][0], 'chat-a');
+});
+
+test('deleting a mapped conversation invalidates its business transcript too', async () => {
+  const f=await fixture();
+  await f.deleteIMConversation({...f.scope,researchConversationId:'business-a'});
+  assert.deepEqual(f.calls.invalidated,['business-a']);
+  assert.equal(f.calls.forgotten[0][1],'business-a');
+  assert.equal(f.calls.api.length,0);
 });

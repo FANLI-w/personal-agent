@@ -8,7 +8,7 @@ import path from "node:path";
  * own package manager, so the profile stays DSH's: pnpm writes the manifest and
  * lockfile, and we only add the bundle name DSH needs to load it.
  */
-export const researchPlugin = { name: "dsh-research-workbench", version: "0.3.3" };
+export const researchPlugin = { name: "dsh-research-workbench", version: "0.4.0" };
 
 type EnsureResult = { changed: boolean; version?: string; reason?: string };
 
@@ -37,10 +37,25 @@ function runPnpm(runtime: string, profile: string, args: string[]) {
 async function installedVersion(profile: string) {
   try {
     const manifest = JSON.parse(await readFile(path.join(profile, "node_modules", researchPlugin.name, "package.json"), "utf8"));
-    return typeof manifest.version === "string" ? manifest.version : undefined;
-  } catch {
-    return undefined;
+    if (typeof manifest.version !== "string") throw Error("已安装科研插件缺少版本号。");
+    return manifest.version;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw Error("无法核对已安装科研插件的版本，已保留现有插件，请在插件管理中检查。");
   }
+}
+
+// Compare against our stable bundled release. A newer independently installed
+// release (including a newer prerelease) must survive an AcceptCat restart.
+function olderThanBundled(current: string, bundled: string) {
+  const parsed = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(current);
+  if (!parsed) throw Error("科研插件版本无法比较，已保留现有插件，请在插件管理中检查。");
+  const target = bundled.split(".").map(BigInt);
+  for (let i = 0; i < 3; i++) {
+    const value = BigInt(parsed[i + 1]);
+    if (value !== target[i]) return value < target[i];
+  }
+  return parsed[4] !== undefined;
 }
 
 /**
@@ -60,13 +75,19 @@ export async function ensureResearchPlugin(input: {
   const current = await installedVersion(profile);
   const bundled = researchPlugin.version;
   let changed = false;
-  if (current !== bundled) {
-    // `file:` keeps the install offline; pnpm records it in the profile lockfile.
-    await runPnpm(input.runtime, profile, ["add", `file:${input.tarball}`, "--offline", "--ignore-scripts"]);
+  if (current === undefined || olderThanBundled(current, bundled)) {
+    // Name the dependency explicitly: a bare file: argument makes pnpm 11 try
+    // to restore an existing GitHub dependency before replacing it, which fails
+    // offline even though the replacement tarball is already in the installer.
+    await runPnpm(input.runtime, profile, ["add", `${researchPlugin.name}@file:${input.tarball}`, "--offline", "--ignore-scripts"]);
+    if (await installedVersion(profile) !== bundled)
+      throw Error(`科研插件安装结果与内置 ${bundled} 不一致，请重试或在插件管理中检查。`);
     changed = true;
   }
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
   const bundles: string[] = manifest?.dsh?.profile?.bundles ?? [];
+  if (!Array.isArray(bundles) || bundles.some((bundle) => typeof bundle !== "string"))
+    throw Error("科研插件列表格式异常，已保留原配置，请在插件管理中检查。");
   if (!bundles.includes(researchPlugin.name)) {
     manifest.dsh = { ...manifest.dsh, profile: { ...manifest.dsh?.profile, bundles: [...bundles, researchPlugin.name] } };
     await mkdir(profile, { recursive: true });

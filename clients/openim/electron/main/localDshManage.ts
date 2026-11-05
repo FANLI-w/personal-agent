@@ -91,15 +91,15 @@ export function registerLocalDshBridge() {
       // own pnpm so the profile and its lockfile stay DSH's; a fresh profile only
       // appears after the first start, so that case is retried and reloaded once.
       const tarball = path.join(path.resolve(directory, ".."), "tools", "plugins", `${researchPlugin.name}-${researchPlugin.version}.tgz`);
-      const ensure = () => ensureResearchPlugin({ runtime: directory, home: runtime.state.home, tarball }).catch(() => ({ changed: false, reason: "安装失败" }));
-      const first = await ensure();
+      const ensure = () => ensureResearchPlugin({ runtime: directory, home: runtime.state.home, tarball });
+      // Never replace dependencies beneath a live plugin/Office job. A fresh
+      // installation is reconciled before start; existing running DSH is reused.
+      const first = runtime.state.phase === "running" ? { changed: false, reason: undefined } : await ensure();
       let url = await runtime.start();
       if (first.reason === "profile 尚未创建") {
-        const retry = await ensure();
-        if (retry.changed) {
-          await runtime.stop();
-          url = await runtime.start();
-        }
+        await runtime.stop();
+        await ensure();
+        url = await runtime.start();
       }
       // Do not mount a late startup over another conversation or a replaced document.
       if (epoch !== generation || authority(event).contents !== auth.contents || runtime.state.phase !== "running") return;

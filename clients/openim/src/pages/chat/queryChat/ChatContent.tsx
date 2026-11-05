@@ -30,9 +30,12 @@ import { formatMessageTime } from "@/utils/imCommon";
 import MessageItem from "./MessageItem";
 import NotificationMessage from "./NotificationMessage";
 import { historyNotice } from "./history-notice";
+import { historyCacheFailure, subscribeHistoryCache } from './chat-history-cache';
 import { useHistoryMessageList } from "./useHistoryMessageList";
 
 const ChatContent = () => {
+  const [cacheFailure, setCacheFailure] = useState(historyCacheFailure);
+  useEffect(() => subscribeHistoryCache(() => setCacheFailure(historyCacheFailure())), []);
   const virtuoso = useRef<VirtuosoHandle>(null);
   const [dragging, setDragging] = useState(false);
   const selfUserID = useUserStore((state) => state.selfInfo.userID);
@@ -404,6 +407,7 @@ const ChatContent = () => {
         }
       }}
     >
+      {cacheFailure && <Alert type="warning" message={cacheFailure} />}
       {historySource && !historyError && (
         <p className="chat-history-source" role="status">
           {historyNotice(historySource, navigator.onLine)}

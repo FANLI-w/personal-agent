@@ -34,7 +34,7 @@ test("the research plugin installs through the DSH pnpm, not by editing the prof
   const plugin = await read("../electron/utils/dshPlugin.ts");
   assert.match(plugin, /dependencies", "pnpm", "bin", "pnpm\.mjs"/);
   assert.match(plugin, /ELECTRON_RUN_AS_NODE: "1"/);
-  assert.match(plugin, /\["add", `file:\$\{input\.tarball\}`/);
+  assert.match(plugin, /\["add", `\$\{researchPlugin\.name\}@file:\$\{input\.tarball\}`/);
   // Only the bundle list is written by hand; pnpm owns the manifest and lockfile.
   assert.match(plugin, /bundles: \[\.\.\.bundles, researchPlugin\.name\]/);
   // A profile DSH has not created yet is left alone rather than guessed at.
