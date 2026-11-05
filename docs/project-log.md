@@ -2806,3 +2806,9 @@ API healthy、worker running、均restart0；其他六容器ID/镜像/状态逐�
 source/build/preflight/isolated-tests/deploy/post-check最终退出0。首次只读post-check成功但外层shell展开变量导致空退出码留证，保留initial-wrapper原日志并用Python subprocess重新完成同一只读核验；没有重复切换或迁移。证明文本换行排版修正、本机误读一个不存在旧文档路径均留说明，无生产影响；终端证明截图本次成功且未含会话凭据。敏感基线只留服务器ops，脱敏证据D:/deepseek-agent/.runtime/chat-transcript-deploy-20261104，详见[部署回执](deployment/chat-transcript-20261104.md)。
 
 本批只部署后台，没有合并PR172、构建新安装包或发布Release；公开客户端仍0.10.93。完整本地正文/历史分页修复仍需交付PR172客户端，不能将后台上线称为旧安装包已修好。当前状态及实现说明已按后台已部署/客户端待交付分开更新。
+
+## 2026-11-05 授权整合聊天缓存与科研插件0.4.0（发布准备）
+
+负责人授权合并PR172、打包发布新版并内置其科研插件更新。四项CI全成功，连接器merge权限403后改用已登录gh和expected-head保护普通合并，main为43e35e7c7b71d54a38ca22ac1e80207b15d9cdd2。从该main新建release/0.10.94-chat-cache-plugin，保留完整缓存提交链。固定插件官方v0.4.0 / 4572c4b3，3083842字节tgz摘要583de48caac441a2fe97c316a09e08fa13b23af512a7b9b7435643316b594585；源码、lib/helper及Copy的Office MIT许可保留，不改上游tgz。
+
+客户端0.10.94准备包括插件不降级、安装后实际版本核对、禁止运行中替换依赖、首次profile先停子进程后补装、错误不吞掉。补装边界测试17项通过；初稿跨VM数组原型断言和同步close夹具错误保留日志后修正，未改生产逻辑使错误夹具通过。其余类型、完整CI、构建、成品解包和隔离安装验证继续；此时未发布0.10.94，没有改线上0.42或私人客户端。说明见research-plugin-0.4.0.md，证据在Git外D:/deepseek-agent/.runtime/release-0.10.94-20261105。
