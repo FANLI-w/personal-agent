@@ -1,4 +1,4 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 
 export const contractVersion = '0.43.0' as const
 export const Id = z.string().regex(/^[A-Za-z0-9_-]{1,96}$/)

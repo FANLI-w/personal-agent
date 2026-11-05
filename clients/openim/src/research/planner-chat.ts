@@ -1,4 +1,4 @@
-﻿import { Id, Plan, PlanInput, routes } from "@research-agent-platform/contracts";
+import { Id, Plan, PlanInput, routes } from "@research-agent-platform/contracts";
 import type { RequestFor, ResponseFor } from "@research-agent-platform/contracts";
 
 export type ChatPlan = ResponseFor<"getPlan">["data"];
@@ -154,9 +154,11 @@ export function readPlannerHistory(raw: string | null): PlannerHistory | undefin
             validDeadline(t.creating.deadline))),
     );
     if (!threads.length) return;
-    // Older transcripts stored a task shape. The one-task merge it selected no
-    // longer exists, so the shape is dropped, and a pending write reviewed
-    // against merged content is not resumed under a different task count.
+    // REMOVE(compat shim): older transcripts stored a task shape that no longer
+    // exists anywhere. Drop it on read, and never resume a pending write that was
+    // reviewed against merged content. Safe to delete once caches written before
+    // the two-state planner have been rewritten at least once (target: next minor
+    // release); see ISSUES-NOTES「清理：旧 taskShape 兼容」.
     const restored = threads.map((thread) => {
       const stored = thread as PlannerThread & {
         taskShape?: unknown;
