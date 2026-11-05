@@ -1,6 +1,6 @@
 # AcceptCat 0.10.94 发布回执
 
-2026-11-05补充更正：下述插件实际安装检查使用新建profile，未覆盖旧GitHub依赖/锁的升级。负责人随后报告0.3.1旧GitHub包离线恢复错误，已用本成品模块重现；这项旧profile兼容性不能称为验收通过。修复使用显式插件名@file替换并增加真实pnpm旧锁回归，见[修复说明](../development/dsh-legacy-plugin-upgrade.md)。其余已记录成品/缓存检查范围保持，不把用户问题归因于账号数据。
+2026-11-05补充更正：下述插件实际安装检查使用新建profile，未覆盖旧GitHub依赖/锁的升级。负责人随后报告0.3.1旧GitHub包离线恢复错误，已用本成品模块重现；这项旧profile兼容性不能称为验收通过。修复使用显式插件名@file替换并增加真实pnpm旧锁回归，见[修复说明](../development/dsh-legacy-plugin-upgrade.md)。已随 [0.10.95](acceptcat-0.10.95-release.md) 发布并通过旧 profile 成品升级检查；0.10.94 资产保留。其余已记录成品/缓存检查范围保持，不把用户问题归因于账号数据。
 
 负责人授权合并PR172、发布新版并内置其更新的科研插件。北京时间 **2026/11/5 12:09:19** 已公开稳定Latest [v0.10.94](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.94)，Release 434767134。没有覆盖旧版资产，没有部署后台、安装或重启负责人真实客户端。
 
