@@ -8,7 +8,7 @@ import { historyNotice } from "../src/pages/chat/queryChat/history-notice.ts";
 // what the first local-first build did on every fresh conversation.
 
 test("an online machine never claims to be offline", () => {
-  for (const source of ["connecting", "offline", "cache", ""])
+  for (const source of ["connecting", "offline", "cache", "sync-failed", ""])
     assert.doesNotMatch(historyNotice(source, true), /无法联网/);
 });
 
@@ -22,9 +22,14 @@ test("offline is only said when the machine is really offline", () => {
   assert.equal(historyNotice("offline", true), "正在连接服务器…");
 });
 
-test("only a cache hit is described as a cache", () => {
-  assert.match(historyNotice("cache", true), /本机缓存/);
-  assert.match(historyNotice("cache", false), /本机缓存/);
+test("normal local reads stay silent; only actual offline state gets an offline notice", () => {
+  assert.equal(historyNotice("cache", true), "");
+  assert.equal(historyNotice("cache", false), "当前离线，已保存的聊天记录可继续阅读。");
+});
+
+test("a failed latest-page verification reports failed synchronization without inventing an outage", () => {
+  assert.equal(historyNotice("sync-failed", true), "最新消息暂未同步，已保存的聊天记录可继续阅读。");
+  assert.equal(historyNotice("sync-failed", false), "当前离线，已保存的聊天记录可继续阅读。");
 });
 
 test("nothing is claimed while a page is loading normally", () => {

@@ -32,6 +32,8 @@ export function useHistoryMessageList() {
   const mounted = useRef(true);
   const loadGeneration = useRef(0);
   const loadingPage = useRef(false);
+  const pendingPage = useRef<Promise<void>>();
+  const latestPageFailed = useRef(false);
   const [historyError, setHistoryError] = useState("");
   /** Where the visible transcript came from: the local cache, or nothing yet. */
   const [historySource, setHistorySource] = useState<HistorySource>("");
@@ -73,21 +75,21 @@ export function useHistoryMessageList() {
   }, []);
 
   const { loading: moreOldLoading, runAsync: getMoreOldMessages } = useRequest(
-    async (loadMore = true) => {
+    async (loadMore = true, localOnly = false) => {
       if (!conversationID) return;
-      if (loadingPage.current) return;
-      loadingPage.current = true;
+      let finishPage: (() => void) | undefined;
+      let settled: Promise<void> | undefined;
       const reqConversationID = conversationID;
       const generation = useResearchStore.getState().generation;
       const historyGeneration = loadGeneration.current;
       const userID = useUserStore.getState().selfInfo.userID;
-      const isCurrent = () =>
+      const isScopeCurrent = () =>
         mounted.current &&
-        latestCanRead.current &&
         latestConversationID.current === reqConversationID &&
         historyGeneration === loadGeneration.current &&
         generation === useResearchStore.getState().generation &&
         userID === useUserStore.getState().selfInfo.userID;
+      const isCurrent = () => isScopeCurrent() && latestCanRead.current;
       try {
         // The anchor is captured before the request so the cache can be told
         // exactly which page was verified.
@@ -98,18 +100,33 @@ export function useHistoryMessageList() {
         // A partial local chain is shown now; its next gap can be filled later.
         if (loadMore && anchor) {
           const cached = await readCachedHistory(reqConversationID, SPLIT_COUNT, anchor);
-          if (cached?.messages.length && mounted.current && historyGeneration === loadGeneration.current && generation === useResearchStore.getState().generation) {
+          if (cached?.messages.length && mounted.current && latestConversationID.current === reqConversationID && historyGeneration === loadGeneration.current && generation === useResearchStore.getState().generation) {
             const previous = latestLoadState.current;
             const ids = new Set(previous.messageList.map(m => m.clientMsgID));
             const messages = new Map([...cached.messages, ...previous.messageList].map(m => [m.clientMsgID, m]));
             const next = {...previous, initLoading: false, hasMoreOld: !cached.reachedStart,
               messageList: [...messages.values()].sort((a,b) => a.sendTime-b.sendTime || (a.seq||0)-(b.seq||0)),
               firstItemIndex: previous.firstItemIndex-cached.messages.filter(m => !ids.has(m.clientMsgID)).length};
-            latestLoadState.current = next; setLoadState(next); setHistorySource('cache'); setHistoryError('');
+            latestLoadState.current = next; setLoadState(next);
+            setHistorySource(latestPageFailed.current && navigator.onLine !== false ? 'sync-failed' : 'cache'); setHistoryError('');
             return;
           }
-          if (cached?.reachedStart) { setLoadState(previous => ({...previous, hasMoreOld: false})); return; }
+          if (cached?.reachedStart) {
+            if (mounted.current && latestConversationID.current === reqConversationID && historyGeneration === loadGeneration.current && generation === useResearchStore.getState().generation) {
+              const next = { ...latestLoadState.current, hasMoreOld: false };
+              latestLoadState.current = next; setLoadState(next);
+            }
+            return;
+          }
         }
+        // Restoring an old reading position must not fetch pages of uncached
+        // history or turn an optional restoration into a connection warning.
+        if (localOnly) return;
+        if (!isScopeCurrent()) return;
+        if (loadingPage.current) return;
+        loadingPage.current = true;
+        settled = new Promise<void>((resolve) => { finishPage = resolve; });
+        pendingPage.current = settled;
         if (!latestCanRead.current) {
           setHistoryError('本机没有这部分历史记录，连接后可继续读取。');
           return;
@@ -151,7 +168,8 @@ export function useHistoryMessageList() {
         })();
         latestLoadState.current = nextState;
         setLoadState(nextState);
-        setHistorySource("");
+        if (!loadMore) latestPageFailed.current = false;
+        setHistorySource(previous => loadMore && previous === "sync-failed" ? previous : "");
         verifiedFor.current = reqConversationID;
         // Only this verified page may teach the cache about continuity, and
         // "the beginning was reached" is only trusted after a full sync: a page
@@ -164,6 +182,7 @@ export function useHistoryMessageList() {
         // A route reload can mount this hook before SDK login. Also consume
         // failures of requests that belonged to a closed route or prior actor.
         if (!isCurrent()) return;
+        if (!loadMore) latestPageFailed.current = true;
         setLoadState((previous) => ({ ...previous, initLoading: false }));
         // A cached transcript is already on screen, so a failed verification is
         // not a read failure. A failed page further back still is.
@@ -174,10 +193,16 @@ export function useHistoryMessageList() {
         );
         // Only a machine that is really offline gets to say so; anything else
         // is a failed read, which the notice above already reports.
-        if (!latestLoadState.current.messageList.length)
+        if (!loadMore && latestLoadState.current.messageList.length)
+          setHistorySource(navigator.onLine === false ? "cache" : "sync-failed");
+        else if (!latestLoadState.current.messageList.length)
           setHistorySource(navigator.onLine === false ? "offline" : "");
       } finally {
-        if (historyGeneration === loadGeneration.current) loadingPage.current = false;
+        if (settled) {
+          finishPage!();
+          if (pendingPage.current === settled) pendingPage.current = undefined;
+          if (historyGeneration === loadGeneration.current) loadingPage.current = false;
+        }
       }
     },
     { manual: true },
@@ -224,7 +249,7 @@ export function useHistoryMessageList() {
       };
       latestLoadState.current = nextState;
       setLoadState(nextState);
-      setHistorySource("cache");
+      setHistorySource(latestPageFailed.current && navigator.onLine !== false ? "sync-failed" : "cache");
       setHistoryError("");
     },
     [conversationID],
@@ -234,6 +259,8 @@ export function useHistoryMessageList() {
     renderedFor.current = {conversationID, actorGeneration};
     loadGeneration.current++;
     loadingPage.current = false;
+    pendingPage.current = undefined;
+    latestPageFailed.current = false;
     verifiedFor.current = "";
     retryAttempt.current = 0;
     setHistoryError("");
@@ -346,17 +373,40 @@ export function useHistoryMessageList() {
     };
   }, [latestLoadState, conversationID]);
 
-  const seekMessage = async (locator: MessageLocator) => {
+  const seekMessage = async (locator: MessageLocator, options: { localOnly?: boolean } = {}) => {
     const epoch = loadGeneration.current;
+    const generation = useResearchStore.getState().generation;
+    const requestedConversation = latestConversationID.current;
+    const userID = useUserStore.getState().selfInfo.userID;
+    const isCurrent = () =>
+      mounted.current && epoch === loadGeneration.current &&
+      generation === useResearchStore.getState().generation &&
+      requestedConversation === latestConversationID.current &&
+      userID === useUserStore.getState().selfInfo.userID;
     for (let page = 0; page < 100; page++) {
-      if (epoch !== loadGeneration.current || !mounted.current) return undefined;
+      if (!isCurrent()) return undefined;
       const found = latestLoadState.current.messageList.find((m) =>
         matchesLocator(m, locator),
       );
       if (found) return found;
-      if (!latestLoadState.current.hasMoreOld || loadingPage.current) break;
+      if (options.localOnly) {
+        if (!latestLoadState.current.hasMoreOld) break;
+        const before = latestLoadState.current.messageList.length;
+        // Local history can be read while a newest-page verification is slow.
+        await getMoreOldMessages(true, true);
+        if (before === latestLoadState.current.messageList.length) break;
+        continue;
+      }
+      // A page in flight is not a missing message. Its completion can add the
+      // target or establish the anchor for the next local/remote older page.
+      const pending = pendingPage.current;
+      if (pending) {
+        await pending;
+        continue;
+      }
+      if (!latestLoadState.current.hasMoreOld) break;
       const before = latestLoadState.current.messageList.length;
-      await getMoreOldMessages(true);
+      await getMoreOldMessages(true, !!options.localOnly);
       if (before === latestLoadState.current.messageList.length) break;
     }
     return undefined;
@@ -371,6 +421,7 @@ export function useHistoryMessageList() {
     getMoreOldMessages,
     seekMessage,
     historyError,
+    dismissHistoryError: () => setHistoryError(""),
     historySource,
   };
 }
