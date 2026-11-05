@@ -102,6 +102,12 @@ export function PlanningDiscussion({
           <span>
             <em className="is-pending">待定</em>可后续补
           </span>
+          <span>
+            <em className="is-outcome">产物</em>最终成果
+          </span>
+          <span>
+            <em className="is-supplement">补充信息</em>不建任务、不参与状态
+          </span>
         </div>
       </div>
       {issue && (
@@ -130,6 +136,11 @@ export function PlanningDiscussion({
                 </button>
               ))}
             </div>
+          )}
+          {!!planQuestionOptions(plan.unresolvedQuestions[0])?.length && (
+            <p className="discussion-option-hint">
+              我猜的都不对？还是你有更好的想法？
+            </p>
           )}
           {plan.unresolvedQuestions.length > 1 && (
             <details>
