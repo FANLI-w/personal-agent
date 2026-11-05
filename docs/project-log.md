@@ -2812,3 +2812,11 @@ source/build/preflight/isolated-tests/deploy/post-check最终退出0。首次只
 负责人授权合并PR172、打包发布新版并内置其科研插件更新。四项CI全成功，连接器merge权限403后改用已登录gh和expected-head保护普通合并，main为43e35e7c7b71d54a38ca22ac1e80207b15d9cdd2。从该main新建release/0.10.94-chat-cache-plugin，保留完整缓存提交链。固定插件官方v0.4.0 / 4572c4b3，3083842字节tgz摘要583de48caac441a2fe97c316a09e08fa13b23af512a7b9b7435643316b594585；源码、lib/helper及Copy的Office MIT许可保留，不改上游tgz。
 
 客户端0.10.94准备包括插件不降级、安装后实际版本核对、禁止运行中替换依赖、首次profile先停子进程后补装、错误不吞掉。补装边界测试17项通过；初稿跨VM数组原型断言和同步close夹具错误保留日志后修正，未改生产逻辑使错误夹具通过。其余类型、完整CI、构建、成品解包和隔离安装验证继续；此时未发布0.10.94，没有改线上0.42或私人客户端。说明见research-plugin-0.4.0.md，证据在Git外D:/deepseek-agent/.runtime/release-0.10.94-20261105。
+
+## 2026-11-05 0.10.94 已公开，成品缓存/插件直接核验
+
+负责人授权PR172合并和新Release，并内置科研插件更新。PR172普通合并43e35e7，PR173最终c34238d四项CI成功后合并为d574aa5c6a99e1932f0cfd087567c68e5990f8c7，即实际构建/tag。冻结1650份输入完整重建，直接从EXE核对129份构建文件、缓存表/IPC/批同步和插件0.4.0官方摘要；EXE 421224202字节、SHA256 e103bef308a033f2cd74292ec4cb4136dfd2a55a8ce43b14d3caa08c6cbf5483。从EXE提取的缓存模块在随包Electron独立进程写入/重开恢复正文和引用、账号/服务隔离、撤回与分页/删除通过；实际成品插件模块在独立DSH home离线安装/加载0.4.0，匿名403/有效临时会话读取200，重复不重装。
+
+根70文件874项、生产三项/B0/Web、客户端双类型/9守卫/79回归和41DSH检查、隔离缓存界面40条/正文0API/旧页0SDK均通过。PR四项和main包检查通过；main Windows旧库迁移首轮20秒超时，同码定向785ms/仅失败作业重跑通过，未放宽阈值。其余失败和探针参数错误均留原日志；无生产或用户文件操作。
+
+北京时间2026/11/5 12:09:19公开稳定Latest v0.10.94（Release434767134），四资产草稿大小/SHA256核对后才公开，匿名Latest/小附件摘要/EXE HEAD验证通过。旧版资产保留，后台公网仍0.42、三项ok/harness not_verified，本批无部署或提示词/模型设置更改。证据D:/deepseek-agent/.runtime/release-0.10.94-20261105，完整边界见[发布回执](deployment/acceptcat-0.10.94-release.md)。真实账号双端、系统级断网和复杂Office材料由负责人验收；科研插件沿上游本机目录和80MiB上传范围，不称按AcceptCat账号隔离的资料库。
