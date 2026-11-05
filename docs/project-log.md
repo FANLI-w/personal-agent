@@ -2820,3 +2820,9 @@ source/build/preflight/isolated-tests/deploy/post-check最终退出0。首次只
 根70文件874项、生产三项/B0/Web、客户端双类型/9守卫/79回归和41DSH检查、隔离缓存界面40条/正文0API/旧页0SDK均通过。PR四项和main包检查通过；main Windows旧库迁移首轮20秒超时，同码定向785ms/仅失败作业重跑通过，未放宽阈值。其余失败和探针参数错误均留原日志；无生产或用户文件操作。
 
 北京时间2026/11/5 12:09:19公开稳定Latest v0.10.94（Release434767134），四资产草稿大小/SHA256核对后才公开，匿名Latest/小附件摘要/EXE HEAD验证通过。旧版资产保留，后台公网仍0.42、三项ok/harness not_verified，本批无部署或提示词/模型设置更改。证据D:/deepseek-agent/.runtime/release-0.10.94-20261105，完整边界见[发布回执](deployment/acceptcat-0.10.94-release.md)。真实账号双端、系统级断网和复杂Office材料由负责人验收；科研插件沿上游本机目录和80MiB上传范围，不称按AcceptCat账号隔离的资料库。
+
+## 2026-11-05 旧GitHub科研插件升级故障修复准备
+
+负责人安装0.10.94后工作台报pnpm退出1，旧GitHub3d2805c/0.3.1离线tarball缺失。用0.10.94 EXE提取的模块和合成旧锁/旧模块、.ignored两场景真实复现；不是Key、后台或账号库问题。上一批实测的是新profile，漏测旧profile升级，已在0.10.94回执注明边界。隔离尝试verify_deps_before_run=false同样失败，日志保留，不作为修复。
+
+从main/2df856a建fix/dsh-legacy-plugin-upgrade；参数改为dsh-research-workbench@file:明确替换旧依赖，由pnpm维护锁，不清库或删profile。真实附带pnpm11.28.5在空store/离线两场景成功升0.4.0；其他插件、bundle/自定义配置、会话及资料哨兵不变。19项插件检查通过，既有类型/DSH和构建检查继续；CI前置固定DSH与工具准备以实际运行该回归。候选版本0.10.95尚未合并/发布，旧资产保留，后台/模型/缓存代码及插件资产不变。证据D:/deepseek-agent/.runtime/dsh-legacy-plugin-upgrade-20261105，说明见development/dsh-legacy-plugin-upgrade.md。

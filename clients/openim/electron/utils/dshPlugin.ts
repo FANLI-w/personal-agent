@@ -76,8 +76,10 @@ export async function ensureResearchPlugin(input: {
   const bundled = researchPlugin.version;
   let changed = false;
   if (current === undefined || olderThanBundled(current, bundled)) {
-    // `file:` keeps the install offline; pnpm records it in the profile lockfile.
-    await runPnpm(input.runtime, profile, ["add", `file:${input.tarball}`, "--offline", "--ignore-scripts"]);
+    // Name the dependency explicitly: a bare file: argument makes pnpm 11 try
+    // to restore an existing GitHub dependency before replacing it, which fails
+    // offline even though the replacement tarball is already in the installer.
+    await runPnpm(input.runtime, profile, ["add", `${researchPlugin.name}@file:${input.tarball}`, "--offline", "--ignore-scripts"]);
     if (await installedVersion(profile) !== bundled)
       throw Error(`科研插件安装结果与内置 ${bundled} 不一致，请重试或在插件管理中检查。`);
     changed = true;
