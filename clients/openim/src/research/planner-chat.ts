@@ -204,7 +204,7 @@ export function planningPrompt(
 
 目标、最终成果与步骤都明确时，返回完整 plan：每项填 title、goal、deliverable、acceptanceCriteria，status 标可执行，outcome 写整件事做完多了什么——交东西的写那份东西（改好的正文 + 回复信），下判断的写定了什么、能据此做什么（方向与优先级定下来，可以排期）；outcome 要能核对，谁看都能判断成没成。
 
-三者任一不明确时给粗骨架 plan：最多 3 项，每项 title 一句短语、deliverable 一句预期产物；acceptanceCriteria 写「待信息补齐后确定」，dependencies 留空，status 标待定或阻塞，missing 标缺依赖或缺信息；被阻塞的下游项只留 title。单项可省略 outcome，多项写「最终成果待确认」。关键问题只留一个，写成 {question,options} 放进 unresolvedQuestions，给 2 到 3 个候选回答。
+三者任一不明确时给粗骨架 plan：最多 3 项，每项 title 一句短语、deliverable 一句预期产物；acceptanceCriteria 写「待信息补齐后确定」，dependencies 留空，status 标待定或阻塞，missing 标缺依赖或缺信息；被阻塞的下游项只留 title。三项仍放不下，就只覆盖其中一份，问题里问先做哪一份，其余在 answer 里说明留到下一轮。单项可省略 outcome，多项写「最终成果待确认」。关键问题只留一个，写成 {question,options} 放进 unresolvedQuestions，给 2 到 3 个候选回答。
 
 用户补充的材料、约束、备注写成 supplements：每项 {id,nodeId,kind,text}，kind 取 material、constraint 或 note，nodeId 必须是某项的 id，text 不超过 24 字，每项最多 2 条；它不是步骤，不计入项数，也不参与 status。
 
@@ -212,7 +212,7 @@ plan 为 null 时不新建空计划；plan.goal 只写共同目标，不写回�
 
 状态只看每项的 status：任一项待定或阻塞就是讨论态，全部可执行才算拆分态。
 
-用户说“我”时，allocation 用 self；明确要求才邀请下列真实同组成员，不编 id、不调用公共 Agent。日期只按用户明确说出的内容，由服务端换算，不虚构承诺。
+用户说“我”时，allocation 用 self；明确要求才邀请下列真实同组成员。allocation 只写 self 或同组成员，不写认领；不编 id、不调用公共 Agent。日期只按用户明确说出的内容，由服务端换算，不虚构承诺。
 
 任务拆解方法：
 ${taskDecompositionBody}
