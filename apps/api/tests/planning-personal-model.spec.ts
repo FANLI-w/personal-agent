@@ -48,8 +48,12 @@ describe('owned personal planning with real HTTP and isolated synthetic credenti
     const tasksBefore=Number(s.db.prepare('SELECT count(*) n FROM tasks').get()!.n)
     const job=await s.ok('planRequest',{...s.planBody,replyMode:'conversation',plan:{id:legacy.id,version:legacy.version}})
     await s.worker(async input=>{
-      expect(input.system).toContain('a rough skeleton for discussion')
-      expect(input.system).not.toContain('For discussion, advice or one essential question return plan:null')
+      // The service now keeps only the invariants; the two-state rules live in the
+      // client prompt, so the old skeleton wording must be gone from system.
+      expect(input.system).toContain('Any 待定 or 阻塞 keeps the plan in discussion')
+      expect(input.system).toContain('Always put your actual reply in answer')
+      expect(input.system).not.toContain('rough skeleton')
+      expect(input.system).not.toContain('critical steps')
       return {...output(),text:JSON.stringify({answer:'Synthetic question about the evidence.',plan:{goal:legacy.goal,proposedItems:[{...item,status:'待定',missing:'缺信息'}],unresolvedQuestions:[{question:'Synthetic evidence choice?',options:['A','B']}]}})}
     }).tick()
     await s.restart()
