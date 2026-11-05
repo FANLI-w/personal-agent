@@ -14,7 +14,6 @@ import {
   isDiscussionPlan,
   plannerDiscussionIssue,
   plannerSupplementMap,
-  plannerTaskShape,
   isPlannerCreateCommand,
   createPlannerTasks,
   stopPlannerRequest,
@@ -222,45 +221,14 @@ function fake(initial = makePlan(), failure) {
     },
   };
 }
-test("automatic sizing is the default; object counts, complaints and quotes do not force multiple tasks", () => {
-  for (const text of [
-    "完善论文和实验",
-    "比较3个模型并写报告",
-    "为什么给我创建了7个任务",
-    "上次让我创建7个任务太多了",
-    "他说创建7个任务",
-    "请创建7个任务？",
-    "请创建“7个任务”",
-    "不要拆分任务",
-    "不要创建多个任务",
-    "合并成一个任务",
-    "我只要一个任务",
-    "改为小王负责",
-    "继续修改说明",
-  ])
-    assert.equal(plannerTaskShape(text), "auto");
-  for (const text of [
-    "拆成两个任务",
-    "请帮我创建3项任务",
-    "分别创建多个任务",
-    "改成3项任务",
-  ])
-    assert.equal(plannerTaskShape(text), "multiple");
-});
 test("task input treats a stated goal as a draft and keeps task count outside editable personality", () => {
   const automatic = planningPrompt([], "完善现有论文", []).prompt;
-  assert(automatic.includes("目标、最终成果与粗略步骤都明确时"));
+  assert(automatic.includes("目标、最终成果与步骤都明确时"));
   assert(automatic.includes("都返回符合结构的 JSON"));
   assert(automatic.includes("最多 3 项"));
   assert(automatic.includes("budget（没有就 null）"));
   assert(automatic.includes("状态只看每项的 status"));
   assert(automatic.includes("supplements"));
-  assert(!automatic.includes("用户这轮明确要分开安排"));
-  assert(!automatic.includes("进入拆分态后"));
-  const split = planningPrompt([], "分别安排", [], undefined, "", "multiple").prompt;
-  assert(split.includes("用户这轮明确要分开安排"));
-  assert(split.includes("不强行凑数"));
-  assert(!split.includes("进入拆分态后"));
 });
 test("旁支和最终成果都不参与两态判定", () => {
   const item = { ...makePlan().proposedItems[0], status: "可执行" };
@@ -413,18 +381,12 @@ test("a reviewed snapshot survives in its account-scoped transcript, while an in
   );
   assert.equal(restore({ ...thread.creating, key: "short" }), undefined);
 });
-test("new requests carry no stored shape, and explicit merge or split wording is left to the model", () => {
+test("new requests carry no stored shape; explicit merge or split wording stays with the model", () => {
   const thread = { ...newPlannerThread(), id: "thread_shape" };
   const restore = () =>
     readPlannerHistory(JSON.stringify({ active: thread.id, threads: [thread] }))
       .threads[0];
   assert.equal("taskShape" in restore(), false);
-  assert.equal(plannerTaskShape("继续完善安排"), "auto");
-  thread.messages = [{ id: "user_split", role: "user", text: "拆成三个任务" }];
-  assert.equal(plannerTaskShape(thread.messages.at(-1).text), "multiple");
-  thread.messages.push({ id: "user_combine", role: "user", text: "合并成一个任务" });
-  assert.equal(plannerTaskShape(thread.messages.at(-1).text), "auto");
-  assert.equal(plannerTaskShape("这次分开安排好些"), "auto"); // Let the model read natural corrections in context.
 });
 test("automatic sizing previews and confirms the exact model draft count, with no silent merge or extra task", async () => {
   for (const count of [1, 3]) {
@@ -462,8 +424,8 @@ test("planner has no manual sizing switch and no client-side merge of a reviewed
   assert(!source.includes("合为一项任务"));
   assert(!source.includes("改为多项任务"));
   assert(!core.includes("plannerTaskInput"));
-  assert(core.includes('export type PlannerTaskShape = "auto" | "multiple"'));
-  assert(source.includes("const taskShape = plannerTaskShape(text);"));
+  assert(!core.includes("plannerTaskShape"));
+  assert(!core.includes("PlannerTaskShape"));
   assert(!source.includes("plannerTaskShape(text, thread.taskShape)"));
 });
 test("transcript keys isolate service, actor and laboratory, restored pending writes remain explicit", () => {

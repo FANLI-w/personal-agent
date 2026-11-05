@@ -1,24 +1,5 @@
-import { Id, Plan, PlanInput, routes } from "@research-agent-platform/contracts";
+﻿import { Id, Plan, PlanInput, routes } from "@research-agent-platform/contracts";
 import type { RequestFor, ResponseFor } from "@research-agent-platform/contracts";
-
-export type PlannerTaskShape = "auto" | "multiple";
-
-// An explicit request to split is the only shape hint; the model still decides
-// the actual content and count. Creation always needs confirmation.
-export function plannerTaskShape(text: string): PlannerTaskShape {
-  const value = text.trim();
-  if (/[“”「」『』"<>?？]/.test(value)) return "auto";
-  const start =
-    "^(?:(?:请|帮我|给我|我想|我需要|我|现在|就|还是|把这个|只需要|只要|只)\\s*)*";
-  if (
-    new RegExp(
-      start +
-        "(?:创建|建立|安排|拆成|拆分成|分成|分别创建|分别建立|改为|改成)\\s*(?:[2-9]\\d*|1\\d+|[两二三四五六七八九十百]+|多|几|若干)\\s*(?:个|项)?任务",
-    ).test(value)
-  )
-    return "multiple";
-  return "auto";
-}
 
 export type ChatPlan = ResponseFor<"getPlan">["data"];
 export type DeadlineChoice = { date: string | null; target: "final" | "all" | number };
@@ -202,7 +183,6 @@ export function planningPrompt(
   people: { id: string; displayName: string }[],
   deadline?: DeadlineChoice,
   decompositionSkill = "",
-  taskShape: PlannerTaskShape = "auto",
 ) {
   const taskDecompositionBody = decompositionSkill
     .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
@@ -214,23 +194,19 @@ export function planningPrompt(
     if (directory.join("\n").length + entry.length > 1000) break;
     directory.push(entry);
   }
-  const instructions = `这里是安排任务的对话。按对话里提供的助手角色简介和本人保存的偏好说话，用自然的中文接着聊，有依据地给判断，不写成公文条目；用户卡住时只帮一小步，不同意给理由和替代办法，不虚构读过材料、共同经历或进展。编辑时沿用原有的 id。无论用户有没有指派任务，都返回符合结构的 JSON；没有方案改动需求时 plan 为 null，不要用纯文本回复。${
-    taskShape === "multiple"
-      ? "\n\n用户这轮明确要分开安排，按他说的数量和边界写成多项，每项有独立交付价值，不强行凑数。"
-      : ""
-  }
+  const instructions = `这里是安排任务的对话。按对话里提供的助手角色简介和本人保存的偏好说话，用自然的中文接着聊，有依据地给判断，不写成公文条目；用户卡住时只帮一小步，不同意给理由和替代办法，不虚构读过材料、共同经历或进展。编辑时沿用原有的 id。无论用户有没有指派任务，都返回符合结构的 JSON；没有计划改动需求时 plan 为 null，不要用纯文本回复。
 
 口吻示例（不照念）：‘这个方向可以，先从最薄弱的一环入手。你手上最缺的是数据还是论证？’用户已有材料就直接分析；用户说问太多时，先用已有信息给一个小建议，不再追问。
 
 每轮最多问一个必要的问题，不为提问而提问，不列补充清单。
 
-目标、最终成果与粗略步骤都明确时，返回完整 plan：每项填 title、goal、deliverable、acceptanceCriteria，status 标可执行，outcome 写整件事做完多了什么——交东西的写那份东西（改好的正文 + 回复信），下判断的写定了什么、能据此做什么（方向与优先级定下来，可以排期）；不写“大概”“基本”这类词。
+目标、最终成果与步骤都明确时，返回完整 plan：每项填 title、goal、deliverable、acceptanceCriteria，status 标可执行，outcome 写整件事做完多了什么——交东西的写那份东西（改好的正文 + 回复信），下判断的写定了什么、能据此做什么（方向与优先级定下来，可以排期）；outcome 要能核对，谁看都能判断成没成。
 
 三者任一不明确时给粗骨架 plan：最多 3 项，每项 title 一句短语、deliverable 一句预期产物；acceptanceCriteria 写「待信息补齐后确定」，dependencies 留空，status 标待定或阻塞，missing 标缺依赖或缺信息；被阻塞的下游项只留 title。单项可省略 outcome，多项写「最终成果待确认」。关键问题只留一个，写成 {question,options} 放进 unresolvedQuestions，给 2 到 3 个候选回答。
 
 用户补充的材料、约束、备注写成 supplements：每项 {id,nodeId,kind,text}，kind 取 material、constraint 或 note，nodeId 必须是某项的 id，text 不超过 24 字，每项最多 2 条；它不是步骤，不计入项数，也不参与 status。
 
-plan 为 null 时不新建空方案；plan.goal 只写共同目标，不写回答。
+plan 为 null 时不新建空计划；plan.goal 只写共同目标，不写回答。
 
 状态只看每项的 status：任一项待定或阻塞就是讨论态，全部可执行才算拆分态。
 
