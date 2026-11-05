@@ -348,6 +348,7 @@ export function plannerPlanInput(plan: ChatPlan, deadline?: DeadlineChoice) {
   const input = PlanInput.parse({
     labId: plan.labId,
     goal: plan.goal,
+    ...(plan.outcome ? { outcome: plan.outcome } : {}),
     proposedItems: plan.proposedItems,
     unresolvedQuestions: plan.unresolvedQuestions,
   });
@@ -502,6 +503,7 @@ export async function createPlannerTasks(
       PlanInput.parse({
         labId: p.labId,
         goal: p.goal,
+        ...("outcome" in p && p.outcome ? { outcome: p.outcome } : {}),
         proposedItems: p.proposedItems,
         unresolvedQuestions: p.unresolvedQuestions,
       }),

@@ -631,6 +631,13 @@ test("deadline proposals change only the explicitly selected steps and do not mu
   assert.equal(result.proposedItems[1].schedule.hardDeadline.value.date, "2026-10-23");
   assert.throws(() => plannerPlanInput(p, { date: "2026-10-23", target: 4 }), /不存在/);
 });
+test("计划级最终成果在编辑与确认输入里都不会被丢掉", () => {
+  const p = { ...makePlan(), outcome: "改好的正文与回复信" };
+  assert.equal(plannerPlanInput(p).outcome, "改好的正文与回复信");
+  const edited = plannerPlanInput(p, { date: "2026-10-23", target: "final" });
+  assert.equal(edited.outcome, "改好的正文与回复信");
+  assert.equal(p.outcome, "改好的正文与回复信");
+});
 test("creation rechecks the exact reviewed version and uses one stable confirmation key", async () => {
   const p = makePlan(),
     f = fake(p);

@@ -7,7 +7,10 @@ import {
 } from "./planner-chat";
 
 type Props = {
-  plan: Pick<ChatPlan, "goal" | "proposedItems" | "unresolvedQuestions">;
+  plan: Pick<
+    ChatPlan,
+    "goal" | "outcome" | "proposedItems" | "unresolvedQuestions"
+  >;
   version: number;
   disabled: boolean;
   onReassess: () => void;
@@ -23,6 +26,8 @@ export function PlanningDiscussion({
   onOption,
 }: Props) {
   const issue = plannerDiscussionIssue(plan);
+  // Plans written before the outcome field keep showing their closing step's deliverable.
+  const terminal = plan.outcome?.trim() || plan.proposedItems.at(-1)?.deliverable.trim();
   return (
     <article className="planning-chat-discussion" aria-label="讨论中的任务方向">
       <header>
@@ -58,12 +63,10 @@ export function PlanningDiscussion({
                 </em>
               </span>
             ))}
-            {!!plan.proposedItems.at(-1)?.deliverable.trim() && (
+            {!!terminal && (
               <span className="discussion-step">
                 <i aria-hidden="true">→</i>
-                <em title="计划中的最终成果，尚未完成">
-                  {plan.proposedItems.at(-1)!.deliverable}
-                </em>
+                <em title="计划中的最终成果，尚未完成">{terminal}</em>
               </span>
             )}
           </div>

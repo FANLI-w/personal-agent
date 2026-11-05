@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const contractVersion = '0.41.0' as const
+export const contractVersion = '0.42.0' as const
 export const Id = z.string().regex(/^[A-Za-z0-9_-]{1,96}$/)
 export const Text = z.string().min(1).max(8000)
 export const Title = z.string().min(1).max(200)
@@ -25,7 +25,7 @@ export const Allocation = z.discriminatedUnion('kind', [
 export const Dependency = z.strictObject({ taskId: Id, kind: z.enum(['accepted_deliverable', 'confirmed_decision']), requiredRevision: Version.nullable() })
 export const ProposedItem = z.strictObject({ id: Id, title: Title, goal: Text, deliverable: Text, acceptanceCriteria: Text, allocation: Allocation, dependencies: z.array(Id).max(100), schedule: Schedule, inputArtifactIds: z.array(Id).max(100), budget: Budget.nullable(), status: z.enum(['可执行', '待定', '阻塞']).optional(), missing: z.enum(['缺依赖', '缺信息']).optional() })
 export const PlanQuestion = z.strictObject({ question: Text, options: z.array(Title).max(6).optional() })
-export const PlanInput = z.strictObject({ labId: Id, goal: Text, proposedItems: z.array(ProposedItem).max(100), unresolvedQuestions: z.array(z.union([Text, PlanQuestion])).max(50) })
+export const PlanInput = z.strictObject({ labId: Id, goal: Text, outcome: Text.optional(), proposedItems: z.array(ProposedItem).max(100), unresolvedQuestions: z.array(z.union([Text, PlanQuestion])).max(50) })
 export const Plan = PlanInput.extend({ conclusionRefs: z.array(ConclusionBinding).max(100).optional(), id: Id, ownerId: Id, version: Version, status: z.enum(['draft', 'confirmed', 'superseded']), createdAt: Instant })
 // blocked is retained only for historical snapshots and older server responses.
 // New workflow writers do not generate it; migration031 restores current tasks.

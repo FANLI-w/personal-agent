@@ -117,6 +117,19 @@ describe('B1 A1–A5: two real HTTP processes, file SQLite, real passwords', () 
     expect((await request('confirmPlan', { ...input, body: { expectedVersion: 3 } })).value.error?.code).toBe('IDEMPOTENCY_CONFLICT')
     expect((await request('editPlan', { params: { id: planId }, client: clients.A, body: { ...body, expectedVersion: 3 } })).value.error?.code).toBe('INVALID_STATE')
   })
+  it('A1 the plan outcome rides on the closing task and never becomes a task of its own', async () => {
+    const body = { ...planInput([item('self', 'first'), item('self', 'closing')]), outcome: '改好的正文与回复信' }
+    const created = await request('createPlan', { body, client: clients.A })
+    expect(created.status).toBe(201)
+    const confirmed = await request('confirmPlan', { params: { id: created.value.data.id }, client: clients.A, body: { expectedVersion: created.value.data.version } })
+    expect(confirmed.status).toBe(200)
+    const taskIds = confirmed.value.data.taskIds
+    expect(taskIds).toHaveLength(2)
+    const first = await request('task', { params: { id: taskIds[0]! }, client: clients.A })
+    const closing = await request('task', { params: { id: taskIds[1]! }, client: clients.A })
+    expect(first.value.data.task!.acceptanceCriteria).toBe('List missing items explicitly')
+    expect(closing.value.data.task!.acceptanceCriteria).toBe('List missing items explicitly\n整体成果：改好的正文与回复信')
+  })
   it('A2 pending invite is summary only, accept makes commitment, decline preserves history and permits reinvite', async () => {
     const { taskIds } = await createConfirmed([item('invitation', 'accept'), item('invitation', 'decline')])
     const taskId = taskIds[0]!, declinedId = taskIds[1]!
