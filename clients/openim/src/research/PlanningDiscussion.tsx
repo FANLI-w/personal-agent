@@ -61,7 +61,7 @@ export function PlanningDiscussion({
             {!!plan.proposedItems.at(-1)?.deliverable.trim() && (
               <span className="discussion-step">
                 <i aria-hidden="true">→</i>
-                <em title="计划中的最终交付物，尚未完成">
+                <em title="计划中的最终成果，尚未完成">
                   {plan.proposedItems.at(-1)!.deliverable}
                 </em>
               </span>
