@@ -65,7 +65,7 @@ for (const current of [undefined, "0.3.3", "0.4.0-rc.1"]) {
     const r = await f.run();
     assert.equal(r.changed, true); assert.equal(r.version, "0.4.0");
     assert.equal(f.calls.length, 1);
-    assert.deepEqual(Array.from(f.calls[0].args.slice(-4)), ["add", `file:${f.tarball}`, "--offline", "--ignore-scripts"]);
+    assert.deepEqual(Array.from(f.calls[0].args.slice(-4)), ["add", `dsh-research-workbench@file:${f.tarball}`, "--offline", "--ignore-scripts"]);
     assert.equal(f.calls[0].options.cwd, f.profile);
     assert.equal(f.calls[0].options.windowsHide, true);
     const manifest = JSON.parse(await readFile(f.manifestPath, "utf8"));

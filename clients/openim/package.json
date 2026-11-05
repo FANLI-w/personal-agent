@@ -1,6 +1,6 @@
 {
   "name": "research-wechat-openim",
-  "version": "0.10.94",
+  "version": "0.10.95",
   "main": "dist-electron/main/bootstrap.js",
   "description": "AcceptCat · 科研个人助理与课题组协作",
   "author": "blooming",
@@ -32,7 +32,7 @@
     "typecheck:electron": "tsc -p tsconfig.electron-check.json",
     "check:workspace": "node scripts/workspace-build.mjs",
     "test:build": "node --test tests/desktop-build.test.mjs",
-    "test:dsh-plugin": "node --test tests/dsh-plugin.test.mjs tests/bundled-tools.test.mjs",
+    "test:dsh-plugin": "node --test tests/dsh-plugin.test.mjs tests/bundled-tools.test.mjs tests/dsh-plugin-upgrade.test.mjs",
     "test:local-dsh": "node --test tests/local-dsh.test.mjs tests/local-dsh-account.test.mjs tests/local-dsh-files.test.mjs tests/task-workspace.test.mjs tests/task-material-bridge.test.mjs tests/team-execution.test.mjs",
     "test:service": "node --test tests/research-service.test.mjs",
     "test:peer-library": "node --test tests/peer-library.test.mjs",
