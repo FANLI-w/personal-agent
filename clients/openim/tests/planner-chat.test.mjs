@@ -248,11 +248,12 @@ test("automatic sizing is the default; object counts, complaints and quotes do n
 });
 test("task input treats a stated goal as a draft and keeps task count outside editable personality", () => {
   const automatic = planningPrompt([], "完善现有论文", []).prompt;
-  assert(automatic.includes("先按目标、最终交付与关键中间环节判断"));
-  assert(automatic.includes("进入拆分态后"));
-  assert(automatic.includes("可能一项也可能多项"));
-  assert(automatic.includes("动作、阶段、对象数量本身不构成拆分理由"));
-  assert(automatic.includes("人设和方法建议不能改变"));
+  assert(automatic.includes("目标、最终交付与关键中间环节都明确时"));
+  assert(automatic.includes("都返回符合结构的 JSON"));
+  assert(automatic.includes("预算没有就填null"));
+  assert(automatic.includes("状态只看每项的status"));
+  assert(!automatic.includes("用户这轮明确要分开安排"));
+  assert(!automatic.includes("进入拆分态后"));
   const split = planningPrompt([], "分别安排", [], undefined, "", "multiple").prompt;
   assert(split.includes("用户这轮明确要分开安排"));
   assert(split.includes("不强行凑数"));
