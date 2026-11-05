@@ -2832,3 +2832,13 @@ source/build/preflight/isolated-tests/deploy/post-check最终退出0。首次只
 2026/11/5 15:37:13 公开稳定 Latest v0.10.95（Release434891459），PR175 四项成功后普通合并为 1baf294b707207ec7b7b9d3acd4de53b583aef82 并从该干净 main 重建/tag。固定并校验插件0.4.0原包，显式 name@file 替换旧GitHub0.3.1依赖；19项含真实 pnpm 空store离线升级、EXE提取模块两条回归、成品旧profile升级后实际DSH加载/会话读取、完整聊天缓存跨进程及隔离启动均通过。1653 份输入/129 份构建文件核对，EXE 421224009 字节，SHA256 ddccfa6b80058f9b29d462a6b75b9b92c4e803682b675dee86d2fa1a027ca888。草稿四资产与远端digest一致后公开，匿名Latest/附件校验及旧四资产保留已确认。
 
 根70文件874项与客户端CI最终成功；PR/main Windows 的既有 dialogue-context 测试首次各一条30秒超时（873/1），本地原文件9项与失败作业同码/原时限重跑成功，保留失败日志、不认定根因。实际0.10.94模块运行新增回归两场景失败，确认原bug；上一批漏了旧profile升级，未清库/删除用户锁或配置。完整缓存模块字节与0.10.94一致，后台0.42及模型/提示词未改，未操作私人客户端/模型/Office，真实安装待负责人复验。见[发布回执](deployment/acceptcat-0.10.95-release.md)，证据D:/deepseek-agent/.runtime/release-0.10.95-20261105及dsh-legacy-plugin-upgrade-20261105。
+
+## 2026-11-05 聊天缓存状态与消息定位误报修复
+
+负责人要求修复截图里的两条提示。从干净 main/4867f31 另建 fix/chat-history-navigation-notices，产品 b4b17b92655ad1c3060d20257667b9b03e5b2c45。正常缓存命中保持安静，不输出空黄条；真正离线或最新页核对失败才给对应状态，不将“尚未加载”描述成断网或删除。自动位置恢复只遍历本地页，缓存缺口/过期锚点安静回到最新记录，并停止反复恢复失效锚点；最新核对慢时本地恢复仍能先完成。主动定位等待已有读取，失败保留 locator，重试重新核对最新页并跨页找原目标；关闭提示、切会话/账号清理目标及旧定位结果。
+
+47项定向（30缓存/状态/定位，17引用/会话/注意状态）、客户端类型和完整 build:web 通过，新增并发/本地恢复/账号切换/重试检查纳入现有 test:chat-history。Browser 插件未提供，使用现有 Playwright1.61.1 与独立 headless Edge，在实际 ChatContent、useHistoryMessageList、chat-timeline、Virtuoso/AntD 和独立 SQLite 上覆盖8条路径，1280×800/1024×768，页面异常0；SDK/IPC与简单气泡为合成边界，没有用私人账号或模型。正常读本地及自动恢复没有旧页SDK请求；失败后重试实际跨两页找到原目标。保留Router future/AntD findDOMNode警告、注入503与Node类型警告，不称零日志。
+
+失败/更正证据保留：最初本机7900代理未监听，直连fetch成功，未改变用户代理设置；focused-first.log暴露旧定位在账号变化后继续读取，补即时世代检查后通过；ui-final.log及ui-sync-race-failure.json/png记录核对失败先于缓存到达时丢失失败状态，保留失败事实直到核对成功后通过；baseline-0.10.95.log用已发布tag源码确认原忙碌误判回归失败。曾以错误相对工作目录读取几份文件，随后更正，没有产品影响。所有证据在Git外D:/deepseek-agent/.runtime/chat-navigation-notices-20261105。
+
+本批未改共享契约、后台、SQLite结构、提示词、模型设置或科研插件，不清用户数据。尚未合并、部署、制作新安装包或发布；公开Latest仍0.10.95，当前已安装版本不会因本分支提交而自动修复。真实安装/SDK/双端由后续新包验收，PR176的规划审查不混入本批。
