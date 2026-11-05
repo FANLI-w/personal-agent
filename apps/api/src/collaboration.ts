@@ -198,6 +198,8 @@ export class Collaboration {
   canConfirmPlan(plan: Pick<PlanModel,'status'|'proposedItems'>) {
     // Legacy manually reviewed drafts lack state metadata; keep their API
     // contract. Explicit two-state discussions are not confirmable anywhere.
+    // Only proposedItems decide this: supplements never become tasks and the
+    // plan-level outcome never changes whether a plan is reviewable.
     return plan.status==='draft'&&!plan.proposedItems.some(item=>item.status&&item.status!=='可执行')
   }
   validatePlan(plan: RequestFor<'createPlan'>['body']) {

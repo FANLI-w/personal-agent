@@ -249,16 +249,31 @@ test("automatic sizing is the default; object counts, complaints and quotes do n
 });
 test("task input treats a stated goal as a draft and keeps task count outside editable personality", () => {
   const automatic = planningPrompt([], "完善现有论文", []).prompt;
-  assert(automatic.includes("目标、最终交付与关键中间环节都明确时"));
+  assert(automatic.includes("目标、最终成果与粗略步骤都明确时"));
   assert(automatic.includes("都返回符合结构的 JSON"));
-  assert(automatic.includes("预算没有就填null"));
-  assert(automatic.includes("状态只看每项的status"));
+  assert(automatic.includes("最多 3 项"));
+  assert(automatic.includes("budget（没有就 null）"));
+  assert(automatic.includes("状态只看每项的 status"));
+  assert(automatic.includes("supplements"));
   assert(!automatic.includes("用户这轮明确要分开安排"));
   assert(!automatic.includes("进入拆分态后"));
   const split = planningPrompt([], "分别安排", [], undefined, "", "multiple").prompt;
   assert(split.includes("用户这轮明确要分开安排"));
   assert(split.includes("不强行凑数"));
   assert(!split.includes("进入拆分态后"));
+});
+test("旁支和最终成果都不参与两态判定", () => {
+  const item = { ...makePlan().proposedItems[0], status: "可执行" };
+  const plan = {
+    proposedItems: [item],
+    outcome: "方向定下来",
+    supplements: [
+      { id: "s1", nodeId: item.id, kind: "material", text: "已有 baseline" },
+      { id: "s2", nodeId: item.id, kind: "note", text: "正文上限 9 页" },
+    ],
+  };
+  assert.equal(isDiscussionPlan(plan.proposedItems), false);
+  assert.equal(plannerDiscussionIssue(plan), undefined);
 });
 test("讨论态判断：status 缺省按待定处理，只有全部可执行才算拆分态", () => {
   const item = (status) => ({ ...makePlan().proposedItems[0], status });

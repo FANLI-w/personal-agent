@@ -207,13 +207,14 @@ export function planningPrompt(
   const taskDecompositionBody = decompositionSkill
     .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
     .trim();
+  // The directory competes with conversation history for the same 8000 characters.
   const directory: string[] = [];
   for (const person of people.slice(0, 20)) {
     const entry = `${person.displayName}（${person.id}）`;
-    if (directory.join("\n").length + entry.length > 1500) break;
+    if (directory.join("\n").length + entry.length > 1000) break;
     directory.push(entry);
   }
-  const instructions = `这里是安排任务的对话。按对话里提供的助手角色简介和本人保存的偏好说话，用自然的中文接着聊，有依据地给判断，不写成公文条目；用户卡住时只帮一小步，不同意给理由和替代办法，不虚构读过材料、共同经历或进展。编辑时沿用原计划里的步骤ID。无论用户有没有指派任务，都返回符合结构的 JSON；没有方案改动需求时 plan 为 null，不要用纯文本回复。${
+  const instructions = `这里是安排任务的对话。按对话里提供的助手角色简介和本人保存的偏好说话，用自然的中文接着聊，有依据地给判断，不写成公文条目；用户卡住时只帮一小步，不同意给理由和替代办法，不虚构读过材料、共同经历或进展。编辑时沿用原有的 id。无论用户有没有指派任务，都返回符合结构的 JSON；没有方案改动需求时 plan 为 null，不要用纯文本回复。${
     taskShape === "multiple"
       ? "\n\n用户这轮明确要分开安排，按他说的数量和边界写成多项，每项有独立交付价值，不强行凑数。"
       : ""
@@ -223,15 +224,21 @@ export function planningPrompt(
 
 每轮最多问一个必要的问题，不为提问而提问，不列补充清单。
 
-目标、最终交付与关键中间环节都明确时，返回完整的plan，每项填齐标题、目标、交付与验收，status标为可执行；三者任一不明确时，返回粗骨架plan：proposedItems三至四项，每项写标题、目标、交付物与验收各一句，dependencies留空，status标为待定或阻塞并用missing标出缺依赖或缺信息，缺的是什么写进该项标题，待澄清的那个关键问题写成{question,options}放进unresolvedQuestions，options给2至3个候选回答。plan为null时不新建空方案；plan.goal只写共同目标，不写回答。
+目标、最终成果与粗略步骤都明确时，返回完整 plan：每项填 title、goal、deliverable、acceptanceCriteria，status 标可执行，outcome 写整件事做完多了什么——交东西的写那份东西（改好的正文 + 回复信），下判断的写定了什么、能据此做什么（方向与优先级定下来，可以排期）；不写“大概”“基本”这类词。
 
-状态只看每项的status：任一项待定或阻塞就是讨论态，全部可执行才算拆分态。
+三者任一不明确时给粗骨架 plan：最多 3 项，每项 title 一句短语、deliverable 一句预期产物；acceptanceCriteria 写「待信息补齐后确定」，dependencies 留空，status 标待定或阻塞，missing 标缺依赖或缺信息；被阻塞的下游项只留 title。单项可省略 outcome，多项写「最终成果待确认」。关键问题只留一个，写成 {question,options} 放进 unresolvedQuestions，给 2 到 3 个候选回答。
 
-用户说“我”时，allocation用self；明确要求才邀请下列真实同组成员，不编ID、不调用公共Agent。日期只按用户明确说出的内容，由服务端换算，不虚构承诺。
+用户补充的材料、约束、备注写成 supplements：每项 {id,nodeId,kind,text}，kind 取 material、constraint 或 note，nodeId 必须是某项的 id，text 不超过 24 字，每项最多 2 条；它不是步骤，不计入项数，也不参与 status。
+
+plan 为 null 时不新建空方案；plan.goal 只写共同目标，不写回答。
+
+状态只看每项的 status：任一项待定或阻塞就是讨论态，全部可执行才算拆分态。
+
+用户说“我”时，allocation 用 self；明确要求才邀请下列真实同组成员，不编 id、不调用公共 Agent。日期只按用户明确说出的内容，由服务端换算，不虚构承诺。
 
 任务拆解方法：
 ${taskDecompositionBody}
-本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议并进该项的目标或交付描述。每项给出编号，写明由谁做（本人或同组成员），预算没有就填null。每项用 status（可执行 / 待定 / 阻塞）与 missing（缺依赖 / 缺信息）标明确定程度，不新增这两个以外的字段。
+本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议并进该项的 goal 或 deliverable。每项要有 id、allocation（self 或同组成员）、budget（没有就 null）。每项用 status（可执行 / 待定 / 阻塞）与 missing（缺依赖 / 缺信息）标明确定程度，不新增这两个以外的字段。
 
 可邀请的同组成员：
 ${directory.join("\n") || "未提供，不能编造成员"}
@@ -421,6 +428,7 @@ export function plannerSupplementMap(
 /**
  * 讨论态：任意一项不是「可执行」。status 缺省也算待定（保守方向），
  * 宁可多讨论一轮，也不把信息不全的草案当成可创建方案。
+ * 只看 proposedItems：supplements 是旁支、outcome 是计划级成果，都不参与这个判定。
  */
 export function isDiscussionPlan(items: { status?: unknown }[]): boolean {
   return items.some((item) => item.status !== "可执行");
