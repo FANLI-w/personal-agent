@@ -24,7 +24,13 @@ function normalizedReply(text: string) {
   return normalized
 }
 function planInput(plan: z.infer<typeof Draft> | null, labId: string) {
-  return plan === null ? null : PlanInput.parse({ ...plan, labId, proposedItems: plan.proposedItems.map(item => ({ ...item, schedule: unknownSchedule(), inputArtifactIds: [] })) })
+  if (plan === null) return null
+  const items = plan.proposedItems.map(item => ({ ...item, schedule: unknownSchedule(), inputArtifactIds: [] }))
+  const ids = new Set(items.map(item => item.id))
+  // A supplement whose node disappeared is dropped here, not rejected later: a stale
+  // anchor must never fail the whole turn.
+  const supplements = plan.supplements?.filter(supplement => ids.has(supplement.nodeId))
+  return PlanInput.parse({ ...plan, labId, proposedItems: items, ...(supplements ? { supplements } : {}) })
 }
 export function parsePlanningOutput(text: string, labId: string) {
   const answer = PlanningModelReply.parse(normalizedReply(text))

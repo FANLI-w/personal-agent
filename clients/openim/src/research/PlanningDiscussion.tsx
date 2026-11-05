@@ -1,7 +1,9 @@
 import { Button } from "antd";
 import {
   type ChatPlan,
+  type PlannerSupplement,
   plannerDiscussionIssue,
+  plannerSupplementMap,
   planQuestionOptions,
   planQuestionText,
 } from "./planner-chat";
@@ -9,7 +11,7 @@ import {
 type Props = {
   plan: Pick<
     ChatPlan,
-    "goal" | "outcome" | "proposedItems" | "unresolvedQuestions"
+    "goal" | "outcome" | "supplements" | "proposedItems" | "unresolvedQuestions"
   >;
   version: number;
   disabled: boolean;
@@ -28,6 +30,10 @@ export function PlanningDiscussion({
   const issue = plannerDiscussionIssue(plan);
   // Plans written before the outcome field keep showing their closing step's deliverable.
   const terminal = plan.outcome?.trim() || plan.proposedItems.at(-1)?.deliverable.trim();
+  const supplements = plannerSupplementMap(
+    plan.proposedItems,
+    (plan.supplements ?? []) as PlannerSupplement[],
+  );
   return (
     <article className="planning-chat-discussion" aria-label="讨论中的任务方向">
       <header>
@@ -42,27 +48,45 @@ export function PlanningDiscussion({
         <div className="discussion-row">
           <span>流程</span>
           <div className="discussion-flow">
-            {plan.proposedItems.map((step, index) => (
-              <span className="discussion-step" key={step.id}>
-                {index > 0 && <i aria-hidden="true">→</i>}
-                <em
-                  title={
-                    !step.status ? "原方案未标注规划状态，需要重新核对" : step.status
-                  }
-                  className={
-                    !step.status
-                      ? "is-unclassified"
-                      : step.status === "阻塞"
-                      ? "is-blocked"
-                      : step.status === "可执行"
-                      ? "is-ready"
-                      : "is-pending"
-                  }
+            {plan.proposedItems.map((step, index) => {
+              const attached = supplements.get(step.id);
+              const label = { material: "材料", constraint: "约束", note: "备注" };
+              const bubble = (s: { id: string; kind: "material" | "constraint" | "note"; text: string }, side: "above" | "below") => (
+                <span
+                  className={`discussion-supp is-${side}`}
+                  key={s.id}
+                  title={`${label[s.kind]}：${s.text}`}
                 >
-                  {step.title}
-                </em>
-              </span>
-            ))}
+                  <i>{label[s.kind]}</i>
+                  {s.text}
+                </span>
+              );
+              return (
+                <span className="discussion-slot" key={step.id}>
+                  {attached?.above.map((s) => bubble(s, "above"))}
+                  <span className="discussion-step">
+                    {index > 0 && <i aria-hidden="true">→</i>}
+                    <em
+                      title={
+                        !step.status ? "原方案未标注规划状态，需要重新核对" : step.status
+                      }
+                      className={
+                        !step.status
+                          ? "is-unclassified"
+                          : step.status === "阻塞"
+                          ? "is-blocked"
+                          : step.status === "可执行"
+                          ? "is-ready"
+                          : "is-pending"
+                      }
+                    >
+                      {step.title}
+                    </em>
+                  </span>
+                  {attached?.below.map((s) => bubble(s, "below"))}
+                </span>
+              );
+            })}
             {!!terminal && (
               <span className="discussion-step">
                 <i aria-hidden="true">→</i>

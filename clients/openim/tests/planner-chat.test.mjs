@@ -13,6 +13,7 @@ import {
   plannerPlanInput,
   isDiscussionPlan,
   plannerDiscussionIssue,
+  plannerSupplementMap,
   plannerTaskShape,
   isPlannerCreateCommand,
   createPlannerTasks,
@@ -630,6 +631,26 @@ test("deadline proposals change only the explicitly selected steps and do not mu
   assert.equal(result.proposedItems[0].schedule.hardDeadline, null);
   assert.equal(result.proposedItems[1].schedule.hardDeadline.value.date, "2026-10-23");
   assert.throws(() => plannerPlanInput(p, { date: "2026-10-23", target: 4 }), /不存在/);
+});
+test("旁支按节点分组：材料在上、约束备注在下，孤儿丢弃，每节点最多两条", () => {
+  const items = [{ id: "a" }, { id: "b" }];
+  const map = plannerSupplementMap(items, [
+    { id: "s1", nodeId: "a", kind: "material", text: "已有 baseline" },
+    { id: "s2", nodeId: "a", kind: "constraint", text: "只换损失函数" },
+    { id: "s3", nodeId: "a", kind: "note", text: "第三条应被丢弃" },
+    { id: "s4", nodeId: "gone", kind: "note", text: "孤儿" },
+    { id: "s5", nodeId: "b", kind: "note", text: "正文上限 9 页" },
+  ]);
+  assert.deepEqual(map.get("a").above.map((s) => s.id), ["s1"]);
+  assert.deepEqual(map.get("a").below.map((s) => s.id), ["s2"]);
+  assert.deepEqual(map.get("b").below.map((s) => s.id), ["s5"]);
+  assert.equal(map.has("gone"), false);
+  assert.deepEqual(map.get("a").above[0], {
+    id: "s1",
+    nodeId: "a",
+    kind: "material",
+    text: "已有 baseline",
+  });
 });
 test("计划级最终成果在编辑与确认输入里都不会被丢掉", () => {
   const p = { ...makePlan(), outcome: "改好的正文与回复信" };

@@ -431,6 +431,59 @@
     background: #f1f8f3;
     color: #527e64;
   }
+  /* 旁支：挂在节点上下的上下文，上下留白让所有节点保持同一水平线 */
+  .discussion-slot {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 26px 0;
+    min-width: 140px;
+  }
+  .discussion-supp {
+    position: absolute;
+    left: 0;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    max-width: 180px;
+    padding: 2px 7px;
+    border: 1px dashed #c9d8e4;
+    border-radius: 7px;
+    background: #f8fafc;
+    color: #5f7285;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .discussion-supp > i {
+    flex: none;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: #edf2f7;
+    color: #72889d;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 600;
+  }
+  .discussion-supp::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    width: 0;
+    height: 8px;
+    border-left: 1px dashed #c2d3e0;
+  }
+  .discussion-supp.is-above {
+    top: 0;
+  }
+  .discussion-supp.is-above::after {
+    bottom: -9px;
+  }
+  .discussion-supp.is-below {
+    bottom: 0;
+  }
+  .discussion-supp.is-below::after {
+    top: -9px;
+  }
   .discussion-legend {
     position: absolute;
     right: 12px;

@@ -390,6 +390,34 @@ export const planQuestionText = (value: string | { question: string }) =>
 export const planQuestionOptions = (
   value: string | { question: string; options?: string[] },
 ) => (typeof value === "string" ? undefined : value.options);
+export type PlannerSupplement = {
+  id: string;
+  nodeId: string;
+  kind: "material" | "constraint" | "note";
+  text: string;
+};
+/**
+ * 旁支是按节点挂的上下文，不是任务：材料挂在节点上方，约束和备注挂在下方。
+ * 锚点不在清单里的直接丢掉（旧数据或模型删了节点），每节点最多保留两条。
+ */
+export function plannerSupplementMap(
+  items: { id: string }[],
+  supplements: readonly PlannerSupplement[] = [],
+) {
+  const known = new Set(items.map((item) => item.id));
+  const grouped = new Map<
+    string,
+    { above: PlannerSupplement[]; below: PlannerSupplement[] }
+  >();
+  for (const supplement of supplements) {
+    if (!known.has(supplement.nodeId)) continue;
+    const entry = grouped.get(supplement.nodeId) ?? { above: [], below: [] };
+    if (entry.above.length + entry.below.length >= 2) continue;
+    (supplement.kind === "material" ? entry.above : entry.below).push(supplement);
+    grouped.set(supplement.nodeId, entry);
+  }
+  return grouped;
+}
 /**
  * 讨论态：任意一项不是「可执行」。status 缺省也算待定（保守方向），
  * 宁可多讨论一轮，也不把信息不全的草案当成可创建方案。

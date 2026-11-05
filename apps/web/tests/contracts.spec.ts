@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   Task,
   Member,
@@ -22,7 +22,7 @@ import { projectTask } from "../src/contract-projection";
 
 describe("Frontend consumes shared contract", () => {
   it("validates every shared semantic and endpoint example", () => {
-    expect(contractVersion).toBe("0.42.0");
+    expect(contractVersion).toBe("0.43.0");
     for (const example of Object.values(fixtures))
       example.schema.parse(example.value);
     for (const [name, example] of Object.entries(endpointExamples)) {

@@ -213,6 +213,8 @@ export class Collaboration {
       }
       if (item.dependencies.some(dependency => !ids.has(dependency))) fail('VALIDATION_ERROR')
     }
+    // Supplements are context, never tasks: only their anchor has to be real.
+    for (const supplement of plan.supplements ?? []) if (!ids.has(supplement.nodeId)) fail('VALIDATION_ERROR')
     const visiting = new Set<string>(), visited = new Set<string>()
     const visit = (itemId: string) => {
       if (visiting.has(itemId)) fail('VALIDATION_ERROR')
