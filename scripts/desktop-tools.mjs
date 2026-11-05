@@ -25,11 +25,11 @@ export const tools = [
   },
   {
     name: 'dsh-research-workbench',
-    version: '0.3.3',
+    version: '0.4.0',
     archive: 'tgz',
-    url: 'https://github.com/luoyan96/dsh-research-workbench/releases/download/v0.3.3/dsh-research-workbench-0.3.3.tgz',
-    sha256: 'a7b0d4ac36b8c84d5b0e9ada056bc0569480a47adce9e8a53ed53cf248dc4ac1',
-    member: 'dsh-research-workbench-0.3.3.tgz',
+    url: 'https://github.com/luoyan96/dsh-research-workbench/releases/download/v0.4.0/dsh-research-workbench-0.4.0.tgz',
+    sha256: '583de48caac441a2fe97c316a09e08fa13b23af512a7b9b7435643316b594585',
+    member: 'dsh-research-workbench-0.4.0.tgz',
     target: 'tools/plugins',
   },
 ];
@@ -72,6 +72,8 @@ export async function prepareTools(client) {
     const cache = path.join(client, 'tools', '.cache', `${entry.name}-${entry.version}.${entry.archive}`);
     await mkdir(destination, { recursive: true });
     if (existsSync(file)) {
+      if (entry.archive === 'tgz' && (await digest(file)) !== entry.sha256)
+        throw Error(`${entry.name} 已有插件文件校验失败`);
       manifest.push({ ...entry, path: `${entry.target}/${entry.member}` });
       continue;
     }
