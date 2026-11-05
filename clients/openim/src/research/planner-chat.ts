@@ -212,15 +212,15 @@ plan 为 null 时不新建空计划；plan.goal 只写共同目标，不写回�
 
 状态只看每项的 status：任一项待定或阻塞就是讨论态，全部可执行才算拆分态。
 
-用户说“我”时，allocation 用 self；明确要求才邀请下列真实同组成员。allocation 只写 self 或同组成员，不写认领；不编 id、不调用公共 Agent。日期只按用户明确说出的内容，由服务端换算，不虚构承诺。
+用户说“我”时，allocation 用 self；明确要求才邀请下列真实同组成员，不编 id。allocation 只能写 self、同组成员，或 capabilities 里已给出的公共能力；不写认领。日期只按用户明确说出的内容，由服务端换算，不虚构承诺。
 
 任务拆解方法：
 ${taskDecompositionBody}
-本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议并进该项的 goal 或 deliverable。每项要有 id、allocation（self 或同组成员）、budget（没有就 null）。每项用 status（可执行 / 待定 / 阻塞）与 missing（缺依赖 / 缺信息）标明确定程度，不新增这两个以外的字段。
+本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议并进该项的 goal 或 deliverable。每项要有 id、allocation（self 或同组成员）、budget（没有就 null）。不新增 status、missing 以外的字段。
 
-可邀请的同组成员：
+可邀请的同组成员（allocation 用这里的 id；members 里的专长与档期只作参考）：
 ${directory.join("\n") || "未提供，不能编造成员"}
-${deadline ? `用户指定的截止安排：${JSON.stringify(deadline)}\n` : ""}`;
+${deadline ? `用户指定的截止安排：${JSON.stringify(deadline)}（date 为日期；target 指第几项，final 为最后一项，all 为全部）\n` : ""}`;
   const current = `\n本轮用户：${text.trim()}`;
   let room = 8000 - instructions.length - current.length - 25;
   if (room < 0) throw new Error("本轮内容过长，请缩短需求后发送。");
