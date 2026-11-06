@@ -424,12 +424,7 @@ export class Collaboration {
       new ReuseService(this).validatePlanRange(params.id,body)
       if (body.labId !== plan.labId) fail('VALIDATION_ERROR')
       const { expectedVersion: _, ...input } = body
-      // Legacy strict clients cannot send the extension fields. Preserve them
-      // on edits, pruning only context whose step the user explicitly removed.
-      const ids = new Set(input.proposedItems.map(item => item.id))
-      const updated = { ...plan, ...input,
-        ...(input.supplements === undefined && plan.supplements ? { supplements: plan.supplements.filter(item => ids.has(item.nodeId)) } : {}),
-        version: plan.version + 1 }
+      const updated = { ...plan, ...input, version: plan.version + 1 }
       this.savePlan(updated); return { data: updated }
     },
     confirmPlan: ({ params, body }) => {

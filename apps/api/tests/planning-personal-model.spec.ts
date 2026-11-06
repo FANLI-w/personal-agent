@@ -41,6 +41,33 @@ async function setup(){
   return {db,config,call,ok,personal,lab,planBody,planning,detail,worker,restart:async()=>{await app.close();app=createServer(config);url=await app.listen({host:'127.0.0.1',port:0})}}
 }
 describe('owned personal planning with real HTTP and isolated synthetic credentials',{timeout:30000},()=>{
+  it('accepts an explicitly unfinished downstream skeleton while preserving the existing conditional field writeback',async()=>{
+    const s=await setup();await s.personal()
+    const dated={...schedule,hardDeadline:{value:{kind:'date',date:'2026-11-30',timezone:'Asia/Shanghai'},source:'user',confirmed:true}}
+    const step={id:'downstream',title:'Synthetic downstream',goal:'Synthetic existing goal',deliverable:'Synthetic report',acceptanceCriteria:'Review sources',allocation:{kind:'self'},dependencies:[],schedule:dated,inputArtifactIds:[],budget:null,status:'待定',missing:'缺依赖'}
+    const prior=await s.ok('createPlan',{labId:'lab_synthetic',goal:'Synthetic project',proposedItems:[step],unresolvedQuestions:[{question:'Synthetic prerequisite?'}]})
+    const job=await s.ok('planRequest',{...s.planBody,replyMode:'conversation',plan:{id:prior.id,version:prior.version}})
+    const {goal:_goal,deliverable:_deliverable,acceptanceCriteria:_criteria,...rough}=step
+    await s.worker(async()=>({...output(),text:JSON.stringify({answer:'Synthetic prerequisite still needs confirmation.',plan:{goal:prior.goal,proposedItems:[{...rough,schedule:{invented:true},inputArtifactIds:['private_file']}],unresolvedQuestions:[{question:'Synthetic prerequisite?'}]}})})).tick()
+    const completed=await s.detail(job.id)
+    expect(completed.status).toBe('draft')
+    expect(completed.reply.plan).toMatchObject({id:prior.id,version:2,proposedItems:[{id:step.id,title:step.title,goal:'目标待确认',deliverable:'预期产物待确认',acceptanceCriteria:'待信息补齐后确定',status:'待定',missing:'缺依赖',schedule:dated,inputArtifactIds:[]}]})
+    expect(completed.reply.actions).toEqual([])
+    const denied=await s.call('confirmPlan',{expectedVersion:2},{id:prior.id})
+    expect(denied.value.error.code).toBe('INVALID_STATE')
+    expect(Number(s.db.prepare('SELECT count(*) n FROM tasks WHERE plan_id=?').get(prior.id)!.n)).toBe(0)
+  })
+  it('does not turn a missing research field into executable work or mutate an existing draft',async()=>{
+    const s=await setup();await s.personal()
+    const step={id:'step_qa',title:'Synthetic step',goal:'Synthetic existing goal',deliverable:'Synthetic report',acceptanceCriteria:'Review sources',allocation:{kind:'self'},dependencies:[],schedule,inputArtifactIds:[],budget:null,status:'可执行'}
+    const prior=await s.ok('createPlan',{labId:'lab_synthetic',goal:'Synthetic project',proposedItems:[step],unresolvedQuestions:[]})
+    const job=await s.ok('planRequest',{...s.planBody,replyMode:'conversation',plan:{id:prior.id,version:prior.version}})
+    const {goal:_goal,...missingGoal}=step
+    await s.worker(async()=>({...output(),text:JSON.stringify({answer:'Synthetic incomplete executable draft.',plan:{goal:prior.goal,proposedItems:[missingGoal],unresolvedQuestions:[]}})})).tick()
+    expect(await s.detail(job.id)).toMatchObject({status:'failed',failure:'INVALID_MODEL_OUTPUT'})
+    expect(await s.ok('getPlan',null,{id:prior.id})).toEqual({...prior,conclusionRefs:[]})
+    expect(Number(s.db.prepare('SELECT count(*) n FROM plan_versions WHERE plan_id=?').get(prior.id)!.n)).toBe(1)
+  })
   it('preserves an old plan for explicit reassessment and only confirms the executable revision',async()=>{
     const s=await setup();await s.personal()
     const item={id:'step_qa',title:'Synthetic step',goal:'Synthetic goal',deliverable:'Synthetic report',acceptanceCriteria:'Review sources',allocation:{kind:'self'},dependencies:[],schedule,inputArtifactIds:[],budget:null}

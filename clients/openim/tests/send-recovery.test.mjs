@@ -119,38 +119,6 @@ test("handoff capability follows the backend version and is cleared with the acc
   assert.equal(api.supportsTranscriptSync(), false);
 });
 
-test("planner extensions require an advertised compatible server and reset with the account", async (t) => {
-  let version = "0.42.0";
-  isolated(t, async (_, options) => {
-    assert.equal(options.headers["X-AcceptCat-Planning"], "extensions-v1");
-    return new Response(JSON.stringify(session), {
-      headers: { "Content-Type": "application/json", "X-Contract-Version": version },
-    });
-  });
-  assert.equal(api.supportsPlannerExtensions(), false);
-  await api.researchApi("session");
-  assert.equal(api.supportsPlannerExtensions(), false);
-  version = "0.43.0";
-  await api.researchApi("session");
-  assert.equal(api.supportsPlannerExtensions(), true);
-  api.clearResearchSession();
-  assert.equal(api.supportsPlannerExtensions(), false);
-});
-
-test("a late old-account response cannot enable the new account's planner extensions", async (t) => {
-  let release;
-  isolated(t, () => new Promise(resolve => { release = resolve; }));
-  const rejected = assert.rejects(api.researchApi("session"), { name: "AbortError" });
-  await flush();
-  api.clearResearchSession();
-  release(new Response(JSON.stringify(session), {
-    headers: { "Content-Type": "application/json", "X-Contract-Version": "0.43.0" },
-  }));
-  await rejected;
-  await flush();
-  assert.equal(api.supportsPlannerExtensions(), false);
-});
-
 test("a missing session response is bounded and never dispatches the mutation", async (t) => {
   let signal,
     requests = 0;

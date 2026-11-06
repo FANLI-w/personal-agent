@@ -390,8 +390,7 @@
     display: flex;
     flex: 1;
     flex-wrap: wrap;
-    align-items: stretch;
-    min-width: 0;
+    align-items: center;
     gap: 6px;
   }
   .discussion-step {
@@ -432,29 +431,17 @@
     background: #f1f8f3;
     color: #527e64;
   }
-  /* 上下两组随内容增高；等高轨道让步骤对齐，不以固定留白覆盖长旁支。 */
+  /* 旁支：挂在节点上下的上下文，上下留白让所有节点保持同一水平线 */
   .discussion-slot {
     position: relative;
-    display: grid;
-    grid-template-rows: 1fr auto 1fr;
+    display: inline-flex;
+    align-items: center;
+    padding: 26px 0;
     min-width: 140px;
-    max-width: 240px;
-  }
-  .discussion-supplements {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .discussion-supplements.is-above {
-    align-self: end;
-    padding-bottom: 10px;
-  }
-  .discussion-supplements.is-below {
-    padding-top: 10px;
   }
   .discussion-supp {
-    position: relative;
+    position: absolute;
+    left: 0;
     display: inline-flex;
     align-items: baseline;
     gap: 4px;
@@ -485,8 +472,14 @@
     height: 8px;
     border-left: 1px dashed #c2d3e0;
   }
+  .discussion-supp.is-above {
+    top: 0;
+  }
   .discussion-supp.is-above::after {
     bottom: -9px;
+  }
+  .discussion-supp.is-below {
+    bottom: 0;
   }
   .discussion-supp.is-below::after {
     top: -9px;

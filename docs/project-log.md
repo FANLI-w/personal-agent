@@ -2859,10 +2859,13 @@ c454753的main Windows根CI出现agent-files解析超时/连带缺失turn，原�
 
 草稿四附件全部size/digest一致后公开，匿名Latest/小附件摘要/EXE HEAD核对、0.10.95四附件ID/大小/digest未变的检查通过。详见[发布回执](deployment/acceptcat-0.10.96-release.md)，证据 D:/deepseek-agent/.runtime/release-0.10.96-20261106。
 
-## 2026-11-06 PR176三处补修与0.10.97发布准备
+## 2026-11-06 负责人更正PR176补修范围：只处理第二项
 
-负责人授权修复同事PR176、保留设计并合并发包。干净main/5b1343b上开fix/planner176-compat，普通merge固定a528c292为67972f6，保留同事提交和96聊天修复。契约沿同事0.43，无迁移。补七类响应的显式扩展协商与旧0.42投影，数据库/幂等记录不裁字段；实际公开96模型契约的严格读取核验通过。旧编辑保留扩展并在删除步骤后修剪失效锚点。仅显式待定/阻塞且有missing的粗骨架容许省略研究细节并填未确认占位，可执行/旧无状态项仍严格，模型不能带入日期或文件权限。plannerPlanInput/确认指纹传递supplements，避免真实讨论卡漏显示或确认未看过的新要求。
+PR182已普通合main为f34b027，GitHub将原同事PR176标记MERGED，原a528c292及merge67972f6历史保留。首轮共享882/客户端和UI检查通过，但负责人随后说明只需修第二项，第三项预览不传supplements为有意数据边界；0.10.97此时尚未tag或公开。停止三项候选交付，从最新main另开fix/planner176-skeleton-only，用非改历史的逆向修改撤回9eb992中第一/第三项，保留第二项解析条件。原兼容投影/协商、预览与指纹、布局、提示词和Skill改动撤回；对规划相关八文件git diff a528c292逐字节一致核对通过。首轮构建证据保留在release-0.10.97-20261106并标记被新范围取代，不作为最终包。
 
-根ci71文件882项与生产三项/B0/Web通过；47项规划依赖图、16项请求恢复检查通过，包含0.43能力声明/旧服务降级和迟到账号隔离。实际PlanningAgent、useResearchRead、预览、讨论卡/依赖图、SCSS的隔离Edge桌面1440×980/窄屏1024×768通过；候选虚线与填草稿不自动发送、两态、三种旁支/成果保留。最初选择器未计入标签导致超时，DOM本已含资料，修正夹具并保留失败；随后肉眼发现旧26px留白让长材料遮住标题，改自适应上下轨道，保留同事设计，增加标题/图例几何检查通过。页面异常0，保留Router future警告，没有私人资料或真实模型调用。
+重新沿实际worker链核对：原schedule/inputArtifactIds等特殊字段在解析后写回正确保留；goal/deliverable/acceptanceCriteria是解析前必填，标题骨架确会先失败。只允许显式待定/阻塞且有missing的项省略研究细节，保持未知、不制造可执行状态；可执行和旧无状态格式仍严格。新增实际HTTP/SQLite/worker检查：原标题骨架保存，明确日程恢复、伪造原件授权不进入计划、讨论态不可建任务、可执行缺字段失败而原方案/版本不变。解析与worker两文件28项通过。完整CI重新核对，客户端按原设计验证不接入supplements，不把此前三项方案的882/界面结果冒称为本轮。
 
-本轮初次PowerShell使用Bash花括号路径报语法错，拆开重读；几处历史猜测文件名不存在，随后rg定位正确入口，未产生产品修改。共享构建/定向API检查均通过，没有为通过测试修改权限或放宽超时。证据在Git外D:/deepseek-agent/.runtime/planner176-fixes-20261106。当前97仍候选、未合并/发包；线上0.42未改，新客户端为旧服务提供字段兼容，完整新字段/新服务system须独立部署0.43。写入新Plan扩展后旧0.42不能直接读，部署需前滚或兼容镜像。完整说明见development/planner176-compatibility.md。
+本批线上仍0.42、Latest96；0.43后端不自动部署，版本兼容第一项按负责人要求不在本批修复，部署前协调客户端及新字段后前滚风险。新97将从修正合并后的固定main重新构建，原候选不能复用。Git外证据planner176-skeleton-only-20261106；说明development/planner-skeleton-conditions.md。最初gh创建PR182遇502，列表确认无重复后重试成功，原记录在planner176-fixes-20261106/pr-create-first-failure.txt；源码和生产未因该失败变化。
+范围更正后的完整验证：根70文件880项、生产三项/B0/Web通过；客户端44项规划/依赖图与类型通过。外部探针加载原a528c292实际解析模块，确认日期/文件字段原归一化有效，原标题骨架的goal/deliverable/acceptanceCriteria会先报invalid_type；现条件解析接受并保持阻塞状态。实际PlanningAgent、原useResearchRead/预览/讨论卡/SCSS在1440×980与1024×768复查，明确断言原始服务端夹具保留三条supplements但前端不传递，候选只填草稿和原两态均保持；页面异常0、Router提示保留。源代码九文件与同事原版逐字节相同的守卫纳入最终构建捕获。
+
+首轮PR182及f34 main Ubuntu两个矩阵的planning-compat新夹具createPersonalModel返回503，原日志已留planner176-fixes-20261106/pr182-foundation-failed.log与first-main-foundation-failed.log；夹具写测试密钥未指定mode，Linux权限保护拒绝，Windows通过。该兼容功能/夹具因负责人收窄范围撤回，不作为最终结果；新条件写回检查复用原planning-personal-model的0600夹具，未关闭权限保护。第一项兼容不在新范围内且后台未到0.43，故新97仅预发布手动安装，96继续Latest，待后台就绪再转正式。

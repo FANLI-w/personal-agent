@@ -636,47 +636,6 @@ test("计划级最终成果在编辑与确认输入里都不会被丢掉", () =>
   assert.equal(edited.outcome, "改好的正文与回复信");
   assert.equal(p.outcome, "改好的正文与回复信");
 });
-
-test("supplements survive the actual preview and deadline edit without changing their source", () => {
-  const p = { ...makePlan(), supplements: [
-    { id: "material", nodeId: "step_1", kind: "material", text: "已有参考图" },
-    { id: "constraint", nodeId: "step_2", kind: "constraint", text: "保留原始数据" },
-  ] };
-  const source = structuredClone(p);
-  for (const deadline of [undefined, { date: "2026-11-30", target: "final" }]) {
-    assert.deepEqual(plannerPlanInput(p, deadline).supplements, p.supplements);
-  }
-  assert.deepEqual(p, source);
-  assert.deepEqual(plannerPlanInput({ ...p, supplements: [] }).supplements, []);
-});
-
-test("the confirmation fingerprint includes the reviewed supplements", async () => {
-  const p = { ...makePlan(), supplements: [{ id: "keep", nodeId: "step_1", kind: "note", text: "核对引用" }] };
-  const f = fake(p);
-  await assert.rejects(createPlannerTasks(async (name, options) => {
-    const result = await f.call(name, options);
-    return name === "getPlan" ? { ...result, data: { ...result.data, supplements: [{ ...p.supplements[0], text: "另一窗口的要求" }] } } : result;
-  }, { key: "reviewed_supplements_123", plan: p }, () => true), /其他窗口|版本/);
-  assert.deepEqual(f.calls.map(call => call.name), ["getPlan"]);
-});
-
-test("the same two-state design uses old-server fields until extensions are advertised", () => {
-  const skill = readFileSync(new URL("../../../agents/skills/task-decomposition/SKILL.md", import.meta.url), "utf8");
-  const legacy = planningPrompt([], "整理现有材料", [], undefined, skill, false).prompt;
-  const modern = planningPrompt([], "整理现有材料", [], undefined, skill, true).prompt;
-  for (const value of [legacy, modern]) {
-    assert(value.includes("最多 3 项"));
-    assert(value.includes("每轮最多问一个必要的问题"));
-    assert(value.includes("任一项待定或阻塞就是讨论态"));
-    assert(value.length <= 8000);
-  }
-  assert(!legacy.includes("写成 supplements"));
-  assert(!legacy.includes("`outcome`"));
-  assert(legacy.includes("当前服务的 plan 只使用 goal、proposedItems、unresolvedQuestions"));
-  assert(legacy.includes("goal、deliverable 填「待确认」"));
-  assert(modern.includes("写成 supplements"));
-  assert(modern.includes("被阻塞的下游项只留 title"));
-});
 test("creation rechecks the exact reviewed version and uses one stable confirmation key", async () => {
   const p = makePlan(),
     f = fake(p);
