@@ -40,6 +40,7 @@ type TimelineState = {
   hidden: string[];
   action?: { kind: "forward" | "delete" | "withdraw"; ids: string[] };
   jump?: MessageLocator;
+  failedLocation?: MessageLocator;
   highlighted?: string;
   error?: string;
 };
@@ -53,6 +54,7 @@ export function openTimeline(scope: string) {
       ...empty,
       action: undefined,
       jump: undefined,
+      failedLocation: undefined,
       highlighted: undefined,
       error: undefined,
     });
@@ -80,7 +82,7 @@ export function selectTimelineMessage(id: string) {
 }
 export function locateMessage(scope: string, locator: MessageLocator) {
   if (useChatTimeline.getState().scope === scope)
-    useChatTimeline.setState({ jump: locator, error: undefined });
+    useChatTimeline.setState({ jump: locator, failedLocation: undefined, error: undefined });
 }
 // Reading position and local-only hides retain IDs, never message bodies or credentials.
 type Position = { anchor?: string; atBottom: boolean; hidden: string[] };
@@ -144,6 +146,7 @@ useResearchStore.subscribe((next, previous) => {
       ...empty,
       action: undefined,
       jump: undefined,
+      failedLocation: undefined,
       highlighted: undefined,
       error: undefined,
     });

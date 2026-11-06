@@ -6,6 +6,7 @@ import {
   chatPosition,
   saveChatPosition,
   positionKey,
+  locateMessage,
 } from "@/research/chat-timeline";
 import clsx from "clsx";
 import {
@@ -47,6 +48,7 @@ const ChatContent = () => {
     getMoreOldMessages,
     seekMessage,
     historyError,
+    dismissHistoryError,
     historySource,
   } = useHistoryMessageList();
   const actorId = useResearchStore((s) => s.actor?.member.id || "");
@@ -55,6 +57,8 @@ const ChatContent = () => {
   const hidden = useChatTimeline((s) => s.hidden);
   const jump = useChatTimeline((s) => s.jump);
   const navigationError = useChatTimeline((s) => s.error);
+  const failedLocation = useChatTimeline((s) => s.failedLocation);
+  const historyStatus = historyNotice(historySource, navigator.onLine);
   const [locating, setLocating] = useState(false);
   const [restoreReady, setRestoreReady] = useState(false);
   const [initialAnchor, setInitialAnchor] = useState<string>();
@@ -185,18 +189,29 @@ const ChatContent = () => {
       return;
     }
     const activeScope = scope;
+    const explicit = !!jump;
+    const activeJump = jump;
     stopFollowing();
     setLocating(true);
     void seek
-      .current(target)
+      .current(target, { localOnly: !explicit })
       .then((found) => {
-        if (currentScope.current !== activeScope) return;
+        if (currentScope.current !== activeScope || useChatTimeline.getState().jump !== activeJump) return;
         if (!found) {
-          useChatTimeline.setState({
-            jump: undefined,
-            error:
-              "本次未定位到消息：它可能尚未同步、已删除或不在已加载范围。可继续查找或重试。",
-          });
+          if (explicit) {
+            useChatTimeline.setState({
+              jump: undefined,
+              failedLocation: target,
+              error: "暂未定位到这条消息，可以重新定位或继续查找。",
+            });
+          } else {
+            // An expired reading anchor is optional state, not a failed user
+            // action. Show the available transcript and stop restoring it.
+            visibleAnchor.current = undefined;
+            saveChatPosition(savedKey, { anchor: undefined, atBottom: true });
+            historyPaused.current = false;
+            setPaused(false);
+          }
           return;
         }
         const hiddenIds = useChatTimeline
@@ -205,6 +220,7 @@ const ChatContent = () => {
         useChatTimeline.setState({
           hidden: hiddenIds,
           jump: undefined,
+          failedLocation: undefined,
           highlighted: found.clientMsgID,
           error: undefined,
         });
@@ -231,8 +247,15 @@ const ChatContent = () => {
           });
       })
       .catch(() => {
-        if (currentScope.current === activeScope)
-          useChatTimeline.setState({ jump: undefined, error: "定位失败，请重试。" });
+        if (currentScope.current !== activeScope || useChatTimeline.getState().jump !== activeJump) return;
+        if (explicit)
+          useChatTimeline.setState({ jump: undefined, failedLocation: target, error: "暂时无法定位这条消息，请重试。" });
+        else {
+          visibleAnchor.current = undefined;
+          saveChatPosition(savedKey, { anchor: undefined, atBottom: true });
+          historyPaused.current = false;
+          setPaused(false);
+        }
       })
       .finally(() => {
         if (currentScope.current === activeScope) {
@@ -408,9 +431,9 @@ const ChatContent = () => {
       }}
     >
       {cacheFailure && <Alert type="warning" message={cacheFailure} />}
-      {historySource && !historyError && (
+      {historyStatus && !historyError && (
         <p className="chat-history-source" role="status">
-          {historyNotice(historySource, navigator.onLine)}
+          {historyStatus}
         </p>
       )}
       {(historyError || navigationError) && (
@@ -418,15 +441,30 @@ const ChatContent = () => {
           type="warning"
           message={historyError || navigationError}
           closable
-          onClose={() => useChatTimeline.setState({ error: undefined })}
+          onClose={() => {
+            dismissHistoryError();
+            useChatTimeline.setState({ error: undefined, failedLocation: undefined });
+          }}
           action={
-            <Button size="small" onClick={() => void getMoreOldMessages()}>
-              重新读取
-            </Button>
+            failedLocation ? (
+              <Button size="small" loading={moreOldLoading} onClick={async () => {
+                dismissHistoryError();
+                // Recheck even an exhausted history boundary before retrying
+                // the same locator; a page may have become available since.
+                await getMoreOldMessages(false);
+                locateMessage(viewScope, failedLocation);
+              }}>
+                重新定位
+              </Button>
+            ) : historyError ? (
+              <Button size="small" onClick={() => void getMoreOldMessages()}>
+                重新读取
+              </Button>
+            ) : undefined
           }
         />
       )}
-      {locating && (
+      {locating && jump && (
         <div role="status" className="chat-navigation-status">
           <Spin size="small" /> 正在定位聊天记录…
         </div>
