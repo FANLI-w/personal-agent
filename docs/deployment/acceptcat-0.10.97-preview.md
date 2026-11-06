@@ -1,5 +1,8 @@
 # AcceptCat 0.10.97 预发布回执
 
+> 后续部署更新：2026-11-06 11:35:11北京时间，配套后台0.43已上线；可以用0.10.97开始真实任务验收，客户端仍为预发布、96仍Latest。见[后台部署回执](planner-skeleton-20261106.md)。下列“后台仍0.42”是10:42公开安装包时的历史记录。
+
+
 北京时间 2026/11/6 10:42:54 已公开手动安装预发布 [v0.10.97](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.97)，Release ID 436038237，**v0.10.96仍为自动更新Latest**。原同事PR176已合并；范围修正PR183已合并，实际构建/tag固定 **de0d55a5f6a00b391365ff7bd0fd6e6e6bbf12a7**。
 
 - Windows x64安装包：[AcceptCat_0.10.97.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.97/AcceptCat_0.10.97.exe)，421224775字节。
