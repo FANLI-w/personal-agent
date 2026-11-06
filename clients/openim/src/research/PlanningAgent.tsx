@@ -20,7 +20,7 @@ import { takeFeishuPlanning } from "./feishu-planning";
 import { DependencyGraph } from "./DependencyGraph";
 import { PlanningDiscussion } from "./PlanningDiscussion";
 import taskDecompositionSkill from "@skills/task-decomposition/SKILL.md?raw";
-import { researchApi, ResearchApiError } from "./api";
+import { researchApi, ResearchApiError, supportsPlannerExtensions } from "./api";
 import { useResearchStore } from "./store";
 import { useResearchRead } from "./useResearchRead";
 import { usePersonalOperation } from "./usePersonalOperation";
@@ -37,7 +37,6 @@ import {
   plannerPlanInput,
   isDiscussionPlan,
   planQuestionText,
-  plannerTaskShape,
   planningPrompt,
   plannerReplyMessage,
   readPlannerHistory,
@@ -636,7 +635,6 @@ function PlanningAgentSession({
     const deadlineQuestion = statedDeadline
       ? false
       : needsDeadlineClarification(text) || !!thread.deadlineQuestion;
-    const taskShape = plannerTaskShape(text);
     void run(async (isCurrent) => {
       const context = planningPrompt(
         retry ? retry.messages : thread.messages,
@@ -644,7 +642,7 @@ function PlanningAgentSession({
         members.data?.data || [],
         deadline,
         taskDecompositionSkill,
-        taskShape,
+        supportsPlannerExtensions(),
       );
       const mate = await prepareColleague(isCurrent);
       if (!mate || !isCurrent()) return;

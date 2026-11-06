@@ -198,6 +198,8 @@ export class Collaboration {
   canConfirmPlan(plan: Pick<PlanModel,'status'|'proposedItems'>) {
     // Legacy manually reviewed drafts lack state metadata; keep their API
     // contract. Explicit two-state discussions are not confirmable anywhere.
+    // Only proposedItems decide this: supplements never become tasks and the
+    // plan-level outcome never changes whether a plan is reviewable.
     return plan.status==='draft'&&!plan.proposedItems.some(item=>item.status&&item.status!=='可执行')
   }
   validatePlan(plan: RequestFor<'createPlan'>['body']) {
@@ -213,6 +215,8 @@ export class Collaboration {
       }
       if (item.dependencies.some(dependency => !ids.has(dependency))) fail('VALIDATION_ERROR')
     }
+    // Supplements are context, never tasks: only their anchor has to be real.
+    for (const supplement of plan.supplements ?? []) if (!ids.has(supplement.nodeId)) fail('VALIDATION_ERROR')
     const visiting = new Set<string>(), visited = new Set<string>()
     const visit = (itemId: string) => {
       if (visiting.has(itemId)) fail('VALIDATION_ERROR')
@@ -420,7 +424,12 @@ export class Collaboration {
       new ReuseService(this).validatePlanRange(params.id,body)
       if (body.labId !== plan.labId) fail('VALIDATION_ERROR')
       const { expectedVersion: _, ...input } = body
-      const updated = { ...plan, ...input, version: plan.version + 1 }
+      // Legacy strict clients cannot send the extension fields. Preserve them
+      // on edits, pruning only context whose step the user explicitly removed.
+      const ids = new Set(input.proposedItems.map(item => item.id))
+      const updated = { ...plan, ...input,
+        ...(input.supplements === undefined && plan.supplements ? { supplements: plan.supplements.filter(item => ids.has(item.nodeId)) } : {}),
+        version: plan.version + 1 }
       this.savePlan(updated); return { data: updated }
     },
     confirmPlan: ({ params, body }) => {
@@ -431,10 +440,14 @@ export class Collaboration {
       if (!plan.proposedItems.length) fail('VALIDATION_ERROR')
       for(const item of plan.proposedItems) if(item.allocation.kind==='public_agent'){if(item.allocation.humanLeadId!==this.actor.id)fail('FORBIDDEN');if(!item.allocation.capability||!item.budget)fail('CAPABILITY_UNAVAILABLE');new AiService(this,this.execution?.enabled??false,this.execution?.model??'deepseek-v4-flash').available(item.allocation.capability)}
       const mapping = new Map(plan.proposedItems.map(item => [item.id, id()]))
-      for (const item of plan.proposedItems) {
+      for (const [index, item] of plan.proposedItems.entries()) {
         const own = item.allocation.kind === 'self' || item.allocation.kind === 'public_agent'
-        const task = Task.parse({ id: mapping.get(item.id), labId: plan.labId, parentTaskId: null, planId: plan.id, planVersion: plan.version, title: item.title, taskType: 'other', goal: item.goal, acceptanceCriteria: item.acceptanceCriteria, initiatorId: this.actor.id, leadId: own ? this.actor.id : null, reviewerId: this.actor.id, participantIds: [], status: own ? 'ready' : 'awaiting_acceptance', blocker: null, dependencies: item.dependencies.map(dependency => ({ taskId: mapping.get(dependency), kind: 'accepted_deliverable', requiredRevision: null })), schedule: item.schedule, access: { visibility: item.allocation.kind === 'claim' ? 'lab_summary' : 'participants', summary: item.allocation.kind === 'claim' ? item.allocation.summary : null }, version: 1, createdAt: now(), updatedAt: now(), allowedActions: [] })
-        const summary = TaskSummary.parse({ projection: 'claim_summary', id: task.id, labId: task.labId, title: item.title, summary: item.allocation.kind === 'claim' ? item.allocation.summary : item.deliverable, deliverable: item.deliverable, acceptanceCriteria: item.acceptanceCriteria, schedule: item.schedule, initiatorId: task.initiatorId, reviewerId: task.reviewerId, version: 1, allowedActions: [], pendingInvitation: null })
+        // The plan-level outcome has no task field; the closing step carries it so the workspace still shows it.
+        const closing = index === plan.proposedItems.length - 1 && plan.outcome?.trim()
+        const merged = closing ? `${item.acceptanceCriteria}\n整体成果：${plan.outcome!.trim()}` : item.acceptanceCriteria
+        const acceptanceCriteria = merged.length <= 8000 ? merged : item.acceptanceCriteria
+        const task = Task.parse({ id: mapping.get(item.id), labId: plan.labId, parentTaskId: null, planId: plan.id, planVersion: plan.version, title: item.title, taskType: 'other', goal: item.goal, acceptanceCriteria, initiatorId: this.actor.id, leadId: own ? this.actor.id : null, reviewerId: this.actor.id, participantIds: [], status: own ? 'ready' : 'awaiting_acceptance', blocker: null, dependencies: item.dependencies.map(dependency => ({ taskId: mapping.get(dependency), kind: 'accepted_deliverable', requiredRevision: null })), schedule: item.schedule, access: { visibility: item.allocation.kind === 'claim' ? 'lab_summary' : 'participants', summary: item.allocation.kind === 'claim' ? item.allocation.summary : null }, version: 1, createdAt: now(), updatedAt: now(), allowedActions: [] })
+        const summary = TaskSummary.parse({ projection: 'claim_summary', id: task.id, labId: task.labId, title: item.title, summary: item.allocation.kind === 'claim' ? item.allocation.summary : item.deliverable, deliverable: item.deliverable, acceptanceCriteria, schedule: item.schedule, initiatorId: task.initiatorId, reviewerId: task.reviewerId, version: 1, allowedActions: [], pendingInvitation: null })
         this.db.prepare('INSERT INTO tasks VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(task.id, task.labId, plan.id, item.id, task.initiatorId, task.leadId, task.reviewerId, task.status, item.allocation.kind === 'claim' ? 1 : 0, 1, task.createdAt, encode(task), encode(summary))
         this.db.prepare('INSERT INTO task_versions VALUES (?,?,?)').run(task.id,task.version,encode(task))
         this.grant(task.id, this.actor.id, 'full')

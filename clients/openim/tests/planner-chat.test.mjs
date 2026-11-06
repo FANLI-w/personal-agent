@@ -13,7 +13,7 @@ import {
   plannerPlanInput,
   isDiscussionPlan,
   plannerDiscussionIssue,
-  plannerTaskShape,
+  plannerSupplementMap,
   isPlannerCreateCommand,
   createPlannerTasks,
   stopPlannerRequest,
@@ -221,42 +221,27 @@ function fake(initial = makePlan(), failure) {
     },
   };
 }
-test("automatic sizing is the default; object counts, complaints and quotes do not force multiple tasks", () => {
-  for (const text of [
-    "完善论文和实验",
-    "比较3个模型并写报告",
-    "为什么给我创建了7个任务",
-    "上次让我创建7个任务太多了",
-    "他说创建7个任务",
-    "请创建7个任务？",
-    "请创建“7个任务”",
-    "不要拆分任务",
-    "不要创建多个任务",
-    "合并成一个任务",
-    "我只要一个任务",
-    "改为小王负责",
-    "继续修改说明",
-  ])
-    assert.equal(plannerTaskShape(text), "auto");
-  for (const text of [
-    "拆成两个任务",
-    "请帮我创建3项任务",
-    "分别创建多个任务",
-    "改成3项任务",
-  ])
-    assert.equal(plannerTaskShape(text), "multiple");
-});
 test("task input treats a stated goal as a draft and keeps task count outside editable personality", () => {
   const automatic = planningPrompt([], "完善现有论文", []).prompt;
-  assert(automatic.includes("先按目标、最终交付与关键中间环节判断"));
-  assert(automatic.includes("进入拆分态后"));
-  assert(automatic.includes("可能一项也可能多项"));
-  assert(automatic.includes("动作、阶段、对象数量本身不构成拆分理由"));
-  assert(automatic.includes("人设和方法建议不能改变"));
-  const split = planningPrompt([], "分别安排", [], undefined, "", "multiple").prompt;
-  assert(split.includes("用户这轮明确要分开安排"));
-  assert(split.includes("不强行凑数"));
-  assert(!split.includes("进入拆分态后"));
+  assert(automatic.includes("目标、最终成果与步骤都明确时"));
+  assert(automatic.includes("都返回符合结构的 JSON"));
+  assert(automatic.includes("最多 3 项"));
+  assert(automatic.includes("budget（没有就 null）"));
+  assert(automatic.includes("状态只看每项的 status"));
+  assert(automatic.includes("supplements"));
+});
+test("旁支和最终成果都不参与两态判定", () => {
+  const item = { ...makePlan().proposedItems[0], status: "可执行" };
+  const plan = {
+    proposedItems: [item],
+    outcome: "方向定下来",
+    supplements: [
+      { id: "s1", nodeId: item.id, kind: "material", text: "已有 baseline" },
+      { id: "s2", nodeId: item.id, kind: "note", text: "正文上限 9 页" },
+    ],
+  };
+  assert.equal(isDiscussionPlan(plan.proposedItems), false);
+  assert.equal(plannerDiscussionIssue(plan), undefined);
 });
 test("讨论态判断：status 缺省按待定处理，只有全部可执行才算拆分态", () => {
   const item = (status) => ({ ...makePlan().proposedItems[0], status });
@@ -396,18 +381,12 @@ test("a reviewed snapshot survives in its account-scoped transcript, while an in
   );
   assert.equal(restore({ ...thread.creating, key: "short" }), undefined);
 });
-test("new requests carry no stored shape, and explicit merge or split wording is left to the model", () => {
+test("new requests carry no stored shape; explicit merge or split wording stays with the model", () => {
   const thread = { ...newPlannerThread(), id: "thread_shape" };
   const restore = () =>
     readPlannerHistory(JSON.stringify({ active: thread.id, threads: [thread] }))
       .threads[0];
   assert.equal("taskShape" in restore(), false);
-  assert.equal(plannerTaskShape("继续完善安排"), "auto");
-  thread.messages = [{ id: "user_split", role: "user", text: "拆成三个任务" }];
-  assert.equal(plannerTaskShape(thread.messages.at(-1).text), "multiple");
-  thread.messages.push({ id: "user_combine", role: "user", text: "合并成一个任务" });
-  assert.equal(plannerTaskShape(thread.messages.at(-1).text), "auto");
-  assert.equal(plannerTaskShape("这次分开安排好些"), "auto"); // Let the model read natural corrections in context.
 });
 test("automatic sizing previews and confirms the exact model draft count, with no silent merge or extra task", async () => {
   for (const count of [1, 3]) {
@@ -445,8 +424,8 @@ test("planner has no manual sizing switch and no client-side merge of a reviewed
   assert(!source.includes("合为一项任务"));
   assert(!source.includes("改为多项任务"));
   assert(!core.includes("plannerTaskInput"));
-  assert(core.includes('export type PlannerTaskShape = "auto" | "multiple"'));
-  assert(source.includes("const taskShape = plannerTaskShape(text);"));
+  assert(!core.includes("plannerTaskShape"));
+  assert(!core.includes("PlannerTaskShape"));
   assert(!source.includes("plannerTaskShape(text, thread.taskShape)"));
 });
 test("transcript keys isolate service, actor and laboratory, restored pending writes remain explicit", () => {
@@ -629,6 +608,74 @@ test("deadline proposals change only the explicitly selected steps and do not mu
   assert.equal(result.proposedItems[0].schedule.hardDeadline, null);
   assert.equal(result.proposedItems[1].schedule.hardDeadline.value.date, "2026-10-23");
   assert.throws(() => plannerPlanInput(p, { date: "2026-10-23", target: 4 }), /不存在/);
+});
+test("旁支按节点分组：材料在上、约束备注在下，孤儿丢弃，每节点最多两条", () => {
+  const items = [{ id: "a" }, { id: "b" }];
+  const map = plannerSupplementMap(items, [
+    { id: "s1", nodeId: "a", kind: "material", text: "已有 baseline" },
+    { id: "s2", nodeId: "a", kind: "constraint", text: "只换损失函数" },
+    { id: "s3", nodeId: "a", kind: "note", text: "第三条应被丢弃" },
+    { id: "s4", nodeId: "gone", kind: "note", text: "孤儿" },
+    { id: "s5", nodeId: "b", kind: "note", text: "正文上限 9 页" },
+  ]);
+  assert.deepEqual(map.get("a").above.map((s) => s.id), ["s1"]);
+  assert.deepEqual(map.get("a").below.map((s) => s.id), ["s2"]);
+  assert.deepEqual(map.get("b").below.map((s) => s.id), ["s5"]);
+  assert.equal(map.has("gone"), false);
+  assert.deepEqual(map.get("a").above[0], {
+    id: "s1",
+    nodeId: "a",
+    kind: "material",
+    text: "已有 baseline",
+  });
+});
+test("计划级最终成果在编辑与确认输入里都不会被丢掉", () => {
+  const p = { ...makePlan(), outcome: "改好的正文与回复信" };
+  assert.equal(plannerPlanInput(p).outcome, "改好的正文与回复信");
+  const edited = plannerPlanInput(p, { date: "2026-10-23", target: "final" });
+  assert.equal(edited.outcome, "改好的正文与回复信");
+  assert.equal(p.outcome, "改好的正文与回复信");
+});
+
+test("supplements survive the actual preview and deadline edit without changing their source", () => {
+  const p = { ...makePlan(), supplements: [
+    { id: "material", nodeId: "step_1", kind: "material", text: "已有参考图" },
+    { id: "constraint", nodeId: "step_2", kind: "constraint", text: "保留原始数据" },
+  ] };
+  const source = structuredClone(p);
+  for (const deadline of [undefined, { date: "2026-11-30", target: "final" }]) {
+    assert.deepEqual(plannerPlanInput(p, deadline).supplements, p.supplements);
+  }
+  assert.deepEqual(p, source);
+  assert.deepEqual(plannerPlanInput({ ...p, supplements: [] }).supplements, []);
+});
+
+test("the confirmation fingerprint includes the reviewed supplements", async () => {
+  const p = { ...makePlan(), supplements: [{ id: "keep", nodeId: "step_1", kind: "note", text: "核对引用" }] };
+  const f = fake(p);
+  await assert.rejects(createPlannerTasks(async (name, options) => {
+    const result = await f.call(name, options);
+    return name === "getPlan" ? { ...result, data: { ...result.data, supplements: [{ ...p.supplements[0], text: "另一窗口的要求" }] } } : result;
+  }, { key: "reviewed_supplements_123", plan: p }, () => true), /其他窗口|版本/);
+  assert.deepEqual(f.calls.map(call => call.name), ["getPlan"]);
+});
+
+test("the same two-state design uses old-server fields until extensions are advertised", () => {
+  const skill = readFileSync(new URL("../../../agents/skills/task-decomposition/SKILL.md", import.meta.url), "utf8");
+  const legacy = planningPrompt([], "整理现有材料", [], undefined, skill, false).prompt;
+  const modern = planningPrompt([], "整理现有材料", [], undefined, skill, true).prompt;
+  for (const value of [legacy, modern]) {
+    assert(value.includes("最多 3 项"));
+    assert(value.includes("每轮最多问一个必要的问题"));
+    assert(value.includes("任一项待定或阻塞就是讨论态"));
+    assert(value.length <= 8000);
+  }
+  assert(!legacy.includes("写成 supplements"));
+  assert(!legacy.includes("`outcome`"));
+  assert(legacy.includes("当前服务的 plan 只使用 goal、proposedItems、unresolvedQuestions"));
+  assert(legacy.includes("goal、deliverable 填「待确认」"));
+  assert(modern.includes("写成 supplements"));
+  assert(modern.includes("被阻塞的下游项只留 title"));
 });
 test("creation rechecks the exact reviewed version and uses one stable confirmation key", async () => {
   const p = makePlan(),

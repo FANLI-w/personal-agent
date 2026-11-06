@@ -1,5 +1,6 @@
 import {runTeamWork, notifyTeamDecision} from './team-work.js'
 import { taskWorkflowProjection } from './task-workflow-compat.js'
+import { planningProjection } from './planning-compat.js'
 import {runWorkContext} from './work-context.js'
 import {runLibraryIndex} from './library-index.js'
 import { ReuseService, reuseCommands } from './reuse.js'
@@ -70,6 +71,9 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
     } catch { db?.close(); db = undefined; fail('SERVICE_UNAVAILABLE') }
   }
   app.addHook('onClose', async () => { db?.close() })
+  app.addHook('preSerialization', async (request, _reply, payload) =>
+    planningProjection((request.routeOptions.config as { acceptcatRoute?: string }).acceptcatRoute ?? '', payload,
+      request.headers['x-acceptcat-planning'] === 'extensions-v1'))
   registerLocalDsh(app, database, config, options.dshTransport)
   app.addHook('onSend', async (_request, reply) => { reply.header('Cache-Control', 'no-store'); reply.header('X-Contract-Version', contractVersion); reply.header('X-Content-Type-Options', 'nosniff') })
   const authValidationMessages={username:'用户名只能使用字母、数字、下划线或短横线，长度为 1 到 100 个字符。',password:'密码至少需要 8 个字符。',inviteCode:'请输入有效的邀请码。',displayName:'请输入 1 到 200 个字符的显示名称。'} satisfies Record<AuthValidationField,string>
@@ -112,7 +116,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
   })
   for (const [name, route] of Object.entries(routes)) {
     if (route.stage === 'B0') continue
-    app.route({ method: route.method, url: route.path.replace(/\{(\w+)\}/g, ':$1'), ...((name==='upload'||name==='agentFileMessage'||name==='importResearchFile')?{bodyLimit:14000000}:name==='putResearchUploadPart'?{bodyLimit:1500000}:name==='register'?{bodyLimit:8192}:{}), handler: async (request, reply) => {
+    app.route({ method: route.method, url: route.path.replace(/\{(\w+)\}/g, ':$1'), config: { acceptcatRoute: name }, ...((name==='upload'||name==='agentFileMessage'||name==='importResearchFile')?{bodyLimit:14000000}:name==='putResearchUploadPart'?{bodyLimit:1500000}:name==='register'?{bodyLimit:8192}:{}), handler: async (request, reply) => {
       if (!route.implemented && name !== 'planRequest') fail('NOT_IMPLEMENTED')
       if (route.method !== 'GET' && request.headers.origin !== config.origin) fail('FORBIDDEN')
       const connection = database()

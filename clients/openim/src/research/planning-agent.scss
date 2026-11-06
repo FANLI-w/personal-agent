@@ -360,7 +360,7 @@
   .discussion-panel {
     position: relative;
     margin: 14px 18px 0;
-    padding: 4px 14px 30px;
+    padding: 4px 14px 70px;
     border: 1px solid #e6eef5;
     border-radius: 12px;
     background: #fbfdff;
@@ -390,7 +390,8 @@
     display: flex;
     flex: 1;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: stretch;
+    min-width: 0;
     gap: 6px;
   }
   .discussion-step {
@@ -431,6 +432,65 @@
     background: #f1f8f3;
     color: #527e64;
   }
+  /* 上下两组随内容增高；等高轨道让步骤对齐，不以固定留白覆盖长旁支。 */
+  .discussion-slot {
+    position: relative;
+    display: grid;
+    grid-template-rows: 1fr auto 1fr;
+    min-width: 140px;
+    max-width: 240px;
+  }
+  .discussion-supplements {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .discussion-supplements.is-above {
+    align-self: end;
+    padding-bottom: 10px;
+  }
+  .discussion-supplements.is-below {
+    padding-top: 10px;
+  }
+  .discussion-supp {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    max-width: 180px;
+    padding: 2px 7px;
+    border: 1px dashed #c9d8e4;
+    border-radius: 7px;
+    background: #f8fafc;
+    color: #5f7285;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .discussion-supp > i {
+    flex: none;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: #edf2f7;
+    color: #72889d;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 600;
+  }
+  .discussion-supp::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    width: 0;
+    height: 8px;
+    border-left: 1px dashed #c2d3e0;
+  }
+  .discussion-supp.is-above::after {
+    bottom: -9px;
+  }
+  .discussion-supp.is-below::after {
+    top: -9px;
+  }
   .discussion-legend {
     position: absolute;
     right: 12px;
@@ -463,6 +523,16 @@
     background: #fff8e6;
     color: #a8701a;
   }
+  .discussion-legend em.is-outcome {
+    border-color: #d3e7f5;
+    background: #eef7fd;
+    color: #2f5c7d;
+  }
+  .discussion-legend em.is-supplement {
+    border: 1px dashed #c9d8e4;
+    background: #f8fafc;
+    color: #5f7285;
+  }
   .discussion-question {
     margin: 12px 18px 0;
     padding: 12px 14px;
@@ -494,9 +564,9 @@
   }
   .discussion-option {
     padding: 7px 14px;
-    border: 1px solid #d3e7f5;
+    border: 1px dashed #c9d8e4;
     border-radius: 999px;
-    background: #fff;
+    background: #f8fafc;
     color: #2f5c7d;
     font-size: 12px;
     cursor: pointer;
@@ -504,6 +574,11 @@
   .discussion-option:hover {
     border-color: #5b9ecb;
     background: #f7fbfe;
+  }
+  .discussion-option-hint {
+    margin: 8px 0 0;
+    color: #8a97a1;
+    font-size: 11px;
   }
   .discussion-meta {
     display: flex;
