@@ -1,9 +1,16 @@
 import { z } from 'zod'
-import { PlanInput, ProposedItem } from '@research-agent-platform/contracts'
+import { Allocation, PlanInput, ProposedItem } from '@research-agent-platform/contracts'
 
 // The model proposes research content. Identity, material access and dates are
 // supplied by the service, never granted by fields copied from a prior Plan.
-const DraftItem = ProposedItem.omit({ schedule: true, inputArtifactIds: true })
+// Dispatch is decided by people, so `claim` is not a shape the planner may emit;
+// public capability stays open because it is an explicit allocation, not a claim.
+type AllocationOption = (typeof Allocation.options)[number]
+const DraftAllocation = z.discriminatedUnion(
+  'kind',
+  Allocation.options.filter(option => option.shape.kind.value !== 'claim') as unknown as [AllocationOption, ...AllocationOption[]],
+)
+const DraftItem = ProposedItem.omit({ schedule: true, inputArtifactIds: true }).extend({ allocation: DraftAllocation })
 const Draft = PlanInput.omit({ labId: true }).extend({ proposedItems: z.array(DraftItem).max(100) })
 export const PlanningModelReply = z.strictObject({ intent: z.enum(['draft', 'progress', 'find_work']), plan: Draft.nullable() })
 export const PlanningConversationReply = z.strictObject({ answer: z.string().trim().min(1).max(8000), plan: Draft.nullable() })
@@ -24,14 +31,26 @@ function normalizedReply(text: string) {
   return normalized
 }
 function planInput(plan: z.infer<typeof Draft> | null, labId: string) {
-  return plan === null ? null : PlanInput.parse({ ...plan, labId, proposedItems: plan.proposedItems.map(item => ({ ...item, schedule: unknownSchedule(), inputArtifactIds: [] })) })
+  if (plan === null) return null
+  const items = plan.proposedItems.map(item => ({ ...item, schedule: unknownSchedule(), inputArtifactIds: [] }))
+  const ids = new Set(items.map(item => item.id))
+  // A supplement whose node disappeared is dropped here, not rejected later: a stale
+  // anchor must never fail the whole turn.
+  const supplements = plan.supplements?.filter(supplement => ids.has(supplement.nodeId))
+  return PlanInput.parse({ ...plan, labId, proposedItems: items, ...(supplements ? { supplements } : {}) })
 }
 export function parsePlanningOutput(text: string, labId: string) {
   const answer = PlanningModelReply.parse(normalizedReply(text))
   return { intent: answer.intent, plan: planInput(answer.plan, labId) }
 }
 export function parsePlanningConversation(text: string, labId: string) {
-  const reply = PlanningConversationReply.parse(normalizedReply(text))
+  // The request carries `intent`, the reply schema does not: drop an echoed copy
+  // instead of failing the turn on a field the model was shown but cannot use.
+  const normalized = normalizedReply(text)
+  const echoed = record(normalized) && 'intent' in normalized
+    ? (() => { const { intent: _intent, ...rest } = normalized; return rest })()
+    : normalized
+  const reply = PlanningConversationReply.parse(echoed)
   return { answer: reply.answer, plan: planInput(reply.plan, labId) }
 }
 

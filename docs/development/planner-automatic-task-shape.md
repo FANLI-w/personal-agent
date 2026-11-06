@@ -27,3 +27,12 @@ PlanningAgent删除切换，planner-chat维护auto、明确修正、缓存恢复
 - “合成一项”的意图改由提示词的自动分支和拆解方法承接，模型不遵守时会建出多项，这是本次已知代价。
 - `planner-chat.test.mjs` 的合并类用例改为“草案几项就建几项”，`planner-task-creation.test.mjs` 移除单项用例并保留 1/3/7 项的真库创建覆盖。协议、API、数据库、费用与权限规则未改。
 
+## 后续：multiple 也删除
+
+2026-11-05。上一条还留着 `plannerTaskShape` 的“明确要求分开”这一种提示。两态模型（讨论态 / 拆分态，按 `status` 判定）已经能承接“分开”，用户原话本来也在 prompt 里，所以整段移除：
+
+- 删 `PlannerTaskShape` 类型、`plannerTaskShape` 正则、`planningPrompt` 的 `taskShape` 参数与对应提示分支、`PlanningAgent` 的调用。
+- “明确要求分开”改由 `SKILL.md`「用户明确要求合并或分开时，按其意图重写完整计划」承接；**已知代价**：模型若不遵守，会按自己的判断给项数，客户端不再有强制提示。
+- 本地缓存兼容保留：旧会话的 `taskShape` 字段仍在读取时丢弃，旧 `single` 待确认写入照旧作废。
+- `planner-chat.test.mjs` 删掉形状判定用例；协议、API、数据库未改。
+

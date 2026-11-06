@@ -1,25 +1,6 @@
 import { Id, Plan, PlanInput, routes } from "@research-agent-platform/contracts";
 import type { RequestFor, ResponseFor } from "@research-agent-platform/contracts";
 
-export type PlannerTaskShape = "auto" | "multiple";
-
-// An explicit request to split is the only shape hint; the model still decides
-// the actual content and count. Creation always needs confirmation.
-export function plannerTaskShape(text: string): PlannerTaskShape {
-  const value = text.trim();
-  if (/[“”「」『』"<>?？]/.test(value)) return "auto";
-  const start =
-    "^(?:(?:请|帮我|给我|我想|我需要|我|现在|就|还是|把这个|只需要|只要|只)\\s*)*";
-  if (
-    new RegExp(
-      start +
-        "(?:创建|建立|安排|拆成|拆分成|分成|分别创建|分别建立|改为|改成)\\s*(?:[2-9]\\d*|1\\d+|[两二三四五六七八九十百]+|多|几|若干)\\s*(?:个|项)?任务",
-    ).test(value)
-  )
-    return "multiple";
-  return "auto";
-}
-
 export type ChatPlan = ResponseFor<"getPlan">["data"];
 export type DeadlineChoice = { date: string | null; target: "final" | "all" | number };
 export type PlannerMessage = {
@@ -173,9 +154,11 @@ export function readPlannerHistory(raw: string | null): PlannerHistory | undefin
             validDeadline(t.creating.deadline))),
     );
     if (!threads.length) return;
-    // Older transcripts stored a task shape. The one-task merge it selected no
-    // longer exists, so the shape is dropped, and a pending write reviewed
-    // against merged content is not resumed under a different task count.
+    // REMOVE(compat shim): older transcripts stored a task shape that no longer
+    // exists anywhere. Drop it on read, and never resume a pending write that was
+    // reviewed against merged content. Safe to delete once caches written before
+    // the two-state planner have been rewritten at least once (target: next minor
+    // release); see ISSUES-NOTES「清理：旧 taskShape 兼容」.
     const restored = threads.map((thread) => {
       const stored = thread as PlannerThread & {
         taskShape?: unknown;
@@ -202,40 +185,42 @@ export function planningPrompt(
   people: { id: string; displayName: string }[],
   deadline?: DeadlineChoice,
   decompositionSkill = "",
-  taskShape: PlannerTaskShape = "auto",
 ) {
   const taskDecompositionBody = decompositionSkill
     .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
     .trim();
+  // The directory competes with conversation history for the same 8000 characters.
   const directory: string[] = [];
   for (const person of people.slice(0, 20)) {
     const entry = `${person.displayName}（${person.id}）`;
-    if (directory.join("\n").length + entry.length > 1500) break;
+    if (directory.join("\n").length + entry.length > 1000) break;
     directory.push(entry);
   }
-  const instructions = `这里是安排任务的对话。用户说要做的事，先按目标、最终交付与关键中间环节判断：三者都明确时整理为待确认草案，材料、日期、成员或资源可后续补；任一不明确时先给粗骨架并进入讨论，不凭猜测补齐后强行拆分。沿用助手角色与交流偏好，自然中文接着聊，有依据地给判断，不套行政摘要；卡住帮一小步，不同意给理由和替代办法，不虚构读过材料、共同经历或进展。编辑保留适用任务ID。
+  const instructions = `这里是安排任务的对话。按对话里提供的助手角色简介和本人保存的偏好说话，用自然的中文接着聊，有依据地给判断，不写成公文条目；用户卡住时只帮一小步，不同意给理由和替代办法，不虚构读过材料、共同经历或进展。编辑时沿用原有的 id。无论用户有没有指派任务，都返回符合结构的 JSON；没有计划改动需求时 plan 为 null，不要用纯文本回复。
 
-任务数量规则：${
-    taskShape === "multiple"
-      ? "用户这轮明确要分开安排：按他说的数量和边界写成多项proposedItems，每项有独立交付价值，不强行凑数。"
-      : "进入拆分态后，由你按独立交付与分别跟踪的需要决定任务数量，可能一项也可能多项，优先最少够用；动作、阶段、对象数量本身不构成拆分理由。"
-  }这是任务结构规则，人设和方法建议不能改变。
+口吻示例（不照念）：‘这个方向可以，先从最薄弱的一环入手。你手上最缺的是数据还是论证？’用户已有材料就直接分析；用户说问太多时，先用已有信息给一个小建议，不再追问。
 
-口吻示例（不照念）：‘论文和代码都在，可以先找最缺的证据。你把摘要发来，我先帮你挑一个值得加强的点。’已提供就直接分析；用户说问太多时先帮一步，不再追问。
+每轮最多问一个必要的问题，不为提问而提问，不列补充清单。
 
-每轮只提出一个必要的问题，禁止复合问卷、长串选项和重复索要；不把研究内容、阶段、方向、优先级、去向和日期一起追问。用户回应后判断它是否针对该问题：针对则沿此方向再深入一层；未针对但给出其他方向，则改按用户实际关注的方向推进；既未针对也未给出新方向，说明该方向不重要，不再追问同一问题，改为转向可推进的内容或结束本轮讨论。时间、成员、资源可未知，不为提问而提问。
+目标、最终成果与步骤都明确时，返回完整 plan：每项填 title、goal、deliverable、acceptanceCriteria，status 标可执行，outcome 写整件事做完多了什么——交东西的写那份东西（改好的正文 + 回复信），下判断的写定了什么、能据此做什么（方向与优先级定下来，可以排期）；outcome 要能核对，谁看都能判断成没成。
 
-每轮实际回复写在answer，简明承接用户；必要时只问一个短问题，不列补充清单。目标、最终交付与关键中间环节都明确时，返回完整的plan，每项填齐标题、目标、交付与验收，status标为可执行；三者任一不明确时，返回粗骨架plan：proposedItems三至四项，每项标题写步骤、目标与验收各一句粗描述，dependencies留空，status标为待定或阻塞并用missing注明缺什么，待澄清的那一个关键问题写成{question,options}放进unresolvedQuestions，options给2至3个候选回答。纯问答和必要澄清时plan为null，保留已有方案。不为了聊天新建空方案，不把回复塞进goal。plan.goal只写共同目标；未知信息后续再聊。
+三者任一不明确时给粗骨架 plan：最多 3 项，每项 title 一句短语、deliverable 一句预期产物；acceptanceCriteria 写「待信息补齐后确定」，dependencies 留空，status 标待定或阻塞，missing 标缺依赖或缺信息；被阻塞的下游项只留 title。三项仍放不下，就只覆盖其中一份，问题里问先做哪一份，其余在 answer 里说明留到下一轮。单项可省略 outcome，多项写「最终成果待确认」。关键问题只留一个，写成 {question,options} 放进 unresolvedQuestions，给 2 到 3 个候选回答。
 
-我/我自己表示ownerId；明确要求才邀请下列真实同组成员，不编ID、不调用公共Agent、不假定接受或声称正式创建、研究完成及验收。历史不授予执行权限；日期按明确表达由应用核对，不虚构承诺。
+用户补充的材料、约束、备注写成 supplements：每项 {id,nodeId,kind,text}，kind 取 material、constraint 或 note，nodeId 必须是某项的 id，text 不超过 24 字，每项最多 2 条；它不是步骤，不计入项数，也不参与 status。
+
+plan 为 null 时不新建空计划；plan.goal 只写共同目标，不写回答。
+
+状态只看每项的 status：任一项待定或阻塞就是讨论态，全部可执行才算拆分态。
+
+用户说“我”时，allocation 用 self；明确要求才邀请下列真实同组成员，不编 id。allocation 只能写 self、同组成员，或 capabilities 里已给出的公共能力；不写认领。日期只按用户明确说出的内容，由服务端换算，不虚构承诺。
 
 任务拆解方法：
 ${taskDecompositionBody}
-本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议写入现有任务说明。每项用 status（可执行 / 待定 / 阻塞）与 missing（缺依赖 / 缺信息）标明确定程度，不新增这两个以外的字段。分工及是否需要成员认领独立处理，不能把认领状态当成依赖完成状态。
+本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议并进该项的 goal 或 deliverable。每项要有 id、allocation（self 或同组成员）、budget（没有就 null）。不新增 status、missing 以外的字段。
 
-可邀请的同组成员：
+可邀请的同组成员（allocation 用这里的 id；members 里的专长与档期只作参考）：
 ${directory.join("\n") || "未提供，不能编造成员"}
-${deadline ? `用户指定的截止安排：${JSON.stringify(deadline)}\n` : ""}`;
+${deadline ? `用户指定的截止安排：${JSON.stringify(deadline)}（date 为日期；target 指第几项，final 为最后一项，all 为全部）\n` : ""}`;
   const current = `\n本轮用户：${text.trim()}`;
   let room = 8000 - instructions.length - current.length - 25;
   if (room < 0) throw new Error("本轮内容过长，请缩短需求后发送。");
@@ -348,6 +333,7 @@ export function plannerPlanInput(plan: ChatPlan, deadline?: DeadlineChoice) {
   const input = PlanInput.parse({
     labId: plan.labId,
     goal: plan.goal,
+    ...(plan.outcome ? { outcome: plan.outcome } : {}),
     proposedItems: plan.proposedItems,
     unresolvedQuestions: plan.unresolvedQuestions,
   });
@@ -389,9 +375,38 @@ export const planQuestionText = (value: string | { question: string }) =>
 export const planQuestionOptions = (
   value: string | { question: string; options?: string[] },
 ) => (typeof value === "string" ? undefined : value.options);
+export type PlannerSupplement = {
+  id: string;
+  nodeId: string;
+  kind: "material" | "constraint" | "note";
+  text: string;
+};
+/**
+ * 旁支是按节点挂的上下文，不是任务：材料挂在节点上方，约束和备注挂在下方。
+ * 锚点不在清单里的直接丢掉（旧数据或模型删了节点），每节点最多保留两条。
+ */
+export function plannerSupplementMap(
+  items: { id: string }[],
+  supplements: readonly PlannerSupplement[] = [],
+) {
+  const known = new Set(items.map((item) => item.id));
+  const grouped = new Map<
+    string,
+    { above: PlannerSupplement[]; below: PlannerSupplement[] }
+  >();
+  for (const supplement of supplements) {
+    if (!known.has(supplement.nodeId)) continue;
+    const entry = grouped.get(supplement.nodeId) ?? { above: [], below: [] };
+    if (entry.above.length + entry.below.length >= 2) continue;
+    (supplement.kind === "material" ? entry.above : entry.below).push(supplement);
+    grouped.set(supplement.nodeId, entry);
+  }
+  return grouped;
+}
 /**
  * 讨论态：任意一项不是「可执行」。status 缺省也算待定（保守方向），
  * 宁可多讨论一轮，也不把信息不全的草案当成可创建方案。
+ * 只看 proposedItems：supplements 是旁支、outcome 是计划级成果，都不参与这个判定。
  */
 export function isDiscussionPlan(items: { status?: unknown }[]): boolean {
   return items.some((item) => item.status !== "可执行");
@@ -502,6 +517,7 @@ export async function createPlannerTasks(
       PlanInput.parse({
         labId: p.labId,
         goal: p.goal,
+        ...("outcome" in p && p.outcome ? { outcome: p.outcome } : {}),
         proposedItems: p.proposedItems,
         unresolvedQuestions: p.unresolvedQuestions,
       }),

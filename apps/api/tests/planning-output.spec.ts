@@ -30,6 +30,15 @@ describe('planning model content and server-owned fields', () => {
       expect(parsePlanningOutput(reply(value), 'lab_synthetic').plan).toEqual(full)
     }
   })
+  it('keeps supplements anchored to a real node and drops the rest instead of failing the turn', () => {
+    const supplements = [
+      { id: 'keep', nodeId: 'compare', kind: 'material', text: 'Synthetic baseline already exists.' },
+      { id: 'orphan', nodeId: 'gone', kind: 'note', text: 'Synthetic orphan.' },
+    ]
+    const parsed = parsePlanningOutput(reply({ ...draft(), outcome: 'Synthetic finished decision', supplements }), 'lab_synthetic')
+    expect(parsed.plan?.supplements).toEqual([supplements[0]])
+    expect(parsed.plan?.outcome).toBe('Synthetic finished decision')
+  })
   it('accepts a copied second-turn Plan but never trusts its identity, dates, source grants or confirmation', () => {
     const copied = { ...draft(), labId: 'other_lab', id: 'other_plan', ownerId: 'other_owner', version: 999, status: 'confirmed', createdAt: '2026-01-01T00:00:00Z', conclusionRefs: [{ id: 'private', version: 1, status: 'current' }], proposedItems: [{ ...item, schedule: null, inputArtifactIds: ['private_file'] }] }
     expect(() => PlanInput.parse(copied)).toThrow()
