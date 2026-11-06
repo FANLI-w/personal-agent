@@ -3,6 +3,15 @@
 更新日期：2026-11-06（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
 
+## 2026-11-06 0.43配套后台已部署，0.10.97可开始真实验收
+
+2026-11-06 **11:35:11北京时间**，负责人授权更新后，API/worker已成对上线固定源码 **de0d55a5f6a00b391365ff7bd0fd6e6e6bbf12a7**，与0.10.97预发布安装包/tag一致；契约**0.43.0**，schema**032**、**113表**保持。 镜像research-openim-api:planner-skeleton-20261106 / sha256:45290283bd36d6410eb9c09671e2a49b49d31c424f6d1dfefc800b39e2c638a6。
+
+新镜像内5文件100项隔离规划/HTTP/SQLite/聊天/OpenIM测试通过（network none、无生产挂载、合成身份/模型），493份镜像输入匹配固定源码。静止一致备份、实际恢复副本/正式库各两次幂等迁移、旧计划新版本解析及全部旧表行摘要/迁移历史/完整性/外键、9份原件/模式核对通过；39份既有配置和secret输入未变。API healthy、worker running，restart均0；其他六容器ID/镜像/状态、API/worker环境哈希/挂载/启动配置均保持。服务器与本机独立公网ready200，database/storage/authentication为ok，受保护接口匿名401；harness仍not_verified，真实账号/模型体验待本人验收。
+
+仅部署已审PR176与范围修正PR183：标题骨架在模型解析之前的必填冲突按明确待定/阻塞条件修复，原提示词/Skill/界面/特殊字段写回与同事原设计一致，第一/第三项补修没有重新带回。未清除或回填账号/消息/资料，未操作负责人客户端或使用私人模型密钥。0.10.97保持手动安装预发布、0.10.96仍Latest；有0.43新计划字段的使用者须升级配套客户端，新字段写入后采用兼容前滚，不能直接回0.42。 备份/srv/research-openim-backups/planner-skeleton-20261106-20261106T033451Z/research.tar.gz，SHA256 5792d9f8e2267f178fec1093fff310c4745a8b187f5fb77e23a9f2894c536a64。详见[后台部署回执](deployment/planner-skeleton-20261106.md)，本机Git外证据planner-skeleton-deploy-20261106。以下“后台仍0.42/待部署”的内容为历史批次当时状态。
+
+
 ## 2026-11-06 0.10.97 预发布：仅补原粗骨架解析条件
 
 北京时间 2026/11/6 10:42:54 已公开手动安装预发布 [v0.10.97](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.97)，Release ID 436038237，**v0.10.96仍为自动更新Latest**。原同事PR176已合并；范围修正PR183已合并，实际构建/tag固定 **de0d55a5f6a00b391365ff7bd0fd6e6e6bbf12a7**。

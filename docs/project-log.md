@@ -2879,3 +2879,14 @@ PR182已普通合main为f34b027，GitHub将原同事PR176标记MERGED，原a528c
 根70文件880项、3项生产/B0/Web、28项解析与真实隔离HTTP/SQLite/worker、44项客户端规划/依赖图、类型及实际组件桌面/窄屏检查通过。冻结1657份输入，直接解包EXE核对129份构建文件，成品缓存跨进程/插件离线升级/原生DSH加载、隔离启动与更新清单通过。最终构建main四项CI成功；公开四附件digest、匿名预发布下载及96资产/Latest保留核对通过。 安装包421224775字节，SHA256 371e28cf75ce680e9c2d5d4365b39a0d2fa1373c35adb485789ba6e17b449896。 首轮f34b027三项补修候选未上传/发布，明确标作废；新包重新捕获源码构建，没有复用原dist/EXE。首轮错误范围、Ubuntu权限夹具503和UI选择器/布局发现保留原日志；这些属于被撤回方案，最终不以其通过计数替代本批。
 
 后台仍contract0.42.0，database/storage/authentication为ok、harness为not_verified，schema沿既有032；本批没有部署后台。0.43新规划须配套后台升级，第一项版本兼容不在本批，部署前协调客户端。新字段写入后旧0.42服务不能直接读取这类计划，应前滚或用兼容镜像。未使用私人账号、材料或模型密钥，实际安装/模型与多客户端体验由负责人验收。 沿用内置科研插件0.4.0、DSH0.2.1-rc.3、Tectonic0.17.0和96聊天缓存/定位修复。详见[回执](deployment/acceptcat-0.10.97-preview.md)，Git外证据 D:/deepseek-agent/.runtime/release-0.10.97-skeleton-only-20261106 与 planner176-skeleton-only-20261106。
+
+
+## 2026-11-06 PR176/183配套后台0.43正式切换
+
+2026-11-06 **11:35:11北京时间**，负责人授权更新后，API/worker已成对上线固定源码 **de0d55a5f6a00b391365ff7bd0fd6e6e6bbf12a7**，与0.10.97预发布安装包/tag一致；契约**0.43.0**，schema**032**、**113表**保持。 新镜像research-openim-api:planner-skeleton-20261106 / sha256:45290283bd36d6410eb9c09671e2a49b49d31c424f6d1dfefc800b39e2c638a6，完整链接在chat-transcript-20261104之后，API/worker only。
+
+新镜像内5文件100项隔离规划/HTTP/SQLite/聊天/OpenIM测试通过（network none、无生产挂载、合成身份/模型），493份镜像输入匹配固定源码。静止一致备份、实际恢复副本/正式库各两次幂等迁移、旧计划新版本解析及全部旧表行摘要/迁移历史/完整性/外键、9份原件/模式核对通过；39份既有配置和secret输入未变。API healthy、worker running，restart均0；其他六容器ID/镜像/状态、API/worker环境哈希/挂载/启动配置均保持。服务器与本机独立公网ready200，database/storage/authentication为ok，受保护接口匿名401；harness仍not_verified，真实账号/模型体验待本人验收。
+
+备份/srv/research-openim-backups/planner-skeleton-20261106-20261106T033451Z/research.tar.gz，SHA256 5792d9f8e2267f178fec1093fff310c4745a8b187f5fb77e23a9f2894c536a64；其他六容器前后摘要83bddb0a518402f5fbf7ef1d023e0bd8d75493ba30387ffbd4af5332bde50922。source/build/preflight/isolated-tests/deploy/post-check退出0，切换11:34:44—11:35:11，未回退。浏览器URL识别的两轮只读阻断、依赖下载警告和上传前运维探针原句更正均留证，无生产失败。
+
+仅部署已审PR176与范围修正PR183：标题骨架在模型解析之前的必填冲突按明确待定/阻塞条件修复，原提示词/Skill/界面/特殊字段写回与同事原设计一致，第一/第三项补修没有重新带回。未清除或回填账号/消息/资料，未操作负责人客户端或使用私人模型密钥。0.10.97保持手动安装预发布、0.10.96仍Latest；有0.43新计划字段的使用者须升级配套客户端，新字段写入后采用兼容前滚，不能直接回0.42。 新增[部署回执](deployment/planner-skeleton-20261106.md)，Git外planner-skeleton-deploy-20261106，脱敏回执SHA256 40df8437c4f5e0d783263ca01091911ba693e58c3b6880c013f828c25fa0a59b；未重跑已通过的产品根CI或重新打包，仅更新部署文档和Release状态说明，原四资产摘要保持。
