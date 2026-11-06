@@ -62,6 +62,10 @@ const ChatContent = () => {
   const [locating, setLocating] = useState(false);
   const [restoreReady, setRestoreReady] = useState(false);
   const [initialAnchor, setInitialAnchor] = useState<string>();
+  const [scrollTarget, setScrollTarget] = useState<{
+    scope: string;
+    clientMsgID: string;
+  }>();
   const [paused, setPaused] = useState(false);
   const restored = useRef("");
   const initialPosition = useRef(chatPosition(savedKey));
@@ -72,8 +76,6 @@ const ChatContent = () => {
     () => loadState.messageList.filter((m) => !hidden.includes(m.clientMsgID)),
     [loadState.messageList, hidden],
   );
-  const latestMessages = useRef(messages);
-  latestMessages.current = messages;
   const scope = JSON.stringify([actorGeneration, selfUserID, conversationID]);
   const currentScope = useRef(scope);
   currentScope.current = scope;
@@ -153,6 +155,7 @@ const ChatContent = () => {
     setLocating(false);
     setRestoreReady(false);
     setInitialAnchor(undefined);
+    setScrollTarget(undefined);
     useChatTimeline.setState({ hidden: saved.hidden });
     restored.current = "";
     visibleAnchor.current = saved.anchor;
@@ -231,20 +234,7 @@ const ChatContent = () => {
         });
         visibleAnchor.current = found.clientMsgID;
         if (initial) setInitialAnchor(found.clientMsgID);
-        else
-          requestAnimationFrame(() => {
-            if (currentScope.current === activeScope) {
-              const index = latestMessages.current.findIndex(
-                (m) => m.clientMsgID === found.clientMsgID,
-              );
-              if (index >= 0)
-                virtuoso.current?.scrollToIndex({
-                  index,
-                  align: "center",
-                  behavior: "auto",
-                });
-            }
-          });
+        else setScrollTarget({ scope: activeScope, clientMsgID: found.clientMsgID });
       })
       .catch(() => {
         if (currentScope.current !== activeScope || useChatTimeline.getState().jump !== activeJump) return;
@@ -264,6 +254,28 @@ const ChatContent = () => {
         }
       });
   }, [jump, loadState.initLoading, scope, locating]);
+
+  useLayoutEffect(() => {
+    if (!scrollTarget || scrollTarget.scope !== scope || !restoreReady) return;
+    // A history promise can resolve before React commits its prepended rows.
+    // Retain the target until those rows exist in the rendered Virtuoso data.
+    const index = messages.findIndex(
+      (message) => message.clientMsgID === scrollTarget.clientMsgID,
+    );
+    if (index < 0) return;
+    const handle = requestAnimationFrame(() => {
+      const timeline = useChatTimeline.getState();
+      if (
+        currentScope.current !== scrollTarget.scope ||
+        useResearchStore.getState().generation !== actorGeneration ||
+        timeline.jump ||
+        timeline.highlighted !== scrollTarget.clientMsgID
+      ) return;
+      virtuoso.current?.scrollToIndex({ index, align: "center", behavior: "auto" });
+      setScrollTarget(undefined);
+    });
+    return () => cancelAnimationFrame(handle);
+  }, [scrollTarget, messages, scope, restoreReady, actorGeneration]);
 
   useEffect(() => {
     const followOwnSend = (
