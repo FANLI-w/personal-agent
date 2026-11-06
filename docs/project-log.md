@@ -2869,3 +2869,13 @@ PR182已普通合main为f34b027，GitHub将原同事PR176标记MERGED，原a528c
 范围更正后的完整验证：根70文件880项、生产三项/B0/Web通过；客户端44项规划/依赖图与类型通过。外部探针加载原a528c292实际解析模块，确认日期/文件字段原归一化有效，原标题骨架的goal/deliverable/acceptanceCriteria会先报invalid_type；现条件解析接受并保持阻塞状态。实际PlanningAgent、原useResearchRead/预览/讨论卡/SCSS在1440×980与1024×768复查，明确断言原始服务端夹具保留三条supplements但前端不传递，候选只填草稿和原两态均保持；页面异常0、Router提示保留。源代码九文件与同事原版逐字节相同的守卫纳入最终构建捕获。
 
 首轮PR182及f34 main Ubuntu两个矩阵的planning-compat新夹具createPersonalModel返回503，原日志已留planner176-fixes-20261106/pr182-foundation-failed.log与first-main-foundation-failed.log；夹具写测试密钥未指定mode，Linux权限保护拒绝，Windows通过。该兼容功能/夹具因负责人收窄范围撤回，不作为最终结果；新条件写回检查复用原planning-personal-model的0600夹具，未关闭权限保护。第一项兼容不在新范围内且后台未到0.43，故新97仅预发布手动安装，96继续Latest，待后台就绪再转正式。
+
+## 2026-11-06 0.10.97 原设计与单项补修预发布
+
+北京时间 2026/11/6 10:42:54 已公开手动安装预发布 [v0.10.97](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.97)，Release ID 436038237，**v0.10.96仍为自动更新Latest**。原同事PR176已合并；范围修正PR183已合并，实际构建/tag固定 **de0d55a5f6a00b391365ff7bd0fd6e6e6bbf12a7**。
+
+按负责人最新要求只补第二项：只有显式待定/阻塞且带missing的模型项可缺省goal、deliverable、acceptanceCriteria，落库为未确认占位；可执行与旧无状态项仍严格。原schedule/inputArtifactIds等条件写回不动，讨论态不能建任务，失败保留原方案。 第一项兼容层和第三项预览/指纹/布局补修均已撤回；九个相关源码文件与同事a528c292逐字节一致，包括提示词、Skill、客户端API/预览/讨论卡/样式、原服务端server/collaboration/execution-worker。补充信息不向前面预览继续传递是有意边界，保持原设计。
+
+根70文件880项、3项生产/B0/Web、28项解析与真实隔离HTTP/SQLite/worker、44项客户端规划/依赖图、类型及实际组件桌面/窄屏检查通过。冻结1657份输入，直接解包EXE核对129份构建文件，成品缓存跨进程/插件离线升级/原生DSH加载、隔离启动与更新清单通过。最终构建main四项CI成功；公开四附件digest、匿名预发布下载及96资产/Latest保留核对通过。 安装包421224775字节，SHA256 371e28cf75ce680e9c2d5d4365b39a0d2fa1373c35adb485789ba6e17b449896。 首轮f34b027三项补修候选未上传/发布，明确标作废；新包重新捕获源码构建，没有复用原dist/EXE。首轮错误范围、Ubuntu权限夹具503和UI选择器/布局发现保留原日志；这些属于被撤回方案，最终不以其通过计数替代本批。
+
+后台仍contract0.42.0，database/storage/authentication为ok、harness为not_verified，schema沿既有032；本批没有部署后台。0.43新规划须配套后台升级，第一项版本兼容不在本批，部署前协调客户端。新字段写入后旧0.42服务不能直接读取这类计划，应前滚或用兼容镜像。未使用私人账号、材料或模型密钥，实际安装/模型与多客户端体验由负责人验收。 沿用内置科研插件0.4.0、DSH0.2.1-rc.3、Tectonic0.17.0和96聊天缓存/定位修复。详见[回执](deployment/acceptcat-0.10.97-preview.md)，Git外证据 D:/deepseek-agent/.runtime/release-0.10.97-skeleton-only-20261106 与 planner176-skeleton-only-20261106。
