@@ -63,7 +63,9 @@ export function PlanningDiscussion({
               );
               return (
                 <span className="discussion-slot" key={step.id}>
-                  {attached?.above.map((s) => bubble(s, "above"))}
+                  <span className="discussion-supplements is-above">
+                    {attached?.above.map((s) => bubble(s, "above"))}
+                  </span>
                   <span className="discussion-step">
                     {index > 0 && <i aria-hidden="true">→</i>}
                     <em
@@ -83,7 +85,9 @@ export function PlanningDiscussion({
                       {step.title}
                     </em>
                   </span>
-                  {attached?.below.map((s) => bubble(s, "below"))}
+                  <span className="discussion-supplements is-below">
+                    {attached?.below.map((s) => bubble(s, "below"))}
+                  </span>
                 </span>
               );
             })}

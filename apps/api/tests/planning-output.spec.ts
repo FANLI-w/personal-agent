@@ -55,6 +55,23 @@ describe('planning model content and server-owned fields', () => {
     expect(() => parsePlanningOutput(JSON.stringify({ intent: 'execute', plan: draft() }), 'lab_synthetic')).toThrow()
     expect(() => parsePlanningOutput('Unstructured prose', 'lab_synthetic')).toThrow()
   })
+  it('keeps title-only downstream research content as an explicitly unfinished skeleton', () => {
+    const { goal: _goal, deliverable: _deliverable, acceptanceCriteria: _criteria, ...metadata } = item
+    for (const status of ['待定', '阻塞']) {
+      const rough = { ...draft(), proposedItems: [{ ...metadata, status, missing: '缺依赖' }] }
+      const result = parsePlanningConversation(JSON.stringify({ answer: 'Synthetic prerequisite question.', plan: rough }), 'lab_synthetic').plan!
+      expect(result.proposedItems[0]).toMatchObject({ title: item.title, goal: '目标待确认', deliverable: '预期产物待确认', acceptanceCriteria: '待信息补齐后确定', status, missing: '缺依赖', allocation: { kind: 'self' }, schedule, inputArtifactIds: [] })
+      expect(PlanInput.safeParse(result).success).toBe(true)
+    }
+    for (const extra of [{}, { status: '可执行' }, { status: '待定' }, { status: '待定', missing: '缺信息', depends_on: ['invented'] }]) {
+      expect(() => parsePlanningConversation(JSON.stringify({ answer: 'Synthetic answer.', plan: { ...draft(), proposedItems: [{ ...metadata, ...extra }] } }), 'lab_synthetic')).toThrow()
+    }
+  })
+  it('preserves known rough-step content and never trusts model-supplied dates or file grants', () => {
+    const { goal: _goal, acceptanceCriteria: _criteria, ...partial } = item
+    const parsed = parsePlanningOutput(reply({ ...draft(), proposedItems: [{ ...partial, deliverable: 'Known synthetic report', status: '阻塞', missing: '缺信息', schedule: { invented: true }, inputArtifactIds: ['private_file'] }] }), 'lab_synthetic').plan!
+    expect(parsed.proposedItems[0]).toMatchObject({ goal: '目标待确认', deliverable: 'Known synthetic report', schedule, inputArtifactIds: [] })
+  })
   it('records bounded shape diagnostics without private prose or arbitrary field names', () => {
     const text = reply({ ...draft(), proposedItems: [{ ...item, acceptanceCriteria: undefined, PRIVATE_SECRET_FIELD: 'PRIVATE_MATERIAL_SENTINEL' }] })
     try { parsePlanningOutput(text, 'lab_synthetic'); throw new Error('Expected validation failure') } catch (error) {

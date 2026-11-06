@@ -185,10 +185,12 @@ export function planningPrompt(
   people: { id: string; displayName: string }[],
   deadline?: DeadlineChoice,
   decompositionSkill = "",
+  supportsExtensions = true,
 ) {
   const taskDecompositionBody = decompositionSkill
     .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
-    .trim();
+    .trim()
+    .replace(/`outcome`/g, supportsExtensions ? "`outcome`" : "最后一项的 deliverable");
   // The directory competes with conversation history for the same 8000 characters.
   const directory: string[] = [];
   for (const person of people.slice(0, 20)) {
@@ -202,11 +204,11 @@ export function planningPrompt(
 
 每轮最多问一个必要的问题，不为提问而提问，不列补充清单。
 
-目标、最终成果与步骤都明确时，返回完整 plan：每项填 title、goal、deliverable、acceptanceCriteria，status 标可执行，outcome 写整件事做完多了什么——交东西的写那份东西（改好的正文 + 回复信），下判断的写定了什么、能据此做什么（方向与优先级定下来，可以排期）；outcome 要能核对，谁看都能判断成没成。
+目标、最终成果与步骤都明确时，返回完整 plan：每项填 title、goal、deliverable、acceptanceCriteria，status 标可执行，${supportsExtensions ? "outcome" : "最后一项的 deliverable"} 写整件事做完多了什么——交东西的写那份东西（改好的正文 + 回复信），下判断的写定了什么、能据此做什么（方向与优先级定下来，可以排期）；最终成果要能核对，谁看都能判断成没成。
 
-三者任一不明确时给粗骨架 plan：最多 3 项，每项 title 一句短语、deliverable 一句预期产物；acceptanceCriteria 写「待信息补齐后确定」，dependencies 留空，status 标待定或阻塞，missing 标缺依赖或缺信息；被阻塞的下游项只留 title。三项仍放不下，就只覆盖其中一份，问题里问先做哪一份，其余在 answer 里说明留到下一轮。单项可省略 outcome，多项写「最终成果待确认」。关键问题只留一个，写成 {question,options} 放进 unresolvedQuestions，给 2 到 3 个候选回答。
+三者任一不明确时给粗骨架 plan：最多 3 项，每项 title 一句短语、deliverable 一句预期产物；acceptanceCriteria 写「待信息补齐后确定」，dependencies 留空，status 标待定或阻塞，missing 标缺依赖或缺信息；${supportsExtensions ? "被阻塞的下游项只留 title，不猜测目标、产物或验收；id、status、missing、allocation、dependencies、budget 仍按结构填写" : "目标或产物尚未明确时，goal、deliverable 填「待确认」、acceptanceCriteria 填「待信息补齐后确定」，不猜测事实，界面仍只展示粗骨架"}。三项仍放不下，就只覆盖其中一份，问题里问先做哪一份，其余在 answer 里说明留到下一轮。${supportsExtensions ? "单项可省略 outcome，多项写「最终成果待确认」。" : ""}关键问题只留一个，写成 {question,options} 放进 unresolvedQuestions，给 2 到 3 个候选回答。
 
-用户补充的材料、约束、备注写成 supplements：每项 {id,nodeId,kind,text}，kind 取 material、constraint 或 note，nodeId 必须是某项的 id，text 不超过 24 字，每项最多 2 条；它不是步骤，不计入项数，也不参与 status。
+${supportsExtensions ? "用户补充的材料、约束、备注写成 supplements：每项 {id,nodeId,kind,text}，kind 取 material、constraint 或 note，nodeId 必须是某项的 id，text 不超过 24 字，每项最多 2 条；它不是步骤，不计入项数，也不参与 status。" : "用户补充的已知材料、约束和备注保留在对应项的 goal 或 deliverable，不另建步骤。当前服务的 plan 只使用 goal、proposedItems、unresolvedQuestions，不输出其他计划字段。"}
 
 plan 为 null 时不新建空计划；plan.goal 只写共同目标，不写回答。
 
@@ -216,7 +218,7 @@ plan 为 null 时不新建空计划；plan.goal 只写共同目标，不写回�
 
 任务拆解方法：
 ${taskDecompositionBody}
-本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议并进该项的 goal 或 deliverable。每项要有 id、allocation（self 或同组成员）、budget（没有就 null）。不新增 status、missing 以外的字段。
+本应用沿用既有计划结构：前置步骤使用 dependencies 字段，不另加 depends_on 字段；方法建议并进该项的 goal 或 deliverable。每项要有 id、allocation（self 或同组成员或已授权公共能力）、budget（没有就 null）。步骤仅使用既有字段及 status、missing；${supportsExtensions ? "计划可另有 outcome、supplements" : "计划只使用 goal、proposedItems、unresolvedQuestions"}。
 
 可邀请的同组成员（allocation 用这里的 id；members 里的专长与档期只作参考）：
 ${directory.join("\n") || "未提供，不能编造成员"}
@@ -329,11 +331,15 @@ export function needsDeadlineClarification(text: string, choice?: DeadlineChoice
     /截止|周[一二三四五六日天]|星期|今天|明天|后天|下周|月|年|\d[-/:]|点|时/.test(text)
   );
 }
-export function plannerPlanInput(plan: ChatPlan, deadline?: DeadlineChoice) {
+export function plannerPlanInput(
+  plan: Pick<ChatPlan, "labId" | "goal" | "outcome" | "supplements" | "proposedItems" | "unresolvedQuestions">,
+  deadline?: DeadlineChoice,
+) {
   const input = PlanInput.parse({
     labId: plan.labId,
     goal: plan.goal,
     ...(plan.outcome ? { outcome: plan.outcome } : {}),
+    ...(plan.supplements !== undefined ? { supplements: plan.supplements } : {}),
     proposedItems: plan.proposedItems,
     unresolvedQuestions: plan.unresolvedQuestions,
   });
@@ -513,15 +519,7 @@ export async function createPlannerTasks(
   // originally reviewed; the reviewed draft count is always the written count.
   const expected = plannerPlanInput(intent.plan, intent.deadline);
   const fingerprint = (p: ChatPlan | typeof expected) =>
-    JSON.stringify(
-      PlanInput.parse({
-        labId: p.labId,
-        goal: p.goal,
-        ...("outcome" in p && p.outcome ? { outcome: p.outcome } : {}),
-        proposedItems: p.proposedItems,
-        unresolvedQuestions: p.unresolvedQuestions,
-      }),
-    );
+    JSON.stringify(plannerPlanInput(p));
   const draftEdit = fingerprint(expected) !== fingerprint(intent.plan);
   const version = intent.plan.version + (draftEdit ? 1 : 0);
   if (current.status === "confirmed") {

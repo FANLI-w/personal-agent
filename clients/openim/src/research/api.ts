@@ -21,8 +21,10 @@ let csrfToken = "";
 let actorVerified = false;
 let taskHandoffs = false;
 let transcriptSync = false;
+let plannerExtensions = false;
 export const supportsTaskHandoffs = () => taskHandoffs;
 export const supportsTranscriptSync = () => transcriptSync;
+export const supportsPlannerExtensions = () => plannerExtensions;
 const slots = new Map<string, string>();
 // Requests belong to the login that started them, including session/CSRF
 // preparation. A transport may still finish after abort, so the signal checks
@@ -104,6 +106,7 @@ async function requestResearchApi<K extends RouteName>(
   assertRequestActive(options.signal);
   const headers: Record<string, string> = { 'X-AcceptCat-Originals': 'chunked-v1' };
   headers['X-AcceptCat-Task-Workflow'] = 'handoff-v1';
+  headers['X-AcceptCat-Planning'] = 'extensions-v1';
   if (route.method !== "GET") headers["Content-Type"] = "application/json";
   if (csrfToken && route.method !== "GET" && route.access === "session")
     headers["X-CSRF-Token"] = csrfToken;
@@ -185,6 +188,7 @@ async function requestResearchApi<K extends RouteName>(
   const version = response.headers?.get?.('X-Contract-Version')?.split('.').map(Number);
   if (version) taskHandoffs = version[0] > 0 || version[1] >= 39;
   if (version) transcriptSync = version[0] === 0 && version[1] >= 42;
+  if (version) plannerExtensions = version[0] === 0 && version[1] >= 43;
   if (name === "session") {
     csrfToken = (result as ResponseFor<"session">).data.csrfToken;
     actorVerified = true;
@@ -254,6 +258,7 @@ export function clearResearchSession() {
 function resetResearchSession(except?: AbortController) {
   taskHandoffs = false;
   transcriptSync = false;
+  plannerExtensions = false;
   csrfToken = "";
   slots.clear();
   actorVerified = false;

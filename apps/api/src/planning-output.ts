@@ -10,7 +10,13 @@ const DraftAllocation = z.discriminatedUnion(
   'kind',
   Allocation.options.filter(option => option.shape.kind.value !== 'claim') as unknown as [AllocationOption, ...AllocationOption[]],
 )
-const DraftItem = ProposedItem.omit({ schedule: true, inputArtifactIds: true }).extend({ allocation: DraftAllocation })
+const CompleteDraftItem = ProposedItem.omit({ schedule: true, inputArtifactIds: true }).extend({ allocation: DraftAllocation })
+// Only explicitly unfinished items may omit research details. Identity, status
+// and allocation still follow the normal schema; executable items remain strict.
+const RoughDraftItem = CompleteDraftItem.partial({ goal: true, deliverable: true, acceptanceCriteria: true }).extend({
+  status: z.enum(['待定', '阻塞']), missing: z.enum(['缺依赖', '缺信息']),
+})
+const DraftItem = z.union([CompleteDraftItem, RoughDraftItem])
 const Draft = PlanInput.omit({ labId: true }).extend({ proposedItems: z.array(DraftItem).max(100) })
 export const PlanningModelReply = z.strictObject({ intent: z.enum(['draft', 'progress', 'find_work']), plan: Draft.nullable() })
 export const PlanningConversationReply = z.strictObject({ answer: z.string().trim().min(1).max(8000), plan: Draft.nullable() })
@@ -32,7 +38,13 @@ function normalizedReply(text: string) {
 }
 function planInput(plan: z.infer<typeof Draft> | null, labId: string) {
   if (plan === null) return null
-  const items = plan.proposedItems.map(item => ({ ...item, schedule: unknownSchedule(), inputArtifactIds: [] }))
+  const items = plan.proposedItems.map(item => ({
+    ...item,
+    goal: item.goal ?? '目标待确认',
+    deliverable: item.deliverable ?? '预期产物待确认',
+    acceptanceCriteria: item.acceptanceCriteria ?? '待信息补齐后确定',
+    schedule: unknownSchedule(), inputArtifactIds: [],
+  }))
   const ids = new Set(items.map(item => item.id))
   // A supplement whose node disappeared is dropped here, not rejected later: a stale
   // anchor must never fail the whole turn.
