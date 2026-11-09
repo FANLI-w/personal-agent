@@ -19,12 +19,28 @@ export function registerScreenshotEditor(
         sender: Electron.WebContents;
         event: IpcMainInvokeEvent;
         owner: unknown;
+        captures: ChatScreenCapture[];
+        selected: number;
         finish: (image: string | null) => void;
       }
     | undefined;
   let opening = false,
     epoch = 0;
   let openingSender: Electron.WebContents | undefined;
+  ipcMain.handle("chat-screenshot-editor-data", (event) => {
+    const current = active;
+    if (
+      !current ||
+      event.sender !== current.window.webContents ||
+      event.senderFrame !== event.sender.mainFrame
+    )
+      throw new Error("截图窗口无效。");
+    if (authority(current.event).owner !== current.owner) {
+      current.finish(null);
+      throw new Error("会话已变化，截图已取消。");
+    }
+    return { captures: current.captures, selected: current.selected };
+  });
   ipcMain.handle("chat-screenshot-editor-result", async (event, image: unknown) => {
     const current = active;
     if (
@@ -129,6 +145,8 @@ export function registerScreenshotEditor(
           sender: event.sender,
           event,
           owner: auth.owner,
+          captures,
+          selected,
           finish,
         };
         overlay.once("closed", () => finish(null));
@@ -136,7 +154,7 @@ export function registerScreenshotEditor(
         void overlay
           .loadURL(
             "data:text/html;charset=utf-8," +
-              encodeURIComponent(screenshotEditorHtml(captures, selected)),
+              encodeURIComponent(screenshotEditorHtml()),
           )
           .then(() => {
             if (!ended) {
