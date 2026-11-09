@@ -40,10 +40,46 @@ async function digest(file) {
   return hash.digest('hex');
 }
 
+// GitHub Releases 走 CDN，偶发 502/503/504 与连接中断。这类错误重试即可恢复；
+// 4xx（除 429）说明 URL 或权限有问题，重试没有意义，直接失败。
+// 优先用 curl：它自带 HTTP/1.1 回落、断点与 --retry-all-errors，比 fetch 更能扛住 CDN 抖动。
 async function download(url, file) {
-  const response = await fetch(url, { redirect: 'follow' });
-  if (!response.ok || !response.body) throw Error(`下载失败 ${response.status}: ${url}`);
-  await pipeline(Readable.fromWeb(response.body), createWriteStream(file));
+  try {
+    await run('curl.exe', [
+      '-fsSL',
+      '--http1.1',
+      '--retry', '2',
+      '--retry-max-time', '180',
+      '--retry-delay', '5',
+      '--max-time', '120',
+      '-o', file,
+      url,
+    ]);
+    return;
+  } catch (curlError) {
+    if (curlError?.code !== 'ENOENT') console.log(`curl 下载失败，改用 fetch：${curlError?.message ?? curlError}`);
+  }
+  const attempts = 4;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(120000) });
+      if (!response.ok || !response.body) {
+        const retryable = response.status >= 500 || response.status === 429;
+        const error = Error(`下载失败 ${response.status}: ${url}`);
+        Object.assign(error, { retryable });
+        throw error;
+      }
+      await pipeline(Readable.fromWeb(response.body), createWriteStream(file));
+      return;
+    } catch (error) {
+      const retryable = error?.retryable ?? true; // 网络中断与超时同样重试
+      if (!retryable || attempt === attempts) throw error;
+      await rm(file, { force: true });
+      const wait = attempt * 5000;
+      console.log(`下载重试 ${attempt}/${attempts - 1}（${wait}ms 后）：${error?.message ?? error}`);
+      await new Promise(resolve => setTimeout(resolve, wait));
+    }
+  }
 }
 
 async function unpack(entry, archive, destination) {

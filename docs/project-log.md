@@ -1,5 +1,14 @@
 # 项目进展日志
 
+## 2026-11-09：规则与记忆框架（本地分支 `feat/constitution-framework`，未部署）
+
+- 目标是把「三层宪法 + 权限边界 + 注入纪律」先做成可测的骨架，再接现有链路。新增 `packages/constitution`：三层（`system`/`lab`/`personal`，rank 3/2/1 只用于比较）、六类内容、五个动作、九个主体；`can()` 以「显式授予」为默认（未登记即 `deny`），`compose()` 按段装配并记录 `omitted`。零依赖、零 I/O，接线前不影响任何行为。
+- 接线分三批：规划 system（`execution-worker.ts`）、聊天 system（`chat-worker.ts`，注入点选在 `baseSystem` 之前，使规则进入 `packDialogueLayers` 的预算），以及按会话归属取规则——群聊用 `conversation.labId`，私聊用平台规则 + 本人个人规则。开关 `CONSTITUTION_RULES=0` 可整批关闭；**开发与生产默认开启、测试环境默认关闭**（注入约 150 token，会打乱既有用例精确到 token 的预算断言；需要覆盖注入路径时显式传 `CONSTITUTION_RULES=1`）。每轮打一行 `PLANNING_RULES` / `CHAT_RULES` 回执。
+- 内容侧：契约 `kind` 增加 `link`，`scope` 增加 `personal`，新增 `GET/POST /api/v1/personal/work-rules`；契约升 0.44.0。迁移 033 用独立表 `personal_work_rules` 存放个人规则（不改 029 的 CHECK，避免重建带外键的表，也天然隔离课题组查询）。
+- 权限侧：组内链路由承接人提交（校验 `task.leadId`），来源任务的派发人或负责人批准；个人规则本人自批。规则预算在写入侧拦（生效规则超 12KB 拒绝），装配侧仅在存量超限时降级为「只装配平台规则 + 记录省略」。
+- 验证：api/contracts/web/client typecheck 与 build 全 0；`export-contracts --check`、`check-content`（424 份）通过；本地 `vitest` 因沙盒 `spawn EPERM` 跑不了，改用编译产物做等价检查——批次 2/3/4/5 共 33 项断言通过（含迁移历史到 33、链路不进装配、个人规则不进群、别人读不到）。
+- 未验证与风险：真实模型行为、界面交互、聊天侧预算断言只能靠 CI；旧客户端（0.10.98）读到 `kind='link'` 记录会校验失败，上线需客户端同步升级；本分支未推送、未合并、未部署，生产仍是 contract 0.43.0 / schema 032。
+
 ## 2026-10-30：0.10.76 的“无法联网”误报（本地包 0.10.77）
 
 - 负责人装上 0.10.76 后截图：会话区写着“当前无法联网，这段会话本机还没有缓存。”，会话却是空的。先看本机数据再动手：`chat-history/*.sqlite` 存在但四张表全 0 行；OpenIM 核心日志 15:33 仍在 ping/pong；`identity.json` 记录 15:29 已向 `chat.acceptcat.com` 校验成功；SDK 本地库那个会话有 51 条消息。所以是**历史页一次都没落地**，不是断网。
@@ -2941,3 +2950,8 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 完整客户端回归继续发现旧service-status-bridge夹具未登记新增团队资料桥，5项服务状态测试因此无法初始化；补齐无关桥隔离登记后129项通讯录/资料/任务等回归通过，未改其服务或权限实现。修复日志client-regression-final.log，失败日志github-desktop-canonical-failure.log保留；Git原件路径修复后的23项与构建也通过，继续等待新HEAD的远端完整检查。
 
 远端NSIS及清单构建通过后，成品隔离启动发现团队资料新模块直接require ESM契约，已修为复用既有localDshRuntime的CJS共享schema出口（仅增加导出，不改DSH上游/提示词/模型），并增加逐文件不打包CJS实际加载回归。原生/素材/构建24项通过，含任务工作区44项回归、Electron类型通过；失败包不可交付，日志github-desktop-package-failure.log、cjs-native-check.log、cjs-library-tests.log保留。继续重新构建和完整启动核验。
+
+
+## 2026-11-09 PR190规则审核及资料整合发布准备
+
+负责人授权审核修复、整合PR190/191、检查后合并与发布0.10.99并提供本地包；后台部署分开。独立分支从最新main/da6e0ef建立，保留c1b8d466和48e754f历史。迁移统一033仓库/034个人规则、候选契约0.45；34次/116表重复迁移通过，001–032保持，未清理生产数据。具体审核发现与修复见development/constitution-library-integration.md；38项API/规则定向检查、42项DSH回归及281项契约/基础检查通过，初轮夹具/类型失败保留。后续完成实际界面、完整CI和成品核验再发布，不将当前准备当公开结果。

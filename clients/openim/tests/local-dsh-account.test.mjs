@@ -11,7 +11,7 @@ import { buildLocalDshRuntime } from '../../../integrations/deepseek-harness/des
 const require = createRequire(import.meta.url), esbuild = createRequire(require.resolve('vite'))('esbuild');
 const client = path.resolve(new URL('../', import.meta.url).pathname.replace(/^\/(\w:)/, '$1'));
 const runtime = { exports: {} };
-vm.runInNewContext(buildLocalDshRuntime(client).outputFiles[0].text, { module: runtime, exports: runtime.exports, require, process, Buffer, URL, setTimeout, clearTimeout });
+vm.runInNewContext(buildLocalDshRuntime(client).outputFiles[0].text, { module: runtime, exports: runtime.exports, require, process, Buffer,TextEncoder, URL, setTimeout, clearTimeout });
 const compiled = await esbuild.build({ entryPoints: [new URL('../electron/main/localDshAccount.ts', import.meta.url).pathname.replace(/^\/(\w:)/, '$1')], bundle: true, platform: 'node', format: 'cjs', write: false,
   external: ['./localDshRuntime'],
   plugins: [{ name: 'native-boundary', setup(build) {
@@ -22,7 +22,7 @@ const compiled = await esbuild.build({ entryPoints: [new URL('../electron/main/l
   } }],
 });
 const module = { exports: {} };
-vm.runInNewContext(compiled.outputFiles[0].text, { module, exports: module.exports, require: name => name === './localDshRuntime' ? runtime.exports : require(name), Buffer, URL, setTimeout, clearTimeout });
+vm.runInNewContext(compiled.outputFiles[0].text, { module, exports: module.exports, require: name => name === './localDshRuntime' ? runtime.exports : require(name), Buffer,TextEncoder, URL, setTimeout, clearTimeout });
 const { createDshRelay } = module.exports;
 
 test('loopback relay rejects browser-origin, wrong and non-ASCII tokens, restricts routes, fences accounts and closes sockets', async t => {
@@ -55,7 +55,7 @@ test('managed account overlay preserves user plugins and contains only a credent
   const home = mkdtempSync(path.join(tmpdir(), 'dsh-profile-')); t.after(() => rmSync(home, { recursive: true, force: true }));
   const client = path.resolve(new URL('../', import.meta.url).pathname.replace(/^\/(\w:)/, '$1'));
   const built = buildLocalDshRuntime(client), runtime = { exports: {} };
-  vm.runInNewContext(built.outputFiles[0].text, { module: runtime, exports: runtime.exports, require, process, Buffer, URL, setTimeout, clearTimeout });
+  vm.runInNewContext(built.outputFiles[0].text, { module: runtime, exports: runtime.exports, require, process, Buffer,TextEncoder, URL, setTimeout, clearTimeout });
   writeFileSync(path.join(home, 'cordis.patch.yml'), 'synthetic user plugin settings');
   const file = await runtime.exports.prepareAccountProfile(home, { baseURL: 'http://127.0.0.1:4321', model: 'synthetic-model', protocol: 'openai-completions', maxTokens: 8192 });
   const entries = JSON.parse(readFileSync(file, 'utf8'));

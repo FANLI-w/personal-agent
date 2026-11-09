@@ -11,6 +11,8 @@ COPY deploy/openim ./deploy/openim
 ENV pnpm_config_verify_deps_before_run=false
 RUN pnpm install --frozen-lockfile \
     && pnpm --config.verify-deps-before-run=false --filter @research-agent-platform/contracts build \
+    && pnpm --config.verify-deps-before-run=false --filter @research-agent-platform/research-skills build \
+    && pnpm --config.verify-deps-before-run=false --filter @research-agent-platform/constitution build \
     && pnpm --config.verify-deps-before-run=false --filter @research-agent-platform/research-core build \
     && pnpm --config.verify-deps-before-run=false --filter @research-agent-platform/harness-runtime build \
     && pnpm --config.verify-deps-before-run=false --filter @research-agent-platform/api build

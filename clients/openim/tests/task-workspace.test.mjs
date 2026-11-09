@@ -19,7 +19,7 @@ vm.runInNewContext(
     exports: module.exports,
     require,
     process,
-    Buffer,
+    Buffer,TextEncoder,
     URL,
     setTimeout,
     clearTimeout,
@@ -401,6 +401,16 @@ test('Electron CommonJS bundle validates canonical work context without requirin
   assert.equal(WorkContext.parse(policy).privateMemoryAllowed, false);
   assert.equal(WorkContext.safeParse({...policy,privateMemoryAllowed:'yes'}).success, false);
   assert.equal(WorkContext.safeParse({...policy,unexpected:'not admitted'}).success, false);
+});
+
+test('personal constraints remain mandatory while reusable methods are optional and absent from a greeting',()=>{
+ const entries=[{id:'personal',version:2,kind:'rule',layer:'personal',title:'本人偏好',content:'PERSONAL_CONSTRAINT'}, {id:'method',version:1,kind:'link',layer:'lab',title:'组内方法',content:'OPTIONAL_METHOD'}];
+ const task={id:'t',version:1,kind:'task',title:'Task',content:'Synthetic goal'};
+ const greeting=packWorkContext('你好',workInput('personal-v2',entries),task);
+ assert(greeting.content.includes('PERSONAL_CONSTRAINT'));assert(!greeting.content.includes('OPTIONAL_METHOD'));
+ const work=packWorkContext('开始工作',workInput('personal-v2',entries),task);
+ assert(work.receipt.entries.some(e=>e.id==='personal'&&e.layer==='personal'&&e.version===2));
+ assert(work.receipt.entries.some(e=>e.id==='method'&&e.kind==='link'));
 });
 
 test('local files stay local, same-content shared material reuses the copy, and the prompt lists provenance not file contents', async t => {

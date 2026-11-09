@@ -1,6 +1,7 @@
 import {runTeamWork, notifyTeamDecision} from './team-work.js'
 import { taskWorkflowProjection } from './task-workflow-compat.js'
 import {runWorkContext} from './work-context.js'
+import {workContextProjection} from './work-context-compat.js'
 import {runLibraryIndex} from './library-index.js'
 import {runTeamLibrary} from './team-library.js'
 import { ReuseService, reuseCommands } from './reuse.js'
@@ -262,7 +263,13 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
         if(route.stage==='TEAM1')return route.response.parse(runTeamWork(new ChatService(collaboration,config),name as keyof typeof import('@research-agent-platform/contracts').teamWorkRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').teamWorkRoutes>))
         if(route.stage==='INDEX1')return route.response.parse(runLibraryIndex(new ChatService(collaboration,config),name as keyof typeof import('@research-agent-platform/contracts').libraryIndexRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').libraryIndexRoutes>))
         if(route.stage==='GITLIB1')return route.response.parse(runTeamLibrary(new ChatService(collaboration,config),name as keyof typeof import('@research-agent-platform/contracts').teamLibraryRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').teamLibraryRoutes>))
-        if(route.stage==='CONTEXT1')return route.response.parse(runWorkContext(new ChatService(collaboration,config),name as keyof typeof import('@research-agent-platform/contracts').workContextRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').workContextRoutes>))
+        if(route.stage==='CONTEXT1'){
+          const modern=request.headers['x-acceptcat-work-rules']==='layers-v1'
+          const body=parsed.data.body as {kind?:string;scope?:string}|null
+          if(!modern&&(body?.kind==='link'||name==='savePersonalWorkRule'||name==='personalWorkRules'))fail('NOT_IMPLEMENTED')
+          const result=route.response.parse(runWorkContext(new ChatService(collaboration,config),name as keyof typeof import('@research-agent-platform/contracts').workContextRoutes,parsed.data as RequestFor<keyof typeof import('@research-agent-platform/contracts').workContextRoutes>))
+          return workContextProjection(result,modern)
+        }
         if(route.stage==='SKILL1'){const result=runSkills(new ChatService(collaboration,config),name as SkillCommand,parsed.data as RequestFor<SkillCommand>);reconcileChat(connection,config);return result}
         if(route.stage==='CHAT1'||route.stage==='IM1'){const result=new ChatService(collaboration,config).run(name as ChatCommand,parsed.data as RequestFor<ChatCommand>);reconcileChat(connection,config);return result}
         if((reuseCommands as readonly string[]).includes(name)){const result=new ReuseService(collaboration).run(name as ReuseCommand,parsed.data as RequestFor<ReuseCommand>);reconcile(connection,config);return result}

@@ -50,11 +50,11 @@ async function fixture(t, library) {
     })},
   };
   const runtime={exports:{}};
-  vm.runInNewContext(runtimeCode,{module:runtime,exports:runtime.exports,require,process,Buffer,URL,setTimeout,clearTimeout,
+  vm.runInNewContext(runtimeCode,{module:runtime,exports:runtime.exports,require,process,Buffer,TextEncoder,URL,setTimeout,clearTimeout,
     setInterval:(fn,ms)=>{const id=setInterval(fn,ms);timers.push(id);return id;},clearInterval});
   t.after(()=>timers.forEach(clearInterval));
   const mod={exports:{}};
-  vm.runInNewContext(bundled.outputFiles[0].text,{module:mod,exports:mod.exports,teamLibraryFixture:()=>library,require:id=>id==='electron'?electron:id==='./localDshRuntime'?runtime.exports:require(id),process,Buffer,URL,URLSearchParams,setTimeout,clearTimeout});
+  vm.runInNewContext(bundled.outputFiles[0].text,{module:mod,exports:mod.exports,teamLibraryFixture:()=>library,require:id=>id==='electron'?electron:id==='./localDshRuntime'?runtime.exports:require(id),process,Buffer,TextEncoder,URL,URLSearchParams,setTimeout,clearTimeout});
   const account={metadata:{memberId:'member_A'},identity:'synthetic',lease:'one',csrf:'synthetic',valid:async()=>{if(!valid)throw Error('expired');},request:url=>respond(()=>{
     if(url==='/api/v1/health/ready')return{data:{status:'ok',contractVersion:'0.38.0'}};
     if(url==='/api/v1/tasks/synthetic-task')return{data:{task:{title:'Synthetic task',goal:'Local work',version:1,allowedActions:['submit']}}};

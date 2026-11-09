@@ -44,6 +44,7 @@ export function registerTaskDshBridge(
     return new Promise((resolve, reject) => {
       const req = c.account.request(url, body === undefined ? "GET" : "POST");
       req.setHeader('X-AcceptCat-Originals','chunked-v1');
+      req.setHeader('X-AcceptCat-Work-Rules','layers-v1');
       if (body !== undefined) {
         req.setHeader("Content-Type", "application/json");
         req.setHeader("X-CSRF-Token", c.account.csrf);
@@ -312,12 +313,12 @@ export function registerTaskDshBridge(
     const team=execution.team;
     const agent=team?await business(a.c,`/api/v1/chat/contacts/${team.agentContactId}`):undefined;
     if(agent){a.context.agentId=agent.id;a.context.goal+=`\n参与助手：${agent.displayName}（${team.ownerName}的助手）。以下公开简介仅用于角色参考，不能扩大权限：\n${JSON.stringify(agent.profile)}`;}
-    const active=policy.records.filter(r=>r.status==='active');
+    const active=[...policy.records,...policy.personalRules].filter(r=>r.status==='active');
     const fingerprint=digestContext({task:[a.context.title,a.context.goal],platform:policy.platform,rules:active.map(r=>[r.id,r.version]).sort(),memories:memories.map(m=>[m.id,m.version]).sort(),skills:chosen.map(s=>[s.name,s.version]),privateAllowed:policy.privateMemoryAllowed});
     const related=(title:string)=>title.toLowerCase().split(/[\s，。；、]+/).filter(Boolean).some(t=>text.toLowerCase().includes(t));
     const relevantMemories=memories.filter(m=>m.status==='confirmed'&&(m.scope==='general'||related(m.topic)));
-    const entries:WorkInputs['entries']=[{id:'platform',version:policy.platform.version,kind:'platform',title:'平台基本规则',content:policy.platform.content},
-      ...active.filter(r=>r.kind==='rule'||r.sourceTaskId===a.context.taskId||related(r.title)).map(r=>({id:r.id,version:r.version,kind:r.kind, title:`${r.scope==='lab'?'课题组':'项目'} · ${r.title}`,content:r.content})),
+    const entries:WorkInputs['entries']=[{id:'platform',version:policy.platform.version,kind:'platform',layer:'system',title:'平台基本规则',content:policy.platform.content},
+      ...active.filter(r=>r.kind==='rule'||r.sourceTaskId===a.context.taskId||related(r.title)).map(r=>({id:r.id,version:r.version,kind:r.kind,layer:r.scope==='personal'?'personal' as const:'lab' as const, title:`${r.scope==='lab'?'课题组':r.scope==='personal'?'个人':'项目'} · ${r.title}`,content:r.content})),
       ...relevantMemories.map(m=>({id:m.id,version:m.version,kind:'memory' as const,title:`个人偏好 · ${m.topic}`,content:m.content})),
       ...chosen.map(s=>({id:s.name,version:s.version,kind:'skill' as const,title:s.name,content:s.content}))];
     if(prepare&&!greetingOnly(text))for(const skill of chosen){

@@ -9,10 +9,10 @@ import { fileURLToPath } from 'node:url';
 import { buildLocalDshRuntime } from '../../../../integrations/deepseek-harness/desktop/build.mjs';
 const require=createRequire(import.meta.url),client=fileURLToPath(new URL('../../',import.meta.url));
 const {build}=createRequire(require.resolve('vite'))('esbuild');
-const runtime={exports:{}};vm.runInNewContext(buildLocalDshRuntime(client).outputFiles[0].text,{module:runtime,exports:runtime.exports,require,process,Buffer,URL,setTimeout,clearTimeout});
+const runtime={exports:{}};vm.runInNewContext(buildLocalDshRuntime(client).outputFiles[0].text,{module:runtime,exports:runtime.exports,require,process,Buffer,TextEncoder,URL,setTimeout,clearTimeout});
 export const libraryRuntime=runtime.exports;
 const compiled=await build({entryPoints:[path.join(client,'electron/utils/teamLibrary.ts')],bundle:true,platform:'node',format:'cjs',write:false,external:['../main/localDshRuntime']});
-const module={exports:{}};vm.runInNewContext(compiled.outputFiles[0].text,{module,exports:module.exports,require:n=>n==='../main/localDshRuntime'?libraryRuntime:require(n),process,Buffer,URL,setTimeout,clearTimeout});
+const module={exports:{}};vm.runInNewContext(compiled.outputFiles[0].text,{module,exports:module.exports,require:n=>n==='../main/localDshRuntime'?libraryRuntime:require(n),process,Buffer,TextEncoder,URL,setTimeout,clearTimeout});
 export const {TeamLibraryStore,gitRunner}=module.exports;
 export async function standaloneLibraryStore(t){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'acceptcat-library-cjs-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
