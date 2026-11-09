@@ -6,11 +6,24 @@ import os from 'node:os';
 import vm from 'node:vm';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { buildLocalDshRuntime } from '../../../../integrations/deepseek-harness/desktop/build.mjs';
 const require=createRequire(import.meta.url),client=fileURLToPath(new URL('../../',import.meta.url));
 const {build}=createRequire(require.resolve('vite'))('esbuild');
-const compiled=await build({entryPoints:[path.join(client,'electron/utils/teamLibrary.ts')],bundle:true,platform:'node',format:'cjs',write:false});
-const module={exports:{}};vm.runInNewContext(compiled.outputFiles[0].text,{module,exports:module.exports,require,process,Buffer,URL,setTimeout,clearTimeout});
+const runtime={exports:{}};vm.runInNewContext(buildLocalDshRuntime(client).outputFiles[0].text,{module:runtime,exports:runtime.exports,require,process,Buffer,URL,setTimeout,clearTimeout});
+export const libraryRuntime=runtime.exports;
+const compiled=await build({entryPoints:[path.join(client,'electron/utils/teamLibrary.ts')],bundle:true,platform:'node',format:'cjs',write:false,external:['../main/localDshRuntime']});
+const module={exports:{}};vm.runInNewContext(compiled.outputFiles[0].text,{module,exports:module.exports,require:n=>n==='../main/localDshRuntime'?libraryRuntime:require(n),process,Buffer,URL,setTimeout,clearTimeout});
 export const {TeamLibraryStore,gitRunner}=module.exports;
+export async function standaloneLibraryStore(t){
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'acceptcat-library-cjs-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
+ await fs.mkdir(path.join(root,'main'));await fs.mkdir(path.join(root,'utils'));
+ await fs.writeFile(path.join(root,'main/localDshRuntime.js'),buildLocalDshRuntime(client).outputFiles[0].text);
+ // Match the per-file CJS transform used by vite-electron-plugin, without bundling away imports.
+ const {transform}=createRequire(require.resolve('vite'))('esbuild');
+ const output=await transform(await fs.readFile(path.join(client,'electron/utils/teamLibrary.ts'),'utf8'),{loader:'ts',format:'cjs',target:'node16'});
+ const file=path.join(root,'utils/teamLibrary.js');await fs.writeFile(file,output.code);
+ return require(file).TeamLibraryStore;
+}
 export const sha=value=>createHash('sha256').update(value).digest('hex');
 export async function libraryFixture(t,{aliasCache=false}={}){
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'acceptcat-team-git-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));

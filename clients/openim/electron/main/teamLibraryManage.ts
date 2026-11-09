@@ -1,7 +1,7 @@
 import { app, ipcMain, net, shell, type IpcMainInvokeEvent } from "electron";
 import { createHash } from "node:crypto";
 import path from "node:path";
-import { TeamRepositoryBinding } from "@research-agent-platform/contracts";
+const { TeamRepositoryBinding } = require("./localDshRuntime") as typeof import("@research-agent-platform/contracts");
 import { authority } from "./localFolderManage";
 import { desktopSessionCookie } from "../utils/desktopServer";
 import { getResearchServiceStatus } from "./windowManage";

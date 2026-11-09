@@ -6,6 +6,7 @@ export { prepareAccountProfile } from "./account-profile";
 export { DshTaskWorkspace, taskKey } from './task-workspace';
 // Bundle the shared wire schemas into this CJS entry: Electron 22 cannot require the ESM contracts package.
 export { LocalDshConfiguration, localDshPaths } from "../../../packages/contracts/src/local-dsh";
+export { TeamRepositoryBinding, TeamLibraryManifest, TeamLibraryEntry, TeamLibraryPath } from "../../../packages/contracts/src/team-library";
 
 export const supportedDshVersion = "0.2.1-rc.3";
 export type LocalDshState = {

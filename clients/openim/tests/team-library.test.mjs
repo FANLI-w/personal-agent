@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {libraryFixture,TeamLibraryStore,gitRunner,sha} from './helpers/team-library.mjs';
+import {libraryFixture,standaloneLibraryStore,TeamLibraryStore,gitRunner,sha} from './helpers/team-library.mjs';
 import {TeamLibraryPath} from '../../../packages/contracts/dist/team-library.js';
 
 test('real Git fetch, verified originals, cached reopen and failed refresh preserve the published version',async t=>{
@@ -53,4 +53,9 @@ test('a new project is proposed independently with stable retry and no spurious 
  const manifest=JSON.parse(f.git(['--git-dir='+f.remote,'show',result.commit+':acceptcat-library.json']));
  assert.equal(manifest.projects.length,2);assert.equal(manifest.entries.length,1);
  assert.equal(f.git(['--git-dir='+f.remote,'rev-parse','main']).toString().trim(),snapshot.revision);
+});
+test('the standalone per-file CommonJS store loads without an ESM contracts dependency',async t=>{
+ const f=await libraryFixture(t),Store=await standaloneLibraryStore(t);
+ assert.equal(await new Store(path.join(f.root,'standalone-cache'),f.binding).cached(),null);
+ assert.throws(()=>new Store(path.join(f.root,'standalone-cache'),{...f.binding,url:'file:///secret'}));
 });

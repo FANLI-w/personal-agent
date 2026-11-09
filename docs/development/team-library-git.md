@@ -42,7 +42,7 @@
 
 根仓库：`corepack pnpm@11.21.0 install --frozen-lockfile`、`corepack pnpm@11.21.0 run ci`。完整 CI：71 文件 **886 项**、生产运行检查、B0 进程与 Web 生产检查通过。
 
-客户端使用独立 pnpm：根目录先 `corepack pnpm@11.21.0 run build:desktop-deps`；进入 `clients/openim` 后执行 `corepack pnpm@10.28.0 install --ignore-workspace --frozen-lockfile`，再运行 `typecheck`、`typecheck:electron`、`build:web`。全部通过；Git/原生桥/任务取用/构建守卫 **23 项**通过；`test:local-dsh` **42 项**及 `test:team-library` **9 项**通过（与 23 项有重叠，不能相加当独立数量）。Windows CI 已加入新测试。
+客户端使用独立 pnpm：根目录先 `corepack pnpm@11.21.0 run build:desktop-deps`；进入 `clients/openim` 后执行 `corepack pnpm@10.28.0 install --ignore-workspace --frozen-lockfile`，再运行 `typecheck`、`typecheck:electron`、`build:web`。全部通过；Git/原生桥/任务取用/构建守卫 **24 项**通过；`test:local-dsh` **42 项**及 `test:team-library` **10 项**通过（与 24 项有重叠，不能相加当独立数量）。Windows CI 已加入新测试。
 
 测试使用真实本机 Git 对象、隔离 SQLite/HTTP、合成账号，以及任务工作区的合成 DSH RPC。验证了 Git→IPC→工作目录内容/版本一致、无隐式上传、失败重试去重、待审分支不移动 main、失效账号/换组拒绝晚到结果、新项目幂等、未知来源/错误哈希拒绝。界面使用实际组件、隔离真实后台和同一 Git store 的测试适配层；1568×1005 与 1280 桌面检查、搜索/预览/版本历史/新增项目取消/待审提交/任务跳转通过。浏览器中不冒充已连接原生 DSH。
 
@@ -61,3 +61,5 @@ GitHub Windows 两轮检查发现 runner 临时盘祖先路径别名触发过严
 下一步只有两件：审阅代码并安排 0.44/033 后台与客户端独立交付；由负责人用真实任务、私有实验室仓库和 1–300 MB PPT 验收。没有调用真实模型、私人材料、双机账号或替换正在使用的客户端。
 
 远端随后完整客户端回归暴露旧 service-status-bridge 夹具未登记新桥接模块（github-desktop-canonical-failure.log），已补齐与其他无关桥相同的隔离登记；129项通讯录/服务状态/资料/任务等回归通过，未改其实际权限逻辑。修后日志 client-regression-final.log；原件路径修后23项与构建在 native-canonical-check.log / client-build-canonical.log。
+
+打包后隔离启动暴露新原生模块直接require ESM契约导致ERR_PACKAGE_PATH_NOT_EXPORTED（github-desktop-package-failure.log），NSIS生成本身通过但该包不可用。沿用现有localDshRuntime的CommonJS契约打包出口，仅新增团队资料schema导出；原生模块只从已打包CJS取schema，类型仍引用共享契约，没有复制校验实现或修改DSH上游/模型。新增不打包逐文件CJS加载回归，24项原生/任务/构建定向检查与Electron类型通过；含任务工作区的44项回归也通过。日志cjs-native-check.log、cjs-library-tests.log；修复后重新构建并等待完整启动检查，不把先前失败包称为可交付。

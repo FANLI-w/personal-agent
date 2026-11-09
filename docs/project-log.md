@@ -2939,3 +2939,5 @@ typecheck、build:web与38项客户端定向检查通过；合成Edge实际组�
 GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验，修为先解析拥有缓存根再核对子目录，未放宽子目录链接拒绝。补充祖先别名可用/子目录junction逃逸拒绝回归，本机Git与权限9项、Electron类型通过；此前22项定向组增加为23项。远端两轮失败日志保存在Git外github-desktop-*-failure.log；首提交漏暂存的生产测试033断言也已补齐。远端最终结果另行记录，不把本机通过当成远端通过。
 
 完整客户端回归继续发现旧service-status-bridge夹具未登记新增团队资料桥，5项服务状态测试因此无法初始化；补齐无关桥隔离登记后129项通讯录/资料/任务等回归通过，未改其服务或权限实现。修复日志client-regression-final.log，失败日志github-desktop-canonical-failure.log保留；Git原件路径修复后的23项与构建也通过，继续等待新HEAD的远端完整检查。
+
+远端NSIS及清单构建通过后，成品隔离启动发现团队资料新模块直接require ESM契约，已修为复用既有localDshRuntime的CJS共享schema出口（仅增加导出，不改DSH上游/提示词/模型），并增加逐文件不打包CJS实际加载回归。原生/素材/构建24项通过，含任务工作区44项回归、Electron类型通过；失败包不可交付，日志github-desktop-package-failure.log、cjs-native-check.log、cjs-library-tests.log保留。继续重新构建和完整启动核验。

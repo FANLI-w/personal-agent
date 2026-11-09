@@ -2,12 +2,13 @@ import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
-import {
+import type {
   TeamLibraryManifest,
   TeamLibraryEntry,
   TeamRepositoryBinding,
   TeamLibraryPath,
 } from "@research-agent-platform/contracts";
+const schemas = require("../main/localDshRuntime") as typeof import("@research-agent-platform/contracts");
 import type {
   TeamLibrarySnapshot,
   TeamLibraryProposal,
@@ -106,7 +107,7 @@ export class TeamLibraryStore {
     readonly binding: TeamRepositoryBinding,
     runner?: GitRun,
   ) {
-    TeamRepositoryBinding.parse(binding);
+    schemas.TeamRepositoryBinding.parse(binding);
     this.directory = path.join(
       root,
       digest(
@@ -135,7 +136,7 @@ export class TeamLibraryStore {
   }
   private async object(revision: string, relative: string, maxBytes = gitLibraryLimit) {
     if (!/^[a-f0-9]{40}$/.test(revision)) throw Error("资料版本无效。");
-    TeamLibraryPath.parse(relative);
+    schemas.TeamLibraryPath.parse(relative);
     const mode = (
       await this.run(["ls-tree", "-z", revision, "--", relative], { maxBytes: 2048 })
     ).toString();
@@ -158,7 +159,7 @@ export class TeamLibraryStore {
       const value = JSON.parse(
         await fs.readFile(path.join(this.directory, "snapshot.json"), "utf8"),
       );
-      const manifest = TeamLibraryManifest.parse(value.manifest);
+      const manifest = schemas.TeamLibraryManifest.parse(value.manifest);
       if (
         !/^[a-f0-9]{40}$/.test(value.revision) ||
         manifest.workspaceId !== this.binding.workspaceId ||
@@ -192,7 +193,7 @@ export class TeamLibraryStore {
       )
         .toString()
         .trim();
-      const manifest = TeamLibraryManifest.parse(
+      const manifest = schemas.TeamLibraryManifest.parse(
         JSON.parse(
           (await this.object(revision, manifestPath, 1024 * 1024)).toString("utf8"),
         ),
@@ -276,7 +277,7 @@ export class TeamLibraryStore {
     return this.serial(async () => {
       if (text !== undefined && typeof text !== "string")
         throw Error("资料正文格式无效。");
-      const entry = TeamLibraryEntry.parse(input),
+      const entry = schemas.TeamLibraryEntry.parse(input),
         snapshot = await this.cached();
       if (!snapshot || snapshot.revision !== revision)
         throw Error("资料版本已变化，请同步后再提交更新。");
@@ -358,7 +359,7 @@ export class TeamLibraryStore {
             throw Error("Git原件校验值不匹配。");
         }
         manifest.entries.push(entry);
-        TeamLibraryManifest.parse(manifest);
+        schemas.TeamLibraryManifest.parse(manifest);
         const blob = (
           await this.run(["hash-object", "-w", "--stdin"], {
             input: Buffer.from(JSON.stringify(manifest, null, 2) + "\n"),
@@ -429,7 +430,7 @@ export class TeamLibraryStore {
       const snapshot = await this.cached();
       if (!snapshot || snapshot.revision !== revision)
         throw Error("资料版本已变化，请同步后重新提交项目。");
-      const manifest = TeamLibraryManifest.parse({
+      const manifest = schemas.TeamLibraryManifest.parse({
         ...snapshot.manifest,
         projects: [...snapshot.manifest.projects, project],
       });

@@ -7,8 +7,9 @@ import path from 'node:path';
 import vm from 'node:vm';
 import {EventEmitter} from 'node:events';
 import {fileURLToPath} from 'node:url';
+import {libraryRuntime} from './helpers/team-library.mjs';
 const require=createRequire(import.meta.url),{build}=createRequire(require.resolve('vite'))('esbuild');
-const code=(await build({entryPoints:[fileURLToPath(new URL('../electron/main/teamLibraryManage.ts',import.meta.url))],bundle:true,platform:'node',format:'cjs',write:false,external:['electron'],plugins:[{name:'isolated-authority',setup(b){b.onLoad({filter:/localFolderManage\.ts$/},()=>({contents:`export const authority=e=>{if(e.foreign)throw Error('foreign window');return{owner:e.owner,contents:e.sender}};`,loader:'js'}));b.onLoad({filter:/windowManage\.ts$/},()=>({contents:`export const getResearchServiceStatus=()=>({address:'https://synthetic.example.invalid'});`,loader:'js'}));}}]})).outputFiles[0].text;
+const code=(await build({entryPoints:[fileURLToPath(new URL('../electron/main/teamLibraryManage.ts',import.meta.url))],bundle:true,platform:'node',format:'cjs',write:false,external:['electron','./localDshRuntime','../main/localDshRuntime'],plugins:[{name:'isolated-authority',setup(b){b.onLoad({filter:/localFolderManage\.ts$/},()=>({contents:`export const authority=e=>{if(e.foreign)throw Error('foreign window');return{owner:e.owner,contents:e.sender}};`,loader:'js'}));b.onLoad({filter:/windowManage\.ts$/},()=>({contents:`export const getResearchServiceStatus=()=>({address:'https://synthetic.example.invalid'});`,loader:'js'}));}}]})).outputFiles[0].text;
 async function fixture(t){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'acceptcat-team-authority-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
  let token='synthetic_cookie_1234567890',reads=0,during=()=>{};
@@ -22,7 +23,7 @@ async function fixture(t){
      res.emit('data',Buffer.from(JSON.stringify({data})));res.emit('end');
    });return req;
  }}};
- const module={exports:{}};vm.runInNewContext(code,{module,exports:module.exports,require:n=>n==='electron'?electron:require(n),process,Buffer,URL,setTimeout,clearTimeout});module.exports.registerTeamLibraryBridge();
+ const module={exports:{}};vm.runInNewContext(code,{module,exports:module.exports,require:n=>n==='electron'?electron:n.endsWith('/localDshRuntime')?libraryRuntime:require(n),process,Buffer,URL,setTimeout,clearTimeout});module.exports.registerTeamLibraryBridge();
  return {event,binding,call:()=>handlers.get('team-library-cached')(event),expire:()=>token='',during:fn=>during=fn};
 }
 test('the native bridge refuses unverified/foreign sessions without opening another account cache',async t=>{
