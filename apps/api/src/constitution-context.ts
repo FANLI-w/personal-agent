@@ -13,19 +13,17 @@ export type RulesContext = {
   readonly ruleIds: readonly string[]
 }
 
-const header = '工作规则（按平台、课题组、项目顺序生效；个人偏好不能覆盖团队要求）：\n'
+const platformEntry = (): Entry => ({
+  id: 'platform-work-rule',
+  version: PLATFORM_WORK_RULE.version,
+  layer: 'system',
+  kind: 'rule',
+  title: '平台规则',
+  content: PLATFORM_WORK_RULE.content,
+})
 
 export function constitutionEntries(db: DatabaseSync, labId: string): Entry[] {
-  const entries: Entry[] = [
-    {
-      id: 'platform-work-rule',
-      version: PLATFORM_WORK_RULE.version,
-      layer: 'system',
-      kind: 'rule',
-      title: '平台规则',
-      content: PLATFORM_WORK_RULE.content,
-    },
-  ]
+  const entries: Entry[] = [platformEntry()]
   const rows = db
     .prepare("SELECT document FROM work_context_records WHERE lab_id=? AND scope IN ('lab','project') ORDER BY id")
     .all(labId)
@@ -61,8 +59,12 @@ export function activeRuleBytes(db: DatabaseSync, labId: string, excludeId?: str
 }
 
 function render(entries: readonly Entry[], omitted: readonly string[]): RulesContext {
+  const scoped = entries.some(entry => entry.layer === 'lab')
+  const title = scoped
+    ? '工作规则（按平台、课题组、项目顺序生效；个人偏好不能覆盖团队要求）：\n'
+    : '工作规则（平台层；个人偏好不能覆盖团队要求）：\n'
   const text = entries.length
-    ? header +
+    ? title +
       entries
         .map(entry => `[${entry.layer === 'system' ? '平台' : '课题组'}·${entry.title} v${entry.version}] ${entry.content}`)
         .join('\n')
@@ -88,4 +90,24 @@ export function planningRulesContext(db: DatabaseSync, labId: string): RulesCont
     const composed = compose(entries.filter(entry => entry.layer === 'system'))
     return render(composed.included, [...composed.omitted, '课题组规则超出上下文预算，本轮已省略'])
   }
+}
+
+/** 只用平台规则：私聊与个人会话的场景。 */
+export function platformRulesContext(): RulesContext {
+  const composed = compose([platformEntry()])
+  return render(composed.included, composed.omitted)
+}
+
+export type ConversationScope = { readonly id: string; readonly kind: 'personal' | 'direct' | 'group'; readonly labId: string }
+
+/**
+ * 会话的规则作用域：群聊取群所属课题组（`conversation.labId`，创建时固定），
+ * 私聊与个人会话只带平台规则。个人规则不进群。
+ */
+export function conversationRulesContext(
+  db: DatabaseSync,
+  conversation: ConversationScope,
+): RulesContext & { readonly ruleScope: 'lab' | 'platform' } {
+  if (conversation.kind !== 'group') return { ...platformRulesContext(), ruleScope: 'platform' }
+  return { ...planningRulesContext(db, conversation.labId), ruleScope: 'lab' }
 }

@@ -1,4 +1,5 @@
 import {skillContext,skillSystem} from './skills.js'
+import { conversationRulesContext } from './constitution-context.js'
 import { retrieveResearchContext, researchLibrarySystem, researchReadReceipt } from './research-chat-context.js'
 import type { AgentResearchContext } from '@research-agent-platform/contracts'
 import { randomUUID } from 'node:crypto'
@@ -59,6 +60,10 @@ export class ChatWorker {
       const row = this.db.prepare("SELECT * FROM chat_turns WHERE status='queued' AND (json_extract(request_json,'$.continuous.dueAt') IS NULL OR json_extract(request_json,'$.continuous.dueAt')<=?) ORDER BY rowid LIMIT 1").get(this.clock())
       if (!row) return null
       const s = service(this.db, String(row.owner_id), this.config,String(row.id)), { turn, input, group } = s.checkTurnInput(String(row.id))
+      // 规则按会话归属取：群聊用群所属课题组，私聊与个人会话只有平台规则。开关关闭即恢复旧行为。
+      const conversationRules=this.config.constitutionRules?conversationRulesContext(this.db,{id:group.id,kind:group.kind,labId:group.labId}):null
+      const rulesSuffix=conversationRules?.text?`\n${conversationRules.text}`:''
+      if(conversationRules?.text)console.log(`CHAT_RULES conversation=${group.id} kind=${group.kind} scope=${conversationRules.ruleScope} bytes=${conversationRules.bytes} rules=${conversationRules.ruleIds.join(',')} omitted=${conversationRules.omitted.length}`)
       let system:string,prompt:string
       const external=input.externalAgent?externalForChat(s,turn.agentContactId):null
       if(input.externalAgent&&!external)throw new ApiError('FORBIDDEN')
@@ -77,6 +82,7 @@ export class ChatWorker {
         const required=new Set(input.continuous?.messageIds??[turn.inputMessageId]),recent=recentDialogue(s,group.id,input.inputSequence,[...required]),notes=olderDialogue(s,group.id,input.inputSequence,recent,current),tasks=dialogueTaskState(s,group,current)
         let layers:DialogueLayers={messages:[],notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]}
         system=personalAssistantSystem+(complex?'\nComplex work: JSON {kind:"team",title:string,contactIds:[listed_ID]}. Save only a proposal. Owner confirms group creation; humans and Agent owners accept independently. No automatic execution or material sharing.':'')
+        system+=rulesSuffix
         const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'\nAnswer currentRequest only; forwarded names may differ from the sender.')
         system=contextSystem(layers)
         const candidates=rankedAssistantCandidates(s,current),shown:typeof candidates=[]
@@ -130,6 +136,7 @@ export class ChatWorker {
       if(document)system+=fileChatSystem
       const notes=input.dailyChat?olderDialogue(s,group.id,input.inputSequence,messages,currentTurnText(s,turn.id),input.fileSource?.messageId):undefined,tasks=input.dailyChat?dialogueTaskState(s,group,currentTurnText(s,turn.id)):[]
       let layers:DialogueLayers={messages:[],notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]}
+      system+=rulesSuffix
       const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'')
       system=contextSystem(layers)
       // Lossless rows: budget selection may omit an oldest DAILY message, never
