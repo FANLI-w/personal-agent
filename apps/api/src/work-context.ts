@@ -91,7 +91,10 @@ export function runWorkContext(s:ChatService,name:Command,req:RequestFor<Command
  */
 function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:RequestFor<'labWorkRules'|'saveLabWorkRule'>){
  const c=s.c, actor=c.actor.id, canPublish=isLabManager(s.db,c.actor)
- const project=(r:WorkRule):WorkRule=>({...r,allowedActions:r.status==='revoked'?[]:canPublish?['revise','confirm','revoke']:r.status==='candidate'&&r.authorId===actor?['revise','revoke']:[]})
+ // 组内链路由承接人提交、派发人批准；规则仍由负责人批准。
+ const dispatched=new Set(s.db.prepare("SELECT id FROM tasks WHERE lab_id=? AND initiator_id=?").all(c.labId,actor).map(row=>String(row.id)))
+ const approves=(r:WorkRule)=>canPublish||(r.kind==='link'&&!!r.sourceTaskId&&dispatched.has(r.sourceTaskId))
+ const project=(r:WorkRule):WorkRule=>({...r,allowedActions:r.status==='revoked'?[]:approves(r)?['revise','confirm','revoke']:r.status==='candidate'&&r.authorId===actor?['revise','revoke']:[]})
  const get=(recordId:string)=>{
   const row=s.db.prepare("SELECT document FROM work_context_records WHERE id=? AND lab_id=? AND scope='lab'").get(recordId,c.labId)
   if(!row)fail('NOT_FOUND')
@@ -114,10 +117,16 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
  }else if(b.expectedVersion!==0||b.action!=='save')fail('VALIDATION_ERROR')
  if(old&&old.version>=100)fail('RATE_LIMITED')
  if(!old&&Number(s.db.prepare("SELECT count(*) n FROM work_context_records WHERE lab_id=? AND scope='lab' AND scope_id=?").get(c.labId,c.labId)!.n)>=40)fail('RATE_LIMITED')
+ // 只有提交人能绑定来源任务：链路必须以自己承接的任务为依据。
+ if(b.action==='save'&&b.sourceTaskId){
+  const source=c.task(b.sourceTaskId)
+  if(source.leadId!==actor)fail('FORBIDDEN')
+ }
  const now=new Date().toISOString()
- const value:WorkRule={...b,id:old?.id??randomUUID(),scopeId:c.labId,sourceTaskId:old?.sourceTaskId??null,
+ const value:WorkRule={...b,id:old?.id??randomUUID(),scopeId:c.labId,sourceTaskId:b.sourceTaskId??old?.sourceTaskId??null,
   authorId:actor,authorName:c.member(actor).displayName,status:b.action==='revoke'?'revoked':b.action==='confirm'?'active':canPublish?'active':'candidate',version:(old?.version??0)+1,updatedAt:now,allowedActions:[]}
- if(old&&b.action!=='save'){value.title=old.title;value.content=old.content}
+ // 变更动作只改状态：标题、正文、类型与来源任务都保持原样。
+ if(old&&b.action!=='save'){value.title=old.title;value.content=old.content;value.kind=old.kind;value.sourceTaskId=old.sourceTaskId}
  const {recordId:_recordId,expectedVersion:_version,action:_action,...clean}=value as WorkRule & typeof b
  const record=WorkRule.parse(clean), document=JSON.stringify(record)
  assertRuleBudget(s.db,c.labId,record)

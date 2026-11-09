@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.43.0"
+    "version": "0.44.0"
   },
   "paths": {
     "/api/v1/chat/conversations/{id}/team-work": {
@@ -2139,6 +2139,7 @@
                                 "type": "string",
                                 "enum": [
                                   "rule",
+                                  "link",
                                   "memory"
                                 ]
                               },
@@ -2462,6 +2463,7 @@
                     "type": "string",
                     "enum": [
                       "rule",
+                      "link",
                       "memory"
                     ]
                   },
@@ -2546,6 +2548,7 @@
                           "type": "string",
                           "enum": [
                             "rule",
+                            "link",
                             "memory"
                           ]
                         },
@@ -2860,6 +2863,7 @@
                             "type": "string",
                             "enum": [
                               "rule",
+                              "link",
                               "memory"
                             ]
                           },
@@ -3152,6 +3156,7 @@
                                 "type": "string",
                                 "enum": [
                                   "rule",
+                                  "link",
                                   "memory"
                                 ]
                               },
@@ -3442,7 +3447,10 @@
                   },
                   "kind": {
                     "type": "string",
-                    "const": "rule"
+                    "enum": [
+                      "rule",
+                      "link"
+                    ]
                   },
                   "title": {
                     "type": "string",
@@ -3453,6 +3461,17 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 2000
+                  },
+                  "sourceTaskId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "recordId": {
                     "anyOf": [
@@ -3525,6 +3544,7 @@
                           "type": "string",
                           "enum": [
                             "rule",
+                            "link",
                             "memory"
                           ]
                         },
@@ -71000,7 +71020,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.43.0"
+                          "const": "0.44.0"
                         },
                         "checks": {
                           "type": "object",
@@ -71059,7 +71079,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.43.0",
+                    "contractVersion": "0.44.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -71233,7 +71253,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.43.0"
+                          "const": "0.44.0"
                         },
                         "checks": {
                           "type": "object",
@@ -71292,7 +71312,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.43.0",
+                    "contractVersion": "0.44.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -71444,7 +71464,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.43.0"
+                          "const": "0.44.0"
                         },
                         "checks": {
                           "type": "object",
@@ -71503,7 +71523,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.43.0",
+                    "contractVersion": "0.44.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
