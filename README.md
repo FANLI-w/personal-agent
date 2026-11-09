@@ -84,14 +84,13 @@ DSH 随安装包提供，登录后自动连接当前 AcceptCat 账号的模型�
 
 | 版本入口 | 当前状态 |
 | --- | --- |
-| **规划改造预发布：0.10.97** | 供配套0.43后台手动验收：[预发布下载](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.97)。保留同事两态规划设计，仅补信息不足骨架的条件解析；配套后台0.43已部署，真实任务待验收；自动更新Latest保持0.10.96。[范围与检查](docs/deployment/acceptcat-0.10.97-preview.md) |
-| **最新公开桌面试用版：0.10.96** | Windows x64 安装包已发布：[下载 AcceptCat_0.10.96.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.96/AcceptCat_0.10.96.exe)，约421 MB。修复本地历史读取提示、阅读位置恢复与消息跨页定位；保留完整正文/引用缓存、科研插件0.4.0、工作台原生文件/PDF和模型设置。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.96) · [成品检查与边界](docs/deployment/acceptcat-0.10.96-release.md) |
+| **最新公开桌面试用版：0.10.98** | Windows x64安装包已发布：[下载 AcceptCat_0.10.98.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.98/AcceptCat_0.10.98.exe)，约421 MB。图片/文件先暂存再发送，新增框选标注和聊天内F2截图；保留完整本地聊天缓存、两态规划、工作台原生文件/PDF和模型设置。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.98) · [成品检查与边界](docs/deployment/acceptcat-0.10.98-release.md) |
 | **飞书只读本人试点** | 文档快照与命名多维表格论文库代码已包含，配套后台及飞书 0.2.0 已部署；指定论文库的真实读取、私人绑定和 DSH 试读已完成。飞书应用仍仅罗岩本人可用，其他成员不会因安装客户端而自动获得权限。[试点记录与边界](docs/deployment/acceptcat-0.10.27.md) |
 | **后台模型运行层：DSH 0.2.1-rc.2** | 已部署并验证现有模型的真实短句回复，保留现有账号、资料与模型设置；已有客户端无需重装。[部署说明](docs/deployment/harness-0.2.1-rc.2-20261020.md) |
-| **历史公开版本** | 原 v0.10.95、v0.10.94、v0.10.93、v0.10.91、v0.10.90、v0.10.75 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.96 |
-| **产品源码与协作基线** | [v0.10.96 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.96)固定客户端实际构建源码fb9e2d2；[main](https://github.com/luoyan96/personal-agent/tree/main)另保留发布/部署回执。后续功能从主仓库最新main另开分支，通过PR合并，安装包发布和后台部署分别记录 |
+| **历史公开版本** | 原 v0.10.97预发布、v0.10.96、v0.10.95、v0.10.94、v0.10.93、v0.10.91、v0.10.90、v0.10.75 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.98 |
+| **产品源码与协作基线** | [v0.10.98 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.98)固定客户端实际构建源码386f62a；[main](https://github.com/luoyan96/personal-agent/tree/main)另保留发布/部署回执。后续功能从主仓库最新main另开分支，通过PR合并，安装包发布和后台部署分别记录 |
 
-0.10.96客户端已公开，配套后台已独立部署至contract0.42.0/schema032；[发布回执](docs/deployment/acceptcat-0.10.96-release.md)与[后台回执](docs/deployment/chat-transcript-20261104.md)分别维护。已读取的完整消息和引用可从本地恢复，旧版仅存指针的消息首次仍需联网补取。科研插件文件流程需要本机WPS/Office；真实账号模型、双机协作与复杂材料效果由使用者验收。原聊天图片问答基于Windows本机OCR提取文字，具体范围见发布说明。
+0.10.98客户端已公开，配套后台已独立部署至contract0.43.0/schema032，本次无需再部署后台；[发布回执](docs/deployment/acceptcat-0.10.98-release.md)与[后台回执](docs/deployment/planner-skeleton-20261106.md)分别维护。已读取的完整消息和引用可从本地恢复，旧版仅存指针的消息首次仍需联网补取。科研插件文件流程需要本机WPS/Office；真实账号模型、双机协作与复杂材料效果由使用者验收。原聊天图片问答基于Windows本机OCR提取文字，具体范围见发布说明。
 
 已有试用版的团队：登录后在“我的 → 模型设置”配置自己的模型，从一个真实课题的小任务开始。新团队如希望参与试用，可以在 [Issues](https://github.com/luoyan96/personal-agent/issues) 留下使用场景和试用意向；请不要提交账号密钥、未公开论文或学生的私人材料。
 
