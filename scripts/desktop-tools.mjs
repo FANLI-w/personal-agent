@@ -40,10 +40,30 @@ async function digest(file) {
   return hash.digest('hex');
 }
 
+// GitHub Releases 走 CDN，偶发 502/503/504 与连接中断。这类错误重试即可恢复；
+// 4xx（除 429）说明 URL 或权限有问题，重试没有意义，直接失败。
 async function download(url, file) {
-  const response = await fetch(url, { redirect: 'follow' });
-  if (!response.ok || !response.body) throw Error(`下载失败 ${response.status}: ${url}`);
-  await pipeline(Readable.fromWeb(response.body), createWriteStream(file));
+  const attempts = 4;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(url, { redirect: 'follow' });
+      if (!response.ok || !response.body) {
+        const retryable = response.status >= 500 || response.status === 429;
+        const error = Error(`下载失败 ${response.status}: ${url}`);
+        Object.assign(error, { retryable });
+        throw error;
+      }
+      await pipeline(Readable.fromWeb(response.body), createWriteStream(file));
+      return;
+    } catch (error) {
+      const retryable = error?.retryable ?? true; // 网络中断与超时同样重试
+      if (!retryable || attempt === attempts) throw error;
+      await rm(file, { force: true });
+      const wait = attempt * 5000;
+      console.log(`下载重试 ${attempt}/${attempts - 1}（${wait}ms 后）：${error?.message ?? error}`);
+      await new Promise(resolve => setTimeout(resolve, wait));
+    }
+  }
 }
 
 async function unpack(entry, archive, destination) {
