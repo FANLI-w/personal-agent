@@ -110,7 +110,9 @@ test('requires the CommonJS skill importer and its YAML dependency inside the st
   f.put('standalone/dist-electron/preload/screenshotEditor.js','require("electron")');
   f.put('standalone/dist-electron/main/screenshotEditorManage.js','exports.registerScreenshotEditor=()=>{}');
   f.put('standalone/dist-electron/utils/screenshotEditorHtml.js','exports.screenshotEditorHtml=()=>{}');
-  assert.equal(runtimeEntryFiles(path.join(f.workspace,'standalone')).length,9);
+  f.put('standalone/dist-electron/main/teamLibraryManage.js','exports.registerTeamLibraryBridge=()=>{}');
+  f.put('standalone/dist-electron/utils/teamLibrary.js','exports.TeamLibraryStore=class {}');
+  assert.equal(runtimeEntryFiles(path.join(f.workspace,'standalone')).length,11);
 });
 
 test('checks the actual archive, not just the staging directory', async t => {

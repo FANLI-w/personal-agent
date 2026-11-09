@@ -9,6 +9,7 @@ import { LibraryIndexPage } from "./LibraryIndexPage";
 import { ResearchLibrary } from "./ResearchLibrary";
 import { useWorkspaceAvailability } from "./useWorkspaceAvailability";
 import { WorkspaceReports } from "./WorkspaceReports";
+import { TeamLibraryWorkspace } from './TeamLibraryWorkspace';
 
 export function LibraryWorkspace() {
   const [params, setParams] = useSearchParams();
@@ -20,6 +21,7 @@ export function LibraryWorkspace() {
   const reports = params.get("panel") === "reports";
   const standards = params.get("panel") === "standards" && standardsReady;
   const index = params.get("panel") === "index" && indexReady;
+  if(availability.supports(44)) return <main className="social-workspace workspace-library"><header className="workspace-heading"><h1>资料</h1></header><TeamLibraryWorkspace supported initialPanel={params.get('panel')}/></main>;
   return (
     <main className="social-workspace workspace-library">
       <header className="workspace-heading">

@@ -144,3 +144,8 @@ paper-framework-figure-studio-pro 固定修订仅在 Git 外测试完整包往�
 2026-10-29：原生文件/PDF恢复固定升级客户端Electron43.8.4，独立preload接DSH官方文件路径/目录选择约定，保留固定DSH发行树。既有聊天文件上传改用webUtils取得原生File路径，浏览器生成文件保持落盘回退。未迁入DSH/Mimir源码，无业务API/数据库迁移；既有账号隔离DSH_HOME与任务绑定保持，真实已用账号升级仍待负责人验收。见[适配记录](development/dsh-native-files-workbench.md)。
 
 同日0.10.73整合PR129/139/140/141，审核任务转交时新增contract0.39.0/schema031：保留历史blocked读取，当前blocked增加版本恢复原状态，追加系统事件；task_handoffs明确关联本次邀请和原承接快照，不删除历史。新后台保留旧桌面读取投影，新客户端对0.38后台隐藏尚不支持的转交入口。本批仅合并与打包，无后台迁移；后续部署须配对API/worker/网页并先验证静止备份副本，031数据库不能直接回切030旧镜像。详见[整合与升级边界](deployment/acceptcat-0.10.73.md)。
+
+
+## 2026-11-09 团队资料 Git 治理参考
+
+参考Tencent/teamai-cli在固定提交a03ca33d8a02304cc22be8425cc1854d4686716c的目录/团队文档/Git审核实践。AcceptCat独立实现资料manifest、权限核对、原件引用与本机Git store，没有复制其源码、hooks或配置，也没有将其namespace当作ACL。DSH只接收经当前账号授权的任务素材副本；生效规则仍由已有工作上下文服务管理。迁移选择、保留旧资料入口及交付边界见development/team-library-git.md。

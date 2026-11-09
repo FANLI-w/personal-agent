@@ -14,6 +14,7 @@ export type LocalDshBridge = {
   taskAddLocal: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget) => Promise<boolean>;
   /** Copies files from the registered local library into the task's work folder. */
   taskImportLibrary: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget, rels: string[]) => Promise<boolean>;
+  taskImportTeamLibrary: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget, selection: import('./teamLibrary').TeamLibrarySelection) => Promise<{count:number;revision:string}>;
   taskReveal: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget, name?: string) => Promise<void>;
   taskArchive: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget,
     selection: import('../../../../integrations/deepseek-harness/desktop/material-archive').ArchiveSelection,
