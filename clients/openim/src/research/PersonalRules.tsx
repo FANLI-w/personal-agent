@@ -6,6 +6,7 @@ import { useResearchRead } from "./useResearchRead";
 import { useWorkspaceAvailability } from "./useWorkspaceAvailability";
 import { WorkspaceUnavailable } from "./WorkspaceUnavailable";
 import { usePersonalOperation } from "./usePersonalOperation";
+import "./library-workspace.scss";
 
 const statusLabels = {
   active: "生效中",
@@ -87,7 +88,7 @@ export function PersonalRules() {
 
   if (!supported)
     return (
-      <section className="my-rules">
+      <section className="my-rules workspace-standards">
         <WorkspaceUnavailable
           feature="个人规则"
           pending={!availability.data && !availability.error}
@@ -98,7 +99,7 @@ export function PersonalRules() {
     );
 
   return (
-    <section className="my-rules" aria-label="个人规则">
+    <section className="my-rules workspace-standards" aria-label="个人规则">
       <header className="my-section-heading">
         <h2>个人规则</h2>
         <p>
@@ -169,7 +170,8 @@ export function PersonalRules() {
           </div>
         </div>
       )}
-      {!records.length && !editing && !read.error && (
+      {!read.data && !read.error && <p>正在读取个人规则…</p>}
+      {read.data && !records.length && !editing && !read.error && (
         <p className="workspace-muted">
           还没有个人规则。写一条你最常重复的要求，之后每次私聊都会带上它。
         </p>
