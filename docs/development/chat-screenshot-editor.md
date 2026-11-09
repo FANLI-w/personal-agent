@@ -16,7 +16,9 @@ F2只在聊天页面获得焦点时生效，不注册系统全局F2，不接管W
 
 不运行或集成本机Snipaste.exe，不读取其history/crashes/splog。目录中没有源码/说明，config.ini仅为少量运行偏好，未修改。此次自行实现基本交互，没有复制第三方二进制或库。
 
-原单次抓屏权限、15秒期限和大小检查保持。编辑器有5分钟取消期限，使用独立BrowserWindow、sandbox、contextIsolation、禁用Node和网络、独立内存session。preload仅暴露完成/取消接口；只有活动编辑器的主frame可提交。完成前再次核对原窗口权限和身份，检查PNG格式、10MiB与像素大小后才复制；外部窗口、子frame和过期结果均拒绝。图片只在内存流转，不自动落盘。
+原单次抓屏权限、15秒期限和大小检查保持。编辑器有5分钟取消期限，使用独立BrowserWindow、sandbox、contextIsolation、禁用Node和网络、独立内存session。preload仅暴露读取本次截图和完成/取消接口；只有活动编辑器的主frame可读取、提交，均核对原窗口身份。完成前检查PNG格式、10MiB与像素大小后才复制；外部窗口、子frame和过期结果均拒绝。图片只在内存流转，不自动落盘。
+
+0.10.98发布复查以约4.1MB data URL的合成高熵图片，在实际Electron43.8.4复现原页面地址过长ERR_INVALID_URL；改为静态小HTML加受限初始化IPC传递截图，不将像素放进导航URL。大图加载、真实sandbox preload、框选标注导出与取消复验通过，新增大图URL大小及读取权限回归。完成后的PNG限制沿原图片发送边界，没有缩减屏幕来源内容。
 
 新增editChatScreenshot/cancelChatScreenshot，原captureChatScreens保留为抓屏底层接口。移除已替代的旧Modal框选/裁剪路径。新preload、主进程编辑器和HTML生成模块加入runtimeEntryFiles守卫，防止打包漏带。
 
