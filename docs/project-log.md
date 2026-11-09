@@ -2963,3 +2963,9 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 北京时间 2026-11-09T18:24:53+08:00，Windows **0.10.99** 已公开发布并设为 Latest：[Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.99)。固定源码/tag 为 main **cc04d955dd03d3cf3a79ee1458f5b7d0e8088877**；PR #190、#191 经审核修复后通过整合 PR #192 合并，保留双方提交历史。
 
 固定 main 四项检查、根917项及生产/B0/Web、客户端回归与双类型、真实组件隔离API验收、EXE载荷与134份构建文件、实际CJS装配/旧格式、禁网跨进程缓存、隔离启动与更新清单通过。EXE 421231162字节，SHA256 f96a2ff571df434f385db8ddaa3af391947b0735bd4662f8edc5255941102f75；桌面副本相同，四附件公开核对通过，旧98资产保留。后台未部署：0.43/032保持，新功能须配套0.45/034。无私人材料、真实模型或多人验收，完整失败/警告/边界见deployment/acceptcat-0.10.99-release.md；tag保持构建SHA，纯文档回执另经PR汇总。
+
+## 2026-11-09 后台0.45/034部署完成
+
+2026-11-09 **18:43:55 北京时间**，负责人单独授权后，API/worker 成对升级到 **contract0.45.0 / schema034**，固定源码 **cc04d955dd03d3cf3a79ee1458f5b7d0e8088877**（与 Windows0.10.99/tag 一致）。恢复副本与正式库各执行两次迁移，**032→034、113→116表**，第二次未改变记录；完整性、外键、全部旧行及原件/配置保全通过。
+
+镜像sha256:434c60fa4ce0380981e319bc217e59594b39ff94a0191307468f491cf15520cb；备份/srv/research-openim-backups/constitution-library-20261109-20261109T104334Z/research.tar.gz，SHA256 c7f368abe69ab2eec790e257fee8e2b2c2f0da8ff4b19e454ec53ead073b846b。93项镜像隔离检查、517输入/运行模块、187存量计划档案、恢复演练与正式库各两次迁移、旧行/9原件/40配置保全通过；API healthy、worker restart0，其他六容器ID/镜像/状态/重启数相同。服务器与本机公网ready0.45/三项ok，合法匿名读写401。保留一次空POST格式不合法导致的探针失败，修正探针后post-check退出0；无产品代码修改、生产回退、真实账号/模型或私人材料验收。完整失败、恢复边界、证据见deployment/constitution-library-20261109.md；当前公开客户端0.10.99与资产不改。

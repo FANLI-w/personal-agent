@@ -1,5 +1,7 @@
 # AcceptCat 0.10.99 发布回执
 
+后续状态：2026-11-09 18:43:55，配套后台已另行部署至0.45/034，见[后台回执](constitution-library-20261109.md)。下文“未部署”描述客户端公开时的状态，安装包与tag保持。
+
 北京时间 2026-11-09T18:24:53+08:00，Windows **0.10.99** 已公开发布并设为 Latest：[Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.99)。固定源码/tag 为 main **cc04d955dd03d3cf3a79ee1458f5b7d0e8088877**；PR #190、#191 经审核修复后通过整合 PR #192 合并，保留双方提交历史。
 
 本地安装包：`D:\deepseek-agent\acceptcat-group-invite-fix\clients\openim\release\Base\0.10.99\AcceptCat_0.10.99.exe`；桌面副本：`C:/Users/luo/Desktop/AcceptCat_0.10.99.exe`。两份均为 421231162 字节，SHA256 `f96a2ff571df434f385db8ddaa3af391947b0735bd4662f8edc5255941102f75`。四附件为 EXE、blockmap、latest.yml、SHA256SUMS.txt，远端大小/digest 与本机一致，匿名 Latest、小文件字节和 EXE HEAD 已核对。0.10.98 原资产保留。
