@@ -15,6 +15,7 @@ export interface IElectronAPI {
   localDsh: import("./localDsh").LocalDshBridge;
   localLibrary: import("./localLibrary").LocalLibraryBridge;
   chatHistory: import("./chatHistory").ChatHistoryBridge;
+  teamLibrary: import('./teamLibrary').TeamLibraryBridge;
   setMessageUnreadCount: (count: number) => Promise<void>;
   peerLibrary: import('./peerLibrary').PeerLibraryBridge;
   openFeishuLibrary: (url: string) => Promise<void>;

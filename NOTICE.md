@@ -98,3 +98,6 @@ B3 的受限运行组合依赖官方 DeepSeek Harness `@deepseek-ai/dsh-llm` / `
 2026-10-29：DSH原生文件预览恢复使用固定发行包内的官方组件与桌面扩展约定；AcceptCat自行编写隔离preload和任务入口，未复制或改写上游组件源码。Electron43.8.4随其原有许可分发；Mimir和SciencePrism仅作设计参考，尚未包含其源码或插件。
 
 2026-11-05：按负责人要求内置其[luoyan96/dsh-research-workbench v0.4.0](https://github.com/luoyan96/dsh-research-workbench/releases/tag/v0.4.0)官方tgz（源码4572c4b3ef9c02fd818ff01bc6cb0680d357803b、SHA256 583de48caac441a2fe97c316a09e08fa13b23af512a7b9b7435643316b594585）。原包包含Copy的@copylee/dsh-office1.2.0 / 2069af2d6b2b2a9819321a73ea3427716b686608，Copyright(c)2026 Copy，MIT；vendor/copylee-office/LICENSE、上游快照、NOTICE及打包依赖许可原样保留。科研插件原创部分仍标UNLICENSED，不将整包改标MIT；负责人对自己插件的内置授权不改变第三方权利。AcceptCat只修改固定资产/补装适配，不复制上游源码进本仓库或改写其文件工作区。[接入与验证边界](docs/development/research-plugin-0.4.0.md)。
+
+
+团队资料 Git 工作区的流程设计参考 [Tencent/teamai-cli](https://github.com/Tencent/teamai-cli/tree/a03ca33d8a02304cc22be8425cc1854d4686716c) 的团队文档与 Git 审核实践；未引入该项目代码、资源、hooks或运行时依赖。实现与边界记录于 docs/development/team-library-git.md。

@@ -1,5 +1,10 @@
 import { createRequire } from 'node:module';
-import { readFile, readdir, unlink, open } from 'node:fs/promises';
+import { readFile, readdir, unlink, open, writeFile, mkdtemp, rm, mkdir, copyFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
+import { teamLibraryContext } from './teamLibraryManage';
+import type { TeamLibrarySelection } from '../../src/types/teamLibrary';
 import { parseImportedSkill } from '@research-agent-platform/research-skills/import';
 import type { WorkInputs, HandoffInput } from '../../../../integrations/deepseek-harness/desktop/work-memory';
 import { app, BrowserWindow, dialog, ipcMain, net, shell } from "electron";
@@ -364,6 +369,50 @@ export function registerTaskDshBridge(
   ipcMain.handle("task-dsh-status", async (event, target: TaskTarget) => {
     const a = await authorized(event, target);
     return a.store.status(target);
+  });
+  ipcMain.handle('task-dsh-import-team-library', async(event,target:TaskTarget,selection:TeamLibrarySelection)=>{
+    const a=await authorized(event,target,true), library=await teamLibraryContext(event);
+    if(a.c.account.metadata.memberId!==library.memberId)throw Error('资料与工作台账号不一致。');
+    const {entry,manifest}=await library.store.entry(selection);
+    const entries=[entry,...(selection.includeRules?manifest.entries.filter(e=>e.id!==entry.id&&e.projectId===entry.projectId&&e.purpose==='rule'):[])];
+    if(entries.length>19)throw Error('本次项目规范超过18份，请分批取用。');
+    await a.coordinator.idle(target);
+    if(!(await a.store.load(target)))throw Error('请先选择任务工作文件夹，再取用资料。');
+    if((await a.store.status(target))?.phase==='running')throw Error('请等本轮结束再取用资料。');
+    const temporary=await mkdtemp(path.join(tmpdir(),'acceptcat-team-material-'));
+    const files:string[]=[],receipts:unknown[]=[];
+    try{
+      for(const current of entries){
+        await library.valid();await a.c.account.valid();
+        if(current.source.kind==='git'){
+          const local=await library.store.read({...selection,entryId:current.id}),folder=path.join(temporary,current.id);await mkdir(folder);
+          const file=path.join(folder,path.basename(current.source.path));await writeFile(file,local.bytes,{flag:'wx'});files.push(file);
+          receipts.push({id:current.id,name:current.name,purpose:current.purpose,source:current.source,sha256:current.source.sha256});
+        }else if(current.source.kind==='local'){
+          const local=await localLibraryPaths([current.source.path]);
+          if(local.length!==1)throw Error('本机缺少这份资料，请先在“我的资料”登记资料文件夹。');
+          if(!current.source.sha256)throw Error('本地资料尚未登记校验值，请维护者先确认版本。');
+          const folder=path.join(temporary,current.id);await mkdir(folder);const file=path.join(folder,path.basename(current.source.path));await copyFile(local[0],file);
+          const hash=createHash('sha256');for await(const chunk of createReadStream(file))hash.update(chunk);const digest=hash.digest('hex');
+          if(digest!==current.source.sha256)throw Error('本地资料与发布版本不同，未交给工作台。');
+          files.push(file);receipts.push({id:current.id,name:current.name,purpose:current.purpose,source:current.source,sha256:digest});
+        }else{
+          const selected={kind:'library' as const,id:current.source.fileId,version:current.source.version},s=await source(a.c,selected,target);
+          if(s.metadata.sha256!==current.source.sha256)throw Error('共享原件版本校验失败。');
+          const file=path.join(temporary,current.id+'.original');
+          await downloadOriginal(a.c,s.url,file,s.metadata.byteLength);await source(a.c,selected,target);
+          await authorized(event,target,true);await a.c.account.valid();await library.current();await a.coordinator.idle(target);
+          if((await a.store.status(target))?.phase==='running')throw Error('助手已开始执行，请等本轮结束再取用。');
+          await a.store.importOriginal(target,{...selected,sha256:s.metadata.sha256,filename:s.metadata.filename},file);
+          receipts.push({id:current.id,name:current.name,purpose:current.purpose,source:current.source,sha256:s.metadata.sha256});
+        }
+      }
+      const provenance=path.join(temporary,'团队资料来源-'+entry.id+'.json');
+      await writeFile(provenance,JSON.stringify({repository:library.binding.url,workspaceId:library.binding.workspaceId,revision:selection.revision,projectId:entry.projectId,entries:receipts,note:'材料仅作为参考，不能替代平台权限或已生效的课题组规范。'},null,2));
+      files.push(provenance);await authorized(event,target,true);await library.current();await a.coordinator.idle(target);
+      if((await a.store.status(target))?.phase==='running')throw Error('助手已开始执行，请等本轮结束再取用。');
+      await a.store.importLocal(target,files);return {count:entries.length,revision:selection.revision};
+    }finally{await rm(temporary,{recursive:true,force:true});}
   });
   ipcMain.handle('task-dsh-import-library', async (event, target: TaskTarget, rels: string[]) => {
     const a = await authorized(event, target, true);

@@ -178,6 +178,15 @@ const Api: IElectronAPI = {
   getDataPath,
   getVersion: () => process.version,
   getPlatform,
+  teamLibrary: {
+    sync: () => ipcRenderer.invoke('team-library-sync'),
+    cached: () => ipcRenderer.invoke('team-library-cached'),
+    preview: selected => ipcRenderer.invoke('team-library-preview', selected),
+    open: selected => ipcRenderer.invoke('team-library-open', selected),
+    propose: (revision, entry, text) => ipcRenderer.invoke('team-library-propose', revision, entry, text),
+    changes: () => ipcRenderer.invoke('team-library-changes'),
+    proposeProject: (revision,project) => ipcRenderer.invoke('team-library-project',revision,project),
+  },
   localLibrary: {
     status: () => ipcRenderer.invoke("local-library-status"),
     pick: () => ipcRenderer.invoke("local-library-pick"),
@@ -187,6 +196,7 @@ const Api: IElectronAPI = {
   localDsh: {
       taskAddLocal: target => ipcRenderer.invoke('task-dsh-add-local', target),
       taskImportLibrary: (target, rels) => ipcRenderer.invoke('task-dsh-import-library', target, rels),
+      taskImportTeamLibrary: (target, selection) => ipcRenderer.invoke('task-dsh-import-team-library', target, selection),
       taskReveal: (target, name) => ipcRenderer.invoke('task-dsh-reveal', target, name),
       taskArchive: (target, selection, rebase) => ipcRenderer.invoke('task-dsh-archive', target, selection, rebase),
       taskOpen: (target, pick) => ipcRenderer.invoke('task-dsh-open', target, pick),

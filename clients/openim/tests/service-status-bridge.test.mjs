@@ -58,6 +58,7 @@ async function fixture() {
     ["zoteroManage", ["registerZoteroBridge"]],
     ["localFolderManage", ["registerLocalFolderBridge"]],
     ["localLibraryManage", ["registerLocalLibraryBridge"]],
+    ["teamLibraryManage", ["registerTeamLibraryBridge"]],
     ["chatHistoryManage", ["registerChatHistoryBridge"]],
     ["localDshManage", ["registerLocalDshBridge"]],
     ["peerLibraryManage", ["registerPeerLibraryBridge"]],

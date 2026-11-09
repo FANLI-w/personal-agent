@@ -122,6 +122,8 @@ export function runtimeEntryFiles(staging) {
   paths.push(path.join(staging, 'dist-electron/preload/screenshotEditor.js'));
   paths.push(path.join(staging, 'dist-electron/main/screenshotEditorManage.js'));
   paths.push(path.join(staging, 'dist-electron/utils/screenshotEditorHtml.js'));
+  paths.push(path.join(staging, 'dist-electron/main/teamLibraryManage.js'));
+  paths.push(path.join(staging, 'dist-electron/utils/teamLibrary.js'));
   for (const file of paths) {
     nonempty(file);
     const relative = path.relative(realpathSync(staging), realpathSync(file));
