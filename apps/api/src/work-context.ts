@@ -5,6 +5,14 @@ import { personalWork } from './workspace.js'
 import { isLabManager } from './invite-management.js'
 import { fail } from './errors.js'
 import { hash } from './auth.js'
+import { activeRuleBytes, entryBytes } from './constitution-context.js'
+import { ruleBudget } from '@research-agent-platform/constitution'
+
+/** 生效规则会整体进入规划上下文，预算在写入侧挡住，装配侧的抛错只作兜底。 */
+function assertRuleBudget(db:ChatService['db'],labId:string,record:WorkRule){
+  if(record.kind!=='rule'||record.status!=='active')return
+  if(activeRuleBytes(db,labId,record.id)+entryBytes('lab',record.title,record.version,record.content)>ruleBudget)fail('PAYLOAD_TOO_LARGE')
+}
 
 type Command=keyof typeof workContextRoutes
 export function runWorkContext(s:ChatService,name:Command,req:RequestFor<Command>) {
@@ -69,6 +77,7 @@ export function runWorkContext(s:ChatService,name:Command,req:RequestFor<Command
  if(old&&b.action!=='save'){value.title=old.title;value.content=old.content}
  const {recordId:_recordId,expectedVersion:_version,action:_action,...clean}=value as WorkRule & typeof b
  const record=WorkRule.parse(clean), document=JSON.stringify(record)
+ assertRuleBudget(s.db,c.labId,record)
  s.db.prepare('INSERT INTO work_context_records VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET document=excluded.document').run(record.id,c.labId,scope.scope,scope.id,document)
  s.db.prepare('INSERT INTO work_context_revisions VALUES(?,?,?)').run(record.id,record.version,document)
  const result={data:project(record)}
@@ -111,6 +120,7 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
  if(old&&b.action!=='save'){value.title=old.title;value.content=old.content}
  const {recordId:_recordId,expectedVersion:_version,action:_action,...clean}=value as WorkRule & typeof b
  const record=WorkRule.parse(clean), document=JSON.stringify(record)
+ assertRuleBudget(s.db,c.labId,record)
  s.db.prepare('INSERT INTO work_context_records VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET document=excluded.document').run(record.id,c.labId,'lab',c.labId,document)
  s.db.prepare('INSERT INTO work_context_revisions VALUES(?,?,?)').run(record.id,record.version,document)
  const result={data:project(record)}

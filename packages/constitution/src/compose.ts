@@ -21,8 +21,11 @@ export type Section = {
   readonly mandatory: boolean
 }
 
+/** 约束段的预算。写入侧与装配侧共用同一个数值，避免两处判断不一致。 */
+export const ruleBudget = 12_000
+
 export const defaultSections: readonly Section[] = [
-  { name: '约束', match: entry => entry.kind === 'rule', limit: 12_000, mandatory: true },
+  { name: '约束', match: entry => entry.kind === 'rule', limit: ruleBudget, mandatory: true },
   { name: '工作对象', match: entry => entry.kind === 'object', limit: 20_000, mandatory: true },
   { name: '事实', match: entry => entry.kind === 'memory', limit: 32_000, mandatory: false },
   { name: '方法', match: entry => entry.kind === 'link' || entry.kind === 'skill', limit: 32_000, mandatory: false },

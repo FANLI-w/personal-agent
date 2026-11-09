@@ -1,0 +1,112 @@
+import { mkdtempSync, mkdirSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
+import { constitutionEntries, planningRulesContext } from '../src/constitution-context.js'
+import { readConfig } from '../src/config.js'
+import { migrate, openDatabase, seed } from '../src/database.js'
+
+const cleanup: (() => unknown)[] = []
+afterEach(() => {
+  for (const fn of cleanup.splice(0).reverse()) fn()
+})
+
+function setup() {
+  const dir = mkdtempSync(join(tmpdir(), 'planning-rules-'))
+  cleanup.push(() => rmSync(dir, { recursive: true, force: true }))
+  const config = readConfig({
+    NODE_ENV: 'test',
+    DATABASE_PATH: join(dir, 'db.sqlite'),
+    BLOB_ROOT: join(dir, 'blobs'),
+    APP_ORIGIN: 'http://127.0.0.1:4501',
+  })
+  mkdirSync(config.blobRoot)
+  const db = openDatabase(config.databasePath, true)
+  cleanup.push(() => db.close())
+  migrate(db)
+  seed(db, 'test')
+  return { db, labId: 'lab_synthetic' }
+}
+
+type Database = ReturnType<typeof openDatabase>
+type Row = { id: string; kind?: 'rule' | 'memory'; status?: 'candidate' | 'active' | 'revoked'; title: string; content: string }
+
+function insertRule(db: Database, labId: string, row: Row) {
+  db.prepare('INSERT INTO work_context_records VALUES (?,?,?,?,?)').run(
+    row.id,
+    labId,
+    'lab',
+    labId,
+    JSON.stringify({
+      scope: 'lab',
+      kind: row.kind ?? 'rule',
+      title: row.title,
+      content: row.content,
+      id: row.id,
+      scopeId: labId,
+      sourceTaskId: null,
+      authorId: 'member_A',
+      authorName: 'Synthetic author',
+      status: row.status ?? 'active',
+      version: 2,
+      updatedAt: '2026-11-06T00:00:00Z',
+      allowedActions: [],
+    }),
+  )
+}
+
+describe('规划链路的规则上下文', () => {
+  it('平台规则始终装配，并排在课题组规则之前', () => {
+    const { db, labId } = setup()
+    insertRule(db, labId, { id: 'rule_active', title: '交付须附证据', content: '提交成果时附数据来源与复现命令。' })
+    const entries = constitutionEntries(db, labId)
+    expect(entries.map(entry => [entry.layer, entry.kind, entry.title])).toEqual([
+      ['system', 'rule', '平台规则'],
+      ['lab', 'rule', '交付须附证据'],
+    ])
+    const context = planningRulesContext(db, labId)
+    expect(context.text.indexOf('平台规则')).toBeLessThan(context.text.indexOf('交付须附证据'))
+    expect(context.ruleIds).toEqual(['platform-work-rule', 'rule_active'])
+    expect(context.bytes).toBe(Buffer.byteLength(context.text, 'utf8'))
+  })
+
+  it('只收生效的规则，候选规则与记忆类记录不进上下文', () => {
+    const { db, labId } = setup()
+    insertRule(db, labId, { id: 'rule_active', title: '生效规则', content: '生效内容。' })
+    insertRule(db, labId, { id: 'rule_candidate', status: 'candidate', title: '候选规则', content: '候选内容。' })
+    insertRule(db, labId, { id: 'memory_active', kind: 'memory', title: '项目背景', content: '记忆内容。' })
+    const context = planningRulesContext(db, labId)
+    expect(context.ruleIds).toEqual(['platform-work-rule', 'rule_active'])
+    expect(context.text).toContain('生效内容。')
+    expect(context.text).not.toContain('候选内容。')
+    expect(context.text).not.toContain('记忆内容。')
+  })
+
+  it('没有课题组规则时只装配平台规则', () => {
+    const { db, labId } = setup()
+    const context = planningRulesContext(db, labId)
+    expect(context.ruleIds).toEqual(['platform-work-rule'])
+    expect(context.omitted).toEqual([])
+  })
+
+  it('存量规则超出预算时降级为只装配平台规则，并记录省略原因', () => {
+    const { db, labId } = setup()
+    // 单条规则受契约限制为 2000 字符，超预算只能由多条累积触发。
+    for (let index = 0; index < 7; index += 1)
+      insertRule(db, labId, { id: `rule_long_${index}`, title: `长规则${index}`, content: 'x'.repeat(2_000) })
+    const context = planningRulesContext(db, labId)
+    expect(context.ruleIds).toEqual(['platform-work-rule'])
+    expect(context.omitted.join()).toContain('超出上下文预算')
+  })
+
+  it('开关默认开启，设为 0 后关闭', () => {
+    const base = {
+      NODE_ENV: 'test',
+      DATABASE_PATH: 'C:/synthetic/db.sqlite',
+      BLOB_ROOT: 'C:/synthetic/blobs',
+      APP_ORIGIN: 'http://127.0.0.1:4501',
+    }
+    expect(readConfig({ ...base }).constitutionRules).toBe(true)
+    expect(readConfig({ ...base, CONSTITUTION_RULES: '0' }).constitutionRules).toBe(false)
+  })
+})
