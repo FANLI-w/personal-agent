@@ -26,7 +26,7 @@ import { feedbackToast } from "@/utils/common";
 
 import SendActionBar from "./SendActionBar";
 import ImagePasteTray, { type ImagePasteTrayRef } from "@/research/ImagePasteTray";
-import ChatMoreActions from "@/research/ChatMoreActions";
+import { isComposerImage, normalizeComposerImage } from "@/research/composer-files";
 import { useFileMessage } from "./SendActionBar/useFileMessage";
 import { useSendMessage } from "./useSendMessage";
 import { useAgentFileReading } from "@/research/useAgentFileReading";
@@ -74,6 +74,12 @@ const ChatFooter = () => {
   const editor = useRef<CKEditorRef>(null);
   const imageTray = useRef<ImagePasteTrayRef>(null);
   const [html, setHtml] = useState("");
+  const [fileDraft, setFileDraft] = useState<{ scope: string; files: File[] }>({
+    scope: "",
+    files: [],
+  });
+  const stagedFiles =
+    fileDraft.scope === `${generation}:${actor}:${imID}` ? fileDraft.files : [];
   const [imageState, setImageState] = useState({ count: 0, busy: false });
   const latestHtml = useLatest(html);
   const outbox = useChatOutbox((s) => s.items);
@@ -131,7 +137,7 @@ const ChatFooter = () => {
     };
   }, [scope]);
 
-  const { getImageMessage, getFileMessage, getSoundMessage } = useFileMessage();
+  const { getImageMessage, getFileMessage } = useFileMessage();
   const { sendMessage } = useSendMessage();
   const fileReading = useAgentFileReading();
   const imageReading = useAgentImageReading();
@@ -142,7 +148,6 @@ const ChatFooter = () => {
     onFileSent: fileReading.onFileSent,
     onImageSent: imageReading.onImageSent,
   });
-  const captureFileDrop = useAgentChatOperation();
 
   const onChange = (value: string) => {
     if (
@@ -234,6 +239,33 @@ const ChatFooter = () => {
                   tracked.operation.signal,
                 ),
             });
+          }
+          for (const entry of item.files || []) {
+            if (entry.processed) continue;
+            if (!entry.file)
+              throw new Error(
+                "刷新后无法恢复待发文件，请核对聊天记录后重新选择文件。文字记录已保留。",
+              );
+            const sent = await withRequestDeadline(
+              async (signal) =>
+                sendFile(
+                  entry.file!,
+                  "file",
+                  () => tracked.operation.isCurrent() && !signal.aborted,
+                  item.text || undefined,
+                  {
+                    ...entry,
+                    save: (patch) => {
+                      if (signal.aborted || !tracked.operation.isCurrent()) return;
+                      Object.assign(entry, patch);
+                      updateSubmission(item.id, { files: item.files?.slice() });
+                    },
+                  },
+                ),
+              120000,
+              tracked.operation.signal,
+            );
+            if (!sent) throw new Error(`文件“${entry.name}”未完成发送，请重试原消息。`);
           }
           if (request)
             await composer.sendPrepared(
@@ -330,7 +362,7 @@ const ChatFooter = () => {
     const original = latestHtml.current;
     try {
       const images = imageTray.current?.snapshot() || [];
-      if (!cleanText && !images.length) return;
+      if (!cleanText && !images.length && !stagedFiles.length) return;
       assertImageQueueCapacity(images, useChatOutbox.getState().items);
       if (submissions.length >= 20 || useChatOutbox.getState().items.length >= 50)
         throw new Error("还有较多消息未发送，请先处理发送记录。");
@@ -394,6 +426,15 @@ const ChatFooter = () => {
         html: original,
         text,
         request,
+        files: stagedFiles.length
+          ? stagedFiles.map((file) => ({
+              id: crypto.randomUUID(),
+              file,
+              name: file.name,
+              size: file.size,
+              mediaType: file.type,
+            }))
+          : undefined,
         images: images.length ? images : undefined,
         imageAgentConversationId:
           request?.route === "agentChatMessage" ? imageAgentId : undefined,
@@ -407,6 +448,7 @@ const ChatFooter = () => {
         state: "queued",
       };
       useChatOutbox.setState((s) => ({ items: [...s.items, item] }));
+      setFileDraft({ scope, files: [] });
       imageTray.current?.commit(images.map((image) => image.id));
       clearChatReply(activeReplyKey);
       saveChatDraft(conversation.conversationID, "");
@@ -433,18 +475,23 @@ const ChatFooter = () => {
     void pump();
   };
 
-  const droppedFiles = async (files: File[]) => {
-    const images = files.filter((file) => file.type.startsWith("image/"));
-    if (images.length) imageTray.current?.stage(images);
-    const operation = captureFileDrop();
-    try {
-      for (const file of files.filter((file) => !file.type.startsWith("image/"))) {
-        if (!operation.isCurrent()) break;
-        await sendFile(file, "auto", operation.isCurrent);
-      }
-    } finally {
-      operation.dispose();
+  const droppedFiles = (files: File[]) => {
+    const images = files.filter(isComposerImage);
+    const documents = files.filter((file) => !isComposerImage(file));
+    if (documents.some((file) => !file.size)) {
+      feedbackToast({ msg: "所选文件为空，请检查文件后重新选择。" });
+      return;
     }
+    if (stagedFiles.length + documents.length > 20) {
+      feedbackToast({ msg: "待发文件较多，请先发送或移除已有文件。" });
+      return;
+    }
+    if (images.length) imageTray.current?.stage(images.map(normalizeComposerImage));
+    if (documents.length)
+      setFileDraft((previous) => ({
+        scope,
+        files: [...(previous.scope === scope ? previous.files : []), ...documents],
+      }));
   };
   const latestDroppedFiles = useLatest(droppedFiles);
   useEffect(() => {
@@ -467,7 +514,14 @@ const ChatFooter = () => {
 
   return (
     <footer
-      onPasteCapture={(event) => imageTray.current?.paste(event)}
+      onPasteCapture={(event) => {
+        const files = Array.from(event.clipboardData.files);
+        if (files.some((file) => !file.type.startsWith("image/"))) {
+          event.preventDefault();
+          event.stopPropagation();
+          droppedFiles(files);
+        } else imageTray.current?.paste(event);
+      }}
       className={`desktop-chat-footer relative bg-white py-px ${
         window.electronAPI ? "is-native-desktop" : ""
       }`}
@@ -483,12 +537,41 @@ const ChatFooter = () => {
       }}
     >
       <div className="desktop-composer-surface flex h-full flex-col border-t border-t-[var(--gap-text)]">
+        <div className="composer-attachments">
         <ImagePasteTray
           key={scope}
           ref={imageTray}
           onStateChange={setImageState}
           insertText={(text) => editor.current?.insertText(text)}
         />
+        {!!stagedFiles.length && (
+          <section className="composer-file-tray" aria-label="待发送文件">
+            {stagedFiles.map((file, index) => (
+              <div className="composer-file-card" key={index}>
+                <span className="composer-file-type">
+                  {file.name.split(".").at(-1)?.toUpperCase() || "文件"}
+                </span>
+                <div>
+                  <strong title={file.name}>{file.name}</strong>
+                  <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                </div>
+                <button
+                  type="button"
+                  aria-label={`移除文件 ${file.name}`}
+                  onClick={() =>
+                    setFileDraft({
+                      scope,
+                      files: stagedFiles.filter((_, i) => i !== index),
+                    })
+                  }
+                >
+                  <CloseOutlined />
+                </button>
+              </div>
+            ))}
+          </section>
+        )}
+        </div>
         {quoteNotice && (
           <p role="alert" className="desktop-chat-error">
             {quoteNotice}
@@ -533,6 +616,7 @@ const ChatFooter = () => {
             {sending && !recovery && (
               <div className="flex items-center gap-2">
                 <p className="min-w-0 flex-1 truncate" title={sending.text}>
+                  {sending.files?.map((file) => file.name).join("、")}
                   {sending.images?.length ? `${sending.images.length} 张图片 · ` : ""}
                   {sending.text}
                 </p>
@@ -550,6 +634,7 @@ const ChatFooter = () => {
             {recovery && (
               <div>
                 <p className="truncate" title={recovery.text}>
+                  {recovery.files?.map((file) => file.name).join("、")}
                   {recovery.images?.length ? `${recovery.images.length} 张图片 · ` : ""}
                   {recovery.text}
                 </p>
@@ -644,15 +729,10 @@ const ChatFooter = () => {
           />
           <div className="desktop-composer-bottom flex items-center justify-between px-3 py-2">
             <SendActionBar
-              sendMessage={sendMessage}
-              sendFile={sendFile}
-              getSoundMessage={getSoundMessage}
               insertEmoji={(emoji) => editor.current?.insertText(emoji)}
-              insertMention={(contact) => editor.current?.insertMention(contact)}
-              mentionContacts={composer.mentionContacts}
+              stageFiles={droppedFiles}
               stageImages={(files) => imageTray.current?.stage(files)}
               pasteImages={() => imageTray.current?.readClipboard()}
-              moreActions={<ChatMoreActions collaboration={composer.advancedToggle} inline />}
             />
             <Button
               className="w-fit px-6 py-1"
@@ -660,7 +740,7 @@ const ChatFooter = () => {
               aria-label="发送消息"
               title="发送消息（Enter）；Shift+Enter 换行"
               disabled={
-                (!getCleanText(html) && !imageState.count) ||
+                (!getCleanText(html) && !imageState.count && !stagedFiles.length) ||
                 imageState.busy ||
                 composer.invalid
               }

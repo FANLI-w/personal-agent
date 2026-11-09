@@ -119,6 +119,9 @@ export function runtimeEntryFiles(staging) {
   paths.push(createRequire(path.join(staging, 'node_modules/@research-agent-platform/research-skills/package.json')).resolve('yaml'));
   paths.push(path.join(staging, 'dist-electron/main/localDshRuntime.js'));
   paths.push(path.join(staging, 'dist-electron/preload/localDsh.js'));
+  paths.push(path.join(staging, 'dist-electron/preload/screenshotEditor.js'));
+  paths.push(path.join(staging, 'dist-electron/main/screenshotEditorManage.js'));
+  paths.push(path.join(staging, 'dist-electron/utils/screenshotEditorHtml.js'));
   for (const file of paths) {
     nonempty(file);
     const relative = path.relative(realpathSync(staging), realpathSync(file));

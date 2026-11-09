@@ -15,6 +15,7 @@ export type ChatSubmission = {
   text: string;
   request?: PreparedResearchSend;
   images?: ComposerImage[];
+  files?: (ComposerImage & { processed?: boolean })[];
   imageAgentConversationId?: string;
   nativeMessage?: MessageItem;
   quoteMessage?: MessageItem;
@@ -62,11 +63,12 @@ function persist(actor = useResearchStore.getState()) {
       version: 1,
       memberId: hydratedActor,
       storedAt: Date.now(),
-      items: items.map(({ generation: _generation, images, ...item }) => ({
+      items: items.map(({ generation: _generation, images, files, ...item }) => ({
         ...item,
         ...(images
           ? { images: images.map(({ file: _file, ocrText: _ocr, ...image }) => image) }
           : {}),
+        ...(files ? { files: files.map(({ file: _file, ...entry }) => entry) } : {}),
         state: "paused",
       })),
       drafts: [...chatDrafts],
@@ -129,7 +131,7 @@ function restore(actor: ReturnType<typeof useResearchStore.getState>) {
         !bounded(item.groupID, 512) ||
         !bounded(item.html, maxBytes) ||
         !bounded(item.text, maxBytes) ||
-        (!item.text && !item.images?.length)
+        (!item.text && !item.images?.length && !item.files?.length)
       )
         throw new Error("Invalid pending message");
       ids.add(item.id);
@@ -171,6 +173,26 @@ function restore(actor: ReturnType<typeof useResearchStore.getState>) {
           ))
       )
         throw new Error("Invalid stored image submission");
+      if (
+        item.files &&
+        (!Array.isArray(item.files) ||
+          item.files.length > 20 ||
+          item.files.some(
+            (f: ComposerImage & { processed?: boolean }) =>
+              !bounded(f.id, 512) ||
+              !bounded(f.name, 512) ||
+              !bounded(f.mediaType, 128) ||
+              !Number.isSafeInteger(f.size) ||
+              f.size <= 0 ||
+              f.file !== undefined ||
+              (f.sent !== undefined && typeof f.sent !== "boolean") ||
+              (f.processed !== undefined && typeof f.processed !== "boolean") ||
+              (f.message &&
+                (f.message.contentType !== 105 ||
+                  !bounded(f.message.clientMsgID, 512))),
+          ))
+      )
+        throw new Error("Invalid stored file submission");
       if (
         item.imageAgentConversationId &&
         (!item.images ||

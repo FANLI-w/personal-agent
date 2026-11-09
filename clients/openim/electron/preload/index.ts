@@ -126,6 +126,8 @@ const Api: IElectronAPI = {
     return savePath;
   },
   readChatClipboardImages: () => ipcRenderer.invoke("read-chat-clipboard-images"),
+  editChatScreenshot: () => ipcRenderer.invoke("edit-chat-screenshot"),
+  cancelChatScreenshot: () => ipcRenderer.invoke("cancel-chat-screenshot"),
   captureChatScreens: () => ipcRenderer.invoke("capture-chat-screens"),
   saveChatFile: (filename: string, bytes: Uint8Array) => ipcRenderer.invoke("save-chat-file", filename, bytes),
   revealChatFile: (token: string) => ipcRenderer.invoke("reveal-chat-file", token),

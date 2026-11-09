@@ -35,8 +35,8 @@ function fixture({ sources, focused = true, authorized = true, timeout = false }
   const electron = {
     BrowserWindow: { fromWebContents: () => parent },
     ipcMain: {
-      handle: (_, value) => {
-        handler = value;
+      handle: (channel, value) => {
+        if (channel === "capture-chat-screens") handler = value;
       },
     },
     desktopCapturer: {
@@ -49,7 +49,7 @@ function fixture({ sources, focused = true, authorized = true, timeout = false }
                 id: "screen:1",
                 thumbnail: {
                   isEmpty: () => false,
-                  toDataURL: () => "data:image/png;base64,synthetic",
+                  toDataURL: () => visible ? "data:image/png;base64,foreground" : "data:image/png;base64,background",
                 },
               },
             ];
@@ -64,7 +64,7 @@ function fixture({ sources, focused = true, authorized = true, timeout = false }
     setTimeout: (fn, ms) => setTimeout(fn, ms === 250 ? 0 : timeout ? 5 : ms),
     clearTimeout,
     require: (name) =>
-      name === "electron"
+      name === "./screenshotEditorManage" ? { registerScreenshotEditor: () => {} } : name === "electron"
         ? electron
         : {
             authority: () => {
@@ -85,14 +85,14 @@ function fixture({ sources, focused = true, authorized = true, timeout = false }
     },
   };
 }
-test("one-shot screen capture hides and restores the foreground window, returning only preview pixels", async () => {
+test("one-shot capture keeps the visible foreground in the snapshot without changing window stacking", async () => {
   const f = fixture();
   const result = await f.run();
   assert.equal(result[0].name, "屏幕 1");
   assert.equal(result.length, 1);
-  assert.equal(f.calls[0], "hide");
-  assert.equal(f.calls[1].types.join(), "screen");
-  assert.deepEqual(f.calls.slice(-2), ["show", "focus"]);
+  assert.equal(result[0].dataUrl, "data:image/png;base64,foreground");
+  assert.equal(f.calls[0].types.join(), "screen");
+  assert.equal(f.calls.some(value => ["hide", "show", "focus"].includes(value)), false);
   assert.equal(f.visible, true);
 });
 test("untrusted or background callers cannot trigger capture", async () => {
@@ -102,7 +102,7 @@ test("untrusted or background callers cannot trigger capture", async () => {
     assert.equal(f.calls.length, 0);
   }
 });
-test("capture failure and empty screen results restore the window", async () => {
+test("capture failure and empty results leave window visibility and focus untouched", async () => {
   for (const sources of [
     () => {
       throw new Error("capture failed");
@@ -112,7 +112,7 @@ test("capture failure and empty screen results restore the window", async () => 
     const f = fixture({ sources });
     await assert.rejects(f.run());
     assert.equal(f.visible, true);
-    assert.deepEqual(f.calls.slice(-2), ["show", "focus"]);
+    assert.equal(f.calls.some(value => ["hide", "show", "focus"].includes(value)), false);
   }
 });
 test("navigation while capture is pending discards pixels", async () => {
@@ -126,7 +126,7 @@ test("navigation while capture is pending discards pixels", async () => {
   await assert.rejects(f.run(), /窗口已变化/);
   assert.equal(f.visible, true);
 });
-test("a stalled capture times out and restores the window", async () => {
+test("a stalled capture times out without hiding or refocusing the window", async () => {
   const f = fixture({ sources: () => new Promise(() => {}), timeout: true });
   await assert.rejects(f.run(), /截图超时/);
   assert.equal(f.visible, true);
@@ -136,5 +136,5 @@ test("a second capture cannot overlap the first", async () => {
   const first = f.run();
   await assert.rejects(f.run());
   await first;
-  assert.equal(f.calls.filter((value) => value === "hide").length, 1);
+  assert.equal(f.calls.filter(value => typeof value === "object" && value.types?.[0] === "screen").length, 1);
 });
