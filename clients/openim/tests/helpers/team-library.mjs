@@ -12,7 +12,7 @@ const compiled=await build({entryPoints:[path.join(client,'electron/utils/teamLi
 const module={exports:{}};vm.runInNewContext(compiled.outputFiles[0].text,{module,exports:module.exports,require,process,Buffer,URL,setTimeout,clearTimeout});
 export const {TeamLibraryStore,gitRunner}=module.exports;
 export const sha=value=>createHash('sha256').update(value).digest('hex');
-export async function libraryFixture(t){
+export async function libraryFixture(t,{aliasCache=false}={}){
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'acceptcat-team-git-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
   const work=path.join(root,'author'),remote=path.join(root,'remote.git');await fs.mkdir(work);
   const git=(args,options={})=>execFileSync('git',['-c','core.hooksPath='+path.join(root,'no-hooks'),'-c','user.name=Synthetic','-c','user.email=synthetic@example.invalid',...args],{cwd:work,windowsHide:true,stdio:['pipe','pipe','pipe'],...options});
@@ -32,6 +32,8 @@ export async function libraryFixture(t){
     const result=git(['--git-dir='+path.join(directory,'objects.git'),...args],{env:{...process.env,GIT_TERMINAL_PROMPT:'0',...(options.index?{GIT_INDEX_FILE:options.index}:{})},input:options.input,maxBuffer:options.maxBytes??20*1024*1024});
     if(args[0]==='push'&&lose){lose=false;throw Error('synthetic response lost after successful push');}return result;
   };
-  const store=new TeamLibraryStore(path.join(root,'cache'),binding,run);directory=store.directory;
+  const cache=path.join(root,'cache');
+  if(aliasCache){const target=path.join(root,'cache-target');await fs.mkdir(target);await fs.symlink(target,cache,process.platform==='win32'?'junction':'dir');}
+  const store=new TeamLibraryStore(cache,binding,run);directory=store.directory;
   return{root,work,remote,git,entry,manifest,text,store,binding,commands,lose:()=>lose=true,offline:value=>offline=value,publish:async value=>{await fs.writeFile(path.join(work,'acceptcat-library.json'),JSON.stringify(value));git(['add','.']);git(['commit','-m','更新公开示例']);git(['push',remote,'main']);}};
 }

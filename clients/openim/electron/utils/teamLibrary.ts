@@ -241,9 +241,18 @@ export class TeamLibraryStore {
       ),
       file = path.join(folder, name);
     // Never follow an existing file/link while materializing an immutable version.
-    if (
-      (await fs.realpath(folder)).toLowerCase() !== path.resolve(folder).toLowerCase()
-    )
+    // Canonicalize the owned root first: Windows may alias its parent TEMP drive.
+    // Links introduced beneath this root must still fail the containment check.
+    const expectedFolder = path.join(
+      await fs.realpath(this.directory),
+      "originals",
+      selected.revision,
+      entry.id,
+    );
+    const actualFolder = await fs.realpath(folder);
+    const comparable = (value: string) =>
+      process.platform === "win32" ? value.toLowerCase() : value;
+    if (comparable(actualFolder) !== comparable(expectedFolder))
       throw Error("资料缓存路径发生变化，请重新同步。");
     try {
       await fs.writeFile(file, bytes, { flag: "wx" });

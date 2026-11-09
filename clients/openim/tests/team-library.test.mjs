@@ -25,6 +25,14 @@ test('an update creates one recoverable review branch, never moves main and does
  const published=JSON.parse(f.git(['--git-dir='+f.remote,'show',proposal.commit+':acceptcat-library.json']));assert.equal(published.entries[0].source.sha256,sha(body));
  await assert.rejects(f.store.propose(snap.revision,{...f.entry,id:'another'},body),/路径已被|路径已有/);
 });
+test('a canonical cache ancestor is supported while redirected material folders are rejected',async t=>{
+ const f=await libraryFixture(t,{aliasCache:true}),snap=await f.store.sync(),selected={revision:snap.revision,entryId:f.entry.id};
+ const original=await f.store.materialize(selected);assert.equal(await fs.readFile(original.file,'utf8'),f.text);
+ const folder=path.dirname(original.file),redirect=path.join(f.root,'redirect');await fs.mkdir(redirect);
+ await fs.rm(folder,{recursive:true});await fs.symlink(redirect,folder,process.platform==='win32'?'junction':'dir');
+ await assert.rejects(f.store.materialize(selected),/缓存路径发生变化/);
+ assert.deepEqual(await fs.readdir(redirect),[]);
+});
 test('invalid manifest and cross-workspace fetch leave last-good cache intact',async t=>{
  const f=await libraryFixture(t),snap=await f.store.sync();await f.publish({...f.manifest,workspaceId:'another'});await assert.rejects(f.store.sync(),/空间ID/);
  assert.equal((await f.store.cached()).revision,snap.revision);

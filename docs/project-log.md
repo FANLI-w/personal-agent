@@ -2935,3 +2935,5 @@ typecheck、build:web与38项客户端定向检查通过；合成Edge实际组�
 负责人提供的公开空files仓库初始化合成示例，main819c279；客户端界面推送2c7403c说明更新到独立分支并创建files草稿PR1，未合并main。运行版本仍Windows0.10.98、线上0.43/032，候选代码未合并/部署/发版或生成新EXE。详见development/team-library-git.md、根design-qa.md；Git外证据D:/deepseek-agent/.runtime/team-library-20261109，早期失败及修复日志保留。下一步审阅功能PR，再单独安排后台和客户端交付、负责人真实材料验收。
 
 代码PR191提交复查发现并行PR190/c1b8d466（宪法框架）也使用候选contract0.44与033-personal-work-rules。当前main仍da6e0ef、线上未变；本分支0.44/033/114表只代表独立验收。明确记录整合要求：两者择一先审/合入，后者rebase，将新增迁移排034、契约与客户端功能门槛跟随整合版本重导出并跑完整CI；未静默拼接另一批规则/提示词或改变生产迁移记录。
+
+GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验，修为先解析拥有缓存根再核对子目录，未放宽子目录链接拒绝。补充祖先别名可用/子目录junction逃逸拒绝回归，本机Git与权限9项、Electron类型通过；此前22项定向组增加为23项。远端两轮失败日志保存在Git外github-desktop-*-failure.log；首提交漏暂存的生产测试033断言也已补齐。远端最终结果另行记录，不把本机通过当成远端通过。
