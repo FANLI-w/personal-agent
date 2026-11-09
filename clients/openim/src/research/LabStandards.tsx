@@ -18,6 +18,7 @@ import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchRead } from "./useResearchRead";
 import { useWorkspaceAvailability } from "./useWorkspaceAvailability";
 import { WorkspaceUnavailable } from "./WorkspaceUnavailable";
+import { workbenchTaskPath } from "./workbench-links";
 
 const statusLabels = {
   active: "生效中",
@@ -86,7 +87,7 @@ export function LabStandards() {
   useLayoutEffect(() => { setEditing(undefined); setBusy(false); setFailure(""); setNotice(""); setLibrary(undefined); }, [operation.scope]);
   const data = read.data?.data;
   const records = data?.records || [];
-  const templates = records.filter((r) => isPptTemplate(r.title));
+  const templates = records.filter((r) => r.kind === "rule" && isPptTemplate(r.title));
   const links = records.filter((r) => r.kind === "link");
   const rules = records.filter((r) => r.kind !== "link" && !isPptTemplate(r.title));
   const groups = [
@@ -162,7 +163,13 @@ export function LabStandards() {
       if (!captured.isCurrent()) return;
       setEditing(undefined);
       setNotice(
-        action === "revoke"
+        link
+          ? action === "revoke"
+            ? "已撤回这条方法。"
+            : action === "confirm" || data?.canPublish
+            ? "方法已生效，可按需查阅；不会自动加入规划或聊天。"
+            : "方法已提交，等待派发人或负责人确认。"
+          : action === "revoke"
           ? "已撤回，这条不会再进入新任务。"
           : action === "confirm"
           ? "已确认生效，之后的任务会带上它。"
@@ -243,7 +250,7 @@ export function LabStandards() {
           会自动进入任务：平台基本规则、课题组规则、项目约定三层叠在一起。
           <strong>资料</strong>
           只是参考材料，放在资料库里，任务里按需取用，不会自动变成规则。
-          个人任务只带平台规则，不继承课题组约定。
+          本人个人任务使用平台及个人规则；共享个人任务不带私人规则，也不继承课题组约定。
         </p>
       </div>
       <div className="workspace-standards-heading">
@@ -529,8 +536,16 @@ export function LabStandards() {
                 </span>
                 <small>
                   v{record.version} · {record.authorName}
-                  {record.sourceTaskId ? ` · 来源任务 ${record.sourceTaskId}` : ""}
                 </small>
+                {record.sourceTaskId && (
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={() => navigate(workbenchTaskPath(record.sourceTaskId!, "research"))}
+                  >
+                    查看来源任务
+                  </Button>
+                )}
               </header>
               <p>{record.content}</p>
               <div className="workspace-standards-actions">

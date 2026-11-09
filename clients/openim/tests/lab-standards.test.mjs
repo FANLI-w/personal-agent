@@ -20,7 +20,7 @@ test("the standards page reads and writes lab rules and points templates at the 
   assert.match(page, /availability\.supports\(40\)/);
   // What a task actually carries is spelled out, not left to guesswork.
   assert.match(page, /平台基本规则/);
-  assert.match(page, /个人任务只带平台规则/);
+  assert.match(page, /本人个人任务使用平台及个人规则/);
   // Templates are materials, and the page says so before linking to the library.
   assert.match(page, /模板与范文/);
   assert.match(page, /这些是资料，不是规则/);
