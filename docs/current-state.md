@@ -2,7 +2,13 @@
 
 更新日期：2026-11-09（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
-## 2026-11-09 Windows 0.10.98 发布准备
+## 2026-11-09 Windows 0.10.98 已公开发布
+
+北京时间2026/11/9 11:33:08，Windows **0.10.98** 已公开发布并设为Latest：[Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.98)。固定构建/tag为main **386f62a7fc3874d2e2c43bc678c5d37bc746a72d**，PR186/187及发布复查补修PR188已合并。EXE 421214965字节，SHA256 **79d0b8d3cb03b3a03cfce153879d3369a29006fc2bd71ef0905e0450a4cddc49**。
+
+最终main四项CI、64项定向检查、双类型、实际Electron大图IPC/标注导出、EXE解包与隔离启动、更新清单及四附件公开核对通过。本地安装包D:\deepseek-agent\acceptcat-group-invite-fix\clients\openim\release\Base\0.10.98\AcceptCat_0.10.98.exe，桌面副本AcceptCat_0.10.98.exe。无需部署后台，线上contract0.43/schema032保持；真实账号、系统截图与多屏DPI由负责人验收。详见[发布回执](deployment/acceptcat-0.10.98-release.md)。下方准备/待合并文字为当时记录，已由本段发布状态覆盖。
+
+## 2026-11-09 Windows 0.10.98 发布准备（历史记录）
 
 负责人授权整合较新PR并发布：本批纳入PR186维护提醒及PR187附件暂存、工具栏精简、桌面框选标注和聊天内F2。版本升为0.10.98，Windows CI补跑截图编辑器权限/取消测试。旧部署回执、暂缓手机端和早期草稿没有混入。63项客户端定向检查通过；实际Electron43.8.4隐藏测试窗口以合成像素确认sandbox preload、框选标注PNG导出和取消，没有抓私人桌面或触及系统剪贴板。
 
