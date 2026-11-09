@@ -42,7 +42,23 @@ async function digest(file) {
 
 // GitHub Releases 走 CDN，偶发 502/503/504 与连接中断。这类错误重试即可恢复；
 // 4xx（除 429）说明 URL 或权限有问题，重试没有意义，直接失败。
+// 优先用 curl：它自带 HTTP/1.1 回落、断点与 --retry-all-errors，比 fetch 更能扛住 CDN 抖动。
 async function download(url, file) {
+  try {
+    await run('curl.exe', [
+      '-fsSL',
+      '--http1.1',
+      '--retry', '6',
+      '--retry-all-errors',
+      '--retry-delay', '5',
+      '--max-time', '600',
+      '-o', file,
+      url,
+    ]);
+    return;
+  } catch (curlError) {
+    if (curlError?.code !== 'ENOENT') console.log(`curl 下载失败，改用 fetch：${curlError?.message ?? curlError}`);
+  }
   const attempts = 4;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
