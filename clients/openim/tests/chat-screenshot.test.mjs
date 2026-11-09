@@ -35,8 +35,8 @@ function fixture({ sources, focused = true, authorized = true, timeout = false }
   const electron = {
     BrowserWindow: { fromWebContents: () => parent },
     ipcMain: {
-      handle: (_, value) => {
-        handler = value;
+      handle: (channel, value) => {
+        if (channel === "capture-chat-screens") handler = value;
       },
     },
     desktopCapturer: {
@@ -64,7 +64,7 @@ function fixture({ sources, focused = true, authorized = true, timeout = false }
     setTimeout: (fn, ms) => setTimeout(fn, ms === 250 ? 0 : timeout ? 5 : ms),
     clearTimeout,
     require: (name) =>
-      name === "electron"
+      name === "./screenshotEditorManage" ? { registerScreenshotEditor: () => {} } : name === "electron"
         ? electron
         : {
             authority: () => {

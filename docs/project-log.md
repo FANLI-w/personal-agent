@@ -2898,3 +2898,7 @@ PR182已普通合main为f34b027，GitHub将原同事PR176标记MERGED，原a528c
 typecheck、build:web与38项客户端定向检查通过；合成Edge实际组件在1280×900、1024×768验证混选暂存、删除、点击发送、图片102/文件105、回执失败同ID重试、第二批发送及会话隔离。页面异常/相关控制台error为0，旧Router/AntD提示保留。首次脚本GBK解码/相对路径、旧UI夹具缺API导出及未模拟文件选择授权的失败均已修正并在说明留证。证据Git外composer-attachments-20261109和两份composer-build-web日志；详见development/chat-composer-attachments.md。没有共享代码/契约变更，未重跑根CI，没有合并、打包、发布、部署或真实账号验收。
 
 同批PR187后续截图反馈：确认chatScreenshotManage会主动hide当前窗口、等待250ms抓屏，再show/focus，使AcceptCat前面的画面变成后方应用。移除这些改变窗口可见性/焦点的操作，保留原权限、15秒期限、互斥和结果大小/身份守卫，仍在抓屏后打开已有预览。修改回归夹具按可见性区分前台/背后像素：旧实现6项中4通过2失败，新实现6项通过；加5项IPC权限回归共11项通过，Electron typecheck通过。原始失败与通过日志在Git外.runtime/screenshot-visible-before.log、screenshot-visible-after.log；没有使用私人屏幕、重启用户客户端或新增后台变更，真实Windows效果待新安装包验收。
+
+同批PR187按微信/Snipaste截图反馈进一步实现基础覆盖层编辑器：抓当前画面后打开独立sandbox窗口，框选、红圈/方框/箭头/画笔、颜色、撤销、✓/Enter复制并暂存、×/Esc取消；F2仅聊天内。旧Modal路径移除，新编辑器preload/主进程/HTML模块加入成品入口检查，原身份/窗口权限、15秒抓屏和大小边界保留，新增取消未完成抓屏的epoch栅栏和编辑5分钟取消期限。Snipaste仅检查目录/少量config，无源码可复用，未运行二进制或读取历史/日志。
+
+25项截图/编辑器权限/IPC/构建守卫、双类型和Web构建通过；合成Edge实际HTML框选750×480并导出同尺寸且含红色标注，圆圈/箭头/撤销/取消及窄屏工具栏通过；实际组件F2暂存而不发、取消/切会话和按钮恢复通过。首次VM node:path模拟错误4项失败、原UI子宿主端口占用均在隔离夹具处理，证据及边界见development/chat-screenshot-editor.md和Git外screenshot-editor-20261109。未抓私人桌面、读写系统剪贴板、安装/打包/发布/部署；原生Windows、真实多屏DPI和剪贴板效果待新包验收，现有0.10.97不含本批改动。

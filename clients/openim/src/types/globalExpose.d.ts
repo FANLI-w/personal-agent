@@ -24,6 +24,8 @@ export interface IElectronAPI {
   releaseLocalZotero: (grantId: string) => Promise<void>;
   saveImageBytesToDisk: (filename: string, bytes: Uint8Array) => Promise<string>;
   readChatClipboardImages: () => Promise<import("./imageClipboard").ClipboardImages>;
+  editChatScreenshot: () => Promise<string | null>;
+  cancelChatScreenshot: () => Promise<void>;
   captureChatScreens: () => Promise<import("./chatScreenshot").ChatScreenCapture[]>;
   saveChatFile: (filename: string, bytes: Uint8Array) => Promise<{ token: string } | null>;
   revealChatFile: (token: string) => Promise<void>;
