@@ -12,7 +12,7 @@ import { buildLocalDshRuntime } from "../../../integrations/deepseek-harness/des
 const require = createRequire(import.meta.url);
 const { outputFiles } = buildLocalDshRuntime(fileURLToPath(new URL("../", import.meta.url)));
 const module = { exports: {} };
-vm.runInNewContext(outputFiles[0].text, { module, exports: module.exports, require, process, Buffer, URL, setTimeout, clearTimeout });
+vm.runInNewContext(outputFiles[0].text, { module, exports: module.exports, require, process, Buffer,TextEncoder, URL, setTimeout, clearTimeout });
 const { readyUrl, runtimeEnvironment, inspectInstallation, supportedDshVersion, LocalDshRuntime, dshBrowserCompatibility } = module.exports;
 
 test('Windows stop waits for the owned process exit race but does not hide a live-process failure', async () => {
@@ -20,7 +20,7 @@ test('Windows stop waits for the owned process exit race but does not hide a liv
     const child = Object.assign(new EventEmitter(), {pid:12345,exitCode:null,signalCode:null});
     const scoped = {exports:{}};
     const mockRequire = id => id === 'node:child_process' ? {...require(id),execFile:(_exe,_args,_options,callback)=>{callback(Error('tree already exiting'));if(exits)setTimeout(()=>{child.exitCode=0;child.emit('exit',0)},30)}} : require(id);
-    vm.runInNewContext(outputFiles[0].text,{module:scoped,exports:scoped.exports,require:mockRequire,process:{...process,platform:'win32'},Buffer,URL,setTimeout,clearTimeout});
+    vm.runInNewContext(outputFiles[0].text,{module:scoped,exports:scoped.exports,require:mockRequire,process:{...process,platform:'win32'},Buffer,TextEncoder,URL,setTimeout,clearTimeout});
     const runtime = new scoped.exports.LocalDshRuntime('fixture','fixture');runtime.child=child;
     if(exits){await runtime.stop();assert.equal(runtime.state.phase,'stopped');}else{await assert.rejects(runtime.stop(),/停止失败/);assert.equal(runtime.state.phase,'running');}
   }

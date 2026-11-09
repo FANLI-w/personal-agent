@@ -8,7 +8,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {buildLocalDshRuntime} from '../../../integrations/deepseek-harness/desktop/build.mjs';
 const module={exports:{}};
-vm.runInNewContext(buildLocalDshRuntime(fileURLToPath(new URL('../',import.meta.url))).outputFiles[0].text,{module,exports:module.exports,require:createRequire(import.meta.url),process,Buffer,URL,setTimeout,clearTimeout,setInterval,clearInterval});
+vm.runInNewContext(buildLocalDshRuntime(fileURLToPath(new URL('../',import.meta.url))).outputFiles[0].text,{module,exports:module.exports,require:createRequire(import.meta.url),process,Buffer,TextEncoder,URL,setTimeout,clearTimeout,setInterval,clearInterval});
 const {DshTaskWorkspace,TeamExecution}=module.exports;
 const target={kind:'research',taskId:'synthetic_task',title:'Literature',goal:'Cite the fixture sources',version:1};
 const inputs={fingerprint:'original',entries:[],omitted:[]};

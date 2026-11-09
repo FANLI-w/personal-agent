@@ -50,7 +50,8 @@ test("the schedule section no longer repeats acceptance and shows labelled dates
 
 test("rules are summarised instead of asking for more input", async () => {
   const panel = await read("../src/research/TaskKnowledgePanel.tsx");
-  assert.match(panel, /本轮带：平台规则/);
+  assert.match(panel, /当前可用：平台规则/);
+  assert.match(panel, /上轮实际带入/);
   assert.match(panel, /看具体规则/);
   // No more search box, no add/edit editor, no rule history in this panel.
   assert.doesNotMatch(panel, /搜索规则、记忆/);

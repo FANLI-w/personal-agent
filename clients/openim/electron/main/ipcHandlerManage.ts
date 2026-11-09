@@ -20,6 +20,7 @@ import { registerZoteroBridge } from "./zoteroManage";
 import { registerLocalFolderBridge } from "./localFolderManage";
 import { registerLocalLibraryBridge } from "./localLibraryManage";
 import { registerChatHistoryBridge } from "./chatHistoryManage";
+import { registerTeamLibraryBridge } from './teamLibraryManage';
 import { registerPeerLibraryBridge } from "./peerLibraryManage";
 import { registerImageClipboardBridge } from "./imageClipboardManage";
 import { registerChatImageActionsBridge } from "./chatImageActionsManage";
@@ -76,6 +77,7 @@ export const setIpcMainListener = () => {
   registerLocalFolderBridge();
   registerLocalLibraryBridge();
   registerChatHistoryBridge();
+  registerTeamLibraryBridge();
   registerPeerLibraryBridge();
   registerImageClipboardBridge();
   registerChatScreenshotBridge();

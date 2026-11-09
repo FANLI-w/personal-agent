@@ -11,6 +11,7 @@
     "seed": "node dist/manage.js seed"
   },
   "dependencies": {
+    "@research-agent-platform/constitution": "workspace:*",
     "@research-agent-platform/contracts": "workspace:*",
     "@research-agent-platform/research-core": "workspace:*",
     "@research-agent-platform/research-skills": "workspace:*",

@@ -113,6 +113,17 @@
     color: #849198;
   }
 }
+.my-rules.workspace-standards {
+  flex: none;
+  max-width: 1080px;
+  overflow: visible;
+  padding: 0;
+  > .my-section-heading {
+    display: block;
+    margin-bottom: 0;
+    h2 { font-size: 23px; }
+  }
+}
 .my-profile-account {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

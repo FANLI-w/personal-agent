@@ -7,7 +7,7 @@ import type {
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchRead } from "./useResearchRead";
 
-const scopeLabel = { lab: "课题组", project: "项目" };
+const scopeLabel = { lab: "课题组", project: "项目", personal: "个人" };
 
 /**
  * Rules are already enforced by the executor; this panel only answers "what did
@@ -39,7 +39,7 @@ export function TaskKnowledgePanel({
   const policy = knowledge.data?.policy,
     binding = state?.binding,
     preferences = binding?.preferences || { personalMemory: false, skills: [] };
-  const active = (policy?.records || []).filter((r) => r.status === "active"),
+  const active = [...(policy?.records || []),...(policy?.personalRules || [])].filter((r) => r.status === "active" && r.kind === "rule"),
     candidates = (policy?.records || []).filter((r) => r.status === "candidate"),
     lab = active.filter((r) => r.scope === "lab").length,
     project = active.filter((r) => r.scope === "project").length,
@@ -57,8 +57,8 @@ export function TaskKnowledgePanel({
       {policy && (
         <>
           <p className="task-knowledge-summary">
-            本轮带：平台规则 v{policy.platform.version} · 课题组 {lab} 条 · 项目约定{" "}
-            {project} 条
+            当前可用：平台规则 v{policy.platform.version} · 课题组 {lab} 条 · 项目约定{" "}
+            {project} 条 · 个人规则 {active.filter(r=>r.scope==="personal").length} 条
             {candidates.length > 0 ? ` · ${candidates.length} 条待确认` : ""} · 个人记忆
             {preferences.personalMemory ? "已启用" : "未启用"}
             {preferences.skills.length > 0
@@ -77,9 +77,10 @@ export function TaskKnowledgePanel({
               </article>
             ))}
             <p className="task-knowledge-hint">
-              要改规则，去「资料 → 课题组规范」；个人偏好去「我的 → 我的助理」。
+              要改团队规则，去「资料 → 课题组规范」；个人规则去「我的 → 个人规则」，记忆去「我的 → 记忆与偏好」。
             </p>
           </details>
+          {binding?.contextReceipt && <details><summary>上轮实际带入（{binding.contextReceipt.entries.length} 项）</summary>{binding.contextReceipt.entries.map(e=><p key={`${e.kind}:${e.id}`}>{e.title} · v{e.version}</p>)}{binding.contextReceipt.omitted.length>0&&<p>未带入：{binding.contextReceipt.omitted.join("；")}</p>}</details>}
           {latest && (
             <details>
               <summary>上次交接（v{latest.version}）</summary>

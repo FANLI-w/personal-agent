@@ -1,27 +1,36 @@
-# Design QA — 已保存模型与Key首尾预览
+# 团队资料工作区设计复核
 
-final result: passed (local implementation; production backend deployment pending)
+final result: passed
 
-2026-10-20，产品/API/包固定4bc8d1f7cde314a1a9a99d3360b49a8647d43497。用户提供“我的/模型设置”实拍，要求保存后知道具体型号、API Key中间隐藏。沿既有桌面视觉和配置管理流程，未生成新资产。
+范围：资料主工作区的已选设计落地与公开合成资料状态；不是实际模型科研效果、生产账号、安装包或 DSH 原生文件阅读验收。
 
-## 对照与五项检查
+- Source visual truth：`C:/Users/luo/.codex/generated_images/01a16470-4e11-7c42-aa39-4be1cf30a7ef/exec-a016e18b-aa3a-40d9-9bf1-1be93a7dbc1b.png`，1567×1004。
+- Implementation：`D:/deepseek-agent/.runtime/team-library-20261109/ui-final.png`，1568×1005，CSS 1568×1005、devicePixelRatio=1。
+- 同图比较：`design-comparison.png` 与可读细节 `design-detail-comparison.png` 均在上述 Git 外证据目录。源图只按 1 像素差归一到 1568×1005，没有修改其内容；验收脚本 compare-design.ps1 留证。
+- 状态：已选 2026 项目申报、公开示例提纲，实际 Git commit 819c2794。界面在独立 Edge 标签使用真实组件、隔离后台及同一 Git store；不操作负责人客户端。源图虚拟 PPT 封面与本轮真实 Markdown 原件不同，不拿虚构图片或文件大小填充。
 
-原图2556×1636物理像素，与实际React的1536×1024和1024×726 CSS px截图分别观察；原图、final-model-settings-1536.png和model-settings-1024.png在同次view_image比较。密度、原生窗口按钮、合成控制条为环境差异，未把合成配置当作用户真实Key。
+## 发现、修复与复查
 
-| 表面 | 实际结果 |
-| --- | --- |
-| 字体/排版 | 保留中文桌面字体及原标题/表单字号，默认型号明确加粗；长型号在列表换行。 |
-| 间距/布局 | 默认摘要在配置列表上方；原两栏配置保留，1024宽文档scrollWidth=clientWidth=1024，Key输入在窗口内，底部动作可纵向滚达。 |
-| 色彩/token | 沿原浅绿选择/启用与灰色说明；“已保存/未选默认/预览不可用”均有文字，不用颜色代替状态。 |
-| 图像质量 | 原品牌猫及Ant图标，无新增位图、拉伸或不相关装饰。 |
-| 内容/状态 | 默认摘要和已保存型号读实际元数据；编辑未保存不改摘要，Key读实际本人/对应版本的脱敏响应，失败明确不可用。 |
+第一轮 blocked：P2 列宽偏离、约 85px 文件行和两行大输入框将首屏操作挤出；右侧信息比例小。已修正为接近源图的 280 / 弹性 / 440 三列，约 63px 文件行、项目面包屑和 56px 横向资料助手，状态单独一行。
 
-P2已修：保存后列表只有服务商不易识别型号；空Key输入+“已保存”看不到身份；原密码眼睛容易让人误以为能取回完整旧Key。现列表和默认摘要列具体型号，旧Key只读首尾，更换用独立空输入。保存期间版本变化不显示旧版本预览，误贴遮罩在请求前拦截。
+第二轮 blocked：P2 文件名较参考图轻且偏小，灰色辅助信息不够清晰。已调整文件名 17px/600、表格 15px 和更清晰的灰绿前景，重拍 ui-final 并重新打开完整与聚焦对照图；没有遗留 P0/P1/P2。
 
-## 实际交互
+五项表面检查：
 
-IAB/cua_repl，真实React/HTTP/SQLite/认证、合成凭据，无模型worker或供应商调用：原Key读取、改名/换型号保存且Key不变、未保存摘要不变、拒绝遮罩、替换新Key、Qwen默认切换、移除/清默认/恢复、刷新读回、旧404/503降级、A慢预览切B不串数据均检查。客户端类型、680项共享检查、NSIS真实载荷及隔离原生启动通过。清洁重载新error0，既有Router警告2；首次类型/契约版本断言/加载超时/HMR选择器失败保留。
+| 项目 | 最终观察 |
+|---|---|
+| 字体 | 沿产品 Segoe UI / Microsoft YaHei；标题、17px 半粗文件名与辅助信息有层级，长名称截断后详情完整展示 |
+| 间距/布局 | 三列、项目树、列表、版本/取用区与紧凑输入框保持参考结构；1568 首屏资料助手底部 938px、主网格底部约 981px，主要操作可见 |
+| 色彩 | 白底、浅灰绿导航、森林绿主操作和浅绿选择态；无多层重阴影卡片，普通文字加深 |
+| 资产 | 产品侧栏不改；验收壳标记“示例”保护身份。实际标准图标、真实原件/安全 Markdown，不复制图中虚构 PPT 封面充当已渲染原件 |
+| 文案/状态 | 同步时间、Git commit、文件类型来自实际结果；来源位置不假称“本机已有/已验证可取用”；提交成功明确只是待审分支，生效规范与项目材料区分 |
 
-Git外证据D:/deepseek-agent/.runtime/model-config-summary-20261019：saved-model-initial-1536.png、unsaved-model-still-original-summary.png、model-saved-key-preserved.png、reject-mask-as-key.png、replacement-key-saved.png、qwen-default-saved.png、key-removed-no-preview.png、legacy-service-keeps-settings.png、preview503-keeps-metadata.png、student-preview-isolated.png、final-model-settings-1536.png、model-settings-1024.png、browser-logs-clean.json、saved-settings-proof.json。
+1280×900 检查：无水平溢出、工作台主按钮在首屏可见，其余内容正常纵向滚动。更窄桌面使用纵向详情布局；本轮按负责人要求不做手机适配。
 
-无待修P0/P1/P2。生产当前0.25.0，新增0.25.1预览接口待明确部署确认；此实拍是隔离验收，安装新客户端不等于线上旧Key首尾功能已启用。Windows为目标，未声称移动端或真实科研模型质量已验证。
+交互实测：搜索仅返回命中资料；选行显示对应正文；发布历史只读；新建项目可取消；界面将公开说明修改提交为独立分支并返回比较入口；选择隔离真实任务后 URL 带任务类型、资料 ID、准确 commit 和项目规范开关。原生取用由另外的 Git→IPC→任务目录测试验证，浏览器不声称能运行原生 DSH。
+
+## 预期差异与余项
+
+实际内容使用公开示例 MD/CSV，源图的 PPT/PDF/图片尺寸及封面是概念数据，未伪造。Git 版本号替代假设的 v3；当前成员是示例维护者；新增了真实同步按钮、可选项目规范和保留旧功能的次级入口。以上属于产品接线差异，不影响已选布局方向。
+
+P3：后续可按真实私有仓库材料精修格式图标及长文件名提示。PPT/PDF 全格式内嵌阅读、真实用户权限与安装体验仍是明确的功能/验收边界，不在本次视觉通过声明内。

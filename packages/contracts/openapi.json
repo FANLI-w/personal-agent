@@ -2,9 +2,537 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.43.0"
+    "version": "0.45.0"
   },
   "paths": {
+    "/api/v1/library/repository": {
+      "get": {
+        "operationId": "teamRepository",
+        "description": "Live lab membership before read/replay; manager-only versioned repository binding. No Git credentials, file bytes, clones or remote requests on the API server.",
+        "x-stage": "GITLIB1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "GITLIB1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "binding": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "url": {
+                                  "type": "string",
+                                  "maxLength": 500
+                                },
+                                "branch": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_/-]{0,120}$"
+                                },
+                                "workspaceId": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                "labId": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                "version": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                },
+                                "updatedAt": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                },
+                                "updatedBy": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                }
+                              },
+                              "required": [
+                                "url",
+                                "branch",
+                                "workspaceId",
+                                "labId",
+                                "version",
+                                "updatedAt",
+                                "updatedBy"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "canConfigure": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "binding",
+                        "canConfigure"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "binding": null,
+                    "canConfigure": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "saveTeamRepository",
+        "description": "Live lab membership before read/replay; manager-only versioned repository binding. No Git credentials, file bytes, clones or remote requests on the API server.",
+        "x-stage": "GITLIB1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "branch": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_/-]{0,120}$"
+                  },
+                  "workspaceId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                  },
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "url",
+                  "branch",
+                  "workspaceId",
+                  "expectedVersion"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "url": "https://github.com/synthetic/team-library",
+                "branch": "synthetic",
+                "workspaceId": "synthetic",
+                "expectedVersion": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "GITLIB1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "binding": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "url": {
+                                  "type": "string",
+                                  "maxLength": 500
+                                },
+                                "branch": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_/-]{0,120}$"
+                                },
+                                "workspaceId": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                "labId": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                "version": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                },
+                                "updatedAt": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                },
+                                "updatedBy": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                }
+                              },
+                              "required": [
+                                "url",
+                                "branch",
+                                "workspaceId",
+                                "labId",
+                                "version",
+                                "updatedAt",
+                                "updatedBy"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "canConfigure": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "binding",
+                        "canConfigure"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "binding": null,
+                    "canConfigure": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/chat/conversations/{id}/team-work": {
       "get": {
         "operationId": "teamWork",
@@ -2035,7 +2563,7 @@
     "/api/v1/work-context/{kind}/{id}": {
       "get": {
         "operationId": "workContext",
-        "description": "Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
+        "description": "X-AcceptCat-Work-Rules: layers-v1 enables layered context and reusable methods; old readers receive a strict rule/memory projection without personalRules. Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
         "x-stage": "CONTEXT1",
         "x-implemented": true,
         "security": [
@@ -2132,13 +2660,15 @@
                                 "type": "string",
                                 "enum": [
                                   "lab",
-                                  "project"
+                                  "project",
+                                  "personal"
                                 ]
                               },
                               "kind": {
                                 "type": "string",
                                 "enum": [
                                   "rule",
+                                  "link",
                                   "memory"
                                 ]
                               },
@@ -2228,13 +2758,121 @@
                         },
                         "privateMemoryAllowed": {
                           "type": "boolean"
+                        },
+                        "personalRules": {
+                          "default": [],
+                          "maxItems": 40,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "scope": {
+                                "type": "string",
+                                "enum": [
+                                  "lab",
+                                  "project",
+                                  "personal"
+                                ]
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "rule",
+                                  "link",
+                                  "memory"
+                                ]
+                              },
+                              "title": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 80
+                              },
+                              "content": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 2000
+                              },
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              "scopeId": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              "sourceTaskId": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "authorId": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              "authorName": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "candidate",
+                                  "active",
+                                  "revoked"
+                                ]
+                              },
+                              "version": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                              },
+                              "allowedActions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "revise",
+                                    "confirm",
+                                    "revoke"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "scope",
+                              "kind",
+                              "title",
+                              "content",
+                              "id",
+                              "scopeId",
+                              "sourceTaskId",
+                              "authorId",
+                              "authorName",
+                              "status",
+                              "version",
+                              "updatedAt",
+                              "allowedActions"
+                            ],
+                            "additionalProperties": false
+                          }
                         }
                       },
                       "required": [
                         "platform",
                         "scopes",
                         "records",
-                        "privateMemoryAllowed"
+                        "privateMemoryAllowed",
+                        "personalRules"
                       ],
                       "additionalProperties": false
                     }
@@ -2252,7 +2890,8 @@
                     },
                     "scopes": [],
                     "records": [],
-                    "privateMemoryAllowed": false
+                    "privateMemoryAllowed": false,
+                    "personalRules": []
                   }
                 }
               }
@@ -2394,7 +3033,7 @@
     "/api/v1/work-context/{kind}/{id}/records": {
       "post": {
         "operationId": "saveWorkRule",
-        "description": "Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
+        "description": "X-AcceptCat-Work-Rules: layers-v1 enables layered context and reusable methods; old readers receive a strict rule/memory projection without personalRules. Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
         "x-stage": "CONTEXT1",
         "x-implemented": true,
         "security": [
@@ -2455,13 +3094,15 @@
                     "type": "string",
                     "enum": [
                       "lab",
-                      "project"
+                      "project",
+                      "personal"
                     ]
                   },
                   "kind": {
                     "type": "string",
                     "enum": [
                       "rule",
+                      "link",
                       "memory"
                     ]
                   },
@@ -2539,13 +3180,15 @@
                           "type": "string",
                           "enum": [
                             "lab",
-                            "project"
+                            "project",
+                            "personal"
                           ]
                         },
                         "kind": {
                           "type": "string",
                           "enum": [
                             "rule",
+                            "link",
                             "memory"
                           ]
                         },
@@ -2794,7 +3437,7 @@
     "/api/v1/work-context/{kind}/{id}/records/{recordId}": {
       "get": {
         "operationId": "workRuleHistory",
-        "description": "Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
+        "description": "X-AcceptCat-Work-Rules: layers-v1 enables layered context and reusable methods; old readers receive a strict rule/memory projection without personalRules. Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
         "x-stage": "CONTEXT1",
         "x-implemented": true,
         "security": [
@@ -2853,13 +3496,15 @@
                             "type": "string",
                             "enum": [
                               "lab",
-                              "project"
+                              "project",
+                              "personal"
                             ]
                           },
                           "kind": {
                             "type": "string",
                             "enum": [
                               "rule",
+                              "link",
                               "memory"
                             ]
                           },
@@ -3095,7 +3740,7 @@
     "/api/v1/lab/work-rules": {
       "get": {
         "operationId": "labWorkRules",
-        "description": "Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
+        "description": "X-AcceptCat-Work-Rules: layers-v1 enables layered context and reusable methods; old readers receive a strict rule/memory projection without personalRules. Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
         "x-stage": "CONTEXT1",
         "x-implemented": true,
         "security": [
@@ -3145,13 +3790,15 @@
                                 "type": "string",
                                 "enum": [
                                   "lab",
-                                  "project"
+                                  "project",
+                                  "personal"
                                 ]
                               },
                               "kind": {
                                 "type": "string",
                                 "enum": [
                                   "rule",
+                                  "link",
                                   "memory"
                                 ]
                               },
@@ -3400,7 +4047,7 @@
       },
       "post": {
         "operationId": "saveLabWorkRule",
-        "description": "Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
+        "description": "X-AcceptCat-Work-Rules: layers-v1 enables layered context and reusable methods; old readers receive a strict rule/memory projection without personalRules. Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
         "x-stage": "CONTEXT1",
         "x-implemented": true,
         "security": [
@@ -3442,7 +4089,10 @@
                   },
                   "kind": {
                     "type": "string",
-                    "const": "rule"
+                    "enum": [
+                      "rule",
+                      "link"
+                    ]
                   },
                   "title": {
                     "type": "string",
@@ -3453,6 +4103,17 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 2000
+                  },
+                  "sourceTaskId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "recordId": {
                     "anyOf": [
@@ -3518,13 +4179,691 @@
                           "type": "string",
                           "enum": [
                             "lab",
-                            "project"
+                            "project",
+                            "personal"
                           ]
                         },
                         "kind": {
                           "type": "string",
                           "enum": [
                             "rule",
+                            "link",
+                            "memory"
+                          ]
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
+                        "content": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2000
+                        },
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "scopeId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "sourceTaskId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "authorId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "authorName": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "candidate",
+                            "active",
+                            "revoked"
+                          ]
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        "allowedActions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "revise",
+                              "confirm",
+                              "revoke"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "scope",
+                        "kind",
+                        "title",
+                        "content",
+                        "id",
+                        "scopeId",
+                        "sourceTaskId",
+                        "authorId",
+                        "authorName",
+                        "status",
+                        "version",
+                        "updatedAt",
+                        "allowedActions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "scope": "lab",
+                    "kind": "rule",
+                    "title": "synthetic",
+                    "content": "synthetic",
+                    "id": "synthetic",
+                    "scopeId": "synthetic",
+                    "sourceTaskId": null,
+                    "authorId": "synthetic",
+                    "authorName": "synthetic",
+                    "status": "candidate",
+                    "version": 1,
+                    "updatedAt": "2026-09-21T08:00:00+08:00",
+                    "allowedActions": []
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/personal/work-rules": {
+      "get": {
+        "operationId": "personalWorkRules",
+        "description": "X-AcceptCat-Work-Rules: layers-v1 enables layered context and reusable methods; old readers receive a strict rule/memory projection without personalRules. Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
+        "x-stage": "CONTEXT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "CONTEXT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "platform": {
+                          "type": "object",
+                          "properties": {
+                            "version": {
+                              "type": "string"
+                            },
+                            "content": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "version",
+                            "content"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "canPublish": {
+                          "type": "boolean"
+                        },
+                        "records": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "scope": {
+                                "type": "string",
+                                "enum": [
+                                  "lab",
+                                  "project",
+                                  "personal"
+                                ]
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "rule",
+                                  "link",
+                                  "memory"
+                                ]
+                              },
+                              "title": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 80
+                              },
+                              "content": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 2000
+                              },
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              "scopeId": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              "sourceTaskId": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "authorId": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              "authorName": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "candidate",
+                                  "active",
+                                  "revoked"
+                                ]
+                              },
+                              "version": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                              },
+                              "allowedActions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "revise",
+                                    "confirm",
+                                    "revoke"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "scope",
+                              "kind",
+                              "title",
+                              "content",
+                              "id",
+                              "scopeId",
+                              "sourceTaskId",
+                              "authorId",
+                              "authorName",
+                              "status",
+                              "version",
+                              "updatedAt",
+                              "allowedActions"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "platform",
+                        "canPublish",
+                        "records"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "platform": {
+                      "version": "synthetic",
+                      "content": "synthetic"
+                    },
+                    "canPublish": false,
+                    "records": []
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "savePersonalWorkRule",
+        "description": "X-AcceptCat-Work-Rules: layers-v1 enables layered context and reusable methods; old readers receive a strict rule/memory projection without personalRules. Live task ACL; shared rules and confirmed evidence only. Versioned human publication, immutable history, no implicit private memory sharing.",
+        "x-stage": "CONTEXT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "rule"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "recordId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "save",
+                      "confirm",
+                      "revoke"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "title",
+                  "content",
+                  "recordId",
+                  "expectedVersion",
+                  "action"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "kind": "rule",
+                "title": "synthetic",
+                "content": "synthetic",
+                "recordId": null,
+                "expectedVersion": 0,
+                "action": "save"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CONTEXT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "lab",
+                            "project",
+                            "personal"
+                          ]
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "rule",
+                            "link",
                             "memory"
                           ]
                         },
@@ -71000,7 +72339,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.43.0"
+                          "const": "0.45.0"
                         },
                         "checks": {
                           "type": "object",
@@ -71059,7 +72398,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.43.0",
+                    "contractVersion": "0.45.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -71233,7 +72572,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.43.0"
+                          "const": "0.45.0"
                         },
                         "checks": {
                           "type": "object",
@@ -71292,7 +72631,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.43.0",
+                    "contractVersion": "0.45.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -71444,7 +72783,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.43.0"
+                          "const": "0.45.0"
                         },
                         "checks": {
                           "type": "object",
@@ -71503,7 +72842,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.43.0",
+                    "contractVersion": "0.45.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",

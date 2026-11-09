@@ -3,6 +3,7 @@ import {
   ApiOutlined,
   BookOutlined,
   CloudDownloadOutlined,
+  SafetyCertificateOutlined,
   SettingOutlined,
   TeamOutlined,
   UserOutlined,
@@ -20,6 +21,7 @@ import { relocatedMyWorkspace } from "./workspace-navigation";
 import { WorkbenchCapabilities } from "./CapabilitySquare";
 import { ModelSettings } from "./ModelSettings";
 import { PersonalMemoryPanel } from "./PersonalMemoryPanel";
+import { PersonalRules } from "./PersonalRules";
 import { MyProfile } from "./MyProfile";
 import { LabWorkspace } from "./LabWorkspace";
 import { useResearchStore } from "./store";
@@ -32,6 +34,7 @@ const sections = [
   { value: "capabilities", label: "课题组能力", icon: TeamOutlined },
   { value: "models", label: "模型设置", icon: ApiOutlined },
   { value: "memory", label: "记忆与偏好", icon: BookOutlined },
+  { value: "rules", label: "个人规则", icon: SafetyCertificateOutlined },
   { value: "preferences", label: "通用设置", icon: SettingOutlined },
   { value: "version", label: "版本与帮助", icon: CloudDownloadOutlined },
 ];
@@ -122,6 +125,8 @@ export function MyWorkspace() {
             <ModelSettings open embedded onClose={() => navigate("/me")} />
           ) : view === "memory" ? (
             <PersonalMemoryPanel active />
+          ) : view === "rules" ? (
+            <PersonalRules />
           ) : view === "preferences" ? (
             <section className="my-preferences">
               <header className="my-section-heading">

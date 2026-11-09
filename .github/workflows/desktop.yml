@@ -47,6 +47,13 @@ jobs:
           node-version: '24'
       - name: Build dependencies before the isolated client install
         run: corepack pnpm@11.21.0 run desktop:prepare
+      # 固定版本的三方二进制走 GitHub Releases；缓存命中时完全不联网，
+      # 既省掉每次几十到几百 MB 的下载，也避免 CDN 504 决定构建结果。
+      - name: Cache pinned desktop tools
+        uses: actions/cache@v4
+        with:
+          path: clients/openim/tools/.cache
+          key: desktop-tools-${{ runner.os }}-tectonic-0.17.0-dsh-research-workbench-0.4.0
       - name: Stage pinned DSH and tools for offline plugin upgrade tests
         run: |
           node integrations/deepseek-harness/desktop/stage-runtime.mjs clients/openim
@@ -63,6 +70,8 @@ jobs:
           corepack pnpm@10.28.0 run test:build
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:local-dsh
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          corepack pnpm@10.28.0 run test:team-library
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:dsh-plugin
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

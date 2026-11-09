@@ -9,14 +9,15 @@ import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { buildLocalDshRuntime } from '../../../integrations/deepseek-harness/desktop/build.mjs';
+import { libraryFixture } from './helpers/team-library.mjs';
 const require = createRequire(import.meta.url), client = fileURLToPath(new URL('../', import.meta.url));
 const esbuild = createRequire(require.resolve('vite'))('esbuild');
 const bundled = await esbuild.build({ entryPoints: [path.join(client, 'electron/main/taskDshManage.ts')], bundle: true, platform: 'node', format: 'cjs', write: false,
   external: ['electron', './localDshRuntime', '@research-agent-platform/research-skills/import'],
-  plugins: [{ name: 'isolated-window-authority', setup(build) { build.onLoad({ filter: /localFolderManage\.ts$/ }, () => ({ contents: 'export const authority=e=>({contents:e.sender});', loader: 'js' })); } }],
+  plugins: [{ name: 'isolated-window-authority', setup(build) { build.onLoad({filter:/teamLibraryManage\.ts$/},()=>({contents:'export const teamLibraryContext=e=>globalThis.teamLibraryFixture(e);',loader:'js'}));build.onLoad({ filter: /localFolderManage\.ts$/ }, () => ({ contents: 'export const authority=e=>({contents:e.sender});', loader: 'js' })); } }],
 });
 const runtimeCode = buildLocalDshRuntime(client).outputFiles[0].text;
-async function fixture(t) {
+async function fixture(t, library) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'acceptcat-material-bridge-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.mkdir(path.join(root, 'work'));
@@ -49,12 +50,12 @@ async function fixture(t) {
     })},
   };
   const runtime={exports:{}};
-  vm.runInNewContext(runtimeCode,{module:runtime,exports:runtime.exports,require,process,Buffer,URL,setTimeout,clearTimeout,
+  vm.runInNewContext(runtimeCode,{module:runtime,exports:runtime.exports,require,process,Buffer,TextEncoder,URL,setTimeout,clearTimeout,
     setInterval:(fn,ms)=>{const id=setInterval(fn,ms);timers.push(id);return id;},clearInterval});
   t.after(()=>timers.forEach(clearInterval));
   const mod={exports:{}};
-  vm.runInNewContext(bundled.outputFiles[0].text,{module:mod,exports:mod.exports,require:id=>id==='electron'?electron:id==='./localDshRuntime'?runtime.exports:require(id),process,Buffer,URL,URLSearchParams,setTimeout,clearTimeout});
-  const account={identity:'synthetic',lease:'one',csrf:'synthetic',valid:async()=>{if(!valid)throw Error('expired');},request:url=>respond(()=>{
+  vm.runInNewContext(bundled.outputFiles[0].text,{module:mod,exports:mod.exports,teamLibraryFixture:()=>library,require:id=>id==='electron'?electron:id==='./localDshRuntime'?runtime.exports:require(id),process,Buffer,TextEncoder,URL,URLSearchParams,setTimeout,clearTimeout});
+  const account={metadata:{memberId:'member_A'},identity:'synthetic',lease:'one',csrf:'synthetic',valid:async()=>{if(!valid)throw Error('expired');},request:url=>respond(()=>{
     if(url==='/api/v1/health/ready')return{data:{status:'ok',contractVersion:'0.38.0'}};
     if(url==='/api/v1/tasks/synthetic-task')return{data:{task:{title:'Synthetic task',goal:'Local work',version:1,allowedActions:['submit']}}};
     if(url.startsWith('/api/v1/work-execution/'))return{data:{execution:null}};
@@ -109,4 +110,19 @@ test('the task page and the workbench route may both work on the same task, and 
   await assert.rejects(f.call('task-dsh-status'),/任务工作页/);
   f.set({hash:'#/chat?task=synthetic-task'});
   await assert.rejects(f.call('task-dsh-status'),/任务工作页/);
+});
+
+test('published Git original → native IPC → task folder preserves the exact bytes and source revision',async t=>{
+  const git=await libraryFixture(t),snapshot=await git.store.sync();
+  const library={store:git.store,binding:git.binding,valid:async()=>{},current:async()=>{},memberId:'member_A'};
+  const f=await fixture(t,library);await f.call('task-dsh-open',true);
+  const receipt=await f.call('task-dsh-import-team-library',{revision:snapshot.revision,entryId:git.entry.id,includeRules:true});
+  assert.equal(receipt.count,1);assert.equal(receipt.revision,snapshot.revision);
+  const status=await f.call('task-dsh-status'),materials=status.binding.localMaterials;
+  const original=materials.find(m=>m.filename===git.entry.name),provenance=materials.find(m=>m.filename.endsWith('.json'));
+  assert.equal(await fs.readFile(path.join(f.root,'work',original.localName),'utf8'),git.text);
+  const source=JSON.parse(await fs.readFile(path.join(f.root,'work',provenance.localName),'utf8'));
+  assert.equal(source.revision,snapshot.revision);assert.equal(source.entries[0].sha256,git.entry.source.sha256);
+  assert.equal(f.uploads(),0);
+  library.memberId='member_B';await assert.rejects(f.call('task-dsh-import-team-library',{revision:snapshot.revision,entryId:git.entry.id}),/账号不一致/);
 });

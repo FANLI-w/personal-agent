@@ -1,5 +1,5 @@
-import { Alert, Button, Input } from "antd";
-import { useEffect, useState } from "react";
+import { Alert, Button, Input, Select } from "antd";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import type { LocalLibraryStatus } from "@/types/localLibrary";
@@ -18,6 +18,7 @@ import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchRead } from "./useResearchRead";
 import { useWorkspaceAvailability } from "./useWorkspaceAvailability";
 import { WorkspaceUnavailable } from "./WorkspaceUnavailable";
+import { workbenchTaskPath } from "./workbench-links";
 
 const statusLabels = {
   active: "生效中",
@@ -39,6 +40,7 @@ const statusClasses = {
 export function LabStandards() {
   const availability = useWorkspaceAvailability(true);
   const supported = availability.supports(40);
+  const linksSupported = availability.supports(45);
   const navigate = useNavigate();
   const actor = useResearchStore((s) => s.actor);
   const operation = usePersonalOperation(supported, "lab-standards");
@@ -55,23 +57,39 @@ export function LabStandards() {
   const [editing, setEditing] = useState<{
     id?: string;
     version: number;
-    mode: "rule" | "ppt";
+    mode: "rule" | "ppt" | "link";
     /** A rule keeps its title; a PPT template keeps only the name after the prefix. */
     title: string;
     content: string;
     /** One file per line, only for PPT templates. */
     files: string;
+    /** Links may cite the task they came from; that task's dispatcher confirms them. */
+    sourceTask?: string;
   }>();
+  const sourceTasks = useResearchRead(async (signal) => {
+    const tasks: {value:string;label:string}[]=[];
+    const seen=new Set<string>(); let cursor:string|undefined;
+    do {
+      const response=await researchApi("tasks",{signal,query:{labId:actor!.member.labId,scope:"mine",status:"completed",limit:100,cursor}});
+      for(const task of response.data) if("leadId" in task && task.leadId===actor?.member.id) tasks.push({value:task.id,label:task.title});
+      cursor=response.nextCursor ?? undefined;
+      if(cursor&&seen.has(cursor))throw Error("任务分页未完成，请重新读取。");
+      if(cursor)seen.add(cursor);
+    } while(cursor);
+    return tasks;
+  },"link-source-tasks",linksSupported&&Boolean(actor)&&editing?.mode==="link"&&!editing.id,{poll:false});
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
   const [notice, setNotice] = useState("");
   const [library, setLibrary] = useState<LocalLibraryStatus>();
   const [libraryBusy, setLibraryBusy] = useState(false);
   const [picking, setPicking] = useState(false);
+  useLayoutEffect(() => { setEditing(undefined); setBusy(false); setFailure(""); setNotice(""); setLibrary(undefined); }, [operation.scope]);
   const data = read.data?.data;
   const records = data?.records || [];
-  const templates = records.filter((r) => isPptTemplate(r.title));
-  const rules = records.filter((r) => !isPptTemplate(r.title));
+  const templates = records.filter((r) => r.kind === "rule" && isPptTemplate(r.title));
+  const links = records.filter((r) => r.kind === "link");
+  const rules = records.filter((r) => r.kind !== "link" && !isPptTemplate(r.title));
   const groups = [
     {
       key: "active",
@@ -94,20 +112,29 @@ export function LabStandards() {
   );
   const submit = async (
     action: "save" | "confirm" | "revoke",
-    record?: { id: string; version: number; title: string; content: string },
+    record?: {
+      id: string;
+      version: number;
+      title: string;
+      content: string;
+      kind: "rule" | "link" | "memory";
+      sourceTaskId: string | null;
+    },
   ) => {
     const draft = record
       ? {
           id: record.id,
           version: record.version,
-          mode: "rule" as const,
+          mode: record.kind === "link" ? ("link" as const) : ("rule" as const),
           title: record.title,
           content: record.content,
           files: "",
+          sourceTask: record.sourceTaskId ?? "",
         }
       : editing;
     if (!draft) return;
     const template = !record && draft.mode === "ppt";
+    const link = draft.mode === "link";
     const captured = operation.capture();
     setBusy(true);
     setFailure("");
@@ -116,7 +143,7 @@ export function LabStandards() {
       await researchApi("saveLabWorkRule", {
         body: {
           scope: "lab",
-          kind: "rule",
+          kind: link ? "link" : "rule",
           title: template ? pptTemplateTitle(draft.title) : draft.title.trim(),
           content: template
             ? composePptTemplate({
@@ -125,16 +152,24 @@ export function LabStandards() {
                 files: draft.files.split("\n"),
               })
             : draft.content.trim(),
+          ...(link && draft.sourceTask?.trim()
+            ? { sourceTaskId: draft.sourceTask.trim() }
+            : {}),
           recordId: draft.id ?? null,
           expectedVersion: draft.version,
           action,
         },
-        idempotencyKey: crypto.randomUUID(),
       });
       if (!captured.isCurrent()) return;
       setEditing(undefined);
       setNotice(
-        action === "revoke"
+        link
+          ? action === "revoke"
+            ? "已撤回这条方法。"
+            : action === "confirm" || data?.canPublish
+            ? "方法已生效，可按需查阅；不会自动加入规划或聊天。"
+            : "方法已提交，等待派发人或负责人确认。"
+          : action === "revoke"
           ? "已撤回，这条不会再进入新任务。"
           : action === "confirm"
           ? "已确认生效，之后的任务会带上它。"
@@ -215,7 +250,7 @@ export function LabStandards() {
           会自动进入任务：平台基本规则、课题组规则、项目约定三层叠在一起。
           <strong>资料</strong>
           只是参考材料，放在资料库里，任务里按需取用，不会自动变成规则。
-          个人任务只带平台规则，不继承课题组约定。
+          本人个人任务使用平台及个人规则；共享个人任务不带私人规则，也不继承课题组约定。
         </p>
       </div>
       <div className="workspace-standards-heading">
@@ -289,11 +324,19 @@ export function LabStandards() {
           {editing && (
             <div className="workspace-standards-editor" aria-label="编辑课题组规则">
               <Input
-                aria-label={editing.mode === "ppt" ? "模板名称" : "规则标题"}
+                aria-label={
+                  editing.mode === "ppt"
+                    ? "模板名称"
+                    : editing.mode === "link"
+                    ? "链路名称"
+                    : "规则标题"
+                }
                 maxLength={80}
                 placeholder={
                   editing.mode === "ppt"
                     ? "模板名称，例如：组会汇报 / 项目申报答辩"
+                    : editing.mode === "link"
+                    ? "一句话说明这个链路解决什么问题，例如：审稿意见逐条回复"
                     : "一句话说明这条约定，例如：项目书按 7 个小节写"
                 }
                 value={editing.title}
@@ -303,12 +346,20 @@ export function LabStandards() {
                 }
               />
               <Input.TextArea
-                aria-label={editing.mode === "ppt" ? "模板要求" : "规则正文"}
+                aria-label={
+                  editing.mode === "ppt"
+                    ? "模板要求"
+                    : editing.mode === "link"
+                    ? "链路正文"
+                    : "规则正文"
+                }
                 rows={4}
                 maxLength={2000}
                 placeholder={
                   editing.mode === "ppt"
                     ? "每次都要重复说的要求：受众、页数、每页信息量、配色、字体、结构（背景-方法-结果-结论）、图表风格。"
+                    : editing.mode === "link"
+                    ? "做法本身：几步、每步判断依据、容易出错的地方。写结论不写过程。"
                     : "写清楚要求本身，例如：摘要 300 字以内；引用统一 GB/T 7714；结果先给结论再给证据。"
                 }
                 value={editing.content}
@@ -346,11 +397,28 @@ export function LabStandards() {
                   </div>
                 </>
               )}
+              {editing.mode === "link" && (
+                <>
+                <Select
+                  aria-label="来源任务"
+                  showSearch optionFilterProp="label" style={{width:"100%"}}
+                  placeholder="选择你承接并已完成的来源任务"
+                  value={editing.sourceTask || undefined}
+                  loading={sourceTasks.loading}
+                  options={editing.id?[{value:editing.sourceTask,label:"已关联的来源任务"}]:sourceTasks.data||[]}
+                  disabled={busy || Boolean(editing.id)}
+                  onChange={(value) =>
+                    setEditing((s) => s && { ...s, sourceTask: value })
+                  }
+                />
+                {sourceTasks.error && <Alert type="error" message={sourceTasks.error} action={<Button onClick={sourceTasks.refresh}>重新读取</Button>}/>}
+                </>
+              )}
               <div>
                 <Button
                   type="primary"
                   loading={busy}
-                  disabled={!editing.title.trim() || !editing.content.trim()}
+                  disabled={!editing.title.trim() || !editing.content.trim() || (editing.mode==="link"&&!editing.sourceTask)}
                   onClick={() => void submit("save")}
                 >
                   保存
@@ -426,6 +494,101 @@ export function LabStandards() {
                 </article>
               ))}
             </section>
+          ))}
+          <div className="workspace-standards-heading">
+            <div>
+              <h3>组内可复用链路</h3>
+              {!linksSupported && <p>更新配套后台后可提交和审核可复用方法。</p>}
+              <p>
+                任务做完后把做法留下来：几步、每步判断依据、容易出错的地方。
+                承接人提交，来源任务的派发人或负责人确认后全组可读；链路不进入规划与聊天的自动注入，按需查阅。
+              </p>
+            </div>
+            <Button
+              disabled={busy || Boolean(editing) || !linksSupported}
+              onClick={() =>
+                setEditing({
+                  version: 0,
+                  mode: "link",
+                  title: "",
+                  content: "",
+                  files: "",
+                  sourceTask: "",
+                })
+              }
+            >
+              提交链路
+            </Button>
+          </div>
+          {!links.length && !editing && (
+            <p className="workspace-muted">
+              还没有链路。第一次做完一类任务后，把可复用的那几步写在这里，下一次就不用重新摸索。
+            </p>
+          )}
+          {links.map((record) => (
+            <article className="workspace-standards-record" key={record.id}>
+              <header>
+                <strong>{record.title}</strong>
+                <span className={statusClasses[record.status]}>
+                  {record.status === "candidate" && record.sourceTaskId
+                    ? "待派发人确认"
+                    : statusLabels[record.status]}
+                </span>
+                <small>
+                  v{record.version} · {record.authorName}
+                </small>
+                {record.sourceTaskId && (
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={() => navigate(workbenchTaskPath(record.sourceTaskId!, "research"))}
+                  >
+                    查看来源任务
+                  </Button>
+                )}
+              </header>
+              <p>{record.content}</p>
+              <div className="workspace-standards-actions">
+                {record.allowedActions.includes("revise") && (
+                  <Button
+                    size="small"
+                    disabled={busy}
+                    onClick={() =>
+                      setEditing({
+                        id: record.id,
+                        version: record.version,
+                        mode: "link",
+                        title: record.title,
+                        content: record.content,
+                        files: "",
+                        sourceTask: record.sourceTaskId ?? "",
+                      })
+                    }
+                  >
+                    修改
+                  </Button>
+                )}
+                {record.allowedActions.includes("confirm") && (
+                  <Button
+                    size="small"
+                    disabled={busy}
+                    onClick={() => void submit("confirm", record)}
+                  >
+                    确认生效
+                  </Button>
+                )}
+                {record.allowedActions.includes("revoke") && (
+                  <Button
+                    size="small"
+                    danger
+                    disabled={busy}
+                    onClick={() => void submit("revoke", record)}
+                  >
+                    撤回
+                  </Button>
+                )}
+              </div>
+            </article>
           ))}
           <div className="workspace-standards-heading">
             <div>

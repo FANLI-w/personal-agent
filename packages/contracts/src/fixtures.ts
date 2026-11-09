@@ -74,6 +74,7 @@ function sample(s: JsonShape, key = ''): unknown {
 }
 export const endpointExamples = Object.fromEntries(Object.entries(routes).map(([name, route]) => {
   const request = sample(z.toJSONSchema(route.request, { unrepresentable: 'any' }) as JsonShape)
+  if(name==='saveTeamRepository') (request as {body:{url:string}}).body.url='https://github.com/synthetic/team-library'
   const response = name === 'content' || name === 'researchFileContent' ? new Uint8Array([120]) : sample(z.toJSONSchema(route.response, { unrepresentable: 'any' }) as JsonShape)
   return [name, { contractVersion: m.contractVersion, synthetic: true, method: route.method, path: route.path, stage: route.stage, status: route.status, request: route.request.parse(request), response: route.response.parse(response) }]
 }))
