@@ -2896,3 +2896,5 @@ PR182已普通合main为f34b027，GitHub将原同事PR176标记MERGED，原a528c
 按负责人截图，从最新main/289eb3a的干净独立副本新建fix/chat-composer-staged-attachments。确认原文件按钮立即发送且固定file类型，图片入口才暂存，导致选PNG发成文件卡片。现在统一选择/拖放/File粘贴暂存，图片补齐MIME走原图片链，文件卡片可移除并配文，明确发送才入队；工具栏去掉第二个扩展入口与录音入口，@输入保留。文件队列缓存SDK ID、sent/processed回执，失败可重试，切会话停止，刷新保存元数据而不保存File原件；未扩大后台或Agent资料权限。
 
 typecheck、build:web与38项客户端定向检查通过；合成Edge实际组件在1280×900、1024×768验证混选暂存、删除、点击发送、图片102/文件105、回执失败同ID重试、第二批发送及会话隔离。页面异常/相关控制台error为0，旧Router/AntD提示保留。首次脚本GBK解码/相对路径、旧UI夹具缺API导出及未模拟文件选择授权的失败均已修正并在说明留证。证据Git外composer-attachments-20261109和两份composer-build-web日志；详见development/chat-composer-attachments.md。没有共享代码/契约变更，未重跑根CI，没有合并、打包、发布、部署或真实账号验收。
+
+同批PR187后续截图反馈：确认chatScreenshotManage会主动hide当前窗口、等待250ms抓屏，再show/focus，使AcceptCat前面的画面变成后方应用。移除这些改变窗口可见性/焦点的操作，保留原权限、15秒期限、互斥和结果大小/身份守卫，仍在抓屏后打开已有预览。修改回归夹具按可见性区分前台/背后像素：旧实现6项中4通过2失败，新实现6项通过；加5项IPC权限回归共11项通过，Electron typecheck通过。原始失败与通过日志在Git外.runtime/screenshot-visible-before.log、screenshot-visible-after.log；没有使用私人屏幕、重启用户客户端或新增后台变更，真实Windows效果待新安装包验收。

@@ -16,9 +16,9 @@ export function registerChatScreenshotBridge() {
       capturing = true;
       let deadline: ReturnType<typeof setTimeout> | undefined;
       try {
-        parent.hide();
-        // Let the compositor remove our window before taking the snapshot.
-        await new Promise((resolve) => setTimeout(resolve, 250));
+        // Capture the desktop as the user sees it. Hiding our window here would
+        // replace it with whatever application is behind it. The renderer opens
+        // the crop preview only after this snapshot has returned.
         if (authority(event).owner !== auth.owner)
           throw new Error("窗口已变化，请重新截图。");
         const sources = await Promise.race([
@@ -51,10 +51,6 @@ export function registerChatScreenshotBridge() {
       } finally {
         if (deadline) clearTimeout(deadline);
         capturing = false;
-        if (!parent.isDestroyed()) {
-          parent.show();
-          parent.focus();
-        }
       }
     },
   );
