@@ -894,6 +894,70 @@
         }
       }
     },
+    "personalWorkRules": {
+      "contractVersion": "0.44.0",
+      "synthetic": true,
+      "method": "GET",
+      "path": "/api/v1/personal/work-rules",
+      "stage": "CONTEXT1",
+      "status": 200,
+      "request": {
+        "params": {},
+        "query": {},
+        "headers": {},
+        "body": null
+      },
+      "response": {
+        "data": {
+          "platform": {
+            "version": "synthetic",
+            "content": "synthetic"
+          },
+          "canPublish": false,
+          "records": []
+        }
+      }
+    },
+    "savePersonalWorkRule": {
+      "contractVersion": "0.44.0",
+      "synthetic": true,
+      "method": "POST",
+      "path": "/api/v1/personal/work-rules",
+      "stage": "CONTEXT1",
+      "status": 200,
+      "request": {
+        "params": {},
+        "query": {},
+        "headers": {
+          "Idempotency-Key": "synthetic_command_0001"
+        },
+        "body": {
+          "kind": "rule",
+          "title": "synthetic",
+          "content": "synthetic",
+          "recordId": null,
+          "expectedVersion": 0,
+          "action": "save"
+        }
+      },
+      "response": {
+        "data": {
+          "scope": "lab",
+          "kind": "rule",
+          "title": "synthetic",
+          "content": "synthetic",
+          "id": "synthetic",
+          "scopeId": "synthetic",
+          "sourceTaskId": null,
+          "authorId": "synthetic",
+          "authorName": "synthetic",
+          "status": "candidate",
+          "version": 1,
+          "updatedAt": "2026-09-21T08:00:00+08:00",
+          "allowedActions": []
+        }
+      }
+    },
     "libraryIndex": {
       "contractVersion": "0.44.0",
       "synthetic": true,

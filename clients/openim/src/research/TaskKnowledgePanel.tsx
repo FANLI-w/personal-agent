@@ -7,7 +7,7 @@ import type {
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchRead } from "./useResearchRead";
 
-const scopeLabel = { lab: "课题组", project: "项目" };
+const scopeLabel = { lab: "课题组", project: "项目", personal: "个人" };
 
 /**
  * Rules are already enforced by the executor; this panel only answers "what did

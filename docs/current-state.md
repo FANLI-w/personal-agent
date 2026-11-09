@@ -2,6 +2,17 @@
 
 更新日期：2026-11-09（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 2026-11-09 规则与记忆框架：本地分支，未部署
+
+分支 `feat/constitution-framework`，基线 `da6e0ef`（0.10.98）。契约 **0.44.0**、迁移 **033**，**生产仍是 0.43.0 / schema 032**，本分支既未推送也未部署。
+
+- 新包 `packages/constitution`：三层归属（`system`/`lab`/`personal`）、内容类（`rule`/`link`/`skill`/`memory`/`object`/`source`）、五个动作、九个主体的判定与装配骨架。零依赖、零 I/O，未接线。
+- 规划链路（`execution-worker.ts`）与聊天链路（`chat-worker.ts`）已注入「平台规则 + 生效课题组规则」，开关 `CONSTITUTION_RULES=0` 可整批关掉。
+- 聊天按会话归属取规则：**群聊取群所属课题组（`conversation.labId`），私聊只带平台规则 + 本人个人规则**；个人规则不进群，别人的会话读不到。
+- 组内链路（`kind='link'`）与个人规则（`personalWorkRules`）各有独立流程：链路由承接人提交、来源任务的派发人或负责人批准；个人规则本人自批。
+- 规则预算在**写入侧**挡住（生效规则超过 12KB 直接拒），装配侧只在存量超限时降级为「只装配平台规则 + 记录省略原因」。
+- 未验证：真实模型行为、界面交互、聊天侧预算断言（`vitest` 在本地沙盒跑不了，只能靠 CI）。旧客户端（0.10.98）读到 `kind='link'` 记录会校验失败，上线需客户端同步升级。
+
 ## 2026-11-09 Windows 0.10.98 已公开发布
 
 北京时间2026/11/9 11:33:08，Windows **0.10.98** 已公开发布并设为Latest：[Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.98)。固定构建/tag为main **386f62a7fc3874d2e2c43bc678c5d37bc746a72d**，PR186/187及发布复查补修PR188已合并。EXE 421214965字节，SHA256 **79d0b8d3cb03b3a03cfce153879d3369a29006fc2bd71ef0905e0450a4cddc49**。

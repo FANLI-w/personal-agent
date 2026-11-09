@@ -5,7 +5,7 @@ import { personalWork } from './workspace.js'
 import { isLabManager } from './invite-management.js'
 import { fail } from './errors.js'
 import { hash } from './auth.js'
-import { activeRuleBytes, entryBytes } from './constitution-context.js'
+import { activePersonalRuleBytes, activeRuleBytes, entryBytes } from './constitution-context.js'
 import { ruleBudget } from '@research-agent-platform/constitution'
 
 /** 生效规则会整体进入规划上下文，预算在写入侧挡住，装配侧的抛错只作兜底。 */
@@ -19,6 +19,8 @@ export function runWorkContext(s:ChatService,name:Command,req:RequestFor<Command
  // Lab rules are edited without a task, so they have their own two commands.
  if(name==='labWorkRules'||name==='saveLabWorkRule')
   return runLabWorkRule(s,name,req as RequestFor<'labWorkRules'|'saveLabWorkRule'>)
+ if(name==='personalWorkRules'||name==='savePersonalWorkRule')
+  return runPersonalWorkRule(s,name,req as RequestFor<'personalWorkRules'|'savePersonalWorkRule'>)
  const {kind,id}=req.params, c=s.c, actor=c.actor.id
  let scopes:WorkContext['scopes']=[], privateMemoryAllowed=false
  if(kind==='research'){
@@ -135,4 +137,43 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
  const result={data:project(record)}
  s.db.prepare('INSERT INTO idempotency_results(actor_id,command,resource_id,key,request_hash,response_json,http_status,created_at) VALUES(?,?,?,?,?,?,?,?)').run(actor,name,resource,commandKey,digest,JSON.stringify(result),200,now)
  return result
+}
+
+/**
+ * 个人层规则：只属于本人，由本人自己批准，不经负责人。
+ * 与课题组规则同形、同预算，但存在独立表里，课题组查询读不到。
+ */
+function runPersonalWorkRule(s:ChatService,name:'personalWorkRules'|'savePersonalWorkRule',req:RequestFor<'personalWorkRules'|'savePersonalWorkRule'>){
+ const c=s.c, actor=c.actor.id
+ const project=(r:WorkRule):WorkRule=>({...r,allowedActions:r.status==='revoked'?[]:['revise','confirm','revoke']})
+ const get=(recordId:string)=>{
+  const row=s.db.prepare('SELECT document FROM personal_work_rules WHERE id=? AND member_id=?').get(recordId,actor)
+  if(!row)fail('NOT_FOUND')
+  return project(WorkRule.parse(JSON.parse(String(row.document))))
+ }
+ if(name==='personalWorkRules')
+  return {data:{platform:PLATFORM_WORK_RULE,canPublish:true,records:s.db.prepare('SELECT document FROM personal_work_rules WHERE member_id=? ORDER BY id').all(actor).map(row=>WorkRule.parse(JSON.parse(String(row.document)))).map(project)}}
+ const b=(req as RequestFor<'savePersonalWorkRule'>).body
+ const commandKey=req.headers['Idempotency-Key']!, digest=hash(JSON.stringify(b)), resource='personal'
+ const cached=s.db.prepare('SELECT request_hash,response_json FROM idempotency_results WHERE actor_id=? AND command=? AND resource_id=? AND key=?').get(actor,name,resource,commandKey)
+ if(cached){if(cached.request_hash!==digest)fail('IDEMPOTENCY_CONFLICT');const response=JSON.parse(String(cached.response_json));get(response.data.id);return response}
+ const old=b.recordId?get(b.recordId):null
+ if(old){
+  c.checkVersion(old.version,b.expectedVersion)
+  if(old.status==='revoked')fail('INVALID_STATE')
+ }else if(b.expectedVersion!==0||b.action!=='save')fail('VALIDATION_ERROR')
+ if(old&&old.version>=100)fail('RATE_LIMITED')
+ if(!old&&Number(s.db.prepare('SELECT count(*) n FROM personal_work_rules WHERE member_id=?').get(actor)!.n)>=40)fail('RATE_LIMITED')
+ const now=new Date().toISOString()
+ const value:WorkRule={...b,scope:'personal',id:old?.id??randomUUID(),scopeId:actor,sourceTaskId:null,
+  authorId:actor,authorName:c.member(actor).displayName,status:b.action==='revoke'?'revoked':'active',version:(old?.version??0)+1,updatedAt:now,allowedActions:[]}
+ if(old&&b.action!=='save'){value.title=old.title;value.content=old.content;value.kind=old.kind}
+ const {recordId:_recordId,expectedVersion:_version,action:_action,...clean}=value as WorkRule & typeof b
+ const record=WorkRule.parse(clean), document=JSON.stringify(record)
+ if(record.kind==='rule'&&record.status==='active'&&activePersonalRuleBytes(s.db,actor,record.id)+entryBytes('personal',record.title,record.version,record.content)>ruleBudget)fail('PAYLOAD_TOO_LARGE')
+ s.db.prepare('INSERT INTO personal_work_rules VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET document=excluded.document').run(record.id,actor,document)
+ s.db.prepare('INSERT INTO personal_work_rule_revisions VALUES(?,?,?)').run(record.id,record.version,document)
+ const personalResult={data:project(record)}
+ s.db.prepare('INSERT INTO idempotency_results(actor_id,command,resource_id,key,request_hash,response_json,http_status,created_at) VALUES(?,?,?,?,?,?,?,?)').run(actor,name,resource,commandKey,digest,JSON.stringify(personalResult),200,now)
+ return personalResult
 }

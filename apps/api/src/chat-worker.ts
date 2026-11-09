@@ -61,7 +61,7 @@ export class ChatWorker {
       if (!row) return null
       const s = service(this.db, String(row.owner_id), this.config,String(row.id)), { turn, input, group } = s.checkTurnInput(String(row.id))
       // 规则按会话归属取：群聊用群所属课题组，私聊与个人会话只有平台规则。开关关闭即恢复旧行为。
-      const conversationRules=this.config.constitutionRules?conversationRulesContext(this.db,{id:group.id,kind:group.kind,labId:group.labId}):null
+      const conversationRules=this.config.constitutionRules?conversationRulesContext(this.db,{id:group.id,kind:group.kind,labId:group.labId},s.c.actor.id):null
       const rulesSuffix=conversationRules?.text?`\n${conversationRules.text}`:''
       if(conversationRules?.text)console.log(`CHAT_RULES conversation=${group.id} kind=${group.kind} scope=${conversationRules.ruleScope} bytes=${conversationRules.bytes} rules=${conversationRules.ruleIds.join(',')} omitted=${conversationRules.omitted.length}`)
       let system:string,prompt:string

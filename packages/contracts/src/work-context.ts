@@ -3,7 +3,7 @@ import { Id, Version, Instant, ErrorResponse, errorStatus, data } from './models
 
 export const WorkTarget = z.strictObject({ kind: z.enum(['research','personal']), id: Id })
 export const WorkRuleInput = z.strictObject({
-  scope: z.enum(['lab','project']), kind: z.enum(['rule','link','memory']),
+  scope: z.enum(['lab','project','personal']), kind: z.enum(['rule','link','memory']),
   title: z.string().trim().min(1).max(80), content: z.string().trim().min(1).max(2000),
 })
 export const WorkRule = WorkRuleInput.extend({
@@ -34,4 +34,6 @@ export const workContextRoutes={
  workRuleHistory:route('GET','/work-context/{kind}/{id}/records/{recordId}',WorkTarget.extend({recordId:Id}),z.null(),data(z.array(WorkRule).max(100))),
  labWorkRules:route('GET','/lab/work-rules',empty,z.null(),data(LabWorkRules)),
  saveLabWorkRule:route('POST','/lab/work-rules',empty,WorkRuleInput.extend({scope:z.literal('lab'),kind:z.enum(['rule','link']),sourceTaskId:Id.nullable().optional(),recordId:Id.nullable(),expectedVersion:z.number().int().nonnegative(),action:z.enum(['save','confirm','revoke'])}),data(WorkRule)),
+ personalWorkRules:route('GET','/personal/work-rules',empty,z.null(),data(LabWorkRules)),
+ savePersonalWorkRule:route('POST','/personal/work-rules',empty,WorkRuleInput.omit({scope:true}).extend({kind:z.enum(['rule','link']),recordId:Id.nullable(),expectedVersion:z.number().int().nonnegative(),action:z.enum(['save','confirm','revoke'])}),data(WorkRule)),
 } as const

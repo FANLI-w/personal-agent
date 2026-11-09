@@ -43,7 +43,7 @@ export function constitutionEntries(db: DatabaseSync, labId: string): Entry[] {
 }
 
 /** 与装配侧同口径的字节估算：按条目 JSON 计算，而不是只算正文。 */
-export function entryBytes(layer: 'system' | 'lab', title: string, version: string | number, content: string): number {
+export function entryBytes(layer: 'system' | 'lab' | 'personal', title: string, version: string | number, content: string): number {
   return Buffer.byteLength(JSON.stringify({ id: 'measure', version, layer, kind: 'rule', title, content }), 'utf8')
 }
 
@@ -98,16 +98,41 @@ export function platformRulesContext(): RulesContext {
   return render(composed.included, composed.omitted)
 }
 
+/** 个人层规则：只属于本人，未确认的候选不进上下文。 */
+export function personalRuleEntries(db: DatabaseSync, memberId: string): Entry[] {
+  const rows = db.prepare('SELECT document FROM personal_work_rules WHERE member_id=? ORDER BY id').all(memberId)
+  const entries: Entry[] = []
+  for (const row of rows) {
+    const rule = WorkRule.parse(JSON.parse(String(row.document)))
+    if (rule.kind !== 'rule' || rule.status !== 'active') continue
+    entries.push({ id: rule.id, version: rule.version, layer: 'personal', kind: 'rule', title: rule.title, content: rule.content })
+  }
+  return entries
+}
+
+/** 个人规则占用的字节总量，含平台规则。写入侧用它把预算挡在保存之前。 */
+export function activePersonalRuleBytes(db: DatabaseSync, memberId: string, excludeId?: string): number {
+  let total = entryBytes('system', '平台规则', PLATFORM_WORK_RULE.version, PLATFORM_WORK_RULE.content)
+  for (const entry of personalRuleEntries(db, memberId)) {
+    if (entry.id === excludeId) continue
+    total += entryBytes('personal', entry.title, entry.version, entry.content)
+  }
+  return total
+}
+
 export type ConversationScope = { readonly id: string; readonly kind: 'personal' | 'direct' | 'group'; readonly labId: string }
 
 /**
- * 会话的规则作用域：群聊取群所属课题组（`conversation.labId`，创建时固定），
- * 私聊与个人会话只带平台规则。个人规则不进群。
+ * 会话的规则作用域：群聊取群所属课题组（`conversation.labId`，创建时固定）；
+ * 私聊与个人会话带平台规则，会话主人再叠加自己的个人规则。个人规则不进群。
  */
 export function conversationRulesContext(
   db: DatabaseSync,
   conversation: ConversationScope,
+  memberId?: string,
 ): RulesContext & { readonly ruleScope: 'lab' | 'platform' } {
-  if (conversation.kind !== 'group') return { ...platformRulesContext(), ruleScope: 'platform' }
-  return { ...planningRulesContext(db, conversation.labId), ruleScope: 'lab' }
+  if (conversation.kind === 'group') return { ...planningRulesContext(db, conversation.labId), ruleScope: 'lab' }
+  const entries = [platformEntry(), ...(memberId ? personalRuleEntries(db, memberId) : [])]
+  const composed = compose(entries)
+  return { ...render(composed.included, composed.omitted), ruleScope: 'platform' }
 }

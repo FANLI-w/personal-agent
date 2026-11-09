@@ -54,7 +54,48 @@ function insertRule(db: Database, labId: string, id: string, title: string, cont
   )
 }
 
+function insertPersonal(db: Database, memberId: string, id: string, title: string, content: string) {
+  db.prepare('INSERT INTO personal_work_rules VALUES (?,?,?)').run(
+    id,
+    memberId,
+    JSON.stringify({
+      scope: 'personal',
+      kind: 'rule',
+      title,
+      content,
+      id,
+      scopeId: memberId,
+      sourceTaskId: null,
+      authorId: memberId,
+      authorName: 'Synthetic author',
+      status: 'active',
+      version: 1,
+      updatedAt: '2026-11-06T00:00:00Z',
+      allowedActions: [],
+    }),
+  )
+}
+
 describe('会话的规则作用域', () => {
+  it('个人规则只进入本人的私聊，不进群聊也不给别人', () => {
+    const { db, labId } = setup()
+    insertPersonal(db, 'member_A', 'p1', '先给结论', '回答先给结论再给证据。')
+    const own = conversationRulesContext(db, { id: 'conversation_direct', kind: 'direct', labId }, 'member_A')
+    expect(own.ruleIds).toContain('p1')
+    expect(own.text).toContain('先给结论')
+    const group = conversationRulesContext(db, { id: 'conversation_group', kind: 'group', labId }, 'member_A')
+    expect(group.ruleIds).not.toContain('p1')
+    const other = conversationRulesContext(db, { id: 'conversation_direct', kind: 'direct', labId }, 'member_B')
+    expect(other.ruleIds).not.toContain('p1')
+  })
+
+  it('个人规则不进入课题组规则装配', () => {
+    const { db, labId } = setup()
+    insertPersonal(db, 'member_A', 'p1', '先给结论', '回答先给结论再给证据。')
+    const group = conversationRulesContext(db, { id: 'conversation_group', kind: 'group', labId }, 'member_A')
+    expect(group.text).not.toContain('先给结论')
+  })
+
   it('群聊取群所属课题组的规则', () => {
     const { db, labId } = setup()
     insertRule(db, labId, 'rule_group', '交付须附证据', '提交成果时附数据来源与复现命令。')
