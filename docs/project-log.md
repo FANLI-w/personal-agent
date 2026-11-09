@@ -2890,3 +2890,9 @@ PR182已普通合main为f34b027，GitHub将原同事PR176标记MERGED，原a528c
 备份/srv/research-openim-backups/planner-skeleton-20261106-20261106T033451Z/research.tar.gz，SHA256 5792d9f8e2267f178fec1093fff310c4745a8b187f5fb77e23a9f2894c536a64；其他六容器前后摘要83bddb0a518402f5fbf7ef1d023e0bd8d75493ba30387ffbd4af5332bde50922。source/build/preflight/isolated-tests/deploy/post-check退出0，切换11:34:44—11:35:11，未回退。浏览器URL识别的两轮只读阻断、依赖下载警告和上传前运维探针原句更正均留证，无生产失败。
 
 仅部署已审PR176与范围修正PR183：标题骨架在模型解析之前的必填冲突按明确待定/阻塞条件修复，原提示词/Skill/界面/特殊字段写回与同事原设计一致，第一/第三项补修没有重新带回。未清除或回填账号/消息/资料，未操作负责人客户端或使用私人模型密钥。0.10.97保持手动安装预发布、0.10.96仍Latest；有0.43新计划字段的使用者须升级配套客户端，新字段写入后采用兼容前滚，不能直接回0.42。 新增[部署回执](deployment/planner-skeleton-20261106.md)，Git外planner-skeleton-deploy-20261106，脱敏回执SHA256 40df8437c4f5e0d783263ca01091911ba693e58c3b6880c013f828c25fa0a59b；未重跑已通过的产品根CI或重新打包，仅更新部署文档和Release状态说明，原四资产摘要保持。
+
+## 2026-11-09 聊天输入框附件流程调整
+
+按负责人截图，从最新main/289eb3a的干净独立副本新建fix/chat-composer-staged-attachments。确认原文件按钮立即发送且固定file类型，图片入口才暂存，导致选PNG发成文件卡片。现在统一选择/拖放/File粘贴暂存，图片补齐MIME走原图片链，文件卡片可移除并配文，明确发送才入队；工具栏去掉第二个扩展入口与录音入口，@输入保留。文件队列缓存SDK ID、sent/processed回执，失败可重试，切会话停止，刷新保存元数据而不保存File原件；未扩大后台或Agent资料权限。
+
+typecheck、build:web与38项客户端定向检查通过；合成Edge实际组件在1280×900、1024×768验证混选暂存、删除、点击发送、图片102/文件105、回执失败同ID重试、第二批发送及会话隔离。页面异常/相关控制台error为0，旧Router/AntD提示保留。首次脚本GBK解码/相对路径、旧UI夹具缺API导出及未模拟文件选择授权的失败均已修正并在说明留证。证据Git外composer-attachments-20261109和两份composer-build-web日志；详见development/chat-composer-attachments.md。没有共享代码/契约变更，未重跑根CI，没有合并、打包、发布、部署或真实账号验收。

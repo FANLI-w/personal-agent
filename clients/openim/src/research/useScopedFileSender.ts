@@ -41,6 +41,16 @@ export function useScopedFileSender({
     kind: SelectedFileKind = "auto",
     selectionIsCurrent: () => boolean = () => true,
     agentFileText?: string,
+    receipt?: {
+      message?: MessageItem;
+      sent?: boolean;
+      processed?: boolean;
+      save: (patch: {
+        message?: MessageItem;
+        sent?: boolean;
+        processed?: boolean;
+      }) => void;
+    },
   ) => {
     const conversation = useConversationStore.getState().currentConversation;
     if (!conversation || !selectionIsCurrent()) return false;
@@ -66,19 +76,26 @@ export function useScopedFileSender({
     const image =
       kind === "image" || (kind === "auto" && file.type.startsWith("image/"));
     try {
-      const message = await (image ? getImageMessage(file) : getFileMessage(file));
+      const message =
+        receipt?.message ||
+        (await (image ? getImageMessage(file) : getFileMessage(file)));
+      receipt?.save({ message });
       if (!isCurrent()) return false;
       if (peer?.agentRuntime)
         feedbackToast({
           msg: "文件已发送；本站外部接入只转发逐条授权的文字，不会读取或转发本站的图片、语音或附件。",
         });
-      await sendMessage({
-        message,
-        recvID: conversation.userID,
-        groupID: conversation.groupID,
-        isCurrent,
-      });
+      if (!receipt?.sent) {
+        await sendMessage({
+          message,
+          recvID: conversation.userID,
+          groupID: conversation.groupID,
+          isCurrent,
+        });
+        receipt?.save({ sent: true });
+      }
       if (!isCurrent()) return false;
+      if (receipt?.processed) return true;
       const context = {
         file,
         conversation,
@@ -90,6 +107,7 @@ export function useScopedFileSender({
       };
       if (image) await onImageSent?.(context);
       else await onFileSent(context);
+      receipt?.save({ processed: true });
       return true;
     } catch (error) {
       if (isCurrent()) feedbackToast({ error, msg: "文件发送失败，请检查连接后重试" });

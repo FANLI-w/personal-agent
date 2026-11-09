@@ -92,3 +92,19 @@ test('an image-only send also survives refresh as paused instead of invalidating
   assert.equal(restored.images.length,1);
   assert.equal(restored.state,'paused');
 });
+
+test('file attachments persist receipts without bytes and restore file-only sends as paused',()=>{
+  const files=[{id:'file_1',name:'synthetic.pdf',size:3,mediaType:'application/pdf',sent:false}];
+  const {outbox,values}=restoreFixture({...submission,text:'',html:'',request:undefined,files});
+  const item=outbox.useChatOutbox.getState().items[0];
+  assert.equal(item.state,'paused');assert.equal(item.files[0].name,'synthetic.pdf');
+  outbox.updateSubmission(item.id,{files:[{...files[0],file:new File(['PRIVATE_FILE_BYTES'],'synthetic.pdf'),message:{clientMsgID:'stable_file_sdk_id',contentType:105},sent:true,processed:true}]});
+  const raw=values.get(storageKey),saved=JSON.parse(raw).items[0];
+  assert.equal(saved.files[0].file,undefined);assert(!raw.includes('PRIVATE_FILE_BYTES'));
+  assert.equal(saved.files[0].message.clientMsgID,'stable_file_sdk_id');assert.equal(saved.files[0].processed,true);
+});
+
+test('malformed file metadata cannot restore an image or arbitrary payload as a file receipt',()=>{
+  const {outbox}=restoreFixture({...submission,files:[{id:'file_1',name:'bad.pdf',size:3,mediaType:'application/pdf',message:{clientMsgID:'invalid_type',contentType:102}}]});
+  assert.equal(outbox.useChatOutbox.getState().items.length,0);
+});

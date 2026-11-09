@@ -1,46 +1,9 @@
-import {
-  AppstoreOutlined,
-  AudioOutlined,
-  CloseOutlined,
-  FolderOpenOutlined,
-  PictureOutlined,
-  PlusOutlined,
-  SmileOutlined,
-} from "@ant-design/icons";
-import { MessageItem } from "@openim/wasm-client-sdk";
-import { Button, Popover } from "antd";
-import clsx from "clsx";
-import { t } from "i18next";
-import { memo, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-
-import image from "@/assets/images/chatFooter/image.png";
-import fileIcon from "@/assets/images/chatFooter/file.png";
-import rtc from "@/assets/images/chatFooter/rtc.png";
-import { researchMode } from "@/research/api";
-import { useConversationStore } from "@/store";
-import { feedbackToast } from "@/utils/common";
-import {
-  useAgentChatOperation,
-  type AgentChatOperation,
-} from "@/research/useAgentChatOperation";
-import { useResearchStore } from "@/research/store";
-import type { SelectedFileKind } from "@/research/useScopedFileSender";
-import LocalFolderAction from "@/research/LocalFolderAction";
-import type { GroupMentionContact } from "@/research/group-mentions";
-import { MentionList } from "@/research/MentionList";
-
-import { SendMessageParams } from "../useSendMessage";
-import CallPopContent from "./CallPopContent";
-import VoiceRecorder from "./VoiceRecorder";
+import { FolderOpenOutlined, SmileOutlined } from "@ant-design/icons";
+import { Popover } from "antd";
+import { memo, useEffect, useRef } from "react";
+import { useAgentChatOperation } from "@/research/useAgentChatOperation";
+import type { AgentChatOperation } from "@/research/useAgentChatOperation";
 import ScreenshotAction from "./ScreenshotAction";
-
-const mediaActions = [
-  { key: "image", title: "图片", icon: image, accept: "image/*" },
-  { key: "file", title: "文件", icon: fileIcon, accept: "*" },
-] as const;
-const actionClass =
-  "flex h-20 w-full flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 hover:border-blue-300 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500";
-const toolbarClass = "chat-tool-button";
 const emojis = [
   "🙂",
   "😊",
@@ -59,393 +22,85 @@ const emojis = [
   "🔬",
   "🌱",
 ];
-
 const SendActionBar = ({
-  sendMessage,
-  sendFile,
-  getSoundMessage,
   insertEmoji,
-  insertMention,
-  mentionContacts,
+  stageFiles,
   stageImages,
   pasteImages,
-  moreActions,
 }: {
-  sendMessage: (params: SendMessageParams) => Promise<void>;
-  sendFile: (
-    file: File,
-    kind: SelectedFileKind,
-    isCurrent?: () => boolean,
-    agentFileText?: string,
-  ) => Promise<boolean>;
-  getSoundMessage: (file: File, duration: number) => Promise<MessageItem>;
   insertEmoji: (emoji: string) => void;
-  insertMention: (contact: GroupMentionContact) => void;
-  mentionContacts: GroupMentionContact[];
-  stageImages?: (files: File[]) => void;
-  pasteImages?: () => void;
-  moreActions?: ReactNode;
+  stageFiles: (files: File[]) => void;
+  stageImages: (files: File[]) => void;
+  pasteImages: () => void;
 }) => {
-  const [expanded, setExpanded] = useState(false);
-  const [extensionsOpen, setExtensionsOpen] = useState(false);
-  const [voiceVisible, setVoiceVisible] = useState(false);
-  const [mentionOpen, setMentionOpen] = useState(false);
-  const [emojiMode, setEmojiMode] = useState<"desktop" | "mobile">();
-  const panelId = useId();
-  const mediaEpoch = useRef(0);
-  const fileIntent = useRef<{
-    conversationID: string;
-    epoch: number;
-    operation: AgentChatOperation;
-  }>();
-  const mentionIntent = useRef<AgentChatOperation>();
-  const captureOperation = useAgentChatOperation();
-  const fileInputs = useRef<Partial<Record<"image" | "file", HTMLInputElement>>>({});
-  const conversationID = useConversationStore(
-    (s) => s.currentConversation?.conversationID,
-  );
-  const actorGeneration = useResearchStore((s) => s.generation);
-  const isGroupSession = useConversationStore((s) =>
-    Boolean(s.currentConversation?.groupID),
-  );
-
-  useLayoutEffect(() => {
-    mediaEpoch.current++;
-    setExpanded(false);
-    setExtensionsOpen(false);
-    setVoiceVisible(false);
-    setEmojiMode(undefined);
-    setMentionOpen(false);
-    mentionIntent.current?.dispose();
-    mentionIntent.current = undefined;
-    fileIntent.current?.operation.dispose();
-    fileIntent.current = undefined;
-    return () => {
-      mediaEpoch.current++;
-      fileIntent.current?.operation.dispose();
-      mentionIntent.current?.dispose();
-    };
-  }, [conversationID, actorGeneration]);
-
-  const chooseFile = (kind: "image" | "file") => {
-    const current = useConversationStore.getState().currentConversation;
-    fileIntent.current?.operation.dispose();
-    fileIntent.current = current
-      ? {
-          conversationID: current.conversationID,
-          epoch: mediaEpoch.current,
-          operation: captureOperation(),
-        }
-      : undefined;
-    setExpanded(false);
-    setExtensionsOpen(false);
-    setEmojiMode(undefined);
-    fileInputs.current[kind]?.click();
-  };
-  const emojiContent = (
-    <div className="grid grid-cols-4 gap-1" role="group" aria-label="选择表情">
-      {emojis.map((emoji) => (
-        <button
-          key={emoji}
-          type="button"
-          className="h-9 w-10 rounded text-xl hover:bg-slate-100 focus-visible:outline focus-visible:outline-blue-500"
-          aria-label={`插入表情 ${emoji}`}
-          onClick={() => {
-            const operation = captureOperation();
-            if (operation.isCurrent()) insertEmoji(emoji);
-            operation.dispose();
-            setEmojiMode(undefined);
-            setExpanded(false);
-          }}
-        >
-          {emoji}
-        </button>
-      ))}
-    </div>
-  );
-
-  const fileHandle = (files: File[], kind: "image" | "file") => {
-    const conversation = useConversationStore.getState().currentConversation;
-    const intent = fileIntent.current;
-    if (
-      !conversation ||
-      !intent ||
-      !intent.operation.isCurrent() ||
-      intent.conversationID !== conversation.conversationID ||
-      intent.epoch !== mediaEpoch.current
-    ) {
-      const error = new Error("会话已切换，请在当前会话重新选择文件");
-      feedbackToast({ error, msg: error.message });
-      return;
-    }
-    void (async () => {
-      try {
-        if (kind === "image" && stageImages) {
-          stageImages(files);
-          return;
-        }
-        for (const file of files) {
-          if (!intent.operation.isCurrent()) break;
-          await sendFile(file, kind, intent.operation.isCurrent);
-        }
-      } finally {
-        intent.operation.dispose();
-      }
-    })();
-  };
-
+  const input = useRef<HTMLInputElement>(null);
+  const intent = useRef<AgentChatOperation>();
+  const capture = useAgentChatOperation();
+  useEffect(() => () => intent.current?.dispose(), []);
   return (
     <div className="px-3 pt-1">
-      <div
-        className="hidden items-center gap-1 min-[601px]:flex"
-        role="toolbar"
-        aria-label="聊天工具栏"
-      >
+      <div className="flex items-center gap-1" role="toolbar" aria-label="聊天工具栏">
         <Popover
-          content={emojiContent}
-          open={emojiMode === "desktop"}
-          placement="topLeft"
-          onOpenChange={(open) => setEmojiMode(open ? "desktop" : undefined)}
-          trigger="click"
-        >
-          <button type="button" className={toolbarClass} aria-label="表情" title="表情">
-            <SmileOutlined />
-            {window.electronAPI && <span>表情</span>}
-          </button>
-        </Popover>
-        <Popover
-          open={extensionsOpen}
-          destroyTooltipOnHide
-          onOpenChange={(open) => {
-            setExtensionsOpen(open);
-            if (!open) {
-              setMentionOpen(false);
-              mentionIntent.current?.dispose();
-              mentionIntent.current = undefined;
-            }
-          }}
           trigger="click"
           placement="topLeft"
-          arrow={false}
           content={
-            <div
-              className="chat-composer-extensions"
-              role="group"
-              aria-label="聊天扩展操作"
-            >
-              <button
-                type="button"
-                aria-label="添加图片"
-                onClick={() => chooseFile("image")}
-              >
-                <PictureOutlined />
-                <span>发送图片</span>
-              </button>
-              {isGroupSession && mentionContacts.length > 0 && (
-                <Popover
-                  content={
-                    <MentionList
-                      contacts={mentionContacts}
-                      onSelect={(name) => {
-                        const operation = mentionIntent.current;
-                        if (
-                          actorGeneration === useResearchStore.getState().generation &&
-                          conversationID ===
-                            useConversationStore.getState().currentConversation
-                              ?.conversationID &&
-                          operation?.isCurrent()
-                        )
-                          insertMention(name);
-                        operation?.dispose();
-                        mentionIntent.current = undefined;
-                        setMentionOpen(false);
-                        setExtensionsOpen(false);
-                      }}
-                    />
-                  }
-                  open={mentionOpen}
-                  onOpenChange={(open) => {
-                    mentionIntent.current?.dispose();
-                    mentionIntent.current = open ? captureOperation() : undefined;
-                    setMentionOpen(open);
-                  }}
-                  trigger="click"
-                  placement="top"
-                  arrow={false}
+            <div className="grid grid-cols-4 gap-1" aria-label="选择表情">
+              {emojis.map((emoji) => (
+                <button
+                  type="button"
+                  key={emoji}
+                  aria-label={`插入表情 ${emoji}`}
+                  onClick={() => insertEmoji(emoji)}
                 >
-                  <button
-                    type="button"
-                    aria-label="提及成员"
-                    title="也可以直接在输入框键入 @"
-                  >
-                    <span aria-hidden="true">@</span>
-                    <span>选择成员或助手</span>
-                  </button>
-                </Popover>
-              )}
-              <LocalFolderAction sendFile={sendFile} />
-              {moreActions}
-              {!researchMode && !isGroupSession && (
-                <Popover
-                  content={<CallPopContent closeAllPop={() => setExpanded(false)} />}
-                  trigger="click"
-                  arrow={false}
-                  placement="top"
-                >
-                  <button
-                    type="button"
-                    className={toolbarClass}
-                    aria-label={t("placeholder.call")}
-                  >
-                    <img src={rtc} width={20} alt="" />
-                  </button>
-                </Popover>
-              )}
+                  {emoji}
+                </button>
+              ))}
             </div>
           }
         >
           <button
             type="button"
-            className={toolbarClass}
-            aria-label="扩展功能"
-            title="扩展功能"
-            aria-expanded={extensionsOpen}
+            className="chat-tool-button"
+            aria-label="表情"
+            title="表情"
           >
-            <AppstoreOutlined />
+            <SmileOutlined />
           </button>
         </Popover>
         <button
           type="button"
-          className={toolbarClass}
-          aria-label="发送文件"
-          title="发送文件"
-          onClick={() => chooseFile("file")}
+          className="chat-tool-button"
+          aria-label="添加附件"
+          title="添加图片或文件"
+          onClick={() => {
+            intent.current?.dispose();
+            intent.current = capture();
+            input.current?.click();
+          }}
         >
           <FolderOpenOutlined />
         </button>
+        <input
+          ref={input}
+          type="file"
+          multiple
+          hidden
+          aria-label="选择聊天附件"
+          onChange={(event) => {
+            const files = Array.from(event.currentTarget.files || []);
+            event.currentTarget.value = "";
+            const operation = intent.current;
+            intent.current = undefined;
+            try {
+              if (operation?.isCurrent()) stageFiles(files);
+            } finally {
+              operation?.dispose();
+            }
+          }}
+        />
         <ScreenshotAction stageImages={stageImages} pasteImages={pasteImages} />
-        <button
-          type="button"
-          className={toolbarClass}
-          aria-label="打开语音面板"
-          title="语音消息"
-          onClick={() => {
-            setEmojiMode(undefined);
-            setExtensionsOpen(false);
-            setVoiceVisible(true);
-          }}
-        >
-          <AudioOutlined />
-        </button>
       </div>
-      <Button
-        type="text"
-        className="!flex !h-9 !w-9 !items-center !justify-center !rounded-full !border !border-slate-300 !text-xl min-[601px]:!hidden"
-        aria-label="更多聊天功能"
-        aria-expanded={expanded}
-        aria-controls={panelId}
-        icon={expanded ? <CloseOutlined /> : <PlusOutlined />}
-        onClick={() => setExpanded((value) => !value)}
-      />
-      <div
-        id={panelId}
-        role="group"
-        aria-label="聊天扩展功能"
-        className={clsx(
-          "my-2 max-w-[360px] grid-cols-4 gap-2 rounded-xl bg-slate-50 p-2 min-[601px]:!hidden",
-          expanded ? "grid" : "hidden",
-        )}
-      >
-        <Popover
-          content={emojiContent}
-          open={emojiMode === "mobile"}
-          placement="topLeft"
-          onOpenChange={(open) => setEmojiMode(open ? "mobile" : undefined)}
-          trigger="click"
-        >
-          <button type="button" aria-label="表情" className={actionClass}>
-            <SmileOutlined className="text-2xl" />
-            <span>表情</span>
-          </button>
-        </Popover>
-        {mediaActions.map((action) => (
-          <div key={action.key}>
-            <button
-              type="button"
-              aria-label={`发送${action.title}`}
-              className={actionClass}
-              onClick={() => chooseFile(action.key)}
-            >
-              <img src={action.icon} width={24} alt="" />
-              <span>{action.title}</span>
-            </button>
-            <input
-              ref={(element) => {
-                if (element) fileInputs.current[action.key] = element;
-                else delete fileInputs.current[action.key];
-              }}
-              type="file"
-              className="hidden"
-              accept={action.accept}
-              multiple
-              onChange={(event) => {
-                const files = Array.from(event.currentTarget.files ?? []);
-                event.currentTarget.value = "";
-                fileHandle(files, action.key);
-              }}
-            />
-          </div>
-        ))}
-        <button
-          type="button"
-          aria-label="打开语音面板"
-          className={actionClass}
-          onClick={() => {
-            setExpanded(false);
-            setVoiceVisible(true);
-          }}
-        >
-          <AudioOutlined className="text-2xl" />
-          <span>语音</span>
-        </button>
-        <LocalFolderAction sendFile={sendFile} menu />
-        {moreActions}
-        {!researchMode && !isGroupSession && (
-          <Popover
-            content={<CallPopContent closeAllPop={() => setExpanded(false)} />}
-            trigger="click"
-            arrow={false}
-            placement="top"
-          >
-            <button
-              type="button"
-              className={actionClass}
-              aria-label={t("placeholder.call")}
-            >
-              <img src={rtc} width={24} alt="" />
-              <span>{t("placeholder.call")}</span>
-            </button>
-          </Popover>
-        )}
-      </div>
-      {voiceVisible && (
-        <div
-          className="my-2 flex flex-wrap items-start justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2"
-          role="group"
-          aria-label="语音消息"
-        >
-          <VoiceRecorder getSoundMessage={getSoundMessage} sendMessage={sendMessage} />
-          <Button
-            type="text"
-            size="small"
-            icon={<CloseOutlined />}
-            aria-label="关闭语音面板"
-            onClick={() => setVoiceVisible(false)}
-          />
-        </div>
-      )}
     </div>
   );
 };
-
 export default memo(SendActionBar);
