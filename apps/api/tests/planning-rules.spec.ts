@@ -99,14 +99,15 @@ describe('规划链路的规则上下文', () => {
     expect(context.omitted.join()).toContain('超出上下文预算')
   })
 
-  it('开关默认开启，设为 0 后关闭', () => {
+  it('注入开关：开发与生产默认开启，测试环境默认关闭，可用环境变量强制', () => {
     const base = {
-      NODE_ENV: 'test',
       DATABASE_PATH: 'C:/synthetic/db.sqlite',
       BLOB_ROOT: 'C:/synthetic/blobs',
       APP_ORIGIN: 'http://127.0.0.1:4501',
     }
-    expect(readConfig({ ...base }).constitutionRules).toBe(true)
-    expect(readConfig({ ...base, CONSTITUTION_RULES: '0' }).constitutionRules).toBe(false)
+    expect(readConfig({ ...base, NODE_ENV: 'development' }).constitutionRules).toBe(true)
+    expect(readConfig({ ...base, NODE_ENV: 'test' }).constitutionRules).toBe(false)
+    expect(readConfig({ ...base, NODE_ENV: 'test', CONSTITUTION_RULES: '1' }).constitutionRules).toBe(true)
+    expect(readConfig({ ...base, NODE_ENV: 'development', CONSTITUTION_RULES: '0' }).constitutionRules).toBe(false)
   })
 })
