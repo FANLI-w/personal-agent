@@ -53,7 +53,9 @@ describe('权限判定', () => {
   })
 
   it('个人层以本人为批准人', () => {
-    expect(can(asset('personal', 'rule'), 'assistant', 'write')).toBe('request')
+    // 助理写个人规则还没有申请通道，所以 request 清空，助理写入按拒绝处理。
+    expect(can(asset('personal', 'rule'), 'assistant', 'write')).toBe('deny')
+    expect(can(asset('personal', 'rule'), 'assistant', 'inject')).toBe('allow')
     expect(can(asset('personal', 'rule'), 'owner', 'approve')).toBe('allow')
     expect(can(asset('personal', 'rule'), 'manager', 'inject')).toBe('deny')
     expect(approverOf(asset('personal', 'rule'))).toBe('owner')

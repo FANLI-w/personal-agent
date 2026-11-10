@@ -37,7 +37,7 @@ export const defaultGrants: readonly Grant[] = [
   { layer: 'lab', kind: 'memory', read: 'all', write: ['dispatcher', 'assignee'], request: ['assistant'], approve: ['manager'] },
   { layer: 'lab', kind: 'object', read: ['dispatcher', 'assignee', 'assistant'], write: ['dispatcher', 'assignee'], request: ['assignee', 'assistant'], approve: ['dispatcher'] },
   { layer: 'lab', kind: 'source', read: ['dispatcher', 'assignee'], write: ['dispatcher', 'assignee'], request: ['assistant'], approve: ['dispatcher'] },
-  { layer: 'personal', kind: 'rule', read: ['owner', 'assistant'], write: ['owner'], request: ['assistant'], approve: ['owner'] },
+  { layer: 'personal', kind: 'rule', read: ['owner', 'assistant'], write: ['owner'], request: [], approve: ['owner'] },
   { layer: 'personal', kind: 'memory', read: ['owner', 'assistant'], write: ['assistant'], request: [], approve: ['owner'] },
   { layer: 'personal', kind: 'object', read: ['owner', 'assistant'], write: ['owner', 'assistant'], request: [], approve: ['owner'] },
 ]
@@ -72,4 +72,25 @@ export function approverOf(target: Asset): Subject {
   if (target.layer === 'system') return 'maintainer'
   if (target.layer === 'lab') return 'manager'
   return 'owner'
+}
+
+const decisionRank: Readonly<Record<Decision, number>> = { deny: 0, request: 1, allow: 2 }
+
+/**
+ * 多身份取最宽的结果：`allow` > `request` > `deny`。
+ * 一个人在同一处可能有多个身份（负责人兼承接人、派发人兼审阅人），
+ * 取最宽的结果才不会让更窄的身份压住更宽的那个。空列表一律 `deny`。
+ */
+export function canAny(
+  target: Asset,
+  subjects: readonly Subject[],
+  action: Action,
+  grants: readonly Grant[] = defaultGrants,
+): Decision {
+  let best: Decision = 'deny'
+  for (const subject of subjects) {
+    const decision = can(target, subject, action, grants)
+    if (decisionRank[decision] > decisionRank[best]) best = decision
+  }
+  return best
 }

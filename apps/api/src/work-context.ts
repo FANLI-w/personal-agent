@@ -4,6 +4,7 @@ import type { ChatService } from './chat.js'
 import { personalWork } from './workspace.js'
 import { isLabManager } from './invite-management.js'
 import { fail } from './errors.js'
+import { assertAllowed } from './subjects.js'
 import { hash } from './auth.js'
 import { activePersonalRuleBytes, activeRuleBytes, entryBytes } from './constitution-context.js'
 import { ruleBudget } from '@research-agent-platform/constitution'
@@ -123,6 +124,11 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
  }else if(b.expectedVersion!==0||b.action!=='save')fail('VALIDATION_ERROR')
  if(old&&old.version>=100)fail('RATE_LIMITED')
  if(!old&&Number(s.db.prepare("SELECT count(*) n FROM work_context_records WHERE lab_id=? AND scope='lab' AND scope_id=?").get(c.labId,c.labId)!.n)>=40)fail('RATE_LIMITED')
+ // 批准类动作走统一入口：负责人，或该链路来源任务的派发人。
+ if(b.action==='confirm'){
+  const sourceTaskId=old?.sourceTaskId??null
+  assertAllowed('lab',b.kind,{member:true,manager:canPublish,initiator:sourceTaskId!==null&&dispatched.has(sourceTaskId)},'approve')
+ }
  // 只有提交人能绑定来源任务：链路必须以自己承接的任务为依据。
  if(b.kind==='link'&&!old&&!b.sourceTaskId)fail('VALIDATION_ERROR')
  if(old&&b.sourceTaskId&&b.sourceTaskId!==old.sourceTaskId)fail('VALIDATION_ERROR')
@@ -153,9 +159,11 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
 function runPersonalWorkRule(s:ChatService,name:'personalWorkRules'|'savePersonalWorkRule',req:RequestFor<'personalWorkRules'|'savePersonalWorkRule'>){
  const c=s.c, actor=c.actor.id
  const project=(r:WorkRule):WorkRule=>({...r,allowedActions:r.status==='revoked'?[]:['revise','confirm','revoke']})
+ // 私有资产的归属判定走统一入口：别人问到同一条规则时按不存在处理，不暴露存在性。
  const get=(recordId:string)=>{
-  const row=s.db.prepare('SELECT document FROM personal_work_rules WHERE id=? AND member_id=?').get(recordId,actor)
+  const row=s.db.prepare('SELECT member_id, document FROM personal_work_rules WHERE id=?').get(recordId)
   if(!row)fail('NOT_FOUND')
+  assertAllowed('personal','rule',{owner:String(row.member_id)===actor},'write')
   return project(WorkRule.parse(JSON.parse(String(row.document))))
  }
  if(name==='personalWorkRules')
