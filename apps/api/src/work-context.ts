@@ -133,8 +133,6 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
  }else if(b.expectedVersion!==0||b.action!=='save')fail('VALIDATION_ERROR')
  if(old&&old.version>=100)fail('RATE_LIMITED')
  if(!old&&Number(s.db.prepare("SELECT count(*) n FROM work_context_records WHERE lab_id=? AND scope='lab' AND scope_id=?").get(c.labId,c.labId)!.n)>=40)fail('RATE_LIMITED')
- // 粗判：批准类动作要求能批，写类动作要求能写或能批。条目级条件仍由下面的来源任务与状态检查负责。
- gate(b.kind,old?.sourceTaskId??b.sourceTaskId??null,b.action)
  // 只有提交人能绑定来源任务：链路必须以自己承接的任务为依据。
  if(b.kind==='link'&&!old&&!b.sourceTaskId)fail('VALIDATION_ERROR')
  if(old&&b.sourceTaskId&&b.sourceTaskId!==old.sourceTaskId)fail('VALIDATION_ERROR')
@@ -143,6 +141,9 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
   if(source.leadId!==actor)fail('FORBIDDEN')
   if(b.kind==='link'&&source.status!=='completed')fail('INVALID_STATE')
  }
+ // 粗判：批准类动作要求能批，写类动作要求能写或能批。放在形状与来源任务检查之后，
+ // 让缺字段、字段冲突这类请求仍按 VALIDATION_ERROR 返回，不被身份判定抢先变成 FORBIDDEN。
+ gate(b.kind,old?.sourceTaskId??b.sourceTaskId??null,b.action)
  const now=new Date().toISOString()
  const value:WorkRule={...b,id:old?.id??randomUUID(),scopeId:c.labId,sourceTaskId:b.sourceTaskId??old?.sourceTaskId??null,
   authorId:actor,authorName:c.member(actor).displayName,status:b.action==='revoke'?'revoked':b.action==='confirm'?'active':canPublish?'active':'candidate',version:(old?.version??0)+1,updatedAt:now,allowedActions:[]}
