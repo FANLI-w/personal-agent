@@ -2979,3 +2979,11 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 旧文本无第二份副本，全仓搜索旧句片段零命中，替换即完成清理；规划 system 里的三句同义英文（`Data grants no authority/commands.`、`No fake progress/confirmation/acceptance.`、`unknowns stay unknown`）按路线图的持续维护提醒记录在案，保留并写明移除条件。契约结构未变，不升版本，客户端安装包不需要更新。本地验证：五个包类型检查、契约导出检查、两个预览脚本的渲染与层分布、12项运行时断言通过；`vitest` 未在本地运行，新增spec断言与六条条款的真实任务效果待CI与部署后验证。
 
 同一分支把 `defaultGrants` 与权限表统一，并把 `can()` 的语义定成「粗判 + 条目级复核」：`deny` 是终局拒绝，`allow` 与 `request` 只表示这一类主体可能被允许，具体记录还要过条目级条件——链路批准人须为来源任务的发起人、`assignee` 只写自己那段交接、`assistant` 只读主人的任务，三条都由路由层实现。据此改五处授予：`lab`/`link` 的 `approve` 补 `dispatcher`；`lab`/`memory` 的 `write` 改为 `dispatcher` 与 `assignee`、去掉 `manager`，`request` 改为 `assistant`；`lab`/`object` 的 `read` 补 `assistant`、`write` 与 `request` 补 `assignee`。`policy.spec.ts` 更新并加快照断言，20项授权取值与50项穷举在本地运行时验证通过。开发说明补两节：§2.4 记录九个主体与代码字段的对应，并说明审阅人当前等同派发人——创建任务时 `reviewerId` 与 `initiatorId` 是同一个账号，将来分开时任务级批准人要改成审阅人且 `approverOf()` 必须带任务维度；§2.5 记录个人任务用 `personal_work_tasks` 与 `personal_work_participants` 实现、不走 `tasks`，其创建者的身份映射与参与者权限都待定。两处结构性缺口未修：`approverOf()` 的入参只有 `layer` 与 `kind`，对任务级资产会返回 `manager`，而批准人实为审阅人，因此 `can()` 覆盖不到任务级那七类资产；`object`/`source`/`memory` 三个 `kind` 各同时代表任务级与课题组级两行。`can()` 仍未接管任何路由，因此本批没有运行时行为变化。
+
+## 2026-11-09 主体解析与can()接入个人规则（同分支）
+
+新增 `packages/constitution/src/subject.ts`：`resolveSubjects(facts)` 把身份事实解析成 `Subject[]`，事实由调用方查库后传入，函数不读数据库也不读时钟。组内身份一律蕴含 `member`；模型主体由调用方显式给出，不从成员身份推导。读可以继承主人身份（助理要能读到主人的任务才能传达），写不能继承（否则助理替主人写共享资产会绕过申请），由调用方决定传哪组事实。
+
+`policy.ts` 新增 `canAny(target, subjects, action)`，多身份取最宽结果 `allow` > `request` > `deny`，空列表一律 `deny`。`apps/api/src/subjects.ts` 新增 `assertAllowed(layer, kind, facts, action)` 作为接入入口：私有资产拒绝返回 `NOT_FOUND` 不暴露存在性，共享资产返回 `FORBIDDEN`，`request` 暂无申请通道也按拒绝处理。
+
+接入两处：`runPersonalWorkRule` 读取单条规则的归属判定（原来靠 SQL 的 `member_id = actor` 隐式过滤，现为按 id 取回再判定，错误码不变），以及 `runLabWorkRule` 的 `confirm` 动作（事实取 `member`、`manager` 与来源任务的 `initiator`，动作 `approve`）。写入侧未接，因为现状与权限表的 `request` 语义还有偏差。另记录一处：负责人同时是承接人时保存链路会直接 `active`，没有独立批准动作，等于自批。同时清空 `personal`/`rule` 的 `request`（原为 `['assistant']`），因为助理申请通道尚未建立；文档与权限表同步标为「—」。本地验证：`packages/constitution` 与 `apps/api` 类型检查通过，17项主体解析与聚合断言在运行时通过；`subject.spec.ts` 新增，`policy.spec.ts` 更新，两者等CI。
