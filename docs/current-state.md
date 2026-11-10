@@ -12,6 +12,8 @@
 
 **未验证**：`vitest` 未在本地运行，新增的两个 spec 断言等 CI；六条条款在真实任务里的遵守率与是否打断流程尚未观察。本地分支未提交也未部署，线上仍是旧文本；部署后才显示六条，客户端安装包不需要更新。
 
+同一分支上还把授予表与权限表统一了：`can()` 的语义定为「粗判 + 条目级复核」，`deny` 是终局拒绝，`allow` 与 `request` 只说明这一类主体可能被允许，具体记录由路由层收窄。同步改了六处默认授予（`lab`/`link` 的 `approve` 补 `dispatcher`；`lab`/`memory` 的 `write` 改为 `dispatcher` 与 `assignee`、`request` 改为 `assistant`；`lab`/`object` 的 `read` 补 `assistant`、`write` 与 `request` 补 `assignee`；`personal`/`object` 的 `write` 补 `owner`），`policy.spec.ts` 相应更新并加了快照断言。开发说明补了两节：§2.4 是九个主体与代码字段的对应，记录审阅人当前等同派发人（创建任务时 `reviewerId` 与 `initiatorId` 同一个账号）；§2.5 记录个人任务属于个人资产、创建者映射为 `owner`，并说明参与者权限仍待「参与人」主体回补——个人任务一旦有参与者就不再只属于本人，而 `layer` 没有表达「个人层内共享」的位置。两个结构性缺口未修：`approverOf()` 的入参只有 `layer` 与 `kind`，对任务级资产会返回 `manager`，而批准人实为审阅人，所以 `can()` 覆盖不到任务级那七类资产；`object`/`source`/`memory` 三个 `kind` 各代表任务级与课题组级两行。
+
 ## 2026-11-09 后台0.45 / 034已独立部署
 
 2026-11-09 **18:43:55 北京时间**，负责人单独授权后，API/worker 成对升级到 **contract0.45.0 / schema034**，固定源码 **cc04d955dd03d3cf3a79ee1458f5b7d0e8088877**（与 Windows0.10.99/tag 一致）。恢复副本与正式库各执行两次迁移，**032→034、113→116表**，第二次未改变记录；完整性、外键、全部旧行及原件/配置保全通过。
