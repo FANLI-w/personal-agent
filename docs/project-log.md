@@ -2987,3 +2987,9 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 `policy.ts` 新增 `canAny(target, subjects, action)`，多身份取最宽结果 `allow` > `request` > `deny`，空列表一律 `deny`。`apps/api/src/subjects.ts` 新增 `assertAllowed(layer, kind, facts, action)` 作为接入入口：私有资产拒绝返回 `NOT_FOUND` 不暴露存在性，共享资产返回 `FORBIDDEN`，`request` 暂无申请通道也按拒绝处理。
 
 接入两处：`runPersonalWorkRule` 读取单条规则的归属判定（原来靠 SQL 的 `member_id = actor` 隐式过滤，现为按 id 取回再判定，错误码不变），以及 `runLabWorkRule` 的四个动作（写类要求「能写」或「能批」之一，批准类只要求「能批」；`request` 不拒绝，落点是记录进入 `candidate`）。据此确认两条口径：`candidate` 承担「申请」的落地形态，不另建申请实体；自批允许且一步生效，因为有些子任务由派遣人本人承接，他掌握整个流程，也该是批准人，硬加第二人会与项目实际不符。同时把候选作者的 `revise`/`revoke` 例外限制为「作者当前仍能写」，任务转交或拒绝后原承接人失去该例外，候选由批准人改撤。身份变更不需要转移权限：派发人的 `initiator_id` 与 `reviewer_id` 从未改变，拒绝与退出时只撤被邀请人的访问并清空 `leadId`。个人规则的 `request` 清空（原为 `['assistant']`），因为助理申请通道尚未建立；文档与权限表同步标为「—」。本地验证：`packages/constitution` 与 `apps/api` 类型检查通过，17项主体解析与聚合断言在运行时通过；`subject.spec.ts` 新增，`policy.spec.ts` 更新，两者等CI。
+
+## 2026-11-09 记忆预算统一（同分支）
+
+把事实段的字节预算提成 `packages/constitution` 的 `memoryBudget = 3_500`，`compose()` 的事实段与 `personalMemoryContext()` 共用同一个常量。原来两处各写一套：`compose()` 标 32 KB，实际生效的是 `personalMemoryContext()` 里的 3500 字节，而 `compose()` 的事实段从来没有生产者（全仓只有 `constitution-context.ts` 调用 `compose()`，且只传 `rule` 条目）。条数上限单独命名为 `memoryRecordLimit = 12`。事实段预算因此从 32 KB 改为 3.5 KB——把纸面数字改成实际值。
+
+记忆本身没有搬进 `compose()`：个人助理的记忆进的是 prompt JSON（`chat-worker.ts` 的 `serialize()` 里 `personalMemories` 字段），搬动要同时改 prompt 组装、`personalMemoryFingerprint` 失效判定与按 token 重试的 `shown`/`layers` 循环，三处都有精确到 token 的断言，本地跑不了 vitest，风险集中在这里。等记忆模块落地时一起搬。本地验证：两个包类型检查、6项预算与装配断言通过。

@@ -201,10 +201,13 @@ S7 目前是唯一的规范条目，转描述的前提是冲突检测接入装�
 |---|---|---|---|
 | 约束 | `rule` | 12 KB | 是，超限失败 |
 | 工作对象 | `object` | 20 KB | 是 |
-| 事实 | `memory` | 32 KB | 否，超限记 `omitted` |
+| 事实 | `memory` | 3.5 KB | 否，超限记 `omitted` |
 | 方法 | `link`、`skill` | 32 KB | 否 |
 | 参考 | `source` | 36 KB | 否 |
 
+- **事实段预算的来历**：3.5 KB 不是新定的数，它原本写死在 `personalMemoryContext()` 里（`personal-memories.ts`）。2026-11-09 把它提成 `packages/constitution` 的 `memoryBudget`，装配与注入共用同一个常量，避免两处各管各的。课题组记忆目前没有生产者，接入时要按实际体量重新定，不要直接放大这个值。
+- **记忆为什么还没走 `compose()`**：个人助理的记忆不是进 system，而是进 prompt JSON（`chat-worker.ts` 的 `serialize()` 里那个 `personalMemories` 字段）。搬进 `compose()` 要动三段逻辑：prompt 的组装位置、`personalMemoryFingerprint` 的失效判定、以及按 token 反复重试的 `shown` 与 `layers` 循环。这三处都有精确到 token 的断言，改动风险集中在这里，所以先只统一预算常量，等记忆模块落地时一起搬。
+- **条数与字节分开管**：单次注入最多 12 条（`memoryRecordLimit`），与字节预算互为补充；条数上限防止大量短条目淹没上下文。
 - **写入侧拦截**：保存生效规则时校验总量，超过 12 KB 直接拒绝。规则是必进段，写进去就一定会挤占上下文。
 - **装配侧兜底**：生效约束超限会明确失败，不省略全部团队约束后继续调用模型；聊天将该轮保存为失败，队列可继续处理其他请求。
 - **开关**：`CONSTITUTION_RULES=0` 关闭服务端聊天和规划的新增规则注入，行为回到接入前；`=1` 强制开启。开发与生产默认开启，**测试环境默认关闭**——注入会改动既有用例里精确到 token 的预算断言，测试要覆盖注入路径时显式传 `CONSTITUTION_RULES=1`。
