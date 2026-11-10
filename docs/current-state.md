@@ -2,6 +2,16 @@
 
 更新日期：2026-11-09（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 2026-11-09 system 层条款改写为六条（本地分支，未部署）
+
+**目标效果**：system 层从一段散文改成六句可逐条核对、可逐条验收的条款，并把「条目分描述与规范、先补机制再改写成描述」定为后续写作规则。
+
+改动落在分支 `feat/constitution-iron-laws`，从 `7294bf0` 开出：`PLATFORM_WORK_RULE` 换成六条、`version` 由 `'1'` 到 `'2'`；`RulesContext` 增加 `rules`（id / layer / kind / title / version）与 `layerCounts()`；`PLANNING_RULES` 与 `CHAT_RULES` 回执增加 `layers=system:x/lab:y/personal:z`；两个只读预览脚本打印层分布与逐条定位信息。原第四条「不确定的内容保持未知」经核对后不进 system 层，理由与逐条机制见[规则与记忆框架](development/constitution-framework.md)。
+
+**已验证**：`packages/contracts`、`packages/constitution`、`apps/api`（含 tests）、`apps/web`、`clients/openim` 类型检查通过；`export-contracts.mjs --check` 通过，契约保持 0.45.0，OpenAPI 与合成样例无变化；`check-planning-rules.mjs --demo` 与 `check-chat-rules.mjs --demo` 的渲染与层分布正确，平台规则单条 505 B；12 项运行时断言通过。
+
+**未验证**：`vitest` 未在本地运行，新增的两个 spec 断言等 CI；六条条款在真实任务里的遵守率与是否打断流程尚未观察。本地分支未提交也未部署，线上仍是旧文本；部署后才显示六条，客户端安装包不需要更新。
+
 ## 2026-11-09 后台0.45 / 034已独立部署
 
 2026-11-09 **18:43:55 北京时间**，负责人单独授权后，API/worker 成对升级到 **contract0.45.0 / schema034**，固定源码 **cc04d955dd03d3cf3a79ee1458f5b7d0e8088877**（与 Windows0.10.99/tag 一致）。恢复副本与正式库各执行两次迁移，**032→034、113→116表**，第二次未改变记录；完整性、外键、全部旧行及原件/配置保全通过。

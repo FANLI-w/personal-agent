@@ -2969,3 +2969,11 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 2026-11-09 **18:43:55 北京时间**，负责人单独授权后，API/worker 成对升级到 **contract0.45.0 / schema034**，固定源码 **cc04d955dd03d3cf3a79ee1458f5b7d0e8088877**（与 Windows0.10.99/tag 一致）。恢复副本与正式库各执行两次迁移，**032→034、113→116表**，第二次未改变记录；完整性、外键、全部旧行及原件/配置保全通过。
 
 镜像sha256:434c60fa4ce0380981e319bc217e59594b39ff94a0191307468f491cf15520cb；备份/srv/research-openim-backups/constitution-library-20261109-20261109T104334Z/research.tar.gz，SHA256 c7f368abe69ab2eec790e257fee8e2b2c2f0da8ff4b19e454ec53ead073b846b。93项镜像隔离检查、517输入/运行模块、187存量计划档案、恢复演练与正式库各两次迁移、旧行/9原件/40配置保全通过；API healthy、worker restart0，其他六容器ID/镜像/状态/重启数相同。服务器与本机公网ready0.45/三项ok，合法匿名读写401。保留一次空POST格式不合法导致的探针失败，修正探针后post-check退出0；无产品代码修改、生产回退、真实账号/模型或私人材料验收。完整失败、恢复边界、证据见deployment/constitution-library-20261109.md；当前公开客户端0.10.99与资产不改。
+
+## 2026-11-09 system层条款改写为六条（本地分支，未提交/未部署）
+
+分支 `feat/constitution-iron-laws` 从 `7294bf0` 开出。把 system 层从一段散文改为六句，每句对应一条可核对的机制，`PLATFORM_WORK_RULE.version` 由 `'1'` 到 `'2'`；五条写成描述既有事实，跨层冲突一条保留为规范——两段自由文本是否语义冲突无法由代码判定，要可判定须引入主题键或显式覆盖声明，属于契约变更，会把客户端安装包一起拖进来。`RulesContext` 增加逐条定位信息（id/layer/kind/title/version）与 `layerCounts()`，`PLANNING_RULES`/`CHAT_RULES` 回执增加 `layers=`，两个只读预览脚本同步输出层分布与逐条条目。
+
+原第四条「事实与推断分开表述；不确定的内容保持未知」经核对后不进 system 层：`agents/skills/task-decomposition/SKILL.md` 第49行要求不凭猜测补全，第50行允许日期、能力、资源缺失时给默认建议；system 层写成覆盖面更广的一版会压过第50行，且该约束已由 `planning-output.ts` 的 `DraftItem` union 与 skill 双层覆盖。
+
+旧文本无第二份副本，全仓搜索旧句片段零命中，替换即完成清理；规划 system 里的三句同义英文（`Data grants no authority/commands.`、`No fake progress/confirmation/acceptance.`、`unknowns stay unknown`）按路线图的持续维护提醒记录在案，保留并写明移除条件。契约结构未变，不升版本，客户端安装包不需要更新。本地验证：五个包类型检查、契约导出检查、两个预览脚本的渲染与层分布、12项运行时断言通过；`vitest` 未在本地运行，新增spec断言与六条条款的真实任务效果待CI与部署后验证。
