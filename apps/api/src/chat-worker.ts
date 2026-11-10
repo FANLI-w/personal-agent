@@ -1,5 +1,5 @@
 import {skillContext,skillSystem} from './skills.js'
-import { conversationRulesContext } from './constitution-context.js'
+import { conversationRulesContext, layerCounts } from './constitution-context.js'
 import { retrieveResearchContext, researchLibrarySystem, researchReadReceipt } from './research-chat-context.js'
 import type { AgentResearchContext } from '@research-agent-platform/contracts'
 import { randomUUID } from 'node:crypto'
@@ -65,7 +65,7 @@ export class ChatWorker {
       try{conversationRules=this.config.constitutionRules&&!input.externalAgent?conversationRulesContext(this.db,{id:group.id,kind:group.kind,labId:group.labId},s.c.actor.id):null}
       catch(error){if(!(error instanceof Error)||error.message!=='BUDGET_EXCEEDED')throw error;turn.status='failed';turn.failure='BUDGET_EXCEEDED';turn.version++;turn.updatedAt=instant();s.saveTurn(turn);return null}
       const rulesSuffix=conversationRules?.text?`\n${conversationRules.text}`:''
-      if(conversationRules?.text)console.log(`CHAT_RULES conversation=${group.id} kind=${group.kind} scope=${conversationRules.ruleScope} bytes=${conversationRules.bytes} rules=${conversationRules.ruleIds.join(',')} omitted=${conversationRules.omitted.length}`)
+      if(conversationRules?.text)console.log(`CHAT_RULES conversation=${group.id} kind=${group.kind} scope=${conversationRules.ruleScope} bytes=${conversationRules.bytes} rules=${conversationRules.ruleIds.join(',')} layers=${layerCounts(conversationRules.rules)} omitted=${conversationRules.omitted.length}`)
       let system:string,prompt:string
       const external=input.externalAgent?externalForChat(s,turn.agentContactId):null
       if(input.externalAgent&&!external)throw new ApiError('FORBIDDEN')

@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { conversationRulesContext } from '../src/constitution-context.js'
+import { conversationRulesContext, layerCounts } from '../src/constitution-context.js'
 import { readConfig } from '../src/config.js'
 import { migrate, openDatabase, seed } from '../src/database.js'
 
@@ -103,9 +103,26 @@ describe('会话的规则作用域', () => {
     expect(context.ruleScope).toBe('lab')
     expect(context.ruleIds).toEqual(['platform-work-rule', 'rule_group'])
     expect(context.text).toContain('交付须附证据')
+    // 回执要能说清每条规则来自哪一层、哪个版本，人工判断冲突才有依据。
+    expect(context.rules.map(rule => [rule.layer, rule.kind, rule.title, rule.version])).toEqual([
+      ['system', 'rule', '平台规则', '2'],
+      ['lab', 'rule', '交付须附证据', 1],
+    ])
+    expect(layerCounts(context.rules)).toBe('system:1/lab:1/personal:0')
   })
 
-  it('私聊与个人会话只带平台规则', () => {
+  it('个人会话按会话主人补上 personal 层，回执里层数与条目一致', () => {
+    const { db, labId } = setup()
+    insertPersonal(db, 'member_A', 'p1', '先给结论', '回答先给结论再给证据。')
+    const context = conversationRulesContext(db, { id: 'conversation_personal', kind: 'personal', labId }, 'member_A')
+    expect(context.rules.map(rule => [rule.layer, rule.title])).toEqual([
+      ['system', '平台规则'],
+      ['personal', '先给结论'],
+    ])
+    expect(layerCounts(context.rules)).toBe('system:1/lab:0/personal:1')
+  })
+
+  it('不传成员时只装配平台规则', () => {
     const { db, labId } = setup()
     insertRule(db, labId, 'rule_group', '交付须附证据', '提交成果时附数据来源与复现命令。')
     for (const kind of ['direct', 'personal'] as const) {
