@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { PlanningRequest, RunRecord, EvidenceChecklist, AdaptiveReply } from '@research-agent-platform/contracts'
 import { Collaboration } from './collaboration.js'
 import { layerCounts, planningRulesContext } from './constitution-context.js'
+import { lifecycleReceipt } from '@research-agent-platform/constitution'
 import { AiService, instant, executionHarnessVersion } from './ai.js'
 import type { Run, Planning, PlanningInput } from './ai.js'
 import type { Config } from './config.js'
@@ -135,6 +136,7 @@ export class ExecutionWorker {
           budget=request.budget
           const facts=request.taskIds.length?service.facts('progress',request.taskIds):{tasks:[]}
           const reuse=new ReuseService(service.c);reuse.selected(request.conclusionRefs??[],request.plan?{kind:'plan',id:request.plan.id}:undefined)
+          if(request.conclusionRefs?.length)console.log(`PLANNING_MEMORY lab=${service.c.labId} ${lifecycleReceipt({conclusion:request.conclusionRefs.length,turn:1})}`)
           request.contextTasks=facts.tasks.map(t=>({id:t.id,version:t.version,access:'projection' in t?'summary':'full'}))
           this.db.prepare('UPDATE execution_jobs SET request_json=? WHERE id=?').run(encode(request),row.id!)
           const members=this.db.prepare('SELECT m.id FROM members m WHERE EXISTS(SELECT 1 FROM effective_lab_memberships e WHERE e.lab_id=? AND e.member_id=m.id) OR m.id=? ORDER BY m.id LIMIT 20').all(service.c.labId,service.c.actor.id).map(m=>{const p=service.c.member(String(m.id));return {id:p.id,version:p.version,publicExpertise:p.publicExpertise,availability:p.availability,availabilityStatus:p.availabilityStatus}})

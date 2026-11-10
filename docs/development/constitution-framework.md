@@ -206,14 +206,17 @@ S7 目前是唯一的规范条目，转描述的前提是冲突检测接入装�
 | 参考 | `source` | 36 KB | 否 |
 
 - **事实段预算的来历**：3.5 KB 不是新定的数，它原本写死在 `personalMemoryContext()` 里（`personal-memories.ts`）。2026-11-09 把它提成 `packages/constitution` 的 `memoryBudget`，装配与注入共用同一个常量，避免两处各管各的。课题组记忆目前没有生产者，接入时要按实际体量重新定，不要直接放大这个值。
-- **记忆为什么还没走 `compose()`**：个人助理的记忆不是进 system，而是进 prompt JSON（`chat-worker.ts` 的 `serialize()` 里那个 `personalMemories` 字段）。搬进 `compose()` 要动三段逻辑：prompt 的组装位置、`personalMemoryFingerprint` 的失效判定、以及按 token 反复重试的 `shown` 与 `layers` 循环。这三处都有精确到 token 的断言，改动风险集中在这里，所以先只统一预算常量，等记忆模块落地时一起搬。
+- **记忆的四类生命周期**：`preference`（偏好，长期，跟随本人）、`conclusion`（结论，长期可追溯，绑定来源任务与交付物版本）、`handoff`（交接，临时，绑定任务版本）、`turn`（本次要求，只在单轮）。落点分别是 `personal_memories` 与 `chat_memories`、`conclusions` 与 `conclusion_versions`、`task_handoffs`、当前消息。这个标注只用于回执，不落库、不参与装配判定，定义在 `packages/constitution/src/memory.ts`。
+- **记忆回执**：`CHAT_MEMORY` 与 `PLANNING_MEMORY` 各打一行，格式 `preference:n/conclusion:n/handoff:n/turn:n`，缺席的类别也写 0，因为「这一轮没有结论进入」本身是需要看见的事实。目前 `CHAT_MEMORY` 统计偏好（本人记忆加助手自身的记忆），`PLANNING_MEMORY` 统计结论；`handoff` 尚未进入这两条回执，它目前在任务工作页的装配里。
 - **条数与字节分开管**：单次注入最多 12 条（`memoryRecordLimit`），与字节预算互为补充；条数上限防止大量短条目淹没上下文。
+- **记忆为什么还没走 `compose()`**：个人助理的记忆不是进 system，而是进 prompt JSON（`chat-worker.ts` 的 `serialize()` 里那个 `personalMemories` 字段）。搬进 `compose()` 要动三段逻辑：prompt 的组装位置、`personalMemoryFingerprint` 的失效判定、以及按 token 反复重试的 `shown` 与 `layers` 循环。这三处都有精确到 token 的断言，改动风险集中在这里，所以先只统一预算常量，等记忆模块落地时一起搬。
 - **写入侧拦截**：保存生效规则时校验总量，超过 12 KB 直接拒绝。规则是必进段，写进去就一定会挤占上下文。
 - **装配侧兜底**：生效约束超限会明确失败，不省略全部团队约束后继续调用模型；聊天将该轮保存为失败，队列可继续处理其他请求。
 - **开关**：`CONSTITUTION_RULES=0` 关闭服务端聊天和规划的新增规则注入，行为回到接入前；`=1` 强制开启。开发与生产默认开启，**测试环境默认关闭**——注入会改动既有用例里精确到 token 的预算断言，测试要覆盖注入路径时显式传 `CONSTITUTION_RULES=1`。
 - **回执**：每轮打一行 `PLANNING_RULES` / `CHAT_RULES`，含课题组、作用域、字节数、规则 id、**各层条数**（`layers=system:1/lab:1/personal:0`）与省略数量。
 - **定位信息**：`RulesContext.rules` 按装配顺序给出每条规则的 `id`、`layer`、`kind`、`title` 与 `version`，供人工判断跨层冲突。标题只进本地预览脚本，不进服务端回执——标题长度不可控，混在单行日志里会与分隔符冲突。
 - **本地预览**：`scripts/check-planning-rules.mjs` 与 `scripts/check-chat-rules.mjs` 打印层分布与逐条定位信息，`--json` 同步输出 `rules` 与 `layers` 字段。这两个脚本只读，不接线。
+- **记忆总览（本地只读）**：`scripts/check-memory-overview.mjs` 按成员聚合三类记忆的指针——`id`、所属对象、版本、状态与时间，正文一律不取，`--json` 同步输出。这是「一份总览文档 + 多张权威表」里那份文档的雏形。暂时做成只读脚本而不是契约接口：新增路由要升契约版本、重导出 OpenAPI，还要给客户端加版本门槛，而记忆模块的结构还没定，先不把接口固定下来。
 
 作用域取值：
 

@@ -2993,3 +2993,15 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 把事实段的字节预算提成 `packages/constitution` 的 `memoryBudget = 3_500`，`compose()` 的事实段与 `personalMemoryContext()` 共用同一个常量。原来两处各写一套：`compose()` 标 32 KB，实际生效的是 `personalMemoryContext()` 里的 3500 字节，而 `compose()` 的事实段从来没有生产者（全仓只有 `constitution-context.ts` 调用 `compose()`，且只传 `rule` 条目）。条数上限单独命名为 `memoryRecordLimit = 12`。事实段预算因此从 32 KB 改为 3.5 KB——把纸面数字改成实际值。
 
 记忆本身没有搬进 `compose()`：个人助理的记忆进的是 prompt JSON（`chat-worker.ts` 的 `serialize()` 里 `personalMemories` 字段），搬动要同时改 prompt 组装、`personalMemoryFingerprint` 失效判定与按 token 重试的 `shown`/`layers` 循环，三处都有精确到 token 的断言，本地跑不了 vitest，风险集中在这里。等记忆模块落地时一起搬。本地验证：两个包类型检查、6项预算与装配断言通过。
+
+## 2026-11-09 记忆四类生命周期标注（同分支）
+
+新增 `packages/constitution/src/memory.ts`：`lifecycles` 固定为偏好、结论、交接、本次四类，`lifecycleSource` 记录各类在代码里的落点，`lifecycleReceipt` 把计数写成一行回执且缺席写 0。这个标注不落库、不参与装配判定，只用于回执。
+
+接线两处：`chat-worker.ts` 在协调路径与普通路径各打一行 `CHAT_MEMORY`，统计偏好条数（本人记忆加助手自身记忆）与省略标记；`execution-worker.ts` 在绑定结论引用后打一行 `PLANNING_MEMORY`，统计结论条数。交接尚未进入这两条回执，它目前在任务工作页的装配里，接入时再补。本地验证：两个包类型检查、6项生命周期断言通过；`memory.spec.ts` 新增，等CI。
+
+## 2026-11-09 记忆总览只读脚本（同分支）
+
+新增 `scripts/check-memory-overview.mjs`：按成员聚合三类记忆的指针——偏好取 `personal_memories` 的 `topic`/`scope`/`status`/`origin`/`version`，结论取 `conclusions` 的 `task_id`/`head_version`/`revoked`，交接取 `task_handoffs` 的 `task_id`/`status`，正文一律不取。支持 `--member`、`--json`、`--demo`，只读打开数据库，缺表时提示迁移。这是框架 §6.1「一份总览文档 + 多张权威表」里那份文档的雏形。
+
+做成脚本而不做成契约接口，原因是新增路由要升契约版本、重导出 OpenAPI，还要给客户端加版本门槛与界面，而记忆模块的结构还没定，先不把接口固定下来。本地验证：`--demo` 文本与 `--json` 输出正确，缺表路径给出迁移提示。
