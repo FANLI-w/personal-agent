@@ -4,7 +4,7 @@ import type { ChatService } from './chat.js'
 import { personalWork } from './workspace.js'
 import { isLabManager } from './invite-management.js'
 import { fail } from './errors.js'
-import { assertAllowed } from './subjects.js'
+import { assertAllowed, decisionFor } from './subjects.js'
 import { hash } from './auth.js'
 import { activePersonalRuleBytes, activeRuleBytes, entryBytes } from './constitution-context.js'
 import { ruleBudget } from '@research-agent-platform/constitution'
@@ -99,8 +99,17 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
  const c=s.c, actor=c.actor.id, canPublish=isLabManager(s.db,c.actor)
  // 组内链路由承接人提交、派发人批准；规则仍由负责人批准。
  const dispatched=new Set(s.db.prepare("SELECT id FROM tasks WHERE lab_id=? AND initiator_id=?").all(c.labId,actor).map(row=>String(row.id)))
+ const leadOf=(taskId:string)=>String(s.db.prepare('SELECT lead_id FROM tasks WHERE id=?').get(taskId)?.lead_id??'')
  const approves=(r:WorkRule)=>canPublish||(r.kind==='link'&&!!r.sourceTaskId&&dispatched.has(r.sourceTaskId))
- const project=(r:WorkRule):WorkRule=>({...r,allowedActions:r.status==='revoked'?[]:approves(r)?['revise','confirm','revoke']:r.status==='candidate'&&r.authorId===actor?['revise','revoke']:[]})
+ // 粗判只说明这类身份是否可能动这份资产，条目级条件仍由来源任务与状态检查负责。
+ const mayWrite=(kind:WorkRule['kind'],sourceTaskId:string|null)=>decisionFor('lab',kind,{member:true,manager:canPublish,initiator:sourceTaskId!==null&&dispatched.has(sourceTaskId),lead:sourceTaskId!==null&&leadOf(sourceTaskId)===actor},'write')!=='deny'
+ const mayApprove=(kind:WorkRule['kind'],sourceTaskId:string|null)=>decisionFor('lab',kind,{member:true,manager:canPublish,initiator:sourceTaskId!==null&&dispatched.has(sourceTaskId)},'approve')!=='deny'
+ // 写类动作要求「能写」或「能批」之一；批准类动作只要求「能批」。request 有落点（进候选等批准），不拒绝。
+ const gate=(kind:WorkRule['kind'],sourceTaskId:string|null,action:'confirm'|'save'|'revise'|'revoke')=>{
+  if(action==='confirm'){if(!mayApprove(kind,sourceTaskId))fail('FORBIDDEN');return}
+  if(!mayWrite(kind,sourceTaskId)&&!mayApprove(kind,sourceTaskId))fail('FORBIDDEN')
+ }
+ const project=(r:WorkRule):WorkRule=>({...r,allowedActions:r.status==='revoked'?[]:approves(r)?['revise','confirm','revoke']:r.status==='candidate'&&r.authorId===actor&&mayWrite(r.kind,r.sourceTaskId)?['revise','revoke']:[]})
  const get=(recordId:string)=>{
   const row=s.db.prepare("SELECT document FROM work_context_records WHERE id=? AND lab_id=? AND scope='lab'").get(recordId,c.labId)
   if(!row)fail('NOT_FOUND')
@@ -124,11 +133,8 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
  }else if(b.expectedVersion!==0||b.action!=='save')fail('VALIDATION_ERROR')
  if(old&&old.version>=100)fail('RATE_LIMITED')
  if(!old&&Number(s.db.prepare("SELECT count(*) n FROM work_context_records WHERE lab_id=? AND scope='lab' AND scope_id=?").get(c.labId,c.labId)!.n)>=40)fail('RATE_LIMITED')
- // 批准类动作走统一入口：负责人，或该链路来源任务的派发人。
- if(b.action==='confirm'){
-  const sourceTaskId=old?.sourceTaskId??null
-  assertAllowed('lab',b.kind,{member:true,manager:canPublish,initiator:sourceTaskId!==null&&dispatched.has(sourceTaskId)},'approve')
- }
+ // 粗判：批准类动作要求能批，写类动作要求能写或能批。条目级条件仍由下面的来源任务与状态检查负责。
+ gate(b.kind,old?.sourceTaskId??b.sourceTaskId??null,b.action)
  // 只有提交人能绑定来源任务：链路必须以自己承接的任务为依据。
  if(b.kind==='link'&&!old&&!b.sourceTaskId)fail('VALIDATION_ERROR')
  if(old&&b.sourceTaskId&&b.sourceTaskId!==old.sourceTaskId)fail('VALIDATION_ERROR')

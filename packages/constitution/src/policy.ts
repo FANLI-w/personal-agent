@@ -38,7 +38,7 @@ export const defaultGrants: readonly Grant[] = [
   { layer: 'lab', kind: 'object', read: ['dispatcher', 'assignee', 'assistant'], write: ['dispatcher', 'assignee'], request: ['assignee', 'assistant'], approve: ['dispatcher'] },
   { layer: 'lab', kind: 'source', read: ['dispatcher', 'assignee'], write: ['dispatcher', 'assignee'], request: ['assistant'], approve: ['dispatcher'] },
   { layer: 'personal', kind: 'rule', read: ['owner', 'assistant'], write: ['owner'], request: [], approve: ['owner'] },
-  { layer: 'personal', kind: 'memory', read: ['owner', 'assistant'], write: ['assistant'], request: [], approve: ['owner'] },
+  { layer: 'personal', kind: 'memory', read: ['owner', 'assistant'], write: ['owner', 'assistant'], request: [], approve: ['owner'] },
   { layer: 'personal', kind: 'object', read: ['owner', 'assistant'], write: ['owner', 'assistant'], request: [], approve: ['owner'] },
 ]
 

@@ -67,6 +67,13 @@ describe('权限判定', () => {
     expect(can(asset('personal', 'object'), 'member', 'inject')).toBe('deny')
   })
 
+  it('本人能改自己的记忆，助理自动写回同样放行', () => {
+    // 实现里 personal-memories 的 memory() 已给本人 edit 与 revoke，表此前漏了 owner。
+    expect(can(asset('personal', 'memory'), 'owner', 'write')).toBe('allow')
+    expect(can(asset('personal', 'memory'), 'assistant', 'write')).toBe('allow')
+    expect(can(asset('personal', 'memory'), 'member', 'inject')).toBe('deny')
+  })
+
   it('批准人按归属层固定', () => {
     expect(approverOf(asset('system', 'rule'))).toBe('maintainer')
     expect(approverOf(asset('lab', 'rule'))).toBe('manager')
