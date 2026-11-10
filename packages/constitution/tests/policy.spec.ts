@@ -22,11 +22,24 @@ describe('权限判定', () => {
     expect(can(asset('personal', 'memory'), 'assistant', 'write')).toBe('allow')
   })
 
-  it('任务级资产授予派发人与承接人，其他成员读不到', () => {
+  it('任务级资产由派发人与承接人共管，其他成员读不到', () => {
     expect(can(asset('lab', 'object'), 'dispatcher', 'write')).toBe('allow')
-    expect(can(asset('lab', 'object'), 'assignee', 'write')).toBe('deny')
+    expect(can(asset('lab', 'object'), 'assignee', 'write')).toBe('allow')
     expect(can(asset('lab', 'object'), 'member', 'inject')).toBe('deny')
     expect(can(asset('lab', 'source'), 'assignee', 'write')).toBe('allow')
+  })
+
+  it('助理能读到任务档案以便传达，写入仍走申请', () => {
+    expect(can(asset('lab', 'object'), 'assistant', 'inject')).toBe('allow')
+    expect(can(asset('lab', 'object'), 'assistant', 'write')).toBe('request')
+    expect(can(asset('lab', 'object'), 'assignee', 'request')).toBe('allow')
+  })
+
+  it('交接由派发人与承接人写，申请由助理提交，负责人不直接写', () => {
+    expect(can(asset('lab', 'memory'), 'dispatcher', 'write')).toBe('allow')
+    expect(can(asset('lab', 'memory'), 'assignee', 'write')).toBe('allow')
+    expect(can(asset('lab', 'memory'), 'manager', 'write')).toBe('deny')
+    expect(can(asset('lab', 'memory'), 'assistant', 'request')).toBe('allow')
   })
 
   it('课题组级资产全组可读，写入经负责人批准', () => {
@@ -35,6 +48,8 @@ describe('权限判定', () => {
     expect(can(asset('lab', 'rule'), 'member', 'approve')).toBe('deny')
     expect(can(asset('lab', 'rule'), 'manager', 'approve')).toBe('allow')
     expect(can(asset('lab', 'link'), 'assignee', 'write')).toBe('request')
+    // 粗判只说明派发人这一类可能被允许；具体到某条链路由 approves() 收窄到来源任务的发起人。
+    expect(can(asset('lab', 'link'), 'dispatcher', 'approve')).toBe('allow')
   })
 
   it('个人层以本人为批准人', () => {
@@ -42,6 +57,12 @@ describe('权限判定', () => {
     expect(can(asset('personal', 'rule'), 'owner', 'approve')).toBe('allow')
     expect(can(asset('personal', 'rule'), 'manager', 'inject')).toBe('deny')
     expect(approverOf(asset('personal', 'rule'))).toBe('owner')
+  })
+
+  it('个人任务属于个人资产，本人直接写，助理写回也放行', () => {
+    expect(can(asset('personal', 'object'), 'owner', 'write')).toBe('allow')
+    expect(can(asset('personal', 'object'), 'assistant', 'write')).toBe('allow')
+    expect(can(asset('personal', 'object'), 'member', 'inject')).toBe('deny')
   })
 
   it('批准人按归属层固定', () => {
