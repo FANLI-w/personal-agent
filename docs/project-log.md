@@ -3056,3 +3056,11 @@ PR200，固定产品提交e4c8fc562cb92e9b8fdce56de73541e90549222f（含PR199）
 - 不更改提示词、两态规划、共享契约、后台与数据库。当前版本/创建时间如实展示，不伪装尚不存在的规范历史。失败草稿、allowedActions/expectedVersion、作用域失效检查与限时读取保留。
 - 46 项任务/规范与22项资料检查、阶段双类型通过；隔离 IAB 实际目标组件已验证搜索、续聊、任务关联、模板交接、保存失败保留、普通成员无写入口、10秒超时和恢复。业务 API/身份/非目标叶组件为合成夹具，未代操作真实私人账号。
 - 0.10.103 本机安装包与最终设计 QA 进行中；未合 main、公开发版或部署。说明 docs/development/lab-rules-planning-pages.md；证据 D:/deepseek-agent/.runtime/record-pages-20261111，失败记录保留。
+
+
+## 2026-11-12 0.10.103 本机试用包完成
+
+- 固定产品源码 `de2e29d4e0eb0cb618bdf591b46905bf498ccd89`；PR201提交功能分支供审阅，含PR200/PR199，不合main、不公开Release、不部署后台。
+- 本机桌面 `C:/Users/luo/Desktop/AcceptCat_0.10.103.exe`，421237693字节，SHA256 `a460c682f0876eab55e9e24b215f0e97af31d43b0c034aa9018d46b2b67d8a11`；PE与app.asar均0.10.103。386项客户端检查执行/双类型、实际组件配合合成API的IAB交互和图稿对照、冻结Web/NSIS、11必要入口/65资源摘要、更新清单和隔离启动通过。
+- 负责人安装/真实账号/模型体验仍待验收；不更改后台、提示词和两态规划。规范仅显示真实当前版本，独立历史接口后续处理。公开Latest0.10.100、生产0.45/034保持。
+- 回执 docs/deployment/acceptcat-0.10.103-preview.md；设计QA根文件与上一版存档保留。证据 D:/deepseek-agent/.runtime/record-pages-20261111，含失败尝试记录。
