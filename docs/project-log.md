@@ -3048,3 +3048,11 @@ PR200，固定产品提交e4c8fc562cb92e9b8fdce56de73541e90549222f（含PR199）
 ## 2026-11-11 Windows0.10.102本机包完成
 
 同一PR200已整合；固定产品7b3ee2d7e4fbe735c5ca62d225b9b9ed544e1f18，包含原任务视图/资料修复，后续只补记录。桌面C:/Users/luo/Desktop/AcceptCat_0.10.102.exe，421228845字节，SHA256 b727a1aaf07af5a97e38846254b2031e7a35642d5af64c97edd3b90a8be65bb5，与原始产物一致。双类型/373项脚本检查执行、真实hook/API头受控故障、隔离浏览器、冻结Web/NSIS、11必要入口/固定DSH、64成品Web资源、更新清单、全新临时目录启动READY/exit0通过。公开ready约0.13秒，隔离Electron实际传输公开live/ready为5529/3632ms且均成功；不认定用户当时网络根因，不改代理或后台。模型/提示词/权限/两态规划不动，无真实账号/任务/模型验收，未代安装。构建publish never，main/公开Latest0.10.100和生产acffd5e/0.45/034保持。失败/警告/边界详见docs/deployment/acceptcat-0.10.102-preview.md与Git外task-read-recovery-20261111；后续本人安装试用再决定合并与发布。
+
+
+## 2026-11-11 规范与计划记录完整页面（0.10.103 准备）
+
+- 负责人从三种 Product Design 图稿选择第一张；独立分支 `feat/lab-rules-planning-pages` 基于 origin/main/07ab5d1 并保留 PR200/PR199 全部修复。规范主导航、列表/详情、分开的模板/方法/只读平台规则和独立编辑，计划完整页面/分页搜索/原计划续聊/授权任务关联已实现。
+- 不更改提示词、两态规划、共享契约、后台与数据库。当前版本/创建时间如实展示，不伪装尚不存在的规范历史。失败草稿、allowedActions/expectedVersion、作用域失效检查与限时读取保留。
+- 46 项任务/规范与22项资料检查、阶段双类型通过；隔离 IAB 实际目标组件已验证搜索、续聊、任务关联、模板交接、保存失败保留、普通成员无写入口、10秒超时和恢复。业务 API/身份/非目标叶组件为合成夹具，未代操作真实私人账号。
+- 0.10.103 本机安装包与最终设计 QA 进行中；未合 main、公开发版或部署。说明 docs/development/lab-rules-planning-pages.md；证据 D:/deepseek-agent/.runtime/record-pages-20261111，失败记录保留。

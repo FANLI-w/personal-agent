@@ -2,6 +2,12 @@ import "./workspace.scss";
 import "./library-workspace.scss";
 
 import { Button, Segmented, Spin } from "antd";
+import {
+  FileTextOutlined,
+  FolderOutlined,
+  ReadOutlined,
+  SafetyCertificateOutlined,
+} from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
 
 import { LabStandards } from "./LabStandards";
@@ -10,6 +16,7 @@ import { ResearchLibrary } from "./ResearchLibrary";
 import { useWorkspaceAvailability } from "./useWorkspaceAvailability";
 import { WorkspaceReports } from "./WorkspaceReports";
 import { TeamLibraryWorkspace } from "./TeamLibraryWorkspace";
+import "./record-workspace.scss";
 
 export function LibraryWorkspace() {
   const [params, setParams] = useSearchParams();
@@ -51,11 +58,76 @@ export function LibraryWorkspace() {
     );
   if (availability.supports(44))
     return (
-      <main className="social-workspace workspace-library">
-        <header className="workspace-heading">
+      <main className="social-workspace workspace-library library-page-shell">
+        <nav className="library-section-nav" aria-label="资料导航">
           <h1>资料</h1>
-        </header>
-        <TeamLibraryWorkspace supported initialPanel={params.get("panel")} />
+          {[
+            { key: "team", label: "团队资料", icon: <FolderOutlined /> },
+            { key: "mine", label: "我的资料", icon: <FolderOutlined /> },
+            {
+              key: "standards",
+              label: "课题组规范",
+              icon: <SafetyCertificateOutlined />,
+            },
+            { key: "templates", label: "模板与方法", icon: <ReadOutlined /> },
+            { key: "reports", label: "本机报告", icon: <FileTextOutlined /> },
+            { key: "collections", label: "共享原件", icon: <FolderOutlined /> },
+          ].map(({ key, label, icon }) => {
+            const active = reports
+              ? "reports"
+              : standards
+              ? ["templates", "methods"].includes(params.get("section") || "")
+                ? "templates"
+                : "standards"
+              : index
+              ? "mine"
+              : params.get("panel") === "collections"
+              ? "collections"
+              : params.get("scope") === "mine"
+              ? "mine"
+              : "team";
+            return (
+              <button
+                key={key}
+                aria-current={active === key ? "page" : undefined}
+                onClick={() => {
+                  const next = new URLSearchParams();
+                  if (key === "mine") next.set("scope", "mine");
+                  else if (key === "templates") {
+                    next.set("panel", "standards");
+                    next.set("section", "templates");
+                  } else if (key !== "team") next.set("panel", key);
+                  setParams(next);
+                }}
+              >
+                {icon}
+                {label}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="library-section-body">
+          {reports ? (
+            <div className="library-workspace-content">
+              <WorkspaceReports active />
+            </div>
+          ) : standards ? (
+            <LabStandards />
+          ) : index ? (
+            <div className="library-workspace-content">
+              <LibraryIndexPage />
+            </div>
+          ) : params.get("panel") === "collections" ? (
+            <div className="library-workspace-content">
+              <ResearchLibrary />
+            </div>
+          ) : (
+            <TeamLibraryWorkspace
+              supported
+              tab={params.get("scope") === "mine" ? "mine" : "team"}
+            />
+          )}
+        </div>
       </main>
     );
   return (

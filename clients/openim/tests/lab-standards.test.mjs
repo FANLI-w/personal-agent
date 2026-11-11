@@ -23,7 +23,7 @@ test("the standards page reads and writes lab rules and points templates at the 
   assert.match(page, /本人个人任务使用平台及个人规则/);
   // Templates are materials, and the page says so before linking to the library.
   assert.match(page, /模板与范文/);
-  assert.match(page, /这些是资料，不是规则/);
+  assert.match(page, /资料按需引用，不会自动变成规则/);
   assert.match(page, /navigate\("\/library"\)/);
   // Members stage candidates; only the manager publishes.
   assert.match(page, /待负责人确认/);

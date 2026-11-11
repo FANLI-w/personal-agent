@@ -12,6 +12,8 @@ async function fixture() {
   const f = { generation: 1, read: { data: undefined, error: '', loading: true, refresh: async () => { f.retries++; } }, retries: 0, panel: '' };
   const jsx = (type, props) => ({ type, props });
   const imports = {
+    '@ant-design/icons': new Proxy({}, { get: (_, key) => String(key) }),
+    './record-workspace.scss': {},
     react: { useRef(value) { const index = cursor++; return refs[index] ||= { current: value }; }, useEffect() {}, useSyncExternalStore(_subscribe, get) { return get(); } },
     'react/jsx-runtime': { jsx, jsxs: jsx },
     antd: { Button: 'Button', Segmented: 'Segmented', Spin: 'Spin' },

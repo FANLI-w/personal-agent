@@ -1,9 +1,8 @@
 /**
- * The workbench keeps two front doors: the task list and the team overview.
- * Everything else (planning history, schedules, a saved plan) is a place you
- * arrive at from the list or from the task assistant, not a third tab.
+ * History has a full list/detail page. Existing saved-plan links still resume
+ * their original assistant conversation.
  */
-export type WorkbenchTab = "tasks" | "team";
+export type WorkbenchTab = "tasks" | "team" | "history";
 export type WorkbenchFilter = "all" | "completed";
 
 export type WorkbenchView = {
@@ -22,7 +21,8 @@ const id = (value: string | null) =>
 
 export function workbenchView(params: URLSearchParams): WorkbenchView {
   const requested = params.get("view");
-  const tab: WorkbenchTab = requested === "team" ? "team" : "tasks";
+  const tab: WorkbenchTab =
+    requested === "team" ? "team" : requested === "history" ? "history" : "tasks";
   const planId = id(params.get("plan")),
     requestId = id(params.get("planning")),
     draft = params.get("draft")?.trim();

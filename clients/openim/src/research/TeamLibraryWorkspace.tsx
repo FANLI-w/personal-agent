@@ -40,10 +40,7 @@ import { useResearchRead } from "./useResearchRead";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchStore } from "./store";
 import { nativeWorkbenchTaskPath } from "./workbench-links";
-import { ResearchLibrary } from "./ResearchLibrary";
 import { LibraryIndexPage } from "./LibraryIndexPage";
-import { LabStandards } from "./LabStandards";
-import { WorkspaceReports } from "./WorkspaceReports";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import "./team-library.scss";
 
@@ -78,10 +75,10 @@ type RepositoryStatus = ResponseFor<"teamRepository">["data"];
 /** Git publishes curated metadata and small text; originals retain their existing ACL. */
 export function TeamLibraryWorkspace({
   supported,
-  initialPanel,
+  tab = "team",
 }: {
   supported: boolean;
-  initialPanel?: string | null;
+  tab?: "team" | "mine";
 }) {
   const navigate = useNavigate(),
     actor = useResearchStore((s) => s.actor);
@@ -92,8 +89,7 @@ export function TeamLibraryWorkspace({
     "team-library-binding",
     supported && !!actor,
   );
-  const [tab, setTab] = useState("team"),
-    [snapshot, setSnapshot] = useState<TeamLibrarySnapshot>(),
+  const [snapshot, setSnapshot] = useState<TeamLibrarySnapshot>(),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const [project, setProject] = useState(""),
@@ -107,7 +103,7 @@ export function TeamLibraryWorkspace({
     }>(),
     [previewError, setPreviewError] = useState(""),
     [previewBusy, setPreviewBusy] = useState(false);
-  const [panel, setPanel] = useState(initialPanel || ""),
+  const [panel, setPanel] = useState(""),
     [configure, setConfigure] = useState(false),
     [history, setHistory] =
       useState<{ revision: string; title: string; date: string }[]>();
@@ -288,31 +284,12 @@ export function TeamLibraryWorkspace({
       if (ticket.isCurrent()) setError(message(e));
     }
   };
-  const legacy: Record<string, { title: string; body: JSX.Element }> = {
-    collections: { title: "共享原件与飞书资料", body: <ResearchLibrary /> },
-    index: { title: "本地文件与资料索引", body: <LibraryIndexPage /> },
-    standards: { title: "课题组生效规范", body: <LabStandards /> },
-    reports: { title: "本机报告", body: <WorkspaceReports active /> },
-  };
   return (
     <section className="team-library" aria-label="团队资料工作区">
       <div className="team-library-bar">
-        <div className="team-library-tabs" role="tablist" aria-label="资料范围">
-          <button
-            role="tab"
-            aria-selected={tab === "team"}
-            onClick={() => setTab("team")}
-          >
-            团队资料
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === "mine"}
-            onClick={() => setTab("mine")}
-          >
-            我的资料
-          </button>
-        </div>
+        <h2 className="team-library-page-title">
+          {tab === "mine" ? "我的资料" : "团队资料"}
+        </h2>
         <div className="team-library-tools">
           {tab === "team" && (
             <>
@@ -697,29 +674,17 @@ export function TeamLibraryWorkspace({
           )}
         </>
       )}
-      <nav className="team-library-secondary" aria-label="其他资料入口">
-        <Button type="link" onClick={() => setPanel("collections")}>
-          共享原件与飞书资料
-        </Button>
-        <Button type="link" onClick={() => setPanel("index")}>
-          本地文件与资料索引
-        </Button>
-        <Button type="link" onClick={() => setPanel("standards")}>
-          课题组规范
-        </Button>
-        <Button type="link" onClick={() => setPanel("reports")}>
-          本机报告
-        </Button>
-        {supported && current?.canConfigure && (
-          <Button type="link" onClick={() => setConfigure(true)}>
+      {supported && current?.canConfigure && (
+        <div className="team-library-secondary">
+          <Button icon={<SettingOutlined />} onClick={() => setConfigure(true)}>
             仓库设置
           </Button>
-        )}
-      </nav>
+        </div>
+      )}
       <Drawer
-        open={!!panel}
+        open={panel === "history"}
         width="85vw"
-        title={panel === "history" ? "更新记录" : legacy[panel]?.title}
+        title="更新记录"
         onClose={() => setPanel("")}
       >
         {panel === "history" ? (
@@ -733,9 +698,7 @@ export function TeamLibraryWorkspace({
               </article>
             )) || <Spin />}
           </div>
-        ) : (
-          legacy[panel]?.body
-        )}
+        ) : null}
       </Drawer>
       {configure && (
         <RepositoryEditor
