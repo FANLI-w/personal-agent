@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { constitutionEntries, planningRulesContext } from '../src/constitution-context.js'
+import { constitutionEntries, layerCounts, planningRulesContext } from '../src/constitution-context.js'
 import { readConfig } from '../src/config.js'
 import { migrate, openDatabase, seed } from '../src/database.js'
 
@@ -68,6 +68,12 @@ describe('规划链路的规则上下文', () => {
     expect(context.text.indexOf('平台规则')).toBeLessThan(context.text.indexOf('交付须附证据'))
     expect(context.ruleIds).toEqual(['platform-work-rule', 'rule_active'])
     expect(context.bytes).toBe(Buffer.byteLength(context.text, 'utf8'))
+    // 回执要能说清每条规则来自哪一层、哪个版本，人工判断冲突才有依据。
+    expect(context.rules.map(rule => [rule.layer, rule.kind, rule.title, rule.version])).toEqual([
+      ['system', 'rule', '平台规则', '2'],
+      ['lab', 'rule', '交付须附证据', 2],
+    ])
+    expect(layerCounts(context.rules)).toBe('system:1/lab:1/personal:0')
   })
 
   it('只收生效的规则，候选规则与记忆类记录不进上下文', () => {

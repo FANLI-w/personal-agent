@@ -4,6 +4,7 @@ import type { ChatService } from './chat.js'
 import { personalWork } from './workspace.js'
 import { isLabManager } from './invite-management.js'
 import { fail } from './errors.js'
+import { assertAllowed, decisionFor } from './subjects.js'
 import { hash } from './auth.js'
 import { activePersonalRuleBytes, activeRuleBytes, entryBytes } from './constitution-context.js'
 import { ruleBudget } from '@research-agent-platform/constitution'
@@ -98,8 +99,17 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
  const c=s.c, actor=c.actor.id, canPublish=isLabManager(s.db,c.actor)
  // 组内链路由承接人提交、派发人批准；规则仍由负责人批准。
  const dispatched=new Set(s.db.prepare("SELECT id FROM tasks WHERE lab_id=? AND initiator_id=?").all(c.labId,actor).map(row=>String(row.id)))
+ const leadOf=(taskId:string)=>String(s.db.prepare('SELECT lead_id FROM tasks WHERE id=?').get(taskId)?.lead_id??'')
  const approves=(r:WorkRule)=>canPublish||(r.kind==='link'&&!!r.sourceTaskId&&dispatched.has(r.sourceTaskId))
- const project=(r:WorkRule):WorkRule=>({...r,allowedActions:r.status==='revoked'?[]:approves(r)?['revise','confirm','revoke']:r.status==='candidate'&&r.authorId===actor?['revise','revoke']:[]})
+ // 粗判只说明这类身份是否可能动这份资产，条目级条件仍由来源任务与状态检查负责。
+ const mayWrite=(kind:WorkRule['kind'],sourceTaskId:string|null)=>decisionFor('lab',kind,{member:true,manager:canPublish,initiator:sourceTaskId!==null&&dispatched.has(sourceTaskId),lead:sourceTaskId!==null&&leadOf(sourceTaskId)===actor},'write')!=='deny'
+ const mayApprove=(kind:WorkRule['kind'],sourceTaskId:string|null)=>decisionFor('lab',kind,{member:true,manager:canPublish,initiator:sourceTaskId!==null&&dispatched.has(sourceTaskId)},'approve')!=='deny'
+ // 写类动作要求「能写」或「能批」之一；批准类动作只要求「能批」。request 有落点（进候选等批准），不拒绝。
+ const gate=(kind:WorkRule['kind'],sourceTaskId:string|null,action:'confirm'|'save'|'revise'|'revoke')=>{
+  if(action==='confirm'){if(!mayApprove(kind,sourceTaskId))fail('FORBIDDEN');return}
+  if(!mayWrite(kind,sourceTaskId)&&!mayApprove(kind,sourceTaskId))fail('FORBIDDEN')
+ }
+ const project=(r:WorkRule):WorkRule=>({...r,allowedActions:r.status==='revoked'?[]:approves(r)?['revise','confirm','revoke']:r.status==='candidate'&&r.authorId===actor&&mayWrite(r.kind,r.sourceTaskId)?['revise','revoke']:[]})
  const get=(recordId:string)=>{
   const row=s.db.prepare("SELECT document FROM work_context_records WHERE id=? AND lab_id=? AND scope='lab'").get(recordId,c.labId)
   if(!row)fail('NOT_FOUND')
@@ -131,6 +141,9 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
   if(source.leadId!==actor)fail('FORBIDDEN')
   if(b.kind==='link'&&source.status!=='completed')fail('INVALID_STATE')
  }
+ // 粗判：批准类动作要求能批，写类动作要求能写或能批。放在形状与来源任务检查之后，
+ // 让缺字段、字段冲突这类请求仍按 VALIDATION_ERROR 返回，不被身份判定抢先变成 FORBIDDEN。
+ gate(b.kind,old?.sourceTaskId??b.sourceTaskId??null,b.action)
  const now=new Date().toISOString()
  const value:WorkRule={...b,id:old?.id??randomUUID(),scopeId:c.labId,sourceTaskId:b.sourceTaskId??old?.sourceTaskId??null,
   authorId:actor,authorName:c.member(actor).displayName,status:b.action==='revoke'?'revoked':b.action==='confirm'?'active':canPublish?'active':'candidate',version:(old?.version??0)+1,updatedAt:now,allowedActions:[]}
@@ -153,9 +166,11 @@ function runLabWorkRule(s:ChatService,name:'labWorkRules'|'saveLabWorkRule',req:
 function runPersonalWorkRule(s:ChatService,name:'personalWorkRules'|'savePersonalWorkRule',req:RequestFor<'personalWorkRules'|'savePersonalWorkRule'>){
  const c=s.c, actor=c.actor.id
  const project=(r:WorkRule):WorkRule=>({...r,allowedActions:r.status==='revoked'?[]:['revise','confirm','revoke']})
+ // 私有资产的归属判定走统一入口：别人问到同一条规则时按不存在处理，不暴露存在性。
  const get=(recordId:string)=>{
-  const row=s.db.prepare('SELECT document FROM personal_work_rules WHERE id=? AND member_id=?').get(recordId,actor)
+  const row=s.db.prepare('SELECT member_id, document FROM personal_work_rules WHERE id=?').get(recordId)
   if(!row)fail('NOT_FOUND')
+  assertAllowed('personal','rule',{owner:String(row.member_id)===actor},'write')
   return project(WorkRule.parse(JSON.parse(String(row.document))))
  }
  if(name==='personalWorkRules')

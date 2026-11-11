@@ -1,5 +1,6 @@
-import {skillContext,skillSystem} from './skills.js'
-import { conversationRulesContext } from './constitution-context.js'
+import { skillContext,skillSystem } from './skills.js'
+import { lifecycleReceipt } from '@research-agent-platform/constitution'
+import { conversationRulesContext, layerCounts } from './constitution-context.js'
 import { retrieveResearchContext, researchLibrarySystem, researchReadReceipt } from './research-chat-context.js'
 import type { AgentResearchContext } from '@research-agent-platform/contracts'
 import { randomUUID } from 'node:crypto'
@@ -65,7 +66,7 @@ export class ChatWorker {
       try{conversationRules=this.config.constitutionRules&&!input.externalAgent?conversationRulesContext(this.db,{id:group.id,kind:group.kind,labId:group.labId},s.c.actor.id):null}
       catch(error){if(!(error instanceof Error)||error.message!=='BUDGET_EXCEEDED')throw error;turn.status='failed';turn.failure='BUDGET_EXCEEDED';turn.version++;turn.updatedAt=instant();s.saveTurn(turn);return null}
       const rulesSuffix=conversationRules?.text?`\n${conversationRules.text}`:''
-      if(conversationRules?.text)console.log(`CHAT_RULES conversation=${group.id} kind=${group.kind} scope=${conversationRules.ruleScope} bytes=${conversationRules.bytes} rules=${conversationRules.ruleIds.join(',')} omitted=${conversationRules.omitted.length}`)
+      if(conversationRules?.text)console.log(`CHAT_RULES conversation=${group.id} kind=${group.kind} scope=${conversationRules.ruleScope} bytes=${conversationRules.bytes} rules=${conversationRules.ruleIds.join(',')} layers=${layerCounts(conversationRules.rules)} omitted=${conversationRules.omitted.length}`)
       let system:string,prompt:string
       const external=input.externalAgent?externalForChat(s,turn.agentContactId):null
       if(input.externalAgent&&!external)throw new ApiError('FORBIDDEN')
@@ -81,6 +82,7 @@ export class ChatWorker {
       } else if(input.assistantMode==='coordinate'){
         const current=currentTurnText(s,turn.id),agentContext=s.directory.modelContext(turn.agentContactId,group.id),personal=personalMemoryContext(s,agentContext.agent,group,current),complex=assistantComplexRequest(current)
         input.memoryContextSources=memoryContextSources(s,personal.records,agentContext.memories)
+        if(personal.records.length||agentContext.memories.length)console.log(`CHAT_MEMORY conversation=${group.id} ${lifecycleReceipt({preference:personal.records.length+agentContext.memories.length,turn:1})} omitted=${personal.omitted}`)
         const required=new Set(input.continuous?.messageIds??[turn.inputMessageId]),recent=recentDialogue(s,group.id,input.inputSequence,[...required]),notes=olderDialogue(s,group.id,input.inputSequence,recent,current),tasks=dialogueTaskState(s,group,current)
         let layers:DialogueLayers={messages:[],notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]}
         system=personalAssistantSystem+(complex?'\nComplex work: JSON {kind:"team",title:string,contactIds:[listed_ID]}. Save only a proposal. Owner confirms group creation; humans and Agent owners accept independently. No automatic execution or material sharing.':'')
@@ -122,6 +124,7 @@ export class ChatWorker {
       const agentContext=s.directory.modelContext(turn.agentContactId,group.id),requestedAgent=(({availability:_availability,...value})=>value)(publicContact({...agentContext.agent,profile:modelAgentProfile(agentContext.agent)}))
       const personal=personalMemoryContext(s,agentContext.agent,group,currentTurnText(s,turn.id))
       input.memoryContextSources=memoryContextSources(s,personal.records,agentContext.memories)
+      if(personal.records.length||agentContext.memories.length)console.log(`CHAT_MEMORY conversation=${group.id} ${lifecycleReceipt({preference:personal.records.length+agentContext.memories.length,turn:1})} omitted=${personal.omitted}`)
       input.agentContextFingerprint=agentContext.fingerprint
       this.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(input),turn.id)
       const contactColumns=['id','displayName','identity','availability','profile']

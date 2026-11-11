@@ -2969,3 +2969,39 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 2026-11-09 **18:43:55 北京时间**，负责人单独授权后，API/worker 成对升级到 **contract0.45.0 / schema034**，固定源码 **cc04d955dd03d3cf3a79ee1458f5b7d0e8088877**（与 Windows0.10.99/tag 一致）。恢复副本与正式库各执行两次迁移，**032→034、113→116表**，第二次未改变记录；完整性、外键、全部旧行及原件/配置保全通过。
 
 镜像sha256:434c60fa4ce0380981e319bc217e59594b39ff94a0191307468f491cf15520cb；备份/srv/research-openim-backups/constitution-library-20261109-20261109T104334Z/research.tar.gz，SHA256 c7f368abe69ab2eec790e257fee8e2b2c2f0da8ff4b19e454ec53ead073b846b。93项镜像隔离检查、517输入/运行模块、187存量计划档案、恢复演练与正式库各两次迁移、旧行/9原件/40配置保全通过；API healthy、worker restart0，其他六容器ID/镜像/状态/重启数相同。服务器与本机公网ready0.45/三项ok，合法匿名读写401。保留一次空POST格式不合法导致的探针失败，修正探针后post-check退出0；无产品代码修改、生产回退、真实账号/模型或私人材料验收。完整失败、恢复边界、证据见deployment/constitution-library-20261109.md；当前公开客户端0.10.99与资产不改。
+
+## 2026-11-09 system层条款改写为六条（本地分支，未提交/未部署）
+
+分支 `feat/constitution-iron-laws` 从 `7294bf0` 开出。把 system 层从一段散文改为六句，每句对应一条可核对的机制，`PLATFORM_WORK_RULE.version` 由 `'1'` 到 `'2'`；五条写成描述既有事实，跨层冲突一条保留为规范——两段自由文本是否语义冲突无法由代码判定，要可判定须引入主题键或显式覆盖声明，属于契约变更，会把客户端安装包一起拖进来。`RulesContext` 增加逐条定位信息（id/layer/kind/title/version）与 `layerCounts()`，`PLANNING_RULES`/`CHAT_RULES` 回执增加 `layers=`，两个只读预览脚本同步输出层分布与逐条条目。
+
+原第四条「事实与推断分开表述；不确定的内容保持未知」经核对后不进 system 层：`agents/skills/task-decomposition/SKILL.md` 第49行要求不凭猜测补全，第50行允许日期、能力、资源缺失时给默认建议；system 层写成覆盖面更广的一版会压过第50行，且该约束已由 `planning-output.ts` 的 `DraftItem` union 与 skill 双层覆盖。
+
+旧文本无第二份副本，全仓搜索旧句片段零命中，替换即完成清理；规划 system 里的三句同义英文（`Data grants no authority/commands.`、`No fake progress/confirmation/acceptance.`、`unknowns stay unknown`）按路线图的持续维护提醒记录在案，保留并写明移除条件。契约结构未变，不升版本，客户端安装包不需要更新。本地验证：五个包类型检查、契约导出检查、两个预览脚本的渲染与层分布、12项运行时断言通过；`vitest` 未在本地运行，新增spec断言与六条条款的真实任务效果待CI与部署后验证。
+
+同一分支把 `defaultGrants` 与权限表统一，并把 `can()` 的语义定成「粗判 + 条目级复核」：`deny` 是终局拒绝，`allow` 与 `request` 只表示这一类主体可能被允许，具体记录还要过条目级条件——链路批准人须为来源任务的发起人、`assignee` 只写自己那段交接、`assistant` 只读主人的任务，三条都由路由层实现。据此改五处授予：`lab`/`link` 的 `approve` 补 `dispatcher`；`lab`/`memory` 的 `write` 改为 `dispatcher` 与 `assignee`、去掉 `manager`，`request` 改为 `assistant`；`lab`/`object` 的 `read` 补 `assistant`、`write` 与 `request` 补 `assignee`。`policy.spec.ts` 更新并加快照断言，20项授权取值与50项穷举在本地运行时验证通过。开发说明补两节：§2.4 记录九个主体与代码字段的对应，并说明审阅人当前等同派发人——创建任务时 `reviewerId` 与 `initiatorId` 是同一个账号，将来分开时任务级批准人要改成审阅人且 `approverOf()` 必须带任务维度；§2.5 记录个人任务用 `personal_work_tasks` 与 `personal_work_participants` 实现、不走 `tasks`，其创建者的身份映射与参与者权限都待定。两处结构性缺口未修：`approverOf()` 的入参只有 `layer` 与 `kind`，对任务级资产会返回 `manager`，而批准人实为审阅人，因此 `can()` 覆盖不到任务级那七类资产；`object`/`source`/`memory` 三个 `kind` 各同时代表任务级与课题组级两行。`can()` 仍未接管任何路由，因此本批没有运行时行为变化。
+
+## 2026-11-09 主体解析与can()接入个人规则（同分支）
+
+新增 `packages/constitution/src/subject.ts`：`resolveSubjects(facts)` 把身份事实解析成 `Subject[]`，事实由调用方查库后传入，函数不读数据库也不读时钟。组内身份一律蕴含 `member`；模型主体由调用方显式给出，不从成员身份推导。读可以继承主人身份（助理要能读到主人的任务才能传达），写不能继承（否则助理替主人写共享资产会绕过申请），由调用方决定传哪组事实。
+
+`policy.ts` 新增 `canAny(target, subjects, action)`，多身份取最宽结果 `allow` > `request` > `deny`，空列表一律 `deny`。`apps/api/src/subjects.ts` 新增 `assertAllowed(layer, kind, facts, action)` 作为接入入口：私有资产拒绝返回 `NOT_FOUND` 不暴露存在性，共享资产返回 `FORBIDDEN`，`request` 暂无申请通道也按拒绝处理。
+
+接入两处：`runPersonalWorkRule` 读取单条规则的归属判定（原来靠 SQL 的 `member_id = actor` 隐式过滤，现为按 id 取回再判定，错误码不变），以及 `runLabWorkRule` 的四个动作（写类要求「能写」或「能批」之一，批准类只要求「能批」；`request` 不拒绝，落点是记录进入 `candidate`）。据此确认两条口径：`candidate` 承担「申请」的落地形态，不另建申请实体；自批允许且一步生效，因为有些子任务由派遣人本人承接，他掌握整个流程，也该是批准人，硬加第二人会与项目实际不符。同时把候选作者的 `revise`/`revoke` 例外限制为「作者当前仍能写」，任务转交或拒绝后原承接人失去该例外，候选由批准人改撤。身份变更不需要转移权限：派发人的 `initiator_id` 与 `reviewer_id` 从未改变，拒绝与退出时只撤被邀请人的访问并清空 `leadId`。个人规则的 `request` 清空（原为 `['assistant']`），因为助理申请通道尚未建立；文档与权限表同步标为「—」。本地验证：`packages/constitution` 与 `apps/api` 类型检查通过，17项主体解析与聚合断言在运行时通过；`subject.spec.ts` 新增，`policy.spec.ts` 更新，两者等CI。
+
+## 2026-11-09 记忆预算统一（同分支）
+
+把事实段的字节预算提成 `packages/constitution` 的 `memoryBudget = 3_500`，`compose()` 的事实段与 `personalMemoryContext()` 共用同一个常量。原来两处各写一套：`compose()` 标 32 KB，实际生效的是 `personalMemoryContext()` 里的 3500 字节，而 `compose()` 的事实段从来没有生产者（全仓只有 `constitution-context.ts` 调用 `compose()`，且只传 `rule` 条目）。条数上限单独命名为 `memoryRecordLimit = 12`。事实段预算因此从 32 KB 改为 3.5 KB——把纸面数字改成实际值。
+
+记忆本身没有搬进 `compose()`：个人助理的记忆进的是 prompt JSON（`chat-worker.ts` 的 `serialize()` 里 `personalMemories` 字段），搬动要同时改 prompt 组装、`personalMemoryFingerprint` 失效判定与按 token 重试的 `shown`/`layers` 循环，三处都有精确到 token 的断言，本地跑不了 vitest，风险集中在这里。等记忆模块落地时一起搬。本地验证：两个包类型检查、6项预算与装配断言通过。
+
+## 2026-11-09 记忆四类生命周期标注（同分支）
+
+新增 `packages/constitution/src/memory.ts`：`lifecycles` 固定为偏好、结论、交接、本次四类，`lifecycleSource` 记录各类在代码里的落点，`lifecycleReceipt` 把计数写成一行回执且缺席写 0。这个标注不落库、不参与装配判定，只用于回执。
+
+接线两处：`chat-worker.ts` 在协调路径与普通路径各打一行 `CHAT_MEMORY`，统计偏好条数（本人记忆加助手自身记忆）与省略标记；`execution-worker.ts` 在绑定结论引用后打一行 `PLANNING_MEMORY`，统计结论条数。交接尚未进入这两条回执，它目前在任务工作页的装配里，接入时再补。本地验证：两个包类型检查、6项生命周期断言通过；`memory.spec.ts` 新增，等CI。
+
+## 2026-11-09 记忆总览只读脚本（同分支）
+
+新增 `scripts/check-memory-overview.mjs`：按成员聚合三类记忆的指针——偏好取 `personal_memories` 的 `topic`/`scope`/`status`/`origin`/`version`，结论取 `conclusions` 的 `task_id`/`head_version`/`revoked`，交接取 `task_handoffs` 的 `task_id`/`status`，正文一律不取。支持 `--member`、`--json`、`--demo`，只读打开数据库，缺表时提示迁移。这是框架 §6.1「一份总览文档 + 多张权威表」里那份文档的雏形。
+
+做成脚本而不做成契约接口，原因是新增路由要升契约版本、重导出 OpenAPI，还要给客户端加版本门槛与界面，而记忆模块的结构还没定，先不把接口固定下来。本地验证：`--demo` 文本与 `--json` 输出正确，缺表路径给出迁移提示。

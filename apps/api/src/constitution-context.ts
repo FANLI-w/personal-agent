@@ -2,11 +2,25 @@ import type { DatabaseSync } from 'node:sqlite'
 import { PLATFORM_WORK_RULE, WorkRule } from '@research-agent-platform/contracts'
 import { compose, entrySize, type Entry } from '@research-agent-platform/constitution'
 
+/** 一条已装配规则的定位信息，层与版本齐备才能判断它覆盖了谁、又被谁覆盖。 */
+export type RuleTrace = {
+  readonly id: string
+  readonly layer: Entry['layer']
+  readonly kind: Entry['kind']
+  readonly title: string
+  readonly version: string | number
+}
 export type RulesContext = {
   readonly text: string
   readonly bytes: number
   readonly omitted: readonly string[]
   readonly ruleIds: readonly string[]
+  readonly rules: readonly RuleTrace[]
+}
+/** 各层规则条数，写成一行便于在回执里对比层级分布。 */
+export function layerCounts(rules: readonly RuleTrace[]):string{
+  const count=(layer:Entry['layer'])=>rules.filter(rule=>rule.layer===layer).length
+  return `system:${count('system')}/lab:${count('lab')}/personal:${count('personal')}`
 }
 const platformEntry = (): Entry => ({ id:'platform-work-rule',version:PLATFORM_WORK_RULE.version,layer:'system',kind:'rule',title:'平台规则',content:PLATFORM_WORK_RULE.content })
 const ruleEntry = (rule: WorkRule, layer: Entry['layer']): Entry => ({id:rule.id,version:rule.version,layer,kind:'rule',title:rule.title,content:rule.content})
@@ -32,7 +46,7 @@ function render(entries:readonly Entry[],omitted:readonly string[]):RulesContext
   const title=scoped?'工作规则（按平台、课题组、项目顺序生效；个人偏好不能覆盖团队要求）：\n':personal?'工作规则（平台与个人层；个人偏好不能覆盖平台或团队要求）：\n':'工作规则（平台层；个人偏好不能覆盖团队要求）：\n'
   const labels={system:'平台',lab:'课题组',personal:'个人'}
   const text=entries.length?title+entries.map(e=>`[${labels[e.layer]}·${e.title} v${e.version}] ${e.content}`).join('\n'):''
-  return{text,bytes:Buffer.byteLength(text,'utf8'),omitted,ruleIds:entries.map(e=>e.id)}
+  return{text,bytes:Buffer.byteLength(text,'utf8'),omitted,ruleIds:entries.map(e=>e.id),rules:entries.map(e=>({id:e.id,layer:e.layer,kind:e.kind,title:e.title,version:e.version}))}
 }
 function assemble(entries:readonly Entry[]):RulesContext{
   // Mandatory constraints cannot disappear just to make a model call succeed.

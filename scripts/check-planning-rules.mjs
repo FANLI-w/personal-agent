@@ -75,7 +75,7 @@ function skippedRows(db, labId, included) {
   return { available: true, skipped }
 }
 
-const { planningRulesContext } = await load()
+const { planningRulesContext, layerCounts } = await load()
 const labId = value('lab')
 const dbPath = flag('demo') ? undefined : resolve(root, value('db') ?? '.runtime/platform.sqlite')
 const db = flag('demo') ? demoDatabase() : new DatabaseSync(dbPath, { readOnly: true })
@@ -101,12 +101,14 @@ const { available, skipped } = skippedRows(db, target, context.ruleIds)
 const estimatedTokens = Math.ceil(context.bytes / 3)
 
 if (flag('json')) {
-  console.log(JSON.stringify({ labId: target, recordsAvailable: available, ruleIds: context.ruleIds, omitted: context.omitted, skipped, bytes: context.bytes, estimatedTokens, text: context.text }, null, 2))
+  console.log(JSON.stringify({ labId: target, recordsAvailable: available, ruleIds: context.ruleIds, rules: context.rules, layers: layerCounts(context.rules), omitted: context.omitted, skipped, bytes: context.bytes, estimatedTokens, text: context.text }, null, 2))
 } else {
   console.log(`数据库：${flag('demo') ? '（合成内存库）' : dbPath}`)
   console.log(`课题组：${target}`)
   if (!available) console.log('注意：该库没有 work_context_records 表（迁移 029 之前），只装配平台规则。')
   console.log(`\n装配条目：${context.ruleIds.join('、') || '（空）'}`)
+  console.log(`层级分布：${layerCounts(context.rules)}`)
+  for (const rule of context.rules) console.log(`  ${rule.layer.padEnd(8)} v${rule.version}  ${rule.title}（${rule.id}）`)
   if (context.omitted.length) console.log(`省略：${context.omitted.join('、')}`)
   if (skipped.length) console.log(`未纳入：${skipped.join('；')}`)
   console.log(`\n合计 ${context.bytes} B，约 ${estimatedTokens} token（按 3 字节/token 估算）`)
