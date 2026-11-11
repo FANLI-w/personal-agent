@@ -79,8 +79,8 @@ test("the page keeps only the two tabs and names the two kinds of task", async (
     new URL("../src/research/DesktopWorkbench.tsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /label: "待办"/);
-  assert.match(page, /label: "团队"/);
+  assert.match(page, /label: "我的待办"/);
+  assert.match(page, /label: "团队任务"/);
   assert.doesNotMatch(page, /label: "计划"/);
   assert.doesNotMatch(page, /label: "定时"/);
   // Both entries start with 新建 and say what they make.
