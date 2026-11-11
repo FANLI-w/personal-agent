@@ -3012,3 +3012,9 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 新增 `scripts/check-memory-overview.mjs`：按成员聚合三类记忆的指针——偏好取 `personal_memories` 的 `topic`/`scope`/`status`/`origin`/`version`，结论取 `conclusions` 的 `task_id`/`head_version`/`revoked`，交接取 `task_handoffs` 的 `task_id`/`status`，正文一律不取。支持 `--member`、`--json`、`--demo`，只读打开数据库，缺表时提示迁移。这是框架 §6.1「一份总览文档 + 多张权威表」里那份文档的雏形。
 
 做成脚本而不做成契约接口，原因是新增路由要升契约版本、重导出 OpenAPI，还要给客户端加版本门槛与界面，而记忆模块的结构还没定，先不把接口固定下来。本地验证：`--demo` 文本与 `--json` 输出正确，缺表路径给出迁移提示。
+
+## 2026-11-11 Windows0.10.100发布完成
+
+北京时间 2026-11-11T11:57:37+08:00，Windows **0.10.100** 已公开发布并设为 Latest：[Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.100)。固定源码/tag 为 main **acffd5e4119602e881922714c4107b73d40e97ee**；同事PR195经审核修正后通过整合PR196合并，保留原提交历史。
+
+935项根与生产/B0/Web、403项客户端/双类型、PR和main四项CI、EXE载荷与交接恢复、禁网跨进程缓存、隔离启动和四附件公开核验通过。EXE 421232628字节，SHA256 66070e060c834edcf29b2920867469d62a01490424abff0308406d82d5bc572e；桌面副本相同，旧99资产保持。后台未部署，cc04d955/0.45/schema034保持；六条v2和服务端权限/回执须另行部署。无真实模型/私人材料/双机验收。证据与边界见deployment/acceptcat-0.10.100-release.md。
