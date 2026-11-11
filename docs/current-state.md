@@ -2,11 +2,17 @@
 
 更新日期：2026-11-11（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 2026-11-11 配套平台规则与权限后台已更新
+
+负责人单独授权后，北京时间 **2026-11-11T16:32:10+08:00** 将API/worker成对更新至Windows0.10.100相同源码 **acffd5e4119602e881922714c4107b73d40e97ee**。平台规则v2六条、PR195权限与分层/记忆回执已加载并开启；contract仍0.45.0、schema仍034/116表，无新迁移。镜像 `research-openim-api:constitution-policy-20261111` / `sha256:f3bdbf9fe016b499318d2c40a1831fbacff384e883fd5a653c59434e46de6d58`。
+
+97项服务器隔离、523份源码/两容器各13份编译模块与Skill、停写备份与恢复副本/正式库各两次迁移、全部旧行/9原件/41配置保全通过。API healthy、worker running/restart0，另六容器不变；独立公网ready三项ok、匿名401。旧0.45读取副本兼容，本批可成对切回原镜像且不恢复旧DB；不可据此退更早0.43。真实模型/团队体验待负责人验收。详见[部署回执](deployment/constitution-policy-20261111.md)。Release0.10.100与安装包保持，下方发布时“后台未部署”等是历史状态。
+
 ## 2026-11-11 Windows0.10.100已公开发布
 
 北京时间 2026-11-11T11:57:37+08:00，Windows **0.10.100** 已公开发布并设为 Latest：[Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.100)。固定源码/tag 为 main **acffd5e4119602e881922714c4107b73d40e97ee**；同事PR195经审核修正后通过整合PR196合并，保留原提交历史。
 
-本地935项根CI及生产/B0/Web、403项客户端/双类型、PR和固定main四项CI、EXE解包/原生CJS交接、禁网跨进程SQLite缓存、隔离启动与公开四附件核验通过。桌面包 `C:/Users/luo/Desktop/AcceptCat_0.10.100.exe`。**后台未部署，仍cc04d955/0.45/schema034；v2平台规则及服务端权限需另行部署。** 真实账号/模型/团队体验待负责人验收。详见[发布回执](deployment/acceptcat-0.10.100-release.md)。下方准备和同事开发记录保留为历史，以本段为准。
+本地935项根CI及生产/B0/Web、403项客户端/双类型、PR和固定main四项CI、EXE解包/原生CJS交接、禁网跨进程SQLite缓存、隔离启动与公开四附件核验通过。桌面包 `C:/Users/luo/Desktop/AcceptCat_0.10.100.exe`。**发布时后台尚未部署；随后已独立更新至acffd5e/0.45/034，见上方部署回执。** 真实账号/模型/团队体验待负责人验收。详见[发布回执](deployment/acceptcat-0.10.100-release.md)。下方准备和同事开发记录保留为历史，以本段为准。
 
 ## 2026-11-11 PR195审核整合与0.10.100发布准备历史
 

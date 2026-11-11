@@ -3018,3 +3018,7 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 北京时间 2026-11-11T11:57:37+08:00，Windows **0.10.100** 已公开发布并设为 Latest：[Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.100)。固定源码/tag 为 main **acffd5e4119602e881922714c4107b73d40e97ee**；同事PR195经审核修正后通过整合PR196合并，保留原提交历史。
 
 935项根与生产/B0/Web、403项客户端/双类型、PR和main四项CI、EXE载荷与交接恢复、禁网跨进程缓存、隔离启动和四附件公开核验通过。EXE 421232628字节，SHA256 66070e060c834edcf29b2920867469d62a01490424abff0308406d82d5bc572e；桌面副本相同，旧99资产保持。后台未部署，cc04d955/0.45/schema034保持；六条v2和服务端权限/回执须另行部署。无真实模型/私人材料/双机验收。证据与边界见deployment/acceptcat-0.10.100-release.md。
+
+## 2026-11-11 平台规则与权限后台更新完成
+
+按负责人本次单独授权，2026-11-11T16:32:10+08:00上线固定acffd5e、research-openim-api:constitution-policy-20261111/sha256:f3bdbf9fe016b499318d2c40a1831fbacff384e883fd5a653c59434e46de6d58。0.45/034保持，平台规则v2六条与权限/回执加载开启。97项镜像隔离、523源码/各13编译模块与Skill、停写备份、恢复副本/正式库各两次迁移和全部旧行/9原件/41配置保全通过；API healthy、worker running/restart0、其他六容器不变，公网三项ok/匿名401。备份/srv/research-openim-backups/constitution-policy-20261111-20261111T083147Z/research.tar.gz，SHA256 d1e7df73970e63e97473210f1f30383fa62615026d5c50b8b95d20463777637a。旧0.45对034副本读取兼容，可成对回退镜像而不恢复旧库；不授权退0.43。Release0.10.100/安装包不变；真实模型、私人素材与团队体验待本人验收，失败/警告与证据见deployment/constitution-policy-20261111.md。
