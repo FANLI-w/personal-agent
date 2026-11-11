@@ -58,7 +58,7 @@ function demoDatabase() {
   return db
 }
 
-const { conversationRulesContext } = await load()
+const { conversationRulesContext, layerCounts } = await load()
 const dbPath = flag('demo') ? undefined : resolve(root, value('db') ?? '.runtime/platform.sqlite')
 const db = flag('demo') ? demoDatabase() : new DatabaseSync(dbPath, { readOnly: true })
 const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(row => row.name)
@@ -100,6 +100,8 @@ const report = selected.map(row => {
     labId: String(row.lab_id),
     ruleScope: context.ruleScope,
     ruleIds: context.ruleIds,
+    rules: context.rules,
+    layers: layerCounts(context.rules),
     omitted: context.omitted,
     bytes: context.bytes,
     estimatedTokens: Math.ceil(context.bytes / 3),
@@ -112,8 +114,10 @@ if (flag('json')) {
 } else {
   for (const item of report) {
     console.log(`\n会话：${item.conversationId}（${item.kind}，课题组=${item.labId}）`)
-    console.log(`规则作用域：${item.ruleScope === 'lab' ? '群所属课题组 + 平台' : '仅平台（个人规则不进群）'}`)
+    console.log(`规则作用域：${item.ruleScope === 'lab' ? '群所属课题组 + 平台' : item.kind === 'group' ? '仅平台' : '平台 + 会话主人的个人规则'}`)
     console.log(`装配条目：${item.ruleIds.join('、') || '（空）'}`)
+    console.log(`层级分布：${item.layers}`)
+    for (const rule of item.rules) console.log(`  ${rule.layer.padEnd(8)} v${rule.version}  ${rule.title}（${rule.id}）`)
     if (item.omitted.length) console.log(`省略：${item.omitted.join('、')}`)
     console.log(`合计 ${item.bytes} B，约 ${item.estimatedTokens} token`)
     console.log('将注入 system 的文本：')

@@ -8,7 +8,17 @@ import type { Asset } from './asset.js'
  */
 export type Decision = 'allow' | 'deny' | 'request'
 
-/** 一条授予。read 用 'all' 表示全组或全平台；其余用主体列表，空列表表示未授予。 */
+/**
+ * 一条授予。read 用 'all' 表示全组或全平台；其余用主体列表，空列表表示未授予。
+ *
+ * 列表表达的是**主体类**，不是最终判定：`deny` 是终局拒绝，`allow` 与 `request`
+ * 表示这一类主体可能被允许，具体到某一条记录还要过条目级条件。条目级条件由路由层
+ * 判断，因为 `Asset` 只有 layer 与 kind 两个维度，表达不了下列三种限制：
+ * - 链路的批准人必须是该链路来源任务的发起人（`tasks.initiator_id`）；
+ * - `assignee` 写交接只能写自己那一段；
+ * - `assistant` 只能读主人的任务，不能读全组的任务。
+ * 这三条在 `apps/api/src/work-context.ts` 的 `approves()` 与各路由里实现。
+ */
 export type Grant = {
   readonly layer: Layer
   readonly kind: Kind
@@ -18,18 +28,18 @@ export type Grant = {
   readonly approve: readonly Subject[]
 }
 
-/** 默认授予，对应框架文档 §四 的三张权限表。接线时可按场景传入替代表。 */
+/** 默认授予，对应框架文档 §2 的三张权限表。接线时可按场景传入替代表。 */
 export const defaultGrants: readonly Grant[] = [
   { layer: 'system', kind: 'rule', read: 'all', write: ['maintainer'], request: [], approve: ['maintainer'] },
   { layer: 'lab', kind: 'rule', read: 'all', write: ['manager'], request: ['member'], approve: ['manager'] },
-  { layer: 'lab', kind: 'link', read: 'all', write: [], request: ['dispatcher', 'assignee'], approve: ['manager'] },
+  { layer: 'lab', kind: 'link', read: 'all', write: [], request: ['dispatcher', 'assignee'], approve: ['dispatcher', 'manager'] },
   { layer: 'lab', kind: 'skill', read: 'all', write: [], request: [], approve: [] },
-  { layer: 'lab', kind: 'memory', read: 'all', write: ['dispatcher', 'manager'], request: ['assignee'], approve: ['manager'] },
-  { layer: 'lab', kind: 'object', read: ['dispatcher', 'assignee'], write: ['dispatcher'], request: ['assistant'], approve: ['dispatcher'] },
+  { layer: 'lab', kind: 'memory', read: 'all', write: ['dispatcher', 'assignee'], request: ['assistant'], approve: ['manager'] },
+  { layer: 'lab', kind: 'object', read: ['dispatcher', 'assignee', 'assistant'], write: ['dispatcher', 'assignee'], request: ['assignee', 'assistant'], approve: ['dispatcher'] },
   { layer: 'lab', kind: 'source', read: ['dispatcher', 'assignee'], write: ['dispatcher', 'assignee'], request: ['assistant'], approve: ['dispatcher'] },
-  { layer: 'personal', kind: 'rule', read: ['owner', 'assistant'], write: ['owner'], request: ['assistant'], approve: ['owner'] },
-  { layer: 'personal', kind: 'memory', read: ['owner', 'assistant'], write: ['assistant'], request: [], approve: ['owner'] },
-  { layer: 'personal', kind: 'object', read: ['owner', 'assistant'], write: ['assistant'], request: [], approve: ['owner'] },
+  { layer: 'personal', kind: 'rule', read: ['owner', 'assistant'], write: ['owner'], request: [], approve: ['owner'] },
+  { layer: 'personal', kind: 'memory', read: ['owner', 'assistant'], write: ['owner', 'assistant'], request: [], approve: ['owner'] },
+  { layer: 'personal', kind: 'object', read: ['owner', 'assistant'], write: ['owner', 'assistant'], request: [], approve: ['owner'] },
 ]
 
 const covered = (list: 'all' | readonly Subject[], subject: Subject) =>
@@ -62,4 +72,25 @@ export function approverOf(target: Asset): Subject {
   if (target.layer === 'system') return 'maintainer'
   if (target.layer === 'lab') return 'manager'
   return 'owner'
+}
+
+const decisionRank: Readonly<Record<Decision, number>> = { deny: 0, request: 1, allow: 2 }
+
+/**
+ * 多身份取最宽的结果：`allow` > `request` > `deny`。
+ * 一个人在同一处可能有多个身份（负责人兼承接人、派发人兼审阅人），
+ * 取最宽的结果才不会让更窄的身份压住更宽的那个。空列表一律 `deny`。
+ */
+export function canAny(
+  target: Asset,
+  subjects: readonly Subject[],
+  action: Action,
+  grants: readonly Grant[] = defaultGrants,
+): Decision {
+  let best: Decision = 'deny'
+  for (const subject of subjects) {
+    const decision = can(target, subject, action, grants)
+    if (decisionRank[decision] > decisionRank[best]) best = decision
+  }
+  return best
 }

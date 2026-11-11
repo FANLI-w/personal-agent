@@ -151,6 +151,28 @@ it('requires a completed owned source for reusable methods, preserves its type, 
  expect((await s.call('lab/work-rules',body,1)).statusCode).toBe(501)
 })
 
+it('keeps member rule requests pending and removes method author privileges after task transfer',async()=>{
+ const s=await setup(),path='lab/work-rules',body={scope:'lab',kind:'rule',title:'成员建议',content:'附原始依据。',recordId:null,expectedVersion:0,action:'save'}
+ const proposed=await s.modern(path,body,1);expect(proposed.statusCode,proposed.body).toBe(200)
+ const rule=proposed.json().data;expect(rule.status).toBe('candidate');expect(rule.allowedActions).toEqual(['revise','revoke'])
+ const revised=await s.modern(path,{...body,recordId:rule.id,expectedVersion:1,content:'附原始依据与版本。'},1)
+ expect(revised.statusCode,revised.body).toBe(200);expect(revised.json().data.status).toBe('candidate')
+ expect((await s.modern(path,{...body,recordId:rule.id,expectedVersion:2,action:'confirm'},1)).statusCode).toBe(403)
+ const id=s.ids[0]!
+ s.db.prepare("UPDATE tasks SET lead_id='member_B',status='completed',document=json_set(document,'$.leadId','member_B','$.status','completed'),summary_document=json_set(summary_document,'$.status','completed') WHERE id=?").run(id)
+ const method={...body,kind:'link',title:'任务方法',sourceTaskId:id}
+ const submitted=await s.modern(path,method,1);expect(submitted.statusCode,submitted.body).toBe(200)
+ const record=submitted.json().data;expect(record.allowedActions).toEqual(['revise','revoke'])
+ s.db.prepare("UPDATE tasks SET lead_id='member_C',document=json_set(document,'$.leadId','member_C') WHERE id=?").run(id)
+ const listed=(await s.modern(path,undefined,1)).json().data.records.find((r:any)=>r.id===record.id)
+ expect(listed.allowedActions).toEqual([])
+ for(const action of ['save','revoke','confirm'])expect((await s.modern(path,{...method,recordId:record.id,expectedVersion:1,action},1)).statusCode).toBe(403)
+ // 来源任务发起人即使不再是课题组负责人，仍能审核该任务的方法。
+ s.db.prepare("DELETE FROM lab_managers WHERE member_id='member_A'").run()
+ const approved=await s.modern(path,{...method,recordId:record.id,expectedVersion:1,action:'confirm'})
+ expect(approved.statusCode,approved.body).toBe(200);expect(approved.json().data.status).toBe('active')
+})
+
 it('injects only the current owner personal rules into a real worker request; legacy overflow fails the turn without a model call',async()=>{
  const s=await setup(),rule={kind:'rule',title:'本人偏好',content:'PRIVATE_RULE_A_SENTINEL',recordId:null,expectedVersion:0,action:'save'}
  expect((await s.modern('personal/work-rules',rule)).statusCode).toBe(200)

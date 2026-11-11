@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { PersonalMemory,PersonalMemoryInput,PersonalMemorySettings,personalAssistantRoutes,type Contact,type Conversation,type ChatMessage } from '@research-agent-platform/contracts'
 import { hash } from './auth.js'
+import { memoryBudget } from '@research-agent-platform/constitution'
 import { fail } from './errors.js'
 import type { ChatService,ChatRequest } from './chat.js'
 import {contextTerms,relatedScore} from './dialogue-context.js'
@@ -40,6 +41,8 @@ export function handleMemory(s:ChatService,name:string,req:ChatRequest):unknown{
  return undefined
 }
 export function ownLocalMemoryScope(s:ChatService,agent:Contact,group:Conversation){return ['personal','direct'].includes(group.kind)&&agent.identity.kind==='personal_agent'&&agent.identity.ownerMemberId===s.c.actor.id&&!agent.agentRuntime}
+/** 单次注入的条数上限。与字节预算分开管：条数上限防止长尾条目淹没上下文。 */
+export const memoryRecordLimit = 12
 export function personalMemoryContext(s:ChatService,agent:Contact,group:Conversation,text:string){
  if(!ownLocalMemoryScope(s,agent,group))return {fingerprint:null,records:[],omitted:false}
  const settings=memorySettings(s),all=s.db.prepare('SELECT id,version,status FROM personal_memories WHERE member_id=? ORDER BY id').all(s.c.actor.id)
@@ -47,7 +50,7 @@ export function personalMemoryContext(s:ChatService,agent:Contact,group:Conversa
  const match=(topic:string)=>{const target=(text+' '+agent.displayName+' '+agent.profile.capabilityDescription).normalize('NFKC').toLocaleLowerCase();return contextTerms(topic).some(term=>target.includes(term))}
  const candidates=s.db.prepare("SELECT id FROM personal_memories WHERE member_id=? AND status='confirmed' ORDER BY updated_at DESC,id").all(s.c.actor.id).map(r=>memory(s,String(r.id))).filter(v=>v.scope==='general'||match(v.topic)).sort((a,b)=>Number(['回复方式','称呼','语言'].includes(b.topic))-Number(['回复方式','称呼','语言'].includes(a.topic))||relatedScore(b.topic+' '+b.content,text)-relatedScore(a.topic+' '+a.content,text)).map(v=>({id:v.id,topic:v.topic,content:v.content,scope:v.scope,origin:v.origin}))
  const records:typeof candidates=[];let bytes=0
- for(const record of candidates){const size=Buffer.byteLength(JSON.stringify(record),'utf8');if(records.length>=12||bytes+size>3500)continue;records.push(record);bytes+=size}
+ for(const record of candidates){const size=Buffer.byteLength(JSON.stringify(record),'utf8');if(records.length>=memoryRecordLimit||bytes+size>memoryBudget)continue;records.push(record);bytes+=size}
  return {fingerprint,records,omitted:records.length<candidates.length}
 }
 function memoryTopic(content:string){

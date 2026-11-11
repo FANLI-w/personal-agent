@@ -379,6 +379,20 @@ test('changed rules or corrected memories rotate the host session and exclude st
  const state=await f.store.load(context),last=f.calls.filter(c=>c.method==='session/prompt').at(-1);
  assert.notEqual(last.args.sessionId,old);assert(last.args.content[0].text.includes('NEW_VALUE'));assert(!last.args.content[0].text.includes('OLD_VALUE'));assert(state.contextReceipt.omitted.some(s=>s.includes('交接')));
 });
+test('a valid near-limit handoff and task memories survive packing beyond the personal preference budget',async t=>{
+ const f=await fixture(t);await f.store.open(context);
+ const inputs=workInput('policy_v1',[{id:'task-memory',version:1,kind:'memory',title:'Task memory',content:'M'.repeat(2500)}]);
+ await f.store.prompt(context,'Work','long_handoff_request_1',inputs);
+ const conclusion='C'.repeat(3600);
+ await f.store.checkpoint(context,{conclusion,evidence:'result.md',next:'Continue with the accepted inputs',blockers:''},0,'policy_v1');
+ await f.store.newSession(context);
+ await f.restart().prompt(context,'Continue','long_handoff_request_2',inputs);
+ const message=f.calls.filter(c=>c.method==='session/prompt').at(-1).args.content[0].text;
+ assert(message.includes(conclusion));assert(message.includes('M'.repeat(2500)));
+ const receipt=(await f.store.load(context)).contextReceipt;
+ assert(receipt.entries.some(e=>e.kind==='handoff'));assert(receipt.entries.some(e=>e.id==='task-memory'));
+ assert(!receipt.omitted.includes('Task memory'));
+});
 test('ambiguous request freezes its context and blocks replay after memory revocation',async t=>{
  const f=await fixture(t);await f.store.open(context);f.lose();
  await assert.rejects(f.store.prompt(context,'Work','uncertain_request_1',workInput()),/response lost/);
