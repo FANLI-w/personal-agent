@@ -12,7 +12,13 @@ import {
 import { workspaceStatusLabel } from "./workspace-labels";
 import { ResearchTeamAccountHint } from "./ResearchTeamAccountHint";
 import { collectTeamWorkspace, teamDirections } from "./team-progress";
-import { TaskWorkspace, TaskListRow, WorkspaceTaskDetail } from "./TaskWorkspace";
+import {
+  TaskWorkspace,
+  TaskListRow,
+  TaskReadNotice,
+  WorkspaceTaskDetail,
+} from "./TaskWorkspace";
+import { transientReadFailure } from "./read-errors";
 
 type Filter = "all" | "review" | "deadline";
 
@@ -50,6 +56,7 @@ export function ResearchTeamWorkbench({
       ),
     `team-progress:${actor?.member.labId}:${scope}`,
     laboratory,
+    { timeoutMs: 10000, keepDataOnError: transientReadFailure },
   );
   const members = useResearchRead(
     (signal) =>
@@ -60,6 +67,7 @@ export function ResearchTeamWorkbench({
       }),
     `team-progress-members:${actor?.member.labId}`,
     laboratory,
+    { timeoutMs: 10000 },
   );
   useEffect(() => {
     if (refresh) void read.refresh();
@@ -239,13 +247,12 @@ export function ResearchTeamWorkbench({
               </div>
             )}
           </div>
-          {read.error && (
-            <Alert
-              type="error"
-              message={read.error}
-              action={<Button onClick={read.refresh}>重试</Button>}
-            />
-          )}
+          <TaskReadNotice
+            error={read.error}
+            stale={!!read.data}
+            loading={read.loading}
+            onRetry={read.refresh}
+          />
           {!read.data && !read.error && (
             <p className="workspace-task-list-note" role="status">
               正在读取课题组任务…

@@ -16,6 +16,21 @@
     margin: 0;
   }
 }
+.workspace-task-read-notice {
+  padding: 10px 4px;
+  color: #737e87;
+  font-size: 12px;
+  line-height: 1.7;
+  > details {
+    margin-top: 4px;
+  }
+  summary {
+    cursor: pointer;
+  }
+  p {
+    overflow-wrap: anywhere;
+  }
+}
 .workspace-task-list-note {
   padding: 14px 4px;
   color: #7a858e;

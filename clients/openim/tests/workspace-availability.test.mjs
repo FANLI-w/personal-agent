@@ -24,7 +24,7 @@ test("one health version supports independently checked workspace and team bound
   };
   assert.deepEqual(await readWorkspaceAvailability(), { available: true, version: "0.22.0" });
   assert.deepEqual(await readResearchTeamAvailability(), { available: false, version: "0.22.0" });
-  assert(calls.every(c => c.url === "/api/v1/health/ready" && c.options.credentials === "omit"));
+  assert(calls.every(c => c.url === "/api/v1/health/live" && c.options.credentials === "omit"));
 });
 
 test("caller cancellation aborts the health transport and cannot report a late success", async (t) => {

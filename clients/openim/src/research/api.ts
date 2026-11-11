@@ -1,4 +1,5 @@
 import { ErrorResponse, routes } from "@research-agent-platform/contracts";
+import { observeServiceVersion } from "./service-version";
 import type {
   RequestFor,
   ResponseFor,
@@ -183,6 +184,9 @@ async function requestResearchApi<K extends RouteName>(
       "服务响应不符合要求，请刷新或重试原请求。",
     );
   const result = parsedResult.data as ResponseFor<K>;
+  // A successful validated API response already proves its service version;
+  // opening a task must not wait for an unrelated readiness probe as well.
+  observeServiceVersion(response.headers?.get?.("X-Contract-Version"));
   const version = response.headers?.get?.('X-Contract-Version')?.split('.').map(Number);
   if (version) taskHandoffs = version[0] > 0 || version[1] >= 39;
   if (version) transcriptSync = version[0] === 0 && version[1] >= 42;

@@ -8,7 +8,13 @@ import { usePersonalOperation } from "./usePersonalOperation";
 import { researchApi } from "./api";
 import { workspaceApi, useWorkspaceConversation } from "./workspace-api";
 import { workspaceMemberLabel, workspaceStatusLabel } from "./workspace-labels";
-import { TaskWorkspace, TaskListRow, WorkspaceTaskDetail } from "./TaskWorkspace";
+import {
+  TaskWorkspace,
+  TaskListRow,
+  TaskReadNotice,
+  WorkspaceTaskDetail,
+} from "./TaskWorkspace";
+import { transientReadFailure } from "./read-errors";
 import { collectTaskInbox } from "./task-inbox";
 import { collectTeamWorkspace } from "./team-progress";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
@@ -162,6 +168,7 @@ export function DesktopWorkbench() {
       ),
     `workbench:${filter}:${actor?.member.labId}:${availability.supports(23)}`,
     tab === "tasks" && supported && !!actor,
+    { timeoutMs: 10000, keepDataOnError: transientReadFailure },
   );
   const [selected, setSelected] = useState<WorkbenchCard>();
   const [creating, setCreating] = useState(false),
@@ -325,19 +332,6 @@ export function DesktopWorkbench() {
           }
         </div>
       </header>
-      {supported && availability.error && (
-        <Alert
-          type="warning"
-          showIcon
-          message="服务连接不稳定，正在重新检查"
-          description={`${availability.error} 已打开的任务和草稿会保留，最新进展以实际读取结果为准。`}
-          action={
-            <Button loading={availability.loading} onClick={availability.refresh}>
-              重新检查
-            </Button>
-          }
-        />
-      )}
       <div className="workbench-content">
         {!supported ? (
           <WorkspaceUnavailable
@@ -411,13 +405,12 @@ export function DesktopWorkbench() {
                     message="任务较多，当前列表仅包含已读取的事项。请从团队任务继续查找。"
                   />
                 )}
-                {read.error && (
-                  <Alert
-                    type="error"
-                    message={read.error}
-                    action={<Button onClick={read.refresh}>重试</Button>}
-                  />
-                )}
+                <TaskReadNotice
+                  error={read.error}
+                  stale={!!read.data}
+                  loading={read.loading}
+                  onRetry={read.refresh}
+                />
                 {!read.data && !read.error && (
                   <p role="status" className="p-5">
                     正在读取任务…

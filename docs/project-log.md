@@ -3038,3 +3038,9 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 ## 2026-11-11 Windows0.10.101本机试用包完成
 
 PR200，固定产品提交e4c8fc562cb92e9b8fdce56de73541e90549222f（含PR199），仅补记录在后续提交。桌面C:/Users/luo/Desktop/AcceptCat_0.10.101.exe，421230065字节，SHA256 0d1545a975c9fcc88a5c77bd2439571ce3b7a4868588c2e9ac78b868d913191d，桌面与原产物一致、PE/ASAR版本一致。双类型、363项脚本与44项本地DSH检查执行、冻结Windows完整Web/NSIS、11必要入口/DSH、64份打包Web资源、更新清单与独立临时目录启动READY/exit0通过。隔离Edge1440×960/1100×800验证实际任务入口/列表/hooks与合成API/规划/详情叶组件，包含归属、切换、搜索、待审、范围、分工/计划抽屉、新建与团队URL。无真实任务/模型/双机验收，未代安装。构建为--publish never，main/tag/公开Latest0.10.100及生产acffd5e/0.45/034保持，无后台更新。已保留类型、脚本启动、夹具定位、ASAR验证脚本路径/原有Web WASM排除的失败日志，既有Antd/Router/electron-log提示说明见docs/deployment/acceptcat-0.10.101-preview.md及Git外task-views-preview-20261111。下一步负责人安装体验后决定是否合并/发布。
+
+## 2026-11-11 PR200跟进：任务加载与探测提示恢复准备
+
+从main/07ab5d1新建fix/task-service-read-state，普通合并feat/task-views-unified/41a9003，完整保留PR199/200。兼容版本由通过契约校验的API响应既有X-Contract-Version或health/live确认，当前renderer内只共享公共版本；停止每5秒ready轮询，真实任务错误与版本探测分开，任务页删除旧全局黄色检测框。列表/成员限时10秒，可重试；网络/超时/5xx仅保留当前scope上次结果并标明，401/403/格式错误/身份scope变化清旧数据。原30秒默认、写入/发送/模型调用时间限制、提示词及权限不改。
+
+双类型/373项客户端脚本检查执行通过；读取hook实际受控时钟和API版本头回归新增。隔离Edge使用实际入口/列表/hooks及真实researchApi解析合成session，模拟永不返回、503、403、重试和两分钟探测频率通过；业务API/规划/详情叶组件明确夹具，非真实用户验收。首次API测试漏define import.meta.env、浏览器两字按钮空格选择器失败已修正；记录保留，控制台仅既有Router/Antd提示。只读抽查公网ready0.45/三项ok约0.13秒，不认定实际出错时后台/网络根因。计划整合进同一PR200制作0.10.102本机包，尚未打包/安装/发布，无后台变更或部署。证据D:/deepseek-agent/.runtime/task-read-recovery-20261111。
