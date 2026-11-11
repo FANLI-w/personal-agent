@@ -3044,3 +3044,7 @@ PR200，固定产品提交e4c8fc562cb92e9b8fdce56de73541e90549222f（含PR199）
 从main/07ab5d1新建fix/task-service-read-state，普通合并feat/task-views-unified/41a9003，完整保留PR199/200。兼容版本由通过契约校验的API响应既有X-Contract-Version或health/live确认，当前renderer内只共享公共版本；停止每5秒ready轮询，真实任务错误与版本探测分开，任务页删除旧全局黄色检测框。列表/成员限时10秒，可重试；网络/超时/5xx仅保留当前scope上次结果并标明，401/403/格式错误/身份scope变化清旧数据。原30秒默认、写入/发送/模型调用时间限制、提示词及权限不改。
 
 双类型/373项客户端脚本检查执行通过；读取hook实际受控时钟和API版本头回归新增。隔离Edge使用实际入口/列表/hooks及真实researchApi解析合成session，模拟永不返回、503、403、重试和两分钟探测频率通过；业务API/规划/详情叶组件明确夹具，非真实用户验收。首次API测试漏define import.meta.env、浏览器两字按钮空格选择器失败已修正；记录保留，控制台仅既有Router/Antd提示。只读抽查公网ready0.45/三项ok约0.13秒，不认定实际出错时后台/网络根因。计划整合进同一PR200制作0.10.102本机包，尚未打包/安装/发布，无后台变更或部署。证据D:/deepseek-agent/.runtime/task-read-recovery-20261111。
+
+## 2026-11-11 Windows0.10.102本机包完成
+
+同一PR200已整合；固定产品7b3ee2d7e4fbe735c5ca62d225b9b9ed544e1f18，包含原任务视图/资料修复，后续只补记录。桌面C:/Users/luo/Desktop/AcceptCat_0.10.102.exe，421228845字节，SHA256 b727a1aaf07af5a97e38846254b2031e7a35642d5af64c97edd3b90a8be65bb5，与原始产物一致。双类型/373项脚本检查执行、真实hook/API头受控故障、隔离浏览器、冻结Web/NSIS、11必要入口/固定DSH、64成品Web资源、更新清单、全新临时目录启动READY/exit0通过。公开ready约0.13秒，隔离Electron实际传输公开live/ready为5529/3632ms且均成功；不认定用户当时网络根因，不改代理或后台。模型/提示词/权限/两态规划不动，无真实账号/任务/模型验收，未代安装。构建publish never，main/公开Latest0.10.100和生产acffd5e/0.45/034保持。失败/警告/边界详见docs/deployment/acceptcat-0.10.102-preview.md与Git外task-read-recovery-20261111；后续本人安装试用再决定合并与发布。
