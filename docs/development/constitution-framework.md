@@ -203,11 +203,11 @@ S7 目前是唯一的规范条目，转描述的前提是冲突检测接入装�
 |---|---|---|---|
 | 约束 | `rule` | 12 KB | 是，超限失败 |
 | 工作对象 | `object` | 20 KB | 是 |
-| 事实 | `memory` | 3.5 KB | 否，超限记 `omitted` |
+| 事实 | `memory` | 32 KB（工作台） | 否，超限记 `omitted` |
 | 方法 | `link`、`skill` | 32 KB | 否 |
 | 参考 | `source` | 36 KB | 否 |
 
-- **事实段预算的来历**：3.5 KB 不是新定的数，它原本写死在 `personalMemoryContext()` 里（`personal-memories.ts`）。2026-11-09 把它提成 `packages/constitution` 的 `memoryBudget`，装配与注入共用同一个常量，避免两处各管各的。课题组记忆目前没有生产者，接入时要按实际体量重新定，不要直接放大这个值。
+- **两种预算分开**：`memoryBudget = 3_500` 保留 `personalMemoryContext()` 原有个人偏好注入上限，条数仍由 `memoryRecordLimit = 12` 限制。工作台已有真实生产者：`work-memory.ts` 将任务记忆与本人确认的交接（输入可达4KB，另有来源/成果元数据）映射为事实段。2026-11-11 整合审核保留原 `factBudget = 32_000`，避免把有效交接整条省略；超过事实段预算仍记录 `omitted`。不扩大服务端个人偏好预算，也不改写入上限。
 - **记忆的四类生命周期**：`preference`（偏好，长期，跟随本人）、`conclusion`（结论，长期可追溯，绑定来源任务与交付物版本）、`handoff`（交接，临时，绑定任务版本）、`turn`（本次要求，只在单轮）。落点分别是 `personal_memories` 与 `chat_memories`、`conclusions` 与 `conclusion_versions`、`task_handoffs`、当前消息。这个标注只用于回执，不落库、不参与装配判定，定义在 `packages/constitution/src/memory.ts`。
 - **记忆回执**：`CHAT_MEMORY` 与 `PLANNING_MEMORY` 各打一行，格式 `preference:n/conclusion:n/handoff:n/turn:n`，缺席的类别也写 0，因为「这一轮没有结论进入」本身是需要看见的事实。目前 `CHAT_MEMORY` 统计偏好（本人记忆加助手自身的记忆），`PLANNING_MEMORY` 统计结论；`handoff` 尚未进入这两条回执，它目前在任务工作页的装配里。
 - **条数与字节分开管**：单次注入最多 12 条（`memoryRecordLimit`），与字节预算互为补充；条数上限防止大量短条目淹没上下文。

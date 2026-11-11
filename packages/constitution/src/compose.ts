@@ -25,15 +25,18 @@ export type Section = {
 export const ruleBudget = 12_000
 
 /**
- * 事实段的预算。数值取自既有的个人助理记忆实现（`personalMemoryContext`），装配与注入共用它。
- * 课题组记忆目前没有生产者，接入时需要按实际体量重新定，不要直接放大这个值。
+ * 服务端个人助理偏好注入的预算，保留原有 3500 字节边界。
+ * 本机工作台的事实段还承载任务交接，不能用个人偏好预算替代它。
  */
 export const memoryBudget = 3_500
+
+/** 本机工作台已使用的事实段预算，包含交接元数据与多条任务记忆。 */
+export const factBudget = 32_000
 
 export const defaultSections: readonly Section[] = [
   { name: '约束', match: entry => entry.kind === 'rule', limit: ruleBudget, mandatory: true },
   { name: '工作对象', match: entry => entry.kind === 'object', limit: 20_000, mandatory: true },
-  { name: '事实', match: entry => entry.kind === 'memory', limit: memoryBudget, mandatory: false },
+  { name: '事实', match: entry => entry.kind === 'memory', limit: factBudget, mandatory: false },
   { name: '方法', match: entry => entry.kind === 'link' || entry.kind === 'skill', limit: 32_000, mandatory: false },
   { name: '参考', match: entry => entry.kind === 'source', limit: 36_000, mandatory: false },
 ]

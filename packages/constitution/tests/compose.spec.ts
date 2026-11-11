@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compose, type Entry } from '../src/index.js'
+import { compose, factBudget, memoryBudget, type Entry } from '../src/index.js'
 
 const entry = (kind: Entry['kind'], title: string, length = 40): Entry => ({
   id: `id-${title}`,
@@ -11,6 +11,13 @@ const entry = (kind: Entry['kind'], title: string, length = 40): Entry => ({
 })
 
 describe('上下文装配', () => {
+  it('工作台事实段保留任务交接容量，不套用个人偏好注入预算', () => {
+    expect(memoryBudget).toBe(3500)
+    expect(factBudget).toBe(32000)
+    const result = compose([entry('memory', '任务交接', 4000), entry('memory', '任务记忆', 2500)])
+    expect(result.included.map(item => item.title)).toEqual(['任务交接', '任务记忆'])
+    expect(result.omitted).toEqual([])
+  })
   it('按段顺序装配，约束先于事实', () => {
     const result = compose([entry('memory', '记忆A'), entry('rule', '规则A')])
     expect(result.included.map(item => item.title)).toEqual(['规则A', '记忆A'])
