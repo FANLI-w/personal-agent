@@ -1,25 +1,27 @@
 import { useEffect, useRef } from "react";
-import { useResearchStore } from "./store";
 import { useResearchRead } from "./useResearchRead";
-import { readWorkspaceAvailability, workspaceAvailability } from "./workspace-availability";
+import {
+  readWorkspaceAvailability,
+  workspaceAvailability,
+} from "./workspace-availability";
 
 // Remember only the public contract version, never task data or authorization.
-// A failed health recheck must not unmount editors or block authenticated reads.
+// A failed health recheck or actor refresh must not unmount editors. Changing
+// the configured service loads a new renderer origin, which resets this ref;
+// account/lab data and authorization are still fenced by useResearchRead.
 export function useWorkspaceAvailability(enabled: boolean) {
-  const generation = useResearchStore((s) => s.generation);
   const read = useResearchRead(
     readWorkspaceAvailability,
     "workspace-availability",
     enabled,
   );
-  const confirmed = useRef<{ generation: number; version: string }>();
-  if (!enabled || confirmed.current?.generation !== generation)
-    confirmed.current = undefined;
-  if (enabled && read.data)
-    confirmed.current = { generation, version: read.data.version };
-  const version = confirmed.current?.version;
+  const confirmed = useRef<string>();
+  if (!enabled) confirmed.current = undefined;
+  if (enabled && read.data) confirmed.current = read.data.version;
+  const version = confirmed.current;
   const supports = (minimumMinor: number) =>
-    !!version && workspaceAvailability(
+    !!version &&
+    workspaceAvailability(
       { data: { status: "ok", contractVersion: version } },
       minimumMinor,
     ).available;
