@@ -3034,3 +3034,7 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 按负责人要求，从main/07ab5d1新建feat/task-views-unified并普通合并PR199/437b520，保留资料闪动修复历史；客户端候选0.10.101。我的待办与团队任务共用列表/卡片/详情；两个新建入口常驻，团队按计划分组并保留阶段、搜索、待审/截止、范围与分工抽屉，删除原重复概览/大表格/详情弹窗路径。选择任务不离开团队视图，从详情新建先清除所选任务后展开原助手，不改规划提示词或两态流程。我的科研事项通过既有scope=mine获准ID筛选，卡片分页完整读取后归类；上限10页、截断明示，错误不回退团队全量；业务权限隔离保持。
 
 25项任务和44项本地DSH检查、隔离Edge初轮交互通过，实际入口/团队/共享列表/hooks，业务API、规划与详情叶组件为合成夹具。首次类型检查发现nullable任务/成员ID，已修正；夹具误找取消按钮改用实际关闭按钮；旧Antd findDOMNode和Router未来版本提示已记录。进一步检查与NSIS正在进行，不宣称已生成/安装/真实模型验收；证据D:/deepseek-agent/.runtime/task-views-preview-20261111。生产acffd5e/0.45/034、公开0.10.100保持，未合main/发布/部署。
+
+## 2026-11-11 Windows0.10.101本机试用包完成
+
+PR200，固定产品提交e4c8fc562cb92e9b8fdce56de73541e90549222f（含PR199），仅补记录在后续提交。桌面C:/Users/luo/Desktop/AcceptCat_0.10.101.exe，421230065字节，SHA256 0d1545a975c9fcc88a5c77bd2439571ce3b7a4868588c2e9ac78b868d913191d，桌面与原产物一致、PE/ASAR版本一致。双类型、363项脚本与44项本地DSH检查执行、冻结Windows完整Web/NSIS、11必要入口/DSH、64份打包Web资源、更新清单与独立临时目录启动READY/exit0通过。隔离Edge1440×960/1100×800验证实际任务入口/列表/hooks与合成API/规划/详情叶组件，包含归属、切换、搜索、待审、范围、分工/计划抽屉、新建与团队URL。无真实任务/模型/双机验收，未代安装。构建为--publish never，main/tag/公开Latest0.10.100及生产acffd5e/0.45/034保持，无后台更新。已保留类型、脚本启动、夹具定位、ASAR验证脚本路径/原有Web WASM排除的失败日志，既有Antd/Router/electron-log提示说明见docs/deployment/acceptcat-0.10.101-preview.md及Git外task-views-preview-20261111。下一步负责人安装体验后决定是否合并/发布。
