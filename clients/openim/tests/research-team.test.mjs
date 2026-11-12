@@ -121,7 +121,7 @@ test("old workbench and new research team have independent healthy-service gates
     {
       module,
       exports: module.exports,
-      require: () => ({ withRequestDeadline: (run) => run() }),
+      require: () => ({ withRequestDeadline: (run) => run(), validServiceVersion: v => /^\d+\.\d+\.\d+$/.test(v) }),
     },
   );
   const { workspaceAvailability } = module.exports;

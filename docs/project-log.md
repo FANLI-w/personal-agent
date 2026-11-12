@@ -3028,3 +3028,23 @@ GitHub Windows检查发现临时盘祖先路径别名会误触原件缓存校验
 从干净main/07ab5d1创建fix/library-layout-detection。定位为未知健康契约版本被误用作旧后台分支，以及公共已确认版本随账号/课题组generation清除。首次加载/失败独立显示等待和重试，同一服务的公共版本跨会话刷新保留，实际成功健康响应仍能更新版本；业务数据与权限隔离不变，本机报告仍可离线打开。未改模型、规则、服务端或数据库。
 
 客户端29项定向检查（含7项新回归）、类型与完整Web构建通过；新检查加入team-library脚本和Windows CI。隔离Edge用实际入口/团队资料组件/store/hooks复现旧源码切页，并验证修复后延迟、会话刷新、503、首次失败重试、旧0.43服务和本机报告入口；业务API和旧页叶组件为合成夹具，无真实账号/材料验收。证据D:/deepseek-agent/.runtime/library-layout-flicker-20261111，保存初次夹具依赖/JSX与缺失导出失败记录，修正夹具后通过；最终控制台仅Router未来版提示和主动503。后台保持acffd5e/0.45/034，公开0.10.100与安装包保持。当前仅功能分支候选，尚未合并、打包或发布；安装中的0.10.100不包含本修复。
+
+## 2026-11-11 统一任务视图本机试用准备
+
+按负责人要求，从main/07ab5d1新建feat/task-views-unified并普通合并PR199/437b520，保留资料闪动修复历史；客户端候选0.10.101。我的待办与团队任务共用列表/卡片/详情；两个新建入口常驻，团队按计划分组并保留阶段、搜索、待审/截止、范围与分工抽屉，删除原重复概览/大表格/详情弹窗路径。选择任务不离开团队视图，从详情新建先清除所选任务后展开原助手，不改规划提示词或两态流程。我的科研事项通过既有scope=mine获准ID筛选，卡片分页完整读取后归类；上限10页、截断明示，错误不回退团队全量；业务权限隔离保持。
+
+25项任务和44项本地DSH检查、隔离Edge初轮交互通过，实际入口/团队/共享列表/hooks，业务API、规划与详情叶组件为合成夹具。首次类型检查发现nullable任务/成员ID，已修正；夹具误找取消按钮改用实际关闭按钮；旧Antd findDOMNode和Router未来版本提示已记录。进一步检查与NSIS正在进行，不宣称已生成/安装/真实模型验收；证据D:/deepseek-agent/.runtime/task-views-preview-20261111。生产acffd5e/0.45/034、公开0.10.100保持，未合main/发布/部署。
+
+## 2026-11-11 Windows0.10.101本机试用包完成
+
+PR200，固定产品提交e4c8fc562cb92e9b8fdce56de73541e90549222f（含PR199），仅补记录在后续提交。桌面C:/Users/luo/Desktop/AcceptCat_0.10.101.exe，421230065字节，SHA256 0d1545a975c9fcc88a5c77bd2439571ce3b7a4868588c2e9ac78b868d913191d，桌面与原产物一致、PE/ASAR版本一致。双类型、363项脚本与44项本地DSH检查执行、冻结Windows完整Web/NSIS、11必要入口/DSH、64份打包Web资源、更新清单与独立临时目录启动READY/exit0通过。隔离Edge1440×960/1100×800验证实际任务入口/列表/hooks与合成API/规划/详情叶组件，包含归属、切换、搜索、待审、范围、分工/计划抽屉、新建与团队URL。无真实任务/模型/双机验收，未代安装。构建为--publish never，main/tag/公开Latest0.10.100及生产acffd5e/0.45/034保持，无后台更新。已保留类型、脚本启动、夹具定位、ASAR验证脚本路径/原有Web WASM排除的失败日志，既有Antd/Router/electron-log提示说明见docs/deployment/acceptcat-0.10.101-preview.md及Git外task-views-preview-20261111。下一步负责人安装体验后决定是否合并/发布。
+
+## 2026-11-11 PR200跟进：任务加载与探测提示恢复准备
+
+从main/07ab5d1新建fix/task-service-read-state，普通合并feat/task-views-unified/41a9003，完整保留PR199/200。兼容版本由通过契约校验的API响应既有X-Contract-Version或health/live确认，当前renderer内只共享公共版本；停止每5秒ready轮询，真实任务错误与版本探测分开，任务页删除旧全局黄色检测框。列表/成员限时10秒，可重试；网络/超时/5xx仅保留当前scope上次结果并标明，401/403/格式错误/身份scope变化清旧数据。原30秒默认、写入/发送/模型调用时间限制、提示词及权限不改。
+
+双类型/373项客户端脚本检查执行通过；读取hook实际受控时钟和API版本头回归新增。隔离Edge使用实际入口/列表/hooks及真实researchApi解析合成session，模拟永不返回、503、403、重试和两分钟探测频率通过；业务API/规划/详情叶组件明确夹具，非真实用户验收。首次API测试漏define import.meta.env、浏览器两字按钮空格选择器失败已修正；记录保留，控制台仅既有Router/Antd提示。只读抽查公网ready0.45/三项ok约0.13秒，不认定实际出错时后台/网络根因。计划整合进同一PR200制作0.10.102本机包，尚未打包/安装/发布，无后台变更或部署。证据D:/deepseek-agent/.runtime/task-read-recovery-20261111。
+
+## 2026-11-11 Windows0.10.102本机包完成
+
+同一PR200已整合；固定产品7b3ee2d7e4fbe735c5ca62d225b9b9ed544e1f18，包含原任务视图/资料修复，后续只补记录。桌面C:/Users/luo/Desktop/AcceptCat_0.10.102.exe，421228845字节，SHA256 b727a1aaf07af5a97e38846254b2031e7a35642d5af64c97edd3b90a8be65bb5，与原始产物一致。双类型/373项脚本检查执行、真实hook/API头受控故障、隔离浏览器、冻结Web/NSIS、11必要入口/固定DSH、64成品Web资源、更新清单、全新临时目录启动READY/exit0通过。公开ready约0.13秒，隔离Electron实际传输公开live/ready为5529/3632ms且均成功；不认定用户当时网络根因，不改代理或后台。模型/提示词/权限/两态规划不动，无真实账号/任务/模型验收，未代安装。构建publish never，main/公开Latest0.10.100和生产acffd5e/0.45/034保持。失败/警告/边界详见docs/deployment/acceptcat-0.10.102-preview.md与Git外task-read-recovery-20261111；后续本人安装试用再决定合并与发布。

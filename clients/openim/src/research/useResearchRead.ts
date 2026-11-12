@@ -8,7 +8,11 @@ export function useResearchRead<T>(
   read: (signal: AbortSignal) => Promise<T>,
   identity: string,
   enabled = true,
-  options: { poll?: false | ((value: T | undefined) => boolean); keepDataOnError?: boolean } = {},
+  options: {
+    poll?: false | ((value: T | undefined) => boolean);
+    keepDataOnError?: boolean | ((failure: unknown) => boolean);
+    timeoutMs?: number;
+  } = {},
 ) {
   const actorGeneration = useResearchStore((s) => s.generation);
   const scope = `${actorGeneration}:${identity}`;
@@ -66,7 +70,7 @@ export function useResearchRead<T>(
       try {
         const value = await withRequestDeadline(
           (signal) => reader.current(signal),
-          30000,
+          settings.current.timeoutMs ?? 30000,
           flight.controller.signal,
         );
         if (isCurrent()) {
@@ -77,7 +81,9 @@ export function useResearchRead<T>(
       } catch (failure) {
         flight.failure = failure;
         if (isCurrent()) {
-          if (!settings.current.keepDataOnError) setResult(undefined);
+          const keep = settings.current.keepDataOnError;
+          if (!(typeof keep === "function" ? keep(failure) : keep))
+            setResult(undefined);
           nextPollAt.current = Date.now() + 15000;
           setError({
             identity: requestIdentity,
@@ -113,9 +119,14 @@ export function useResearchRead<T>(
       throw flight.failure;
   }, [refresh]);
   const invalidate = useCallback((clear = false) => {
-    generation.current++; ticket.current++;
-    inFlight.current?.controller.abort(); inFlight.current = undefined;
-    if (clear) { setResult(undefined); lastValue.current = undefined; }
+    generation.current++;
+    ticket.current++;
+    inFlight.current?.controller.abort();
+    inFlight.current = undefined;
+    if (clear) {
+      setResult(undefined);
+      lastValue.current = undefined;
+    }
     setPending(undefined);
   }, []);
   useEffect(() => {
@@ -129,7 +140,12 @@ export function useResearchRead<T>(
     if (!enabled) return;
     void refresh();
     const interval = setInterval(() => {
-      if (settings.current.poll === false || (typeof settings.current.poll === 'function' && !settings.current.poll(lastValue.current))) return;
+      if (
+        settings.current.poll === false ||
+        (typeof settings.current.poll === "function" &&
+          !settings.current.poll(lastValue.current))
+      )
+        return;
       if (document.visibilityState === "visible" && Date.now() >= nextPollAt.current)
         void refresh();
     }, 5000);

@@ -73,6 +73,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:local-dsh
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          corepack pnpm@10.28.0 run test:task-views
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:team-library
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           corepack pnpm@10.28.0 run test:dsh-plugin

@@ -12,7 +12,7 @@ async function fixture() {
   const f = { generation: 1, read: { data: undefined, error: '', loading: true, refresh: async () => { f.retries++; } }, retries: 0, panel: '' };
   const jsx = (type, props) => ({ type, props });
   const imports = {
-    react: { useRef(value) { const index = cursor++; return refs[index] ||= { current: value }; }, useEffect() {} },
+    react: { useRef(value) { const index = cursor++; return refs[index] ||= { current: value }; }, useEffect() {}, useSyncExternalStore(_subscribe, get) { return get(); } },
     'react/jsx-runtime': { jsx, jsxs: jsx },
     antd: { Button: 'Button', Segmented: 'Segmented', Spin: 'Spin' },
     'react-router-dom': { useSearchParams: () => [new URLSearchParams(f.panel), () => {}] },
@@ -36,6 +36,8 @@ async function fixture() {
     return module.exports;
   };
   imports['./request-deadline'] = {};
+  imports['./service-version'] = await load('service-version.ts');
+  f.observeVersion = imports['./service-version'].observeServiceVersion;
   imports['./workspace-availability'] = await load('workspace-availability.ts');
   const { useWorkspaceAvailability } = imports['./useWorkspaceAvailability'] = await load('useWorkspaceAvailability.ts');
   const { LibraryWorkspace } = await load('LibraryWorkspace.tsx');
@@ -48,6 +50,14 @@ async function fixture() {
 const nodes = node => !node || typeof node !== 'object' ? [] : Array.isArray(node)
   ? node.flatMap(nodes) : [node, ...nodes(node.props?.children)];
 const has = (tree, type) => nodes(tree).some(node => node.type === type);
+
+test('a validated API version opens the correct layout even when the separate probe has stalled', async () => {
+  const f = await fixture(); f.observeVersion('0.45.0');
+  assert(has(f.render(), 'Team')); f.read.error = 'probe timeout';
+  assert.equal(f.hook().error, ''); assert.equal(f.hook().loading, false);
+  f.observeVersion('invalid'); assert(has(f.render(), 'Team'));
+  f.observeVersion('0.43.0'); assert(has(f.render(), 'Legacy'));
+});
 
 test('initial detection mounts neither legacy library/Agent nor team workspace', async () => {
   const f = await fixture();
