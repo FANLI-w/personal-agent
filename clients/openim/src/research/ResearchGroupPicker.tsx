@@ -111,7 +111,7 @@ export function ResearchGroupPicker({
         )}
       </div>
       <p className="px-3 py-2 text-xs text-[var(--sub-text)]">
-        选中的联系人直接入群。群内固定一个群助理，不再邀请个人智能体。
+        选中的联系人直接入群。后台 0.46 起，每群固定一个群助理，不再邀请个人智能体。
       </p>
     </div>
   );

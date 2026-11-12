@@ -434,8 +434,8 @@ export const ChooseContact: FC<ChooseContactProps> = ({
           </div>
           {researchMode && <div className="mb-4 space-y-2 text-sm">
             {labs.data && labs.data.data.labs.length>1 && <Select aria-label="本群课题组" className="w-full" value={groupLabId} onChange={setSelectedLab} options={labs.data.data.labs.map(l=>({label:l.name,value:l.id}))} />}
-            <p>{labs.data?`本群将适用：平台规则${groupLabId?" + "+labs.data.data.labs.find(l=>l.id===groupLabId)?.name+"课题组规则":"（不关联课题组）"}`:labs.error||"正在核对群规则来源…"}</p>
-            <p className="text-[var(--sub-text)]">群内固定一个群助理，不读取个人规则、偏好或私聊。</p>
+            <p>{labs.data?`本群将适用：平台规则${groupLabId?" + "+labs.data.data.labs.find(l=>l.id===groupLabId)?.name+"课题组规则":"（不关联课题组）"}`:availability.version&&!availability.supports(46)?"新建群聊需要后台升级到 0.46。":labs.error||"正在核对群规则来源…"}</p>
+            <p className="text-[var(--sub-text)]">后台 0.46 起，新群固定一个群助理，不读取个人规则、偏好或私聊。</p>
           </div>}
           {!researchMode && (
             <div className="mb-6 flex items-center">

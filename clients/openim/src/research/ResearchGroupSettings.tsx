@@ -34,9 +34,10 @@ export function ResearchGroupSettings({group,contacts,onRefresh}:{group:Conversa
     finally{if(operation.isCurrent())setBusy(false);}
   }
   const version=read.data?.settings.conversation.version??group.version;
+  const hasGroupAssistant=contacts.some(c=>c.groupConversationId===group.id&&group.members.some(m=>m.contactId===c.id&&m.status==='joined'));
   return <div className="mb-4 rounded-lg border border-[var(--gap-text)] p-3 text-sm">
-    <div className="flex items-center justify-between"><span>群助理 · 本群专用</span><Button type="link" onClick={()=>setExpanded(v=>!v)}>{expanded?'收起':'规则与群设置'}</Button></div>
-    <p className="text-xs text-[var(--sub-text)]">只在被 @ 时回答，不读取个人规则、偏好和私聊。</p>
+    <div className="flex items-center justify-between"><span>{hasGroupAssistant?'群助理 · 本群专用':'群设置'}</span><Button type="link" onClick={()=>setExpanded(v=>!v)}>{expanded?'收起':'规则与群设置'}</Button></div>
+    <p className="text-xs text-[var(--sub-text)]">{hasGroupAssistant?'只在被 @ 时回答，不读取个人规则、偏好和私聊。':'固定群助理与转达需要后台 0.46；升级前沿用已有聊天与成员。'}</p>
     {expanded&&<div className="mt-3 space-y-3">
       {!supported?<p>群助理与群设置需要后台 0.46，当前服务尚未支持。</p>:<>
       {read.loading&&!read.data?<Spin size="small"/>:null}
