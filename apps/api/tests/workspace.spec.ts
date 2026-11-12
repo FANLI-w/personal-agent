@@ -37,8 +37,8 @@ describe('social workspace actual HTTP/SQLite; model and IM transport deliberate
   let group=await s.ok('imCreateGroup',{title:'成员可以拉人和自己的助手',contactIds:[colleague.id],plan:null,sharedContext:{selectedText:null,artifactRefs:[]}})
   expect((await s.ok('chatConversation',null,{id:group.id},1)).allowedActions).toContain('invite')
   expect((await s.call('chatConversation',null,{id:group.id},2)).status).toBe(404)
-  group=await s.ok('imInviteContact',{contactId:assistant.id,expectedConversationVersion:group.version},{id:group.id},1)
-  expect(group.members.find((m:{contactId:string})=>m.contactId===assistant.id).status).toBe('joined')
+  expect((await s.call('imInviteContact',{contactId:assistant.id,expectedConversationVersion:group.version},{id:group.id},1)).value.error.code).toBe('GROUP_AGENT_NOT_ALLOWED')
+  expect(group.members.some((m:{contactId:string})=>m.contactId===assistant.id)).toBe(false)
   const command={contactId:third.id,expectedConversationVersion:group.version},key=randomUUID()
   group=await s.ok('imInviteContact',command,{id:group.id},1,'',key)
   expect((await s.ok('imInviteContact',command,{id:group.id},1,'',key)).version).toBe(group.version)
@@ -51,9 +51,9 @@ describe('social workspace actual HTTP/SQLite; model and IM transport deliberate
   // disappears after the owner withdraws it, including old idempotent receipts.
   const relationship=(await s.ok('chatContact',null,{id:colleague.id})).relationship
   await s.ok('revokeContact',{expectedVersion:relationship.version},{id:colleague.id})
-  expect((await s.call('chatConversation',null,{id:group.id},1)).status).toBe(404)
-  expect((await s.call('chatConversation',null,{id:group.id},2)).status).toBe(404)
-  expect((await s.call('imInviteContact',command,{id:group.id},1,'',key)).status).toBe(404)
+  expect((await s.call('chatConversation',null,{id:group.id},1)).status).toBe(200)
+  expect((await s.call('chatConversation',null,{id:group.id},2)).status).toBe(200)
+  expect((await s.call('imInviteContact',command,{id:group.id},1,'',key)).status).toBe(200)
  })
  it('requires explicit publication and real cross-space friendship; withdrawal invalidates cached discovery',async()=>{
   const s=await setup(),other=await s.own(1),agent=await s.ok('createPersonalAgent',profile,{},1)
@@ -74,7 +74,7 @@ describe('social workspace actual HTTP/SQLite; model and IM transport deliberate
   expect((await s.ok('createPersonalWorkTask',{title:'真实协作',goal:'分析共享的合成段落',contactIds:[foreign.id,agent.id],agentContactId:agent.id},{},0,'',key)).id).toBe(task.id)
   const activation=randomUUID(),active=await s.ok('activatePersonalWorkTask',{expectedVersion:task.version},{id:task.id},0,'',activation);expect((await s.ok('activatePersonalWorkTask',{expectedVersion:task.version},{id:task.id},0,'',activation)).conversationId).toBe(active.conversationId)
   expect(active.participants.find((p:{contactId:string})=>p.contactId===agent.id).status).toBe('accepted')
-  expect((await s.ok('chatConversation',null,{id:active.conversationId})).members.find((m:{contactId:string})=>m.contactId===agent.id).status).toBe('joined')
+  expect((await s.ok('chatConversation',null,{id:active.conversationId})).members.some((m:{contactId:string})=>m.contactId===agent.id)).toBe(false)
   expect((await s.ok('chatInvitations')).some((i:{conversationId:string;invitedContactId:string})=>i.conversationId===active.conversationId&&i.invitedContactId===agent.id)).toBe(false)
   expect((await s.call('chatConversation',null,{id:active.conversationId},1)).status).toBe(200)
   expect(await s.ok('personalWorkTask',null,{id:task.id},1)).toMatchObject({summaryOnly:true,goal:null,result:null,conversationId:null})
@@ -83,9 +83,8 @@ describe('social workspace actual HTTP/SQLite; model and IM transport deliberate
   expect((await s.call('runPersonalWorkTask',{expectedVersion:active.version,agentContactId:agent.id},{id:task.id},1)).status).toBe(403)
   let current=await s.ok('decidePersonalWorkTask',{expectedVersion:active.version,decision:'accept'},{id:task.id},1);expect(current.summaryOnly).toBe(false)
   await s.ok('createPersonalMemory',{topic:'私有',content:'OWNER_PRIVATE_NOT_GROUP',scope:'general'});current=await s.ok('personalWorkTask',null,{id:task.id})
-  const runKey=randomUUID(),running=await s.ok('runPersonalWorkTask',{expectedVersion:current.version,agentContactId:agent.id},{id:task.id},1,'',runKey);expect(running.status).toBe('running')
-  expect((await s.ok('runPersonalWorkTask',{expectedVersion:current.version,agentContactId:agent.id},{id:task.id},1,'',runKey)).turnId).toBe(running.turnId)
-  await s.tick(async(input,_signal,credential)=>{expect(input.prompt).toContain('分析共享的合成段落');expect(input.prompt).not.toContain('OWNER_PRIVATE_NOT_GROUP');expect(credential.apiKey).toBe('synthetic-person-1');return model('实际合成模型返回的分析结果')})
+  expect((await s.call('runPersonalWorkTask',{expectedVersion:current.version,agentContactId:agent.id},{id:task.id},1)).value.error.code).toBe('GROUP_AGENT_NOT_ALLOWED')
+  await s.ok('submitPersonalWorkResult',{expectedVersion:current.version,text:'实际合成用户提交的分析结果'},{id:task.id},1)
   const output=await s.ok('personalWorkTask',null,{id:task.id});expect(output).toMatchObject({status:'awaiting_review',result:{accepted:false}})
   expect((await s.call('reviewPersonalWorkResult',{expectedVersion:output.version,messageId:output.result.messageId,decision:'accept'},{id:task.id},1)).status).toBe(403)
   expect((await s.call('reviewPersonalWorkResult',{expectedVersion:output.version,messageId:'wrong_result',decision:'accept'},{id:task.id})).status).toBe(409)
@@ -93,20 +92,15 @@ describe('social workspace actual HTTP/SQLite; model and IM transport deliberate
   await s.restart();expect(await s.ok('personalWorkTask',null,{id:task.id},1)).toMatchObject({status:'completed',result:{accepted:true}});expect((await s.ok('workbench',null,{},1,'?category=completed')).some((c:{taskId:string})=>c.taskId===task.id)).toBe(true)
   const bridge=new OpenImBridge(s.db,s.config),mapping=bridge.mapping(s.chat(1),complete.conversationId);expect(mapping.kind).toBe('group');expect(mapping.transportStatus).toBe('unavailable');const callback=new OpenImCallbacks(bridge);expect(callback.group(mapping.groupID).members).toHaveLength(3)
   const relationship=(await s.ok('chatContact',null,{id:foreign.id})).relationship;await s.ok('revokeContact',{expectedVersion:relationship.version},{id:foreign.id})
-  expect((await s.call('chatConversation',null,{id:complete.conversationId},1)).status).toBe(404);expect((await s.call('personalWorkTask',null,{id:task.id},1)).status).toBe(404);expect(callback.group(mapping.groupID).members).toHaveLength(2)
+  expect((await s.call('chatConversation',null,{id:complete.conversationId},1)).status).toBe(200);expect((await s.call('personalWorkTask',null,{id:task.id},1)).status).toBe(404);expect(callback.group(mapping.groupID).members).toHaveLength(3)
  })
- it('preserves research group/material ACL while social AI mentions remain explicit and owner-only memory remains private',async()=>{
-  const s=await setup(),foreign=await s.human(1);await s.accept(foreign.id);const own=await s.own(),agent=await s.ok('createPersonalAgent',profile)
-  const plain=await s.ok('imCreateGroup',{title:'纯社交群',contactIds:[foreign.id,agent.id],plan:null,sharedContext:{selectedText:null,artifactRefs:[]}})
-  expect(s.db.prepare('SELECT task_id FROM social_groups WHERE conversation_id=?').get(plain.id)!.task_id).toBeNull();expect(Number(s.db.prepare('SELECT count(*) n FROM personal_work_tasks').get()!.n)).toBe(0)
-  expect(plain.members.find((m:{contactId:string})=>m.contactId===agent.id).status).toBe('joined')
-  expect((await s.ok('chatInvitations')).some((i:{conversationId:string;invitedContactId:string})=>i.conversationId===plain.id&&i.invitedContactId===agent.id)).toBe(false)
-  const plainAsk=await s.ok('sendChatMessage',{text:'普通社交群仅讨论当前文字',intent:'ask_agent',agentContactId:agent.id,budget:{maxTokens:4000,maxSeconds:90}},{id:plain.id});await s.tick(async()=>model('不创建任务的自然回复'));expect((await s.ok('chatTurn',null,{id:plainAsk.turn.id})).status).toBe('succeeded');expect(Number(s.db.prepare('SELECT count(*) n FROM personal_work_tasks').get()!.n)).toBe(0)
-  const task=await s.ok('createPersonalWorkTask',{title:'社交聊天',goal:'仅明确共享目标',contactIds:[agent.id]}),active=await s.ok('activatePersonalWorkTask',{expectedVersion:task.version},{id:task.id})
-  const text=`@${agent.displayName} 你好`;const ordinary=await s.ok('sendChatMessage',{text,mentions:[{contactId:agent.id,start:0,end:agent.displayName.length+1}]},{id:active.conversationId});expect(ordinary.turn).toBeNull();let calls=0;expect(await s.tick(async()=>{calls++;return model('不能调用')})).toBe(false);expect(calls).toBe(0)
-  const explicit=await s.ok('sendChatMessage',{text:'请分析这句文字',intent:'ask_agent',agentContactId:agent.id,budget:{maxTokens:4000,maxSeconds:90}},{id:active.conversationId});await s.tick(async input=>{expect(input.system).not.toContain('JSON {');return model('自然讨论当前文字')});expect((await s.ok('chatTurn',null,{id:explicit.turn.id})).status).toBe('succeeded')
-  expect(await s.ok('personalWorkTask',null,{id:task.id})).toMatchObject({turnId:explicit.turn.id,status:'awaiting_review',result:{messageId:expect.any(String),summary:'自然讨论当前文字',accepted:false}})
-  expect((await s.call('task',null,{id:task.id},1)).status).toBe(404);expect(own.conversation.id).not.toBe(active.conversationId)
+ it('keeps social mentions explicit without personal memory or task creation',async()=>{
+  const s=await setup(),foreign=await s.human(1);await s.accept(foreign.id);await s.ok('createPersonalMemory',{topic:'私有',content:'OWNER_PRIVATE_NOT_GROUP',scope:'general'});
+  const group=await s.ok('imCreateGroup',{title:'纯社交群',contactIds:[foreign.id],plan:null,sharedContext:{selectedText:null,artifactRefs:[]}}),agentId=`group_assistant_${group.id}`;
+  const ordinary=await s.ok('sendChatMessage',{text:'@群助理 你好',mentions:[{contactId:agentId,start:0,end:4}]},{id:group.id});expect(ordinary.turn).toBeNull();expect(await s.tick(async()=>model('不应调用'))).toBe(false);
+  const sent=await s.ok('sendChatMessage',{text:'@群助理 请分析这句文字',intent:'ask_agent',agentContactId:agentId,mentions:[{contactId:agentId,start:0,end:4}],budget:{maxTokens:8000,maxSeconds:90}},{id:group.id});
+  await s.tick(async input=>{expect(input.prompt).not.toContain('OWNER_PRIVATE_NOT_GROUP');return model(JSON.stringify({answer:'合成讨论回复',requests:[]}))});expect((await s.ok('chatTurn',null,{id:sent.turn.id})).status).toBe('succeeded');
+  expect(s.db.prepare('SELECT count(*) n FROM personal_work_tasks').get()!.n).toBe(0);
  })
  it('owner confirmation immediately enables the selected owned Agent; group membership is direct while task commitment stays separate',async()=>{
   const s=await setup(),owned=await s.ok('createPersonalAgent',profile),human=await s.human(1),foreign=await s.ok('createPersonalAgent',{...profile,displayName:'好友的专家'},{},1)
@@ -114,19 +108,15 @@ describe('social workspace actual HTTP/SQLite; model and IM transport deliberate
   const task=await s.ok('createPersonalWorkTask',{title:'确认即可开始',goal:'分析当前合成文字',contactIds:[owned.id,human.id,foreign.id],agentContactId:owned.id}),active=await s.ok('activatePersonalWorkTask',{expectedVersion:task.version},{id:task.id})
   const group=await s.ok('chatConversation',null,{id:active.conversationId})
   // Everyone selected is a joined member immediately: no invitation round.
-  for(const contactId of [owned.id,human.id,foreign.id])expect(group.members.find((m:{contactId:string})=>m.contactId===contactId).status).toBe('joined')
+  expect(group.members.find((m:{contactId:string})=>m.contactId===human.id).status).toBe('joined');for(const contactId of [owned.id,foreign.id])expect(group.members.some((m:{contactId:string})=>m.contactId===contactId)).toBe(false)
   expect(s.db.prepare('SELECT status FROM personal_work_participants WHERE task_id=? AND contact_id=?').get(task.id,owned.id)!.status).toBe('accepted')
   // Direct membership creates no invitation and does not accept the task.
   for(const contactId of [human.id,foreign.id])expect(s.db.prepare('SELECT status FROM personal_work_participants WHERE task_id=? AND contact_id=?').get(task.id,contactId)!.status).toBe('invited')
   expect((await s.ok('chatInvitations')).filter((i:{conversationId:string})=>i.conversationId===group.id)).toEqual([])
   expect((await s.ok('chatInvitations',null,{},1)).filter((i:{conversationId:string})=>i.conversationId===group.id)).toEqual([])
   expect((await s.call('chatConversation',null,{id:group.id},1)).status).toBe(200)
-  const running=await s.ok('runPersonalWorkTask',{expectedVersion:active.version,agentContactId:owned.id},{id:task.id});expect(running.status).toBe('running')
-  await s.tick(async input=>{expect(input.prompt).toContain('分析当前合成文字');return model('确认后的实际合成结果')})
-  expect(await s.ok('personalWorkTask',null,{id:task.id})).toMatchObject({status:'awaiting_review',result:{summary:'确认后的实际合成结果',accepted:false}})
-  const legacy=await s.ok('imCreateGroup',{title:'既有实验室讨论群',contactIds:[owned.id],plan:null,sharedContext:{selectedText:null,artifactRefs:[]}})
-  expect(s.db.prepare('SELECT 1 FROM social_groups WHERE conversation_id=?').get(legacy.id)).toBeUndefined()
-  expect(legacy.members.find((m:{contactId:string})=>m.contactId===owned.id).status).toBe('joined')
+  expect((await s.call('runPersonalWorkTask',{expectedVersion:active.version,agentContactId:owned.id},{id:task.id})).value.error.code).toBe('GROUP_AGENT_NOT_ALLOWED')
+  expect((await s.call('imCreateGroup',{title:'禁止助手入群',contactIds:[owned.id],plan:null,sharedContext:{selectedText:null,artifactRefs:[]}})).value.error.code).toBe('GROUP_AGENT_NOT_ALLOWED')
  })
  it('assistant creates a real collaboration proposal and delegation work item, with no fake automatic membership/completion',async()=>{
   const s=await setup(),own=await s.own(),foreign=await s.human(1);await s.accept(foreign.id);const agent=await s.ok('createPersonalAgent',profile)
@@ -146,8 +136,8 @@ describe('social workspace actual HTTP/SQLite; model and IM transport deliberate
   expect(active.conversationId).toBeTruthy()
  })
  it('020 adds only new tables/indexes and preserves all019 rows/checksums on repeated migration',async()=>{
-  const s=await setup();await s.own();s.db.exec('DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DELETE FROM schema_migrations WHERE version>=20')
+  const s=await setup();await s.own();s.db.exec('DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DELETE FROM schema_migrations WHERE version>=20')
   const tables=s.db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(r=>String(r.name)),hashes=()=>Object.fromEntries(tables.map(t=>[t,createHash('sha256').update(JSON.stringify(s.db.prepare(`SELECT * FROM ${t} ${t==='schema_migrations'?'WHERE version<=19':''} ORDER BY rowid`).all())).digest('hex')]))
-  const before=hashes();migrate(s.db);migrate(s.db);expect(hashes()).toEqual(before);expect(s.db.prepare('SELECT max(version) v FROM schema_migrations').get()!.v).toBe(34);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
+  const before=hashes();migrate(s.db);migrate(s.db);expect(hashes()).toEqual(before);expect(s.db.prepare('SELECT max(version) v FROM schema_migrations').get()!.v).toBe(35);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
  })
 })

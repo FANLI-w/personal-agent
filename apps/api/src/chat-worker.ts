@@ -1,3 +1,6 @@
+import {GroupAssistantOutput} from '@research-agent-platform/contracts'
+import {groupAssistantSystem,groupPublicContext} from './group-assistant-context.js'
+import {queueGroupNotice} from './group-notices.js'
 import { skillContext,skillSystem } from './skills.js'
 import { lifecycleReceipt } from '@research-agent-platform/constitution'
 import { conversationRulesContext, layerCounts } from './constitution-context.js'
@@ -63,7 +66,7 @@ export class ChatWorker {
       const s = service(this.db, String(row.owner_id), this.config,String(row.id)), { turn, input, group } = s.checkTurnInput(String(row.id))
       // 规则按会话归属取：群聊用群所属课题组，私聊与个人会话只有平台规则。开关关闭即恢复旧行为。
       let conversationRules:ReturnType<typeof conversationRulesContext>|null=null
-      try{conversationRules=this.config.constitutionRules&&!input.externalAgent?conversationRulesContext(this.db,{id:group.id,kind:group.kind,labId:group.labId},s.c.actor.id):null}
+      try{conversationRules=(this.config.constitutionRules||group.kind==='group')&&!input.externalAgent?conversationRulesContext(this.db,{id:group.id,kind:group.kind,labId:group.labId},s.c.actor.id):null}
       catch(error){if(!(error instanceof Error)||error.message!=='BUDGET_EXCEEDED')throw error;turn.status='failed';turn.failure='BUDGET_EXCEEDED';turn.version++;turn.updatedAt=instant();s.saveTurn(turn);return null}
       const rulesSuffix=conversationRules?.text?`\n${conversationRules.text}`:''
       if(conversationRules?.text)console.log(`CHAT_RULES conversation=${group.id} kind=${group.kind} scope=${conversationRules.ruleScope} bytes=${conversationRules.bytes} rules=${conversationRules.ruleIds.join(',')} layers=${layerCounts(conversationRules.rules)} omitted=${conversationRules.omitted.length}`)
@@ -107,7 +110,7 @@ export class ChatWorker {
       let context: unknown[]
       try { context = input.context.map(ref => {
         s.checkResource(ref, group.id, true)
-        if (ref.kind === 'task') return { ...ref, data: s.c.task(ref.ref.id) }
+        if (ref.kind === 'task') {const task=s.c.task(ref.ref.id);return {...ref,data:group.kind==='group'?{title:task.title,status:task.status}:task}}
         if (ref.kind === 'plan') return { ...ref, data: s.c.plan(ref.ref.id) }
         if (ref.kind === 'artifact') return { ...ref, data: s.ai.readTexts(s.ai.inputRefs([ref.ref.id]))[0] }
         if (ref.kind === 'run') return { ...ref, data: s.ai.projectedRun(ref.ref.id) }
@@ -119,8 +122,8 @@ export class ChatWorker {
       // Human-authored profile facts stay intact. Versions remain in the server
       // fingerprint, not repeated as readonly metadata in the model directory.
       const publicContact = (contact:ReturnType<typeof s.contact>) => ({id:contact.id,displayName:contact.displayName,identity:contact.identity,availability:{status:contact.availability.status,...(contact.availability.reason?{reason:contact.availability.reason}:{})},profile:Object.fromEntries(Object.entries(contact.profile).filter(([key,value])=>key!=='version'&&value!==''))})
-      const candidates=input.dailyChat?group.members.map(m=>m.contactId).filter(id=>id!==turn.agentContactId):this.db.prepare('SELECT id FROM chat_contacts WHERE lab_id=? AND id<>? ORDER BY id').all(s.c.actor.labId,turn.agentContactId).map(r=>String(r.id))
-      const contacts = candidates.flatMap(id => { try { return [publicContact(s.contact(id))] } catch { return [] } }).slice(0, 100)
+      const candidates=input.dailyChat?group.members.filter(m=>m.status==='joined').map(m=>m.contactId).filter(id=>id!==turn.agentContactId):this.db.prepare('SELECT id FROM chat_contacts WHERE lab_id=? AND id<>? ORDER BY id').all(s.c.actor.labId,turn.agentContactId).map(r=>String(r.id))
+      const contacts = candidates.flatMap(id => { try { const contact=s.contact(id);return [group.kind==='group'?{id:contact.id,displayName:contact.displayName,identity:contact.identity,availability:{status:contact.availability.status},profile:{}}:publicContact(contact)] } catch { return [] } }).slice(0, 100)
       const agentContext=s.directory.modelContext(turn.agentContactId,group.id),requestedAgent=(({availability:_availability,...value})=>value)(publicContact({...agentContext.agent,profile:modelAgentProfile(agentContext.agent)}))
       const personal=personalMemoryContext(s,agentContext.agent,group,currentTurnText(s,turn.id))
       input.memoryContextSources=memoryContextSources(s,personal.records,agentContext.memories)
@@ -129,7 +132,7 @@ export class ChatWorker {
       this.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(input),turn.id)
       const contactColumns=['id','displayName','identity','availability','profile']
       const selectedTasks=input.context.filter(ref=>ref.kind==='task').map(ref=>s.c.task(ref.ref.id))
-      system=input.dailyChat?dailyChatSystem:chatModelSystem({group:group.kind==='personal'&&agentContext.agent.profile.role==='coordinator',inviteContact:group.kind==='group'&&group.ownerMemberId===s.c.actor.id,inviteTask:group.kind==='group'&&group.ownerMemberId===s.c.actor.id&&selectedTasks.some(task=>task.initiatorId===s.c.actor.id),runTask:group.kind==='group'&&selectedTasks.some(task=>task.leadId===s.c.actor.id)})
+      system=group.kind==='group'?groupAssistantSystem:input.dailyChat?dailyChatSystem:chatModelSystem({group:group.kind==='personal'&&agentContext.agent.profile.role==='coordinator',inviteContact:false,inviteTask:false,runTask:false})
       if(input.scheduledFollowupId)system+='\nThe latest service message is an explicitly owner-authorized scheduled instruction. Execute that instruction within the provided conversation text only, and return the result conversationally. It does not grant web browsing, tools, filesystem access, business mutations, contact creation, or further scheduling. State any missing inputs/access plainly; never claim to have performed actions outside this scope.'
       if(input.assistantMode==='coordinate')system=personalAssistantSystem+'\n'+chatModelSystem({group:true,inviteContact:false,inviteTask:false,runTask:false}).split('\n').filter(line=>/^(Ref=|Group=|Item=|S=|s=string)/.test(line)).join('\n')
       const selectedSkill=input.skill?skillContext(s,input.skill,turn.agentContactId):undefined
@@ -139,7 +142,7 @@ export class ChatWorker {
       if(library)system+='\n'+researchLibrarySystem
       const document=input.fileSource?s.fileDocument(input.fileSource.messageId,group.id):undefined
       if(document)system+=fileChatSystem
-      const notes=input.dailyChat?olderDialogue(s,group.id,input.inputSequence,messages,currentTurnText(s,turn.id),input.fileSource?.messageId):undefined,tasks=input.dailyChat?dialogueTaskState(s,group,currentTurnText(s,turn.id)):[]
+      const notes=input.dailyChat?olderDialogue(s,group.id,input.inputSequence,messages,currentTurnText(s,turn.id),input.fileSource?.messageId):undefined,tasks=input.dailyChat&&group.kind!=='group'?dialogueTaskState(s,group,currentTurnText(s,turn.id)):[]
       let layers:DialogueLayers={messages:[],notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]}
       system+=rulesSuffix
       const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'')
@@ -154,7 +157,7 @@ export class ChatWorker {
         // IDs locate the complete current batch; optional old rows need no
         // duplicate UUIDs. Source quotes carry their own durable provenance.
         const messageRows=selected.map(m=>messageColumns.map(key=>key==='id'?currentIds.includes(m.id)?m.id:null:key==='sender'?m.senderContactId===null?null:senderIds.indexOf(m.senderContactId):m[key as keyof typeof m]))
-        return JSON.stringify({...(input.dailyChat?{currentRequest:{messageIds:currentIds}}:{}),...(selectedSkill?{selectedSkill}:{}),...(library?{researchLibrary:{retrieval:library.retrieval,limitation:library.limitation,excerpts:libraryExcerpts.map((e,i)=>({label:`R${i+1}`,...e}))}}:{}),...(!input.dailyChat||selectedSkill?{ownerId:s.c.actor.id,labId:s.c.actor.labId}:{}),requestedAgent,conversation,contactColumns,contacts:contacts.map(c=>contactColumns.map(key=>c[key as keyof typeof c])),senderIds,messageColumns,messages:messageRows,...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(input.assistantMode==='coordinate'?{currentRequest:s.projectedMessage(turn.inputMessageId).text,localSpecialists:assistantCandidates(s),collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(context.length?{context}:{}),...(earlierMessagesOmitted?{earlierMessagesOmitted:true}:{}),...(read?{fileRead:read,fileExcerpts}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
+        return JSON.stringify({...(group.kind==='group'?{groupContext:groupPublicContext(s,group)}:{}),...(input.dailyChat?{currentRequest:{messageIds:currentIds}}:{}),...(selectedSkill?{selectedSkill}:{}),...(library?{researchLibrary:{retrieval:library.retrieval,limitation:library.limitation,excerpts:libraryExcerpts.map((e,i)=>({label:`R${i+1}`,...e}))}}:{}),...(!input.dailyChat||selectedSkill?{ownerId:s.c.actor.id,labId:s.c.actor.labId}:{}),requestedAgent,conversation,contactColumns,contacts:contacts.map(c=>contactColumns.map(key=>c[key as keyof typeof c])),senderIds,messageColumns,messages:messageRows,...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(input.assistantMode==='coordinate'?{currentRequest:s.projectedMessage(turn.inputMessageId).text,localSpecialists:assistantCandidates(s),collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(context.length?{context}:{}),...(earlierMessagesOmitted?{earlierMessagesOmitted:true}:{}),...(read?{fileRead:read,fileExcerpts}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
       }
       prompt=serialize(messages)
       if(input.dailyChat){
@@ -295,7 +298,8 @@ export class ChatWorker {
             const message=s.message(group.id,{senderContactId:turn.agentContactId,origin:'service',text:`已将本条需求提交到你的“${receipt.displayName}”专属聊天。${receipt.status==='queued'?'请求已排队，实际回复和交付尚未完成。':'当前模型不可用，可打开同一聊天查看状态。'}`,mentions:[],resources:[],actionIds:[],turnId:turn.id})
             turn.outputMessageId=message.id;turn.failure=null
           }else{
-          const output = coordinated?.kind==='reply'?{answer:coordinated.answer,waitingInput:false,group:null,actions:[]}:coordinated?.kind==='collaborate'?{answer:coordinated.answer,waitingInput:false,group:coordinated.group,actions:[]}:job.input.dailyChat?{answer:Text.parse(result.text),waitingInput:false,group:null,actions:[]}:ChatModelOutput.parse(JSON.parse(result.text))
+          const groupOutput=group.kind==='group'?GroupAssistantOutput.parse(JSON.parse(result.text)):null
+          const output = groupOutput?{answer:groupOutput.answer,waitingInput:false,group:null,actions:[]}:coordinated?.kind==='reply'?{answer:coordinated.answer,waitingInput:false,group:null,actions:[]}:coordinated?.kind==='collaborate'?{answer:coordinated.answer,waitingInput:false,group:coordinated.group,actions:[]}:job.input.dailyChat?{answer:Text.parse(result.text),waitingInput:false,group:null,actions:[]}:ChatModelOutput.parse(JSON.parse(result.text))
           if(job.input.dailyChat&&!output.answer.trim())throw new Error('INVALID_MODEL_OUTPUT')
           if(job.input.libraryRead){
             const allowed=new Set(job.input.libraryRead.sources.map(source=>source.label))
@@ -312,12 +316,13 @@ export class ChatWorker {
             if (group.kind !== 'personal' || s.contact(turn.agentContactId).profile.role!=='coordinator' || output.group.plan.labId !== s.c.labId) throw new Error('INVALID_MODEL_OUTPUT')
             for (const ref of output.group.sharedContext.artifactRefs) if (!job.input.context.some(r => r.kind === 'artifact' && r.ref.id === ref.id && r.ref.version === ref.version)) throw new Error('INVALID_MODEL_OUTPUT')
             if(coordinated&&output.group.sharedContext.selectedText!==null&&output.group.sharedContext.selectedText!==s.projectedMessage(turn.inputMessageId).text)throw new Error('INVALID_MODEL_OUTPUT')
-            if(coordinated){const allowed=[turn.agentContactId,...assistantCandidates(s).map(c=>c.id),...assistantPeople(s).map(c=>c.id)];if(output.group.contactIds.some(id=>!allowed.includes(id)))throw new Error('INVALID_MODEL_OUTPUT')}
+            if(coordinated){const allowed=assistantPeople(s).map(c=>c.id);if(output.group.contactIds.some(id=>!allowed.includes(id)))throw new Error('INVALID_MODEL_OUTPUT')}
             const created = s.c.handlers.createPlan({ params: {}, query: {}, headers: {}, body: output.group.plan }) as { data: { id: string; version: number } }
             this.db.prepare('INSERT INTO chat_plan_sources VALUES (?,?)').run(created.data.id,turn.id)
             payloads.push({ kind: 'create_group', title: output.group.title, plan: { id: created.data.id, version: created.data.version }, contactIds: output.group.contactIds, sharedContext: output.group.sharedContext })
           }
           for (const payload of payloads) s.validatePayload(payload, group.id)
+          if(groupOutput)for(const request of groupOutput.requests)queueGroupNotice(s,group.id,turn.inputMessageId,turn.agentContactId,request)
           outputStage='persistence'
           const message = s.message(group.id, { senderContactId: turn.agentContactId, origin: 'model', text: output.answer, mentions: [], resources: [], actionIds: [], turnId: turn.id })
           const actions = payloads.map(payload => s.addAction(turn, message.id, payload)); message.actionIds = actions.map(a => a.id)
@@ -328,7 +333,7 @@ export class ChatWorker {
           }
           }
           this.db.exec('RELEASE chat_model_output')
-        } catch(error) { this.db.exec('ROLLBACK TO chat_model_output; RELEASE chat_model_output');diagnostic(outputStage,error instanceof z.ZodError?'schema':error instanceof ApiError?'business':(error as {code?:unknown})?.code==='ERR_SQLITE_ERROR'?'sqlite':'unknown'); turn.status = 'failed'; turn.failure = error instanceof AssistantBudgetError?'BUDGET_EXCEEDED':(job.input.purpose==='create_agent'||job.input.assistantMode==='coordinate')&&error instanceof ApiError&&error.code==='RATE_LIMITED'?'AGENT_LIMIT_REACHED':outputStage==='persistence'?'MODEL_FAILED':'INVALID_MODEL_OUTPUT'; turn.outputMessageId = null;delete turn.assistantReceipt;if(job.input.purpose==='create_agent')turn.createdAgent=null }
+        } catch(error) { this.db.exec('ROLLBACK TO chat_model_output; RELEASE chat_model_output');diagnostic(outputStage,error instanceof z.ZodError?'schema':error instanceof ApiError?'business':(error as {code?:unknown})?.code==='ERR_SQLITE_ERROR'?'sqlite':'unknown'); turn.status = 'failed'; turn.failure = error instanceof ApiError&&(error.code==='GROUP_NOTICE_LIMIT'||error.code==='GROUP_ASSIGN_NOT_AVAILABLE')?error.code:error instanceof AssistantBudgetError?'BUDGET_EXCEEDED':(job.input.purpose==='create_agent'||job.input.assistantMode==='coordinate')&&error instanceof ApiError&&error.code==='RATE_LIMITED'?'AGENT_LIMIT_REACHED':outputStage==='persistence'?'MODEL_FAILED':'INVALID_MODEL_OUTPUT'; turn.outputMessageId = null;delete turn.assistantReceipt;if(job.input.purpose==='create_agent')turn.createdAgent=null }
       }
       turn.version++; turn.updatedAt = instant(); s.saveTurn(turn)
       this.db.prepare('UPDATE chat_turns SET lease_owner=NULL,lease_until=NULL WHERE id=?').run(turn.id)

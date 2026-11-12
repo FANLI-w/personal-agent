@@ -21,8 +21,8 @@ export class OpenImBridge {
   identity(chat:ChatService,id:string){
     const contact=chat.contact(id),userID=`u_${hash(`${contact.labId}:${contact.id}`).slice(0,32)}`
     this.db.prepare('INSERT INTO im_identities(contact_id,lab_id,user_id,updated_at) VALUES (?,?,?,?) ON CONFLICT(contact_id) DO NOTHING').run(id,contact.labId,userID,now())
-    const row=this.db.prepare('SELECT status,profile_version FROM im_identities WHERE contact_id=?').get(id)!
-    return OpenImContact.parse({contact,userID,transportStatus:row.status==='ready'&&row.profile_version===contact.profile.version?'ready':'pending'})
+    const row=this.db.prepare('SELECT user_id,status,profile_version FROM im_identities WHERE contact_id=?').get(id)!
+    return OpenImContact.parse({contact,userID:row.user_id,transportStatus:row.status==='ready'&&row.profile_version===contact.profile.version?'ready':'pending'})
   }
   unavailableReason(){try{imConfiguration(this.config);return null}catch(error){return error instanceof ImUnavailable?error.reason:'not_configured' as const}}
   mapping(chat:ChatService,id:string):ImMapping{
@@ -33,7 +33,7 @@ export class OpenImBridge {
     this.db.prepare('INSERT INTO im_conversations(conversation_id,lab_id,im_conversation_id,group_id,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(conversation_id) DO NOTHING').run(id,group.labId,imConversationID,groupID,now())
     const row=this.db.prepare('SELECT * FROM im_conversations WHERE conversation_id=?').get(id)!,reason=this.unavailableReason()
     if(group.kind==='group'&&row.members_hash!==this.membersHash(chat,group)){this.db.prepare("UPDATE im_conversations SET status='pending' WHERE conversation_id=?").run(id);row.status='pending'}
-    return OpenImConversation.parse({researchConversationId:id,imConversationID,kind:group.kind,peerUserID,groupID,pinned:group.kind==='personal',transportStatus:reason?'unavailable':row.status==='ready'&&row.synced_version===group.version?'ready':'pending',reason})
+    return OpenImConversation.parse({researchConversationId:id,imConversationID:row.im_conversation_id,kind:group.kind,peerUserID,groupID:row.group_id,pinned:group.kind==='personal',transportStatus:reason?'unavailable':row.status==='ready'&&row.synced_version===group.version?'ready':'pending',reason})
   }
   contacts(chat:ChatService){
     const shared=this.db.prepare("SELECT g.id FROM chat_conversations g JOIN chat_members self ON self.conversation_id=g.id AND self.contact_id=? AND self.status='joined'").all(chat.human().id).flatMap(row=>{try{return chat.conversation(String(row.id),false).members.filter(m=>m.status==='joined').map(m=>m.contactId)}catch{return []}})

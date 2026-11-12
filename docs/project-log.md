@@ -3076,3 +3076,14 @@ PR200，固定产品提交e4c8fc562cb92e9b8fdce56de73541e90549222f（含PR199）
 北京时间 2026-11-12T09:58:48+08:00，Windows **0.10.104** 已公开发布并设为 Latest：[Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.104)。固定构建源码/tag 为 main **f70f3a640ce2df2b0b0cf15cb79a82c6e94ed0f5**。PR199/200/201 已审核并按顺序普通合并，PR202仅版本和发布准备，保留原提交历史。
 
 最终EXE 421238113字节，SHA256 f5630e0332b98c1b367aa175c0edac5da5be7a107f85705ff37dfbb55dbd47aa，桌面副本一致。整合树/祖先/保留功能、双类型和客户端定向、PR与固定main四项CI、EXE实际载荷/固定工具、更新清单、隔离启动、禁网跨进程SQLite及四附件公开核验通过。旧0.10.100附件保留；生产acffd5e/0.45/034不变，无后台部署/迁移，未操作私人账号和模型。证据、警告、边界见deployment/acceptcat-0.10.104-release.md。
+
+
+## 2026-11-12 群归属、固定群助理与实名转达候选完成
+
+- 按负责人附件设计，从最新main/e2e7cf6独立创建feat/group-assistant-governance；实现每群固定群助理、只选真人入群、真实课题组0/1/多档选择和NULL归属、规则隔离、归属审计、群主转移/退群/退组接管。清退旧群其他智能体，保留消息、任务承接和IM标识；个人任务不再自动建仅助手的群。
+- notify/ask模型只提交严格结构化请求，服务端核实名/加入状态/原消息，20条每人每群每日/24小时去重，个人会话持久送达、明确引用才回应、撤回与有限重试接入原worker。群助理不读个人规则/偏好/私聊、不批准、不代执行；assign/成员公开偏好档案/新检索工具与共享审批流程未扩展。
+- 候选contract0.46.0、chat1.14.0、migration035（LF/5678字节/SHA256 d08d5abcdf6d6b4bd8a835fe2590e5ce0fe264fd00ddffdb8bf4871355e8e8cc，工作文件与Git blob一致）。重建四张nullable归属父表、新增三表；事务提交前全库foreign_key_check，失败回滚且恢复外键。原始034合成库连续迁移、旧消息字节/任务/IM保全与失败回滚验证；新LF空库两次迁移实测35记录/120表/FK空/foreign_keys=1。
+- 根冻结安装、完整pnpm11.21 ci成功：80文件/954测试、3生产入口、B0双HTTP进程与生产Web守卫；包含固定Harness适配器和缺凭据边界，未运行真实模型验收。9项群治理定向及2项原预算回归另通过；客户端pnpm10.28双类型、14定向、完整Web构建通过，未生成安装包。
+- 隔离无头Edge/Playwright（Browser插件不可用）1280×900，用实际选择器/群设置/转达组件与合成HTTP验证真人过滤、选中、无课题组说明、继任者选择、撤回状态更新，console errors=[]。真实账号、真实OpenIM服务、设备送达及模型效果待负责人验收，未操作私人客户端。
+- 失败记录保留：早期nullable类型、旧多助手目标断言、生产入口旧迁移数、新增建群说明挤占回复预算（压缩说明修复，不放宽预算），以及夹具构建依赖、mock分页形状、重复aria定位。根最终日志ci-complete.log；LF迁移复验migration-lf-final.json/group-lf-final.log；其他证据D:/deepseek-agent/.runtime/group-assistant-20261112，早期CI日志另在C:/Users/luo/.codex/group-governance-ci*.log。
+- 生产0.45/034、公开Windows0.10.104保持。尚未合main、部署或公开发布；旧034程序严格拒绝035，不能只切旧镜像回退。需配套客户端升级，另行授权静止备份/恢复副本迁移后部署，优先兼容前滚，彻底回退需完整一致备份。说明docs/development/group-assistant-governance.md；roadmap已记录新单群助理方向及旧字段清理条件。PR204/205和此前Windows分享未跟踪目录保持独立。

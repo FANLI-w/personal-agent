@@ -6,14 +6,15 @@ import { ChatService } from './chat.js'
 import { serviceFor } from './execution-worker.js'
 import { hasLabMembership } from './lab-access.js'
 import type { Config } from './config.js'
+import {GroupNoticeWorker} from './group-notices.js'
 
 // Deliver task invitation notices (invite + transfer) to the invited member's
 // personal assistant. support_requested and other historical kinds stay dormant.
 export class TaskInvitationWorker {
   constructor(readonly db: DatabaseSync, readonly config: Config) {}
-  async tick() { return transaction(this.db,()=>{
+  async tick() { const notice=new GroupNoticeWorker(this.db,this.config).tick();return transaction(this.db,()=>{
     const row=this.db.prepare("SELECT * FROM outbox WHERE kind IN ('invitation_created','transfer_invitation_created') AND status='pending' AND available_at<=? ORDER BY rowid LIMIT 1").get(new Date().toISOString())
-    if(!row)return false
+    if(!row)return notice
     const payload=JSON.parse(String(row.payload_json)) as {taskId:string;requestedBy?:string}
     const saved=this.db.prepare('SELECT document FROM tasks WHERE id=?').get(payload.taskId)
     const task=saved?Task.parse(JSON.parse(String(saved.document))):null

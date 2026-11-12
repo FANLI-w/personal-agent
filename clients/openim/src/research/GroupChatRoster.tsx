@@ -106,6 +106,7 @@ export function groupContactDescription(
   roster: Contact[],
   actorId?: string,
 ) {
+  if (contact.groupConversationId) return "群助理 · 本群专用";
   if (contact.identity.kind === "human") return "群成员";
   const ownerId = contact.identity.ownerMemberId;
   if (ownerId === actorId) return "我的助手";

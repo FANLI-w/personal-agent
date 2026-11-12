@@ -1,3 +1,4 @@
+import {ResearchGroupSettings} from "./ResearchGroupSettings";
 import { Alert, Button, Modal, Spin } from "antd";
 import { useEffect, useState } from "react";
 import { useGroupChatRoster } from "./GroupChatRoster";
@@ -79,7 +80,7 @@ export function ResearchGroupMembers({
       {member.status === "invited" && (
         <span className="shrink-0 text-xs text-[var(--sub-text)]">待接受</span>
       )}
-      {manage && group.allowedActions.includes("manage") && member.role !== "owner" && (
+      {manage && group.allowedActions.includes("manage") && member.role !== "owner" && !member.contact?.groupConversationId && (
         <Button
           size="small"
           danger
@@ -139,6 +140,7 @@ export function ResearchGroupMembers({
   );
   return (
     <section data-testid="canonical-group-members">
+      <ResearchGroupSettings key={group.id} group={group} contacts={contacts} onRefresh={roster.refresh} />
       <p className="mb-2 text-sm">
         群主：{owner?.contact?.displayName || "成员资料暂不可见"}
       </p>

@@ -166,7 +166,13 @@ export function workspaceHandle(s:ChatService,name:string,req:ChatRequest):unkno
  if(['activatePersonalWorkTask','invitePersonalWorkContact','reviewPersonalWorkResult','cancelPersonalWorkTask'].includes(name)&&!owner)fail('FORBIDDEN')
  if(name==='activatePersonalWorkTask'){
   if(row.status!=='proposed')fail('INVALID_STATE');validateContacts(s,doc.contactIds)
-  const group=s.newConversation('group',doc.title,doc.contactIds,null,[],id);row.status='active';row.conversation_id=group.id;save(s,row,doc)
+  const people=doc.contactIds.filter(contactId=>s.contact(contactId).identity.kind==='human')
+  const group=people.length?s.newConversation('group',doc.title,people,null,[],id):
+    (doc.agentContactId||doc.contactIds.some(contactId=>s.contact(contactId).identity.kind==='personal_agent')?s.handle('createDirectConversation',{params:{},query:{},headers:{},body:{contactId:doc.agentContactId??doc.contactIds.find(contactId=>s.contact(contactId).identity.kind==='personal_agent')}}) as {data:Conversation}: {data:(s.handle('personalConversation',{params:{},query:{},headers:{},body:{}}) as {data:{conversation:Conversation}}).data.conversation}).data
+  row.status='active';row.conversation_id=group.id;save(s,row,doc)
+  // Private task activation never creates an assistant-only group. Existing
+  // task commitments are not converted into group assistant membership.
+  for(const contactId of doc.contactIds){const c=s.contact(contactId);if(c.identity.kind==='personal_agent'&&c.identity.ownerMemberId===s.c.actor.id)s.db.prepare("UPDATE personal_work_participants SET status='accepted' WHERE task_id=? AND contact_id=?").run(id,contactId)}
   // Only the explicitly shared task goal enters the social group, no other
   // conversation history, attachments or memories are copied.
   s.message(group.id,{senderContactId:null,origin:'service',text:doc.goal,mentions:[],resources:[],actionIds:[],turnId:null})

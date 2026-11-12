@@ -25,10 +25,11 @@ test('rejects cursor cycles and cancelled late pages', async () => {
   const controller = new AbortController();
   await assert.rejects(readGroupCandidates(async () => { controller.abort(); return { data: [peer], nextCursor: null }; }, controller.signal), { name: 'AbortError' });
 });
-test('selection excludes self and unauthorized identities, distinguishes same-name Agent owners', () => {
+test('selection includes only authorized humans; fixed group assistant has no personal owner label', () => {
   const mine = agent('mine', 'me'), other = agent('other', 'peer');
   const all = [me, peer, mine, other, { ...human('blocked'), allowedActions: [] }];
-  assert.equal(JSON.stringify(selectableGroupContacts(all, 'me').map(c => c.id)), '["peer","mine","other"]');
+  assert.equal(JSON.stringify(selectableGroupContacts(all, 'me').map(c => c.id)), '["peer"]');
+  assert.equal(groupIdentityLabel({...mine,groupConversationId:'group1'}, all, 'me'), '群助理 · 本群专用');
   assert.equal(groupIdentityLabel(mine, all, 'me'), '我的智能体');
   assert.equal(groupIdentityLabel(other, all, 'me'), '测试同事的智能体');
 });

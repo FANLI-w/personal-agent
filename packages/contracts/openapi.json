@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.45.0"
+    "version": "0.46.0"
   },
   "paths": {
     "/api/v1/library/repository": {
@@ -34737,6 +34737,17 @@
                                 "pattern": "^[A-Za-z0-9_-]{1,96}$"
                               },
                               "labId": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "groupConversationId": {
                                 "type": "string",
                                 "pattern": "^[A-Za-z0-9_-]{1,96}$"
                               },
@@ -34806,28 +34817,35 @@
                                         "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                       },
                                       "capability": {
-                                        "type": "object",
-                                        "properties": {
-                                          "id": {
-                                            "type": "string",
-                                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "id": {
+                                                "type": "string",
+                                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                              },
+                                              "version": {
+                                                "type": "integer",
+                                                "minimum": 1,
+                                                "maximum": 9007199254740991
+                                              },
+                                              "visibility": {
+                                                "type": "string",
+                                                "const": "lab_public"
+                                              }
+                                            },
+                                            "required": [
+                                              "id",
+                                              "version",
+                                              "visibility"
+                                            ],
+                                            "additionalProperties": false
                                           },
-                                          "version": {
-                                            "type": "integer",
-                                            "minimum": 1,
-                                            "maximum": 9007199254740991
-                                          },
-                                          "visibility": {
-                                            "type": "string",
-                                            "const": "lab_public"
+                                          {
+                                            "type": "null"
                                           }
-                                        },
-                                        "required": [
-                                          "id",
-                                          "version",
-                                          "visibility"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       }
                                     },
                                     "required": [
@@ -35369,6 +35387,17 @@
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
                             "labId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "groupConversationId": {
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
@@ -35438,28 +35467,35 @@
                                       "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                     },
                                     "capability": {
-                                      "type": "object",
-                                      "properties": {
-                                        "id": {
-                                          "type": "string",
-                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "version": {
+                                              "type": "integer",
+                                              "minimum": 1,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "visibility": {
+                                              "type": "string",
+                                              "const": "lab_public"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "version",
+                                            "visibility"
+                                          ],
+                                          "additionalProperties": false
                                         },
-                                        "version": {
-                                          "type": "integer",
-                                          "minimum": 1,
-                                          "maximum": 9007199254740991
-                                        },
-                                        "visibility": {
-                                          "type": "string",
-                                          "const": "lab_public"
+                                        {
+                                          "type": "null"
                                         }
-                                      },
-                                      "required": [
-                                        "id",
-                                        "version",
-                                        "visibility"
-                                      ],
-                                      "additionalProperties": false
+                                      ]
                                     }
                                   },
                                   "required": [
@@ -35749,7 +35785,7 @@
                     "status": "published",
                     "contact": {
                       "id": "synthetic",
-                      "labId": "synthetic",
+                      "labId": null,
                       "displayName": "synthetic",
                       "username": null,
                       "identity": {
@@ -35975,6 +36011,17 @@
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
                             "labId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "groupConversationId": {
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
@@ -36044,28 +36091,35 @@
                                       "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                     },
                                     "capability": {
-                                      "type": "object",
-                                      "properties": {
-                                        "id": {
-                                          "type": "string",
-                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "version": {
+                                              "type": "integer",
+                                              "minimum": 1,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "visibility": {
+                                              "type": "string",
+                                              "const": "lab_public"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "version",
+                                            "visibility"
+                                          ],
+                                          "additionalProperties": false
                                         },
-                                        "version": {
-                                          "type": "integer",
-                                          "minimum": 1,
-                                          "maximum": 9007199254740991
-                                        },
-                                        "visibility": {
-                                          "type": "string",
-                                          "const": "lab_public"
+                                        {
+                                          "type": "null"
                                         }
-                                      },
-                                      "required": [
-                                        "id",
-                                        "version",
-                                        "visibility"
-                                      ],
-                                      "additionalProperties": false
+                                      ]
                                     }
                                   },
                                   "required": [
@@ -36355,7 +36409,7 @@
                     "status": "published",
                     "contact": {
                       "id": "synthetic",
-                      "labId": "synthetic",
+                      "labId": null,
                       "displayName": "synthetic",
                       "username": null,
                       "identity": {
@@ -36624,6 +36678,17 @@
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
                             "labId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "groupConversationId": {
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
@@ -36693,28 +36758,35 @@
                                       "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                     },
                                     "capability": {
-                                      "type": "object",
-                                      "properties": {
-                                        "id": {
-                                          "type": "string",
-                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "version": {
+                                              "type": "integer",
+                                              "minimum": 1,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "visibility": {
+                                              "type": "string",
+                                              "const": "lab_public"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "version",
+                                            "visibility"
+                                          ],
+                                          "additionalProperties": false
                                         },
-                                        "version": {
-                                          "type": "integer",
-                                          "minimum": 1,
-                                          "maximum": 9007199254740991
-                                        },
-                                        "visibility": {
-                                          "type": "string",
-                                          "const": "lab_public"
+                                        {
+                                          "type": "null"
                                         }
-                                      },
-                                      "required": [
-                                        "id",
-                                        "version",
-                                        "visibility"
-                                      ],
-                                      "additionalProperties": false
+                                      ]
                                     }
                                   },
                                   "required": [
@@ -37004,7 +37076,7 @@
                     "status": "published",
                     "contact": {
                       "id": "synthetic",
-                      "labId": "synthetic",
+                      "labId": null,
                       "displayName": "synthetic",
                       "username": null,
                       "identity": {
@@ -37212,8 +37284,16 @@
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
                         "labId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "kind": {
                           "type": "string",
@@ -37377,7 +37457,7 @@
                 "example": {
                   "data": {
                     "id": "synthetic",
-                    "labId": "synthetic",
+                    "labId": null,
                     "kind": "personal",
                     "title": "synthetic",
                     "ownerMemberId": "synthetic",
@@ -42142,6 +42222,17 @@
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
                             "labId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "groupConversationId": {
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
@@ -42211,28 +42302,35 @@
                                       "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                     },
                                     "capability": {
-                                      "type": "object",
-                                      "properties": {
-                                        "id": {
-                                          "type": "string",
-                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "version": {
+                                              "type": "integer",
+                                              "minimum": 1,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "visibility": {
+                                              "type": "string",
+                                              "const": "lab_public"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "version",
+                                            "visibility"
+                                          ],
+                                          "additionalProperties": false
                                         },
-                                        "version": {
-                                          "type": "integer",
-                                          "minimum": 1,
-                                          "maximum": 9007199254740991
-                                        },
-                                        "visibility": {
-                                          "type": "string",
-                                          "const": "lab_public"
+                                        {
+                                          "type": "null"
                                         }
-                                      },
-                                      "required": [
-                                        "id",
-                                        "version",
-                                        "visibility"
-                                      ],
-                                      "additionalProperties": false
+                                      ]
                                     }
                                   },
                                   "required": [
@@ -42468,8 +42566,16 @@
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
                             "labId": {
-                              "type": "string",
-                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              "default": null,
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
                             },
                             "kind": {
                               "type": "string",
@@ -42650,7 +42756,7 @@
                   "data": {
                     "contact": {
                       "id": "synthetic",
-                      "labId": "synthetic",
+                      "labId": null,
                       "displayName": "synthetic",
                       "username": null,
                       "identity": {
@@ -42678,7 +42784,7 @@
                     },
                     "conversation": {
                       "id": "synthetic",
-                      "labId": "synthetic",
+                      "labId": null,
                       "kind": "personal",
                       "title": "synthetic",
                       "ownerMemberId": "synthetic",
@@ -47035,6 +47141,17 @@
                                     "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                   },
                                   "labId": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "groupConversationId": {
                                     "type": "string",
                                     "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                   },
@@ -47104,28 +47221,35 @@
                                             "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                           },
                                           "capability": {
-                                            "type": "object",
-                                            "properties": {
-                                              "id": {
-                                                "type": "string",
-                                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            "anyOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "id": {
+                                                    "type": "string",
+                                                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                                  },
+                                                  "version": {
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "maximum": 9007199254740991
+                                                  },
+                                                  "visibility": {
+                                                    "type": "string",
+                                                    "const": "lab_public"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "id",
+                                                  "version",
+                                                  "visibility"
+                                                ],
+                                                "additionalProperties": false
                                               },
-                                              "version": {
-                                                "type": "integer",
-                                                "minimum": 1,
-                                                "maximum": 9007199254740991
-                                              },
-                                              "visibility": {
-                                                "type": "string",
-                                                "const": "lab_public"
+                                              {
+                                                "type": "null"
                                               }
-                                            },
-                                            "required": [
-                                              "id",
-                                              "version",
-                                              "visibility"
-                                            ],
-                                            "additionalProperties": false
+                                            ]
                                           }
                                         },
                                         "required": [
@@ -48426,7 +48550,7 @@
     "/api/v1/im/groups": {
       "post": {
         "operationId": "imCreateGroup",
-        "description": "Explicit manual group creation, independent of model availability. Null plan creates a discussion group without tasks. Non-null plan uses the canonical versioned plan confirmation. Selected resources are live-authorized. Every selected human/private Agent becomes a joined member immediately: the group is complete at creation and no acceptance round exists. Same-origin, CSRF and authorized idempotent replay; network sync is a separate command.",
+        "description": "Explicit manual group creation, independent of model availability. Null plan creates a discussion group without tasks. Non-null plan uses the canonical versioned plan confirmation. Selected resources are live-authorized. Selected humans join immediately; one fixed group assistant is created atomically, other Agents are rejected with GROUP_AGENT_NOT_ALLOWED. labId selects an owned lab or null; omitted defaults only for zero/one real membership. Every selected human becomes a joined member immediately: the group is complete at creation and no acceptance round exists. Same-origin, CSRF and authorized idempotent replay; network sync is a separate command.",
         "x-stage": "IM1",
         "x-implemented": true,
         "security": [
@@ -48547,6 +48671,17 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "labId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
                 "required": [
@@ -48588,8 +48723,16 @@
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
                         "labId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "kind": {
                           "type": "string",
@@ -48753,7 +48896,7 @@
                 "example": {
                   "data": {
                     "id": "synthetic",
-                    "labId": "synthetic",
+                    "labId": null,
                     "kind": "personal",
                     "title": "synthetic",
                     "ownerMemberId": "synthetic",
@@ -48997,8 +49140,16 @@
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
                         "labId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "kind": {
                           "type": "string",
@@ -49162,7 +49313,7 @@
                 "example": {
                   "data": {
                     "id": "synthetic",
-                    "labId": "synthetic",
+                    "labId": null,
                     "kind": "personal",
                     "title": "synthetic",
                     "ownerMemberId": "synthetic",
@@ -49179,6 +49330,2486 @@
                       "pinned": false,
                       "version": 1
                     }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/notices/{id}": {
+      "get": {
+        "operationId": "groupNotice",
+        "description": "Current joined group member or the actual personal recipient only; no source message/history access is granted.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "conversationId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "fromMemberId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "toMemberId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "fromName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "toName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "notify",
+                            "ask"
+                          ]
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 2000
+                        },
+                        "sourceMessageId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "messageId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "delivered",
+                            "responded",
+                            "withdrawn",
+                            "cancelled"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        "deliveredAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "respondedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "canWithdraw": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "conversationId",
+                        "fromMemberId",
+                        "toMemberId",
+                        "fromName",
+                        "toName",
+                        "kind",
+                        "text",
+                        "sourceMessageId",
+                        "messageId",
+                        "status",
+                        "createdAt",
+                        "deliveredAt",
+                        "respondedAt",
+                        "canWithdraw"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "id": "synthetic",
+                    "conversationId": "synthetic",
+                    "fromMemberId": "synthetic",
+                    "toMemberId": "synthetic",
+                    "fromName": "synthetic",
+                    "toName": "synthetic",
+                    "kind": "notify",
+                    "text": "synthetic",
+                    "sourceMessageId": "synthetic",
+                    "messageId": null,
+                    "status": "pending",
+                    "createdAt": "2026-09-21T08:00:00+08:00",
+                    "deliveredAt": null,
+                    "respondedAt": null,
+                    "canWithdraw": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/conversations/{id}/notices": {
+      "get": {
+        "operationId": "groupNotices",
+        "description": "Joined humans only; recent 100 notices with live delivery state. Queueing never means delivered.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          },
+                          "conversationId": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          },
+                          "fromMemberId": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          },
+                          "toMemberId": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          },
+                          "fromName": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "toName": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "notify",
+                              "ask"
+                            ]
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "sourceMessageId": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          },
+                          "messageId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "delivered",
+                              "responded",
+                              "withdrawn",
+                              "cancelled"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                          },
+                          "deliveredAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "respondedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "canWithdraw": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "conversationId",
+                          "fromMemberId",
+                          "toMemberId",
+                          "fromName",
+                          "toName",
+                          "kind",
+                          "text",
+                          "sourceMessageId",
+                          "messageId",
+                          "status",
+                          "createdAt",
+                          "deliveredAt",
+                          "respondedAt",
+                          "canWithdraw"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": []
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/conversations/{id}/notices/{noticeId}/withdraw": {
+      "post": {
+        "operationId": "withdrawGroupNotice",
+        "description": "Actual human sender only, while a joined group member. Retract delivered personal service message and preserve audit; cannot undo a prior response.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "noticeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "conversationId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "fromMemberId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "toMemberId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "fromName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "toName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "notify",
+                            "ask"
+                          ]
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 2000
+                        },
+                        "sourceMessageId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "messageId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "delivered",
+                            "responded",
+                            "withdrawn",
+                            "cancelled"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        "deliveredAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "respondedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "canWithdraw": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "conversationId",
+                        "fromMemberId",
+                        "toMemberId",
+                        "fromName",
+                        "toName",
+                        "kind",
+                        "text",
+                        "sourceMessageId",
+                        "messageId",
+                        "status",
+                        "createdAt",
+                        "deliveredAt",
+                        "respondedAt",
+                        "canWithdraw"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "id": "synthetic",
+                    "conversationId": "synthetic",
+                    "fromMemberId": "synthetic",
+                    "toMemberId": "synthetic",
+                    "fromName": "synthetic",
+                    "toName": "synthetic",
+                    "kind": "notify",
+                    "text": "synthetic",
+                    "sourceMessageId": "synthetic",
+                    "messageId": null,
+                    "status": "pending",
+                    "createdAt": "2026-09-21T08:00:00+08:00",
+                    "deliveredAt": null,
+                    "respondedAt": null,
+                    "canWithdraw": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/group-labs": {
+      "get": {
+        "operationId": "groupLabChoices",
+        "description": "Current real lab memberships; primary comes from members.lab_id, never the selected workspace.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "labs": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "primaryLabId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "labs",
+                        "primaryLabId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "labs": [],
+                    "primaryLabId": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/conversations/{id}/group-settings": {
+      "get": {
+        "operationId": "groupSettings",
+        "description": "Joined human membership; group lab is rule provenance, not a private-task or material grant.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "conversation": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            "labId": {
+                              "default": null,
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "personal",
+                                "direct",
+                                "group"
+                              ]
+                            },
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "ownerMemberId": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            "version": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            "members": {
+                              "maxItems": 100,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "contactId": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                  },
+                                  "role": {
+                                    "type": "string",
+                                    "enum": [
+                                      "owner",
+                                      "member"
+                                    ]
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "invited",
+                                      "joined",
+                                      "declined",
+                                      "revoked"
+                                    ]
+                                  },
+                                  "version": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991
+                                  }
+                                },
+                                "required": [
+                                  "contactId",
+                                  "role",
+                                  "status",
+                                  "version"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "taskIds": {
+                              "maxItems": 100,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              }
+                            },
+                            "lastSequence": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            },
+                            "allowedActions": {
+                              "maxItems": 4,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "send",
+                                  "invite",
+                                  "manage",
+                                  "manage_memory"
+                                ]
+                              }
+                            },
+                            "viewerState": {
+                              "default": {
+                                "readSequence": 0,
+                                "unreadCount": 0,
+                                "pinned": false,
+                                "version": 1
+                              },
+                              "type": "object",
+                              "properties": {
+                                "readSequence": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "unreadCount": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "pinned": {
+                                  "type": "boolean"
+                                },
+                                "version": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "readSequence",
+                                "unreadCount",
+                                "pinned",
+                                "version"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "labId",
+                            "kind",
+                            "title",
+                            "ownerMemberId",
+                            "version",
+                            "members",
+                            "taskIds",
+                            "lastSequence",
+                            "createdAt",
+                            "updatedAt",
+                            "allowedActions",
+                            "viewerState"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "labName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "assistantContactId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "canTakeOver": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "conversation",
+                        "labName",
+                        "assistantContactId",
+                        "canTakeOver"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "conversation": {
+                      "id": "synthetic",
+                      "labId": null,
+                      "kind": "personal",
+                      "title": "synthetic",
+                      "ownerMemberId": "synthetic",
+                      "version": 1,
+                      "members": [],
+                      "taskIds": [],
+                      "lastSequence": 0,
+                      "createdAt": "2026-09-21T08:00:00+08:00",
+                      "updatedAt": "2026-09-21T08:00:00+08:00",
+                      "allowedActions": [],
+                      "viewerState": {
+                        "readSequence": 0,
+                        "unreadCount": 0,
+                        "pinned": false,
+                        "version": 1
+                      }
+                    },
+                    "labName": null,
+                    "assistantContactId": "synthetic",
+                    "canTakeOver": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/conversations/{id}/lab": {
+      "post": {
+        "operationId": "updateGroupLab",
+        "description": "Group owner selects a current real membership or null. Audit column/document together; future requests only.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "labId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "expectedVersion",
+                  "labId"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "expectedVersion": 1,
+                "labId": null
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "labId": {
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "personal",
+                            "direct",
+                            "group"
+                          ]
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "ownerMemberId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "members": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "contactId": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "owner",
+                                  "member"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "invited",
+                                  "joined",
+                                  "declined",
+                                  "revoked"
+                                ]
+                              },
+                              "version": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "contactId",
+                              "role",
+                              "status",
+                              "version"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "taskIds": {
+                          "maxItems": 100,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          }
+                        },
+                        "lastSequence": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        "allowedActions": {
+                          "maxItems": 4,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "send",
+                              "invite",
+                              "manage",
+                              "manage_memory"
+                            ]
+                          }
+                        },
+                        "viewerState": {
+                          "default": {
+                            "readSequence": 0,
+                            "unreadCount": 0,
+                            "pinned": false,
+                            "version": 1
+                          },
+                          "type": "object",
+                          "properties": {
+                            "readSequence": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "unreadCount": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "pinned": {
+                              "type": "boolean"
+                            },
+                            "version": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "readSequence",
+                            "unreadCount",
+                            "pinned",
+                            "version"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "labId",
+                        "kind",
+                        "title",
+                        "ownerMemberId",
+                        "version",
+                        "members",
+                        "taskIds",
+                        "lastSequence",
+                        "createdAt",
+                        "updatedAt",
+                        "allowedActions",
+                        "viewerState"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "id": "synthetic",
+                    "labId": null,
+                    "kind": "personal",
+                    "title": "synthetic",
+                    "ownerMemberId": "synthetic",
+                    "version": 1,
+                    "members": [],
+                    "taskIds": [],
+                    "lastSequence": 0,
+                    "createdAt": "2026-09-21T08:00:00+08:00",
+                    "updatedAt": "2026-09-21T08:00:00+08:00",
+                    "allowedActions": [],
+                    "viewerState": {
+                      "readSequence": 0,
+                      "unreadCount": 0,
+                      "pinned": false,
+                      "version": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/conversations/{id}/owner": {
+      "post": {
+        "operationId": "transferGroupOwner",
+        "description": "Owner transfers to a joined human; bound lab manager may replace an owner who left that lab. No task/material authority transfer.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "memberId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                  }
+                },
+                "required": [
+                  "expectedVersion",
+                  "memberId"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "expectedVersion": 1,
+                "memberId": "synthetic"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "ownerMemberId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "ownerMemberId",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "ownerMemberId": "synthetic",
+                    "version": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/conversations/{id}/leave": {
+      "post": {
+        "operationId": "leaveChatGroup",
+        "description": "Owner must atomically transfer to a different joined human before leaving. Lab provenance is retained.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "successorMemberId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                  }
+                },
+                "required": [
+                  "expectedVersion"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "expectedVersion": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "left": {
+                          "type": "boolean",
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "left"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "left": true
                   }
                 }
               }
@@ -49374,6 +52005,10 @@
                                     "type": "object",
                                     "properties": {
                                       "id": {
+                                        "type": "string",
+                                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                      },
+                                      "noticeId": {
                                         "type": "string",
                                         "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                       },
@@ -49698,7 +52333,9 @@
                                             "AUTHORITY_CHANGED",
                                             "INPUT_CHANGED",
                                             "BUDGET_EXCEEDED",
-                                            "AGENT_LIMIT_REACHED"
+                                            "AGENT_LIMIT_REACHED",
+                                            "GROUP_NOTICE_LIMIT",
+                                            "GROUP_ASSIGN_NOT_AVAILABLE"
                                           ]
                                         },
                                         {
@@ -50298,7 +52935,9 @@
                                             "AUTHORITY_CHANGED",
                                             "INPUT_CHANGED",
                                             "BUDGET_EXCEEDED",
-                                            "AGENT_LIMIT_REACHED"
+                                            "AGENT_LIMIT_REACHED",
+                                            "GROUP_NOTICE_LIMIT",
+                                            "GROUP_ASSIGN_NOT_AVAILABLE"
                                           ]
                                         },
                                         {
@@ -50741,6 +53380,10 @@
                           "type": "object",
                           "properties": {
                             "id": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            "noticeId": {
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
@@ -51279,6 +53922,10 @@
                           "type": "object",
                           "properties": {
                             "id": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            "noticeId": {
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
@@ -52057,6 +54704,17 @@
                             "pattern": "^[A-Za-z0-9_-]{1,96}$"
                           },
                           "labId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "groupConversationId": {
                             "type": "string",
                             "pattern": "^[A-Za-z0-9_-]{1,96}$"
                           },
@@ -52126,28 +54784,35 @@
                                     "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                   },
                                   "capability": {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "type": "string",
-                                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "id": {
+                                            "type": "string",
+                                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                          },
+                                          "version": {
+                                            "type": "integer",
+                                            "minimum": 1,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "visibility": {
+                                            "type": "string",
+                                            "const": "lab_public"
+                                          }
+                                        },
+                                        "required": [
+                                          "id",
+                                          "version",
+                                          "visibility"
+                                        ],
+                                        "additionalProperties": false
                                       },
-                                      "version": {
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": 9007199254740991
-                                      },
-                                      "visibility": {
-                                        "type": "string",
-                                        "const": "lab_public"
+                                      {
+                                        "type": "null"
                                       }
-                                    },
-                                    "required": [
-                                      "id",
-                                      "version",
-                                      "visibility"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -52573,6 +55238,17 @@
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
                         "labId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "groupConversationId": {
                           "type": "string",
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
@@ -52642,28 +55318,35 @@
                                   "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                 },
                                 "capability": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "type": "string",
-                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                        },
+                                        "version": {
+                                          "type": "integer",
+                                          "minimum": 1,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "visibility": {
+                                          "type": "string",
+                                          "const": "lab_public"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "version",
+                                        "visibility"
+                                      ],
+                                      "additionalProperties": false
                                     },
-                                    "version": {
-                                      "type": "integer",
-                                      "minimum": 1,
-                                      "maximum": 9007199254740991
-                                    },
-                                    "visibility": {
-                                      "type": "string",
-                                      "const": "lab_public"
+                                    {
+                                      "type": "null"
                                     }
-                                  },
-                                  "required": [
-                                    "id",
-                                    "version",
-                                    "visibility"
-                                  ],
-                                  "additionalProperties": false
+                                  ]
                                 }
                               },
                               "required": [
@@ -52900,7 +55583,7 @@
                 "example": {
                   "data": {
                     "id": "synthetic",
-                    "labId": "synthetic",
+                    "labId": null,
                     "displayName": "synthetic",
                     "username": null,
                     "identity": {
@@ -53170,6 +55853,17 @@
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
                         "labId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "groupConversationId": {
                           "type": "string",
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
@@ -53239,28 +55933,35 @@
                                   "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                 },
                                 "capability": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "type": "string",
-                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                        },
+                                        "version": {
+                                          "type": "integer",
+                                          "minimum": 1,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "visibility": {
+                                          "type": "string",
+                                          "const": "lab_public"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "version",
+                                        "visibility"
+                                      ],
+                                      "additionalProperties": false
                                     },
-                                    "version": {
-                                      "type": "integer",
-                                      "minimum": 1,
-                                      "maximum": 9007199254740991
-                                    },
-                                    "visibility": {
-                                      "type": "string",
-                                      "const": "lab_public"
+                                    {
+                                      "type": "null"
                                     }
-                                  },
-                                  "required": [
-                                    "id",
-                                    "version",
-                                    "visibility"
-                                  ],
-                                  "additionalProperties": false
+                                  ]
                                 }
                               },
                               "required": [
@@ -53497,7 +56198,7 @@
                 "example": {
                   "data": {
                     "id": "synthetic",
-                    "labId": "synthetic",
+                    "labId": null,
                     "displayName": "synthetic",
                     "username": null,
                     "identity": {
@@ -53751,6 +56452,17 @@
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
                         "labId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "groupConversationId": {
                           "type": "string",
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
@@ -53820,28 +56532,35 @@
                                   "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                 },
                                 "capability": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "type": "string",
-                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                        },
+                                        "version": {
+                                          "type": "integer",
+                                          "minimum": 1,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "visibility": {
+                                          "type": "string",
+                                          "const": "lab_public"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "version",
+                                        "visibility"
+                                      ],
+                                      "additionalProperties": false
                                     },
-                                    "version": {
-                                      "type": "integer",
-                                      "minimum": 1,
-                                      "maximum": 9007199254740991
-                                    },
-                                    "visibility": {
-                                      "type": "string",
-                                      "const": "lab_public"
+                                    {
+                                      "type": "null"
                                     }
-                                  },
-                                  "required": [
-                                    "id",
-                                    "version",
-                                    "visibility"
-                                  ],
-                                  "additionalProperties": false
+                                  ]
                                 }
                               },
                               "required": [
@@ -54078,7 +56797,7 @@
                 "example": {
                   "data": {
                     "id": "synthetic",
-                    "labId": "synthetic",
+                    "labId": null,
                     "displayName": "synthetic",
                     "username": null,
                     "identity": {
@@ -54312,6 +57031,17 @@
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
                         "labId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "groupConversationId": {
                           "type": "string",
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
@@ -54381,28 +57111,35 @@
                                   "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                 },
                                 "capability": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "type": "string",
-                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                        },
+                                        "version": {
+                                          "type": "integer",
+                                          "minimum": 1,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "visibility": {
+                                          "type": "string",
+                                          "const": "lab_public"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "version",
+                                        "visibility"
+                                      ],
+                                      "additionalProperties": false
                                     },
-                                    "version": {
-                                      "type": "integer",
-                                      "minimum": 1,
-                                      "maximum": 9007199254740991
-                                    },
-                                    "visibility": {
-                                      "type": "string",
-                                      "const": "lab_public"
+                                    {
+                                      "type": "null"
                                     }
-                                  },
-                                  "required": [
-                                    "id",
-                                    "version",
-                                    "visibility"
-                                  ],
-                                  "additionalProperties": false
+                                  ]
                                 }
                               },
                               "required": [
@@ -54639,7 +57376,7 @@
                 "example": {
                   "data": {
                     "id": "synthetic",
-                    "labId": "synthetic",
+                    "labId": null,
                     "displayName": "synthetic",
                     "username": null,
                     "identity": {
@@ -55501,6 +58238,17 @@
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
                         "labId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "groupConversationId": {
                           "type": "string",
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
@@ -55570,28 +58318,35 @@
                                   "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                 },
                                 "capability": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "type": "string",
-                                      "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                        },
+                                        "version": {
+                                          "type": "integer",
+                                          "minimum": 1,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "visibility": {
+                                          "type": "string",
+                                          "const": "lab_public"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "version",
+                                        "visibility"
+                                      ],
+                                      "additionalProperties": false
                                     },
-                                    "version": {
-                                      "type": "integer",
-                                      "minimum": 1,
-                                      "maximum": 9007199254740991
-                                    },
-                                    "visibility": {
-                                      "type": "string",
-                                      "const": "lab_public"
+                                    {
+                                      "type": "null"
                                     }
-                                  },
-                                  "required": [
-                                    "id",
-                                    "version",
-                                    "visibility"
-                                  ],
-                                  "additionalProperties": false
+                                  ]
                                 }
                               },
                               "required": [
@@ -55828,7 +58583,7 @@
                 "example": {
                   "data": {
                     "id": "synthetic",
-                    "labId": "synthetic",
+                    "labId": null,
                     "displayName": "synthetic",
                     "username": null,
                     "identity": {
@@ -58042,8 +60797,16 @@
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
                             "labId": {
-                              "type": "string",
-                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              "default": null,
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
                             },
                             "kind": {
                               "type": "string",
@@ -58206,6 +60969,17 @@
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
                             "labId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "groupConversationId": {
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
@@ -58275,28 +61049,35 @@
                                       "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                     },
                                     "capability": {
-                                      "type": "object",
-                                      "properties": {
-                                        "id": {
-                                          "type": "string",
-                                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                            },
+                                            "version": {
+                                              "type": "integer",
+                                              "minimum": 1,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "visibility": {
+                                              "type": "string",
+                                              "const": "lab_public"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "version",
+                                            "visibility"
+                                          ],
+                                          "additionalProperties": false
                                         },
-                                        "version": {
-                                          "type": "integer",
-                                          "minimum": 1,
-                                          "maximum": 9007199254740991
-                                        },
-                                        "visibility": {
-                                          "type": "string",
-                                          "const": "lab_public"
+                                        {
+                                          "type": "null"
                                         }
-                                      },
-                                      "required": [
-                                        "id",
-                                        "version",
-                                        "visibility"
-                                      ],
-                                      "additionalProperties": false
+                                      ]
                                     }
                                   },
                                   "required": [
@@ -58541,7 +61322,7 @@
                   "data": {
                     "conversation": {
                       "id": "synthetic",
-                      "labId": "synthetic",
+                      "labId": null,
                       "kind": "personal",
                       "title": "synthetic",
                       "ownerMemberId": "synthetic",
@@ -58561,7 +61342,7 @@
                     },
                     "agent": {
                       "id": "synthetic",
-                      "labId": "synthetic",
+                      "labId": null,
                       "displayName": "synthetic",
                       "username": null,
                       "identity": {
@@ -58779,8 +61560,16 @@
                             "pattern": "^[A-Za-z0-9_-]{1,96}$"
                           },
                           "labId": {
-                            "type": "string",
-                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            "default": null,
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "kind": {
                             "type": "string",
@@ -59133,8 +61922,16 @@
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
                         "labId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "kind": {
                           "type": "string",
@@ -59298,7 +62095,7 @@
                 "example": {
                   "data": {
                     "id": "synthetic",
-                    "labId": "synthetic",
+                    "labId": null,
                     "kind": "personal",
                     "title": "synthetic",
                     "ownerMemberId": "synthetic",
@@ -59516,6 +62313,17 @@
                             "pattern": "^[A-Za-z0-9_-]{1,96}$"
                           },
                           "labId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "groupConversationId": {
                             "type": "string",
                             "pattern": "^[A-Za-z0-9_-]{1,96}$"
                           },
@@ -59585,28 +62393,35 @@
                                     "pattern": "^[A-Za-z0-9_-]{1,96}$"
                                   },
                                   "capability": {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "type": "string",
-                                        "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "id": {
+                                            "type": "string",
+                                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                          },
+                                          "version": {
+                                            "type": "integer",
+                                            "minimum": 1,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "visibility": {
+                                            "type": "string",
+                                            "const": "lab_public"
+                                          }
+                                        },
+                                        "required": [
+                                          "id",
+                                          "version",
+                                          "visibility"
+                                        ],
+                                        "additionalProperties": false
                                       },
-                                      "version": {
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": 9007199254740991
-                                      },
-                                      "visibility": {
-                                        "type": "string",
-                                        "const": "lab_public"
+                                      {
+                                        "type": "null"
                                       }
-                                    },
-                                    "required": [
-                                      "id",
-                                      "version",
-                                      "visibility"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -60075,7 +62890,9 @@
                                       "AUTHORITY_CHANGED",
                                       "INPUT_CHANGED",
                                       "BUDGET_EXCEEDED",
-                                      "AGENT_LIMIT_REACHED"
+                                      "AGENT_LIMIT_REACHED",
+                                      "GROUP_NOTICE_LIMIT",
+                                      "GROUP_ASSIGN_NOT_AVAILABLE"
                                     ]
                                   },
                                   {
@@ -60855,8 +63672,16 @@
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
                         "labId": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "kind": {
                           "type": "string",
@@ -61020,7 +63845,7 @@
                 "example": {
                   "data": {
                     "id": "synthetic",
-                    "labId": "synthetic",
+                    "labId": null,
                     "kind": "personal",
                     "title": "synthetic",
                     "ownerMemberId": "synthetic",
@@ -61244,6 +64069,10 @@
                         "type": "object",
                         "properties": {
                           "id": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                          },
+                          "noticeId": {
                             "type": "string",
                             "pattern": "^[A-Za-z0-9_-]{1,96}$"
                           },
@@ -61616,7 +64445,7 @@
       },
       "post": {
         "operationId": "sendChatMessage",
-        "description": "Persist one human message. Singular ask_agent remains compatible; optional agentContactIds dispatches up to five explicitly mentioned joined local group Agents atomically, splitting the total budget. Batch returns turns as well as first turn; exact replay never dispatches twice. Ordinary mentions never execute tasks.",
+        "description": "Persist one human message. Singular ask_agent remains compatible; legacy agentContactIds accepts only the one fixed group assistant; other/multiple agents return GROUP_AGENT_NOT_ALLOWED. The total budget is retained; exact replay never dispatches twice. Ordinary mentions never execute tasks.",
         "x-stage": "CHAT1",
         "x-implemented": true,
         "security": [
@@ -61840,6 +64669,10 @@
                           "type": "object",
                           "properties": {
                             "id": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            "noticeId": {
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
@@ -62609,7 +65442,9 @@
                                         "AUTHORITY_CHANGED",
                                         "INPUT_CHANGED",
                                         "BUDGET_EXCEEDED",
-                                        "AGENT_LIMIT_REACHED"
+                                        "AGENT_LIMIT_REACHED",
+                                        "GROUP_NOTICE_LIMIT",
+                                        "GROUP_ASSIGN_NOT_AVAILABLE"
                                       ]
                                     },
                                     {
@@ -63391,7 +66226,9 @@
                                       "AUTHORITY_CHANGED",
                                       "INPUT_CHANGED",
                                       "BUDGET_EXCEEDED",
-                                      "AGENT_LIMIT_REACHED"
+                                      "AGENT_LIMIT_REACHED",
+                                      "GROUP_NOTICE_LIMIT",
+                                      "GROUP_ASSIGN_NOT_AVAILABLE"
                                     ]
                                   },
                                   {
@@ -63956,6 +66793,10 @@
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
+                            "noticeId": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
                             "conversationId": {
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
@@ -64722,7 +67563,9 @@
                                         "AUTHORITY_CHANGED",
                                         "INPUT_CHANGED",
                                         "BUDGET_EXCEEDED",
-                                        "AGENT_LIMIT_REACHED"
+                                        "AGENT_LIMIT_REACHED",
+                                        "GROUP_NOTICE_LIMIT",
+                                        "GROUP_ASSIGN_NOT_AVAILABLE"
                                       ]
                                     },
                                     {
@@ -65221,6 +68064,10 @@
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
                             },
+                            "noticeId": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
                             "conversationId": {
                               "type": "string",
                               "pattern": "^[A-Za-z0-9_-]{1,96}$"
@@ -65987,7 +68834,9 @@
                                         "AUTHORITY_CHANGED",
                                         "INPUT_CHANGED",
                                         "BUDGET_EXCEEDED",
-                                        "AGENT_LIMIT_REACHED"
+                                        "AGENT_LIMIT_REACHED",
+                                        "GROUP_NOTICE_LIMIT",
+                                        "GROUP_ASSIGN_NOT_AVAILABLE"
                                       ]
                                     },
                                     {
@@ -66963,7 +69812,9 @@
                                 "AUTHORITY_CHANGED",
                                 "INPUT_CHANGED",
                                 "BUDGET_EXCEEDED",
-                                "AGENT_LIMIT_REACHED"
+                                "AGENT_LIMIT_REACHED",
+                                "GROUP_NOTICE_LIMIT",
+                                "GROUP_ASSIGN_NOT_AVAILABLE"
                               ]
                             },
                             {
@@ -68245,7 +71096,9 @@
                                 "AUTHORITY_CHANGED",
                                 "INPUT_CHANGED",
                                 "BUDGET_EXCEEDED",
-                                "AGENT_LIMIT_REACHED"
+                                "AGENT_LIMIT_REACHED",
+                                "GROUP_NOTICE_LIMIT",
+                                "GROUP_ASSIGN_NOT_AVAILABLE"
                               ]
                             },
                             {
@@ -69284,7 +72137,9 @@
                                 "AUTHORITY_CHANGED",
                                 "INPUT_CHANGED",
                                 "BUDGET_EXCEEDED",
-                                "AGENT_LIMIT_REACHED"
+                                "AGENT_LIMIT_REACHED",
+                                "GROUP_NOTICE_LIMIT",
+                                "GROUP_ASSIGN_NOT_AVAILABLE"
                               ]
                             },
                             {
@@ -72339,7 +75194,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.45.0"
+                          "const": "0.46.0"
                         },
                         "checks": {
                           "type": "object",
@@ -72398,7 +75253,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.45.0",
+                    "contractVersion": "0.46.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -72572,7 +75427,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.45.0"
+                          "const": "0.46.0"
                         },
                         "checks": {
                           "type": "object",
@@ -72631,7 +75486,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.45.0",
+                    "contractVersion": "0.46.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -72783,7 +75638,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.45.0"
+                          "const": "0.46.0"
                         },
                         "checks": {
                           "type": "object",
@@ -72842,7 +75697,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.45.0",
+                    "contractVersion": "0.46.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -125208,6 +128063,11 @@
               "code": {
                 "type": "string",
                 "enum": [
+                  "GROUP_AGENT_NOT_ALLOWED",
+                  "GROUP_LAB_REQUIRED",
+                  "GROUP_OWNER_TRANSFER_REQUIRED",
+                  "GROUP_NOTICE_LIMIT",
+                  "GROUP_ASSIGN_NOT_AVAILABLE",
                   "LAB_MEMBER_HAS_ACTIVE_TASKS",
                   "LAB_ALREADY_MANAGED",
                   "LAB_MANAGER_CANNOT_LEAVE",

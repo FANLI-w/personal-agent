@@ -15,7 +15,7 @@ export function chatModelSystem(options:{group:boolean;inviteContact:boolean;inv
     'Tables=columns/senderIds(null=service); payload=expanded stable IDs; omitted=[].',
     ...(options.group||options.inviteTask||options.runTask?['Ref={id:string,version:positive_integer}.']:[]),
     ...(options.group?[
-      'Group={title:string,contactIds:string[],sharedContext:{selectedText:null|string,artifactRefs:Ref[]},plan:{labId:string,goal:string,proposedItems:Item[],unresolvedQuestions:string[]}}. <=20; listed lab/self. No private history/memories. Accept independently.',
+      'Group={title:string,contactIds:string[],sharedContext:{selectedText:null|string,artifactRefs:Ref[]},plan:{labId:string,goal:string,proposedItems:Item[],unresolvedQuestions:string[]}}. <=20 listed humans only; server adds assistant. No private data.',
       'Item={id,title,goal,deliverable,acceptanceCriteria,allocation,dependencies:string[],schedule:Schedule,inputArtifactIds:[],budget:null}. First5:string. allocation={kind:self}|{kind:claim,audience:lab_members,summary:string}|{kind:invitation,memberId:string}; listed humans.'
     ]:[]),
     ...(options.group||options.inviteTask?[
