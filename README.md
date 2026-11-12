@@ -84,10 +84,10 @@ DSH 随安装包提供，登录后自动连接当前 AcceptCat 账号的模型�
 
 | 版本入口 | 当前状态 |
 | --- | --- |
-| **最新公开桌面试用版：0.10.100** | Windows x64安装包已发布：[下载 AcceptCat_0.10.100.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.100/AcceptCat_0.10.100.exe)。审核整合同事规则框架并保留工作台交接、文件/PDF、模型设置和本地聊天缓存；配套服务端规则已同步更新。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.100) · [成品检查与边界](docs/deployment/acceptcat-0.10.100-release.md) |
+| **最新公开桌面试用版：0.10.104** | Windows x64安装包已发布：[下载 AcceptCat_0.10.104.exe](https://github.com/luoyan96/personal-agent/releases/download/v0.10.104/AcceptCat_0.10.104.exe)。修复资料布局闪动、统一任务视图与读取恢复，规范和计划记录改为完整页面；保留聊天本地缓存及工作台文件/PDF与模型设置。本批无需后台更新。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.104) · [成品检查与边界](docs/deployment/acceptcat-0.10.104-release.md) |
 | **飞书只读本人试点** | 文档快照与命名多维表格论文库代码已包含，配套后台及飞书 0.2.0 已部署；指定论文库的真实读取、私人绑定和 DSH 试读已完成。飞书应用仍仅罗岩本人可用，其他成员不会因安装客户端而自动获得权限。[试点记录与边界](docs/deployment/acceptcat-0.10.27.md) |
 | **后台模型运行层：DSH 0.2.1-rc.2** | 已部署并验证现有模型的真实短句回复，保留现有账号、资料与模型设置；已有客户端无需重装。[部署说明](docs/deployment/harness-0.2.1-rc.2-20261020.md) |
-| **历史公开版本** | 原 v0.10.98、v0.10.97预发布、v0.10.96、v0.10.95、v0.10.94、v0.10.93、v0.10.91、v0.10.90、v0.10.75 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.100 |
+| **历史公开版本** | 原 v0.10.98、v0.10.97预发布、v0.10.96、v0.10.95、v0.10.94、v0.10.93、v0.10.91、v0.10.90、v0.10.75 等发布继续保留在 [Releases](https://github.com/luoyan96/personal-agent/releases)；[最新发布入口](https://github.com/luoyan96/personal-agent/releases/latest)现指向 v0.10.104 |
 | **产品源码与协作基线** | [v0.10.99 标签](https://github.com/luoyan96/personal-agent/tree/v0.10.99)固定客户端实际构建源码cc04d95；[main](https://github.com/luoyan96/personal-agent/tree/main)另保留发布/部署回执。后续功能从主仓库最新main另开分支，通过PR合并，安装包发布和后台部署分别记录 |
 
 0.10.99客户端已公开；配套后台已独立升级至contract0.45.0/schema034，支持新增团队仓库与分层规则；[发布回执](docs/deployment/acceptcat-0.10.99-release.md)与[后台部署回执](docs/deployment/constitution-library-20261109.md)分别维护。已读取的完整消息和引用可从本地恢复，旧版仅存指针的消息首次仍需联网补取。科研插件文件流程需要本机WPS/Office；真实账号模型、双机协作与复杂材料效果由使用者验收。原聊天图片问答基于Windows本机OCR提取文字，具体范围见发布说明。
