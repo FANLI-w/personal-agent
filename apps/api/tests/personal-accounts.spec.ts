@@ -209,8 +209,8 @@ describe('public accounts and owned models over real local HTTP, synthetic crede
   expect((await s.call('chatMessages',null,{id:direct.id},1,`?limit=1&cursor=${encodeURIComponent(page.nextCursor)}`)).status).toBe(404)
   expect((await s.call('chatConversation',null,{id:direct.id})).status).toBe(404)
   expect((await s.call('imConversations',null,{},1)).value.data.conversations.some((m:any)=>m.researchConversationId===direct.id)).toBe(false)
-  expect((await s.call('chatConversation',null,{id:group.id},1)).status).toBe(404)
-  expect((await s.call('imConversations',null,{},1)).value.data.conversations.some((m:any)=>m.researchConversationId===group.id)).toBe(false)
+  expect((await s.call('chatConversation',null,{id:group.id},1)).status).toBe(200)
+  expect((await s.call('imConversations',null,{},1)).value.data.conversations.some((m:any)=>m.researchConversationId===group.id)).toBe(true)
   expect(s.db.prepare('SELECT count(*) n FROM chat_turns').get()!.n).toBe(0)
  })
 
@@ -308,7 +308,7 @@ it('upgrades exact populated015 twice, preserving IFRC accounts, sessions, chat 
  db.prepare('INSERT INTO im_identities(contact_id,lab_id,user_id,updated_at) VALUES (?,?,?,?)').run('contact_member_old_A','lab_ifrc','u_preserved_old',at)
  const prior={accounts:db.prepare('SELECT * FROM auth_accounts').all(),lab:db.prepare('SELECT * FROM labs').all(),key:db.prepare('SELECT * FROM lab_ai_settings').all(),document:db.prepare('SELECT document FROM chat_conversations').get()!.document,identity:db.prepare('SELECT * FROM im_identities').all()}
  migrate(db);migrate(db);checkDatabase(db)
- expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(34)
+ expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(35)
  expect(db.prepare('SELECT * FROM auth_accounts').all()).toEqual(prior.accounts);expect(db.prepare('SELECT * FROM labs').all()).toEqual(prior.lab);expect(db.prepare('SELECT * FROM lab_ai_settings').all()).toEqual(prior.key);expect(db.prepare('SELECT * FROM im_identities').all()).toEqual(prior.identity);expect(db.prepare('SELECT document FROM chat_conversations').get()!.document).toBe(prior.document)
  expect(db.prepare('SELECT relation_key FROM chat_contact_requests').get()!.relation_key).toBe('human:member_old_A:member_old_B')
  expect(db.prepare('SELECT scope_key FROM chat_conversations').get()!.scope_key).toBe('direct:member_old_A:member_old_B')

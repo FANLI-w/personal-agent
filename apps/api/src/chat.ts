@@ -1,4 +1,5 @@
 import {PeerLibraryService} from './peer-library.js'
+import {authorizeGroupCommand,handleGroupCommand,chooseGroupLab,ensureGroupAssistant,groupAssistantContact,isGroupAssistant} from './group-governance.js'
 import {chatMessageDetails,withdrawChatMessage,isMessageRetracted,linkMessageReply} from './chat-message-actions.js'
 import { syncTranscript } from './chat-transcript.js'
 import {hasLabMembership} from './lab-access.js'
@@ -38,7 +39,7 @@ import {workspaceCommands,workspaceAuthorize,workspaceHandle,workspaceReplay,isS
 export type ChatCommand = keyof typeof chatRoutes | keyof typeof agentIntegrationRoutes | keyof typeof personalAssistantRoutes | keyof typeof workspaceRoutes | 'imCreateGroup' | 'imInviteContact'
 type Resource = z.infer<typeof ChatResource>
 export type TurnInput = DialogueSelection & { librarySnapshot?:ResearchContextSnapshot; libraryRead?:ResearchReadReceipt; skill?:SkillCall; workTaskId?:string; workTaskVersion?:number; scheduledFollowupId?:string; scheduledRunId?:string; continuous?:ContinuousInput; budget: { maxTokens: number; maxSeconds: number }; context: Resource[]; conversationVersion: number; inputSequence: number; agentContextFingerprint?: string; modelSelectionFingerprint?:string; dailyChat?:boolean; personalAssistant?:boolean; assistantMode?:'coordinate'; delegatedByTurnId?:string; personalMemoryFingerprint?:string; assistantDirectoryFingerprint?:string; assistantReceipt?:AgentTurn['assistantReceipt'];memoryReceipt?:AgentTurn['memoryReceipt'];followupReceipt?:AgentTurn['followupReceipt']; externalConsent?:boolean; externalAgent?:boolean; externalConnectionVersion?:number; purpose?:'create_agent'; createdAgent?:AgentTurn['createdAgent']; creationFailure?:'AGENT_LIMIT_REACHED'; assistantFailure?:'AGENT_LIMIT_REACHED'; fileDocument?:FileDocument; fileSource?:AgentFileSelection; fileRead?:AgentTurn['fileRead']; modelInputDiagnostic?:{budgetMaxTokens:number;inputTokenBound:number;maxOutputTokens:number;admitted:boolean}; modelOutputDiagnostic?:{stage:string;returnedTextLength:number;trimEmpty:boolean;maxOutputTokens:number;reasoningEffort:string;finishReason?:string;failure?:string;errorCategory?:string} }
-export type ChatRequest = { params: { id?: string; contactId?: string; messageId?: string }; query: { known?: string; cursor?: string; limit?: number; search?: string; afterSequence?: number; category?: 'all'|'ongoing'|'awaiting_me'|'completed'|'scheduled'; kind?: 'all'|'human'|'agent'; view?: 'directory'|'mine'|'public'; direction?: 'all'|'incoming'|'outgoing'; status?: 'all'|'pending'|'confirmed'|'candidate'|'revoked'|'active'|'paused'|'completed'|'cancelled'; scope?: 'private_agent'|'conversation'|'local'|'global'; scopeId?: string }; headers: { 'Idempotency-Key'?: string }; body: unknown }
+export type ChatRequest = { params: { id?: string; contactId?: string; messageId?: string; noticeId?:string }; query: { known?: string; cursor?: string; limit?: number; search?: string; afterSequence?: number; category?: 'all'|'ongoing'|'awaiting_me'|'completed'|'scheduled'; kind?: 'all'|'human'|'agent'; view?: 'directory'|'mine'|'public'; direction?: 'all'|'incoming'|'outgoing'; status?: 'all'|'pending'|'confirmed'|'candidate'|'revoked'|'active'|'paused'|'completed'|'cancelled'; scope?: 'private_agent'|'conversation'|'local'|'global'; scopeId?: string }; headers: { 'Idempotency-Key'?: string }; body: unknown }
 type Request = ChatRequest
 const decode = (value: unknown) => JSON.parse(String(value))
 const encode = JSON.stringify
@@ -75,7 +76,7 @@ export class ChatService {
     }
   }
   mineContactIds(){
-    return this.db.prepare(`SELECT id FROM chat_contacts WHERE owner_id=?
+    return this.db.prepare(`SELECT id FROM chat_contacts WHERE owner_id=? AND principal NOT GLOB 'group:*'
       UNION SELECT target_contact_id FROM chat_contact_requests WHERE requester_id=? AND status='accepted'
       UNION SELECT peer.id FROM chat_contact_requests r JOIN chat_contacts target ON target.id=r.target_contact_id AND target.kind='human'
         JOIN chat_contacts peer ON peer.kind='human' AND peer.owner_id=r.requester_id
@@ -89,6 +90,7 @@ export class ChatService {
   }
   contact(id: string): Contact { return this.directory.contact(id) }
   baseContact(id: string): Contact {
+    const assistant=groupAssistantContact(this,id);if(assistant)return assistant
     const row = this.db.prepare('SELECT * FROM chat_contacts WHERE id=?').get(id)
     if (!row) fail('NOT_FOUND')
     const owner = this.db.prepare("SELECT m.display_name,m.version,a.disabled,a.username FROM members m JOIN auth_accounts a ON a.member_id=m.id WHERE m.id=? AND (?='public_agent' OR m.lab_id=?)").get(row.owner_id!,row.kind!, row.lab_id!)
@@ -106,7 +108,7 @@ export class ChatService {
   conversation(id: string, withViewerState = true): Conversation {
     const row = this.db.prepare('SELECT * FROM chat_conversations WHERE id=?').get(id)
     const social=!!row&&isSocialGroup(this,id)
-    if(row && row.kind!=='direct' && row.lab_id!==this.c.actor.labId&&row.lab_id!==this.c.labId&&!social)fail('NOT_FOUND')
+    if(row && row.kind==='personal' && row.lab_id!==this.c.actor.labId&&row.lab_id!==this.c.labId)fail('NOT_FOUND')
     if (!row || (row.kind === 'personal' && row.owner_id !== this.c.actor.id)) fail('NOT_FOUND')
     const self = this.human().id
     // Authorizing an owned AI to participate is independent from the owner's
@@ -154,11 +156,11 @@ export class ChatService {
     const { viewerState: _viewerState, ...document } = value
     this.db.prepare('UPDATE chat_conversations SET document=? WHERE id=?').run(encode(document), value.id)
   }
-  rawConversation(id: string): Conversation { return Conversation.parse(decode(this.db.prepare('SELECT document FROM chat_conversations WHERE id=?').get(id)!.document)) }
+  rawConversation(id: string): Conversation { const row=this.db.prepare('SELECT document FROM chat_conversations WHERE id=?').get(id);if(!row)fail('NOT_FOUND');return Conversation.parse(decode(row.document)) }
   private teamContact(contact:Contact){const owner=contact.identity.kind==='human'?contact.identity.memberId:contact.identity.ownerMemberId;return hasLabMembership(this.db,owner,this.c.labId)}
-  newConversation(kind: Conversation['kind'], title: string, contactIds: string[], scope: string | null, taskIds: string[] = [],socialTaskId?:string|true) {
+  newConversation(kind: Conversation['kind'], title: string, contactIds: string[], scope: string | null, taskIds: string[] = [],socialTaskId?:string|true,groupLab?:string|null) {
     if (scope) { const old = this.db.prepare('SELECT id FROM chat_conversations WHERE scope_key=?').get(scope); if (old) return this.conversation(String(old.id)) }
-    const value = Conversation.parse({ id: randomUUID(), labId: kind==='group'&&!socialTaskId?this.c.labId:this.c.actor.labId, kind, title, ownerMemberId: this.c.actor.id, version: 1, members: [], taskIds, lastSequence: 0, createdAt: instant(), updatedAt: instant(), allowedActions: [] })
+    const value = Conversation.parse({ id: randomUUID(), labId: kind==='group'?chooseGroupLab(this,groupLab):this.c.actor.labId, kind, title, ownerMemberId: this.c.actor.id, version: 1, members: [], taskIds, lastSequence: 0, createdAt: instant(), updatedAt: instant(), allowedActions: [] })
     const { viewerState: _viewerState, ...document } = value
     this.db.prepare('INSERT INTO chat_conversations VALUES (?,?,?,?,?,?)').run(value.id, value.labId, value.ownerMemberId, kind, scope, encode(document))
     if(socialTaskId){if(kind!=='group'||socialTaskId!==true&&!this.db.prepare("SELECT 1 FROM personal_work_tasks WHERE id=? AND owner_id=? AND status='proposed'").get(socialTaskId,this.c.actor.id))fail('FORBIDDEN');this.db.prepare('INSERT INTO social_groups VALUES (?,?)').run(value.id,socialTaskId===true?null:socialTaskId)}
@@ -166,7 +168,8 @@ export class ChatService {
     for (const contactId of new Set([self, ...contactIds])) {
       requireActiveAgent(this.db,contactId)
       const contact = this.contact(contactId)
-      if(kind==='group' && (socialTaskId?!socialContactAllowed(this,this.c.actor.id,contactId):!this.teamContact(contact)))fail('FORBIDDEN')
+      if(kind==='group'&&contact.identity.kind!=='human')fail('GROUP_AGENT_NOT_ALLOWED')
+      if(kind==='group' && !this.teamContact(contact)&&!socialContactAllowed(this,this.c.actor.id,contactId))fail('FORBIDDEN')
       const ownedSocialAgent = !!socialTaskId && contact.identity.kind === 'personal_agent' && contact.identity.ownerMemberId === this.c.actor.id
       // Group chat is direct membership: whoever the creator selects is a joined
       // member at creation, so the group exists complete and needs no acceptance
@@ -175,10 +178,11 @@ export class ChatService {
       this.db.prepare('INSERT INTO chat_members VALUES (?,?,?,?,?)').run(value.id, contactId, 'joined', 1, contactId === self ? 'owner' : 'member')
       if(ownedSocialAgent&&typeof socialTaskId==='string')this.db.prepare("UPDATE personal_work_participants SET status='accepted' WHERE task_id=? AND contact_id=?").run(socialTaskId,contactId)
     }
+    if(kind==='group')ensureGroupAssistant(this,value)
     return this.conversation(value.id)
   }
   invitation(id: string) {
-    const row = this.db.prepare('SELECT i.*,c.owner_id group_owner FROM chat_invitations i JOIN chat_conversations c ON c.id=i.conversation_id WHERE i.id=? AND (c.lab_id=? OR EXISTS(SELECT 1 FROM social_groups s WHERE s.conversation_id=c.id))').get(id, this.c.labId)
+    const row = this.db.prepare('SELECT i.*,c.owner_id group_owner FROM chat_invitations i JOIN chat_conversations c ON c.id=i.conversation_id WHERE i.id=? AND (c.lab_id=? OR c.lab_id IS NULL OR EXISTS(SELECT 1 FROM social_groups s WHERE s.conversation_id=c.id))').get(id, this.c.labId)
     if (!row) fail('NOT_FOUND')
     const contact = this.contact(String(row.contact_id))
     if(isSocialGroup(this,String(row.conversation_id))&&!socialContactAllowed(this,String(row.group_owner),contact.id))fail('NOT_FOUND')
@@ -186,6 +190,7 @@ export class ChatService {
     return decode(row.document) as { id: string; conversationId: string; title: string; invitedContactId: string; invitedByMemberId: string; status: string; version: number }
   }
   joinedAgent(group: Conversation, contactId: string) {
+    if(group.kind==='group'&&!isGroupAssistant(this,contactId,group.id))fail('GROUP_AGENT_NOT_ALLOWED')
     requireActiveAgent(this.db,contactId)
     const contact = this.contact(contactId)
     if (!group.members.some(m => m.contactId === contactId && m.status === 'joined')) fail('NOT_FOUND')
@@ -217,7 +222,9 @@ export class ChatService {
     const row = this.db.prepare('SELECT * FROM chat_turns WHERE id=?').get(turnId); if (!row) fail('NOT_FOUND')
     const input = decode(row.request_json) as TurnInput, turn = this.materializedTurn(row)
     if(exact && (input.continuous?.messageIds ?? [turn.inputMessageId]).some(id=>isMessageRetracted(this,id)))fail('VERSION_CONFLICT')
-    const group = this.conversation(turn.conversationId, false); this.joinedAgent(group, turn.agentContactId)
+    const group = this.conversation(turn.conversationId, false)
+    const retired=!exact&&group.kind==='group'&&turn.status==='succeeded'&&this.db.prepare('SELECT 1 FROM group_retired_agents WHERE conversation_id=? AND contact_id=?').get(group.id,turn.agentContactId)
+    if(!retired)this.joinedAgent(group, turn.agentContactId)
     // Explicit instruction Skills must never reuse an assistant/creation route,
     // including inconsistent batches persisted by an older merge implementation.
     if(input.skill&&(input.purpose||input.assistantMode||input.personalAssistant))fail('VERSION_CONFLICT')
@@ -389,11 +396,11 @@ export class ChatService {
     if (group.kind !== 'group' || (!['run_task','invite_contact'].includes(payload.kind) && group.ownerMemberId !== this.c.actor.id)) fail('FORBIDDEN')
     const contact = this.contact(payload.contactId)
     if(payload.kind==='invite_contact'){
+      if(contact.identity.kind!=='human')fail('GROUP_AGENT_NOT_ALLOWED')
       if(!group.allowedActions.includes('invite'))fail('FORBIDDEN')
-      if(isSocialGroup(this,group.id)){if(!socialContactAllowed(this,this.c.actor.id,contact.id))fail('FORBIDDEN');return}
+      if(!this.teamContact(contact)&&!socialContactAllowed(this,this.c.actor.id,contact.id))fail('FORBIDDEN');return
     }
     if(!this.teamContact(contact))fail('FORBIDDEN')
-    if (payload.kind === 'invite_contact') return
     if (!group.members.some(m => m.contactId === contact.id && m.status === 'joined')) fail('NOT_FOUND')
     this.checkResource({ kind: 'task', ref: payload.task }, groupId, true)
     const task = this.c.task(payload.task.id)
@@ -401,13 +408,15 @@ export class ChatService {
       if (contact.identity.kind !== 'human' || task.initiatorId !== this.c.actor.id) fail('FORBIDDEN')
       this.c.validateInvitation(task, contact.identity.memberId, payload.schedule)
     } else {
-      if (contact.identity.kind !== 'public_agent' || task.leadId !== this.c.actor.id) fail('FORBIDDEN')
+      if (contact.identity.kind !== 'public_agent' || !contact.identity.capability || contact.groupConversationId || task.leadId !== this.c.actor.id) fail('FORBIDDEN')
       if (canonical(contact.identity.capability) !== canonical(payload.capability)) fail('CAPABILITY_UNAVAILABLE')
       for (const ref of payload.inputArtifactRefs) this.checkResource({ kind: 'artifact', ref }, groupId, true)
       this.ai.validateNewRun(task.id, { expectedVersion: payload.task.version, capability: payload.capability, budget: payload.budget, inputArtifactIds: payload.inputArtifactRefs.map(ref => ref.id), conclusionRefs: [] })
     }
   }
   validateGroupInput(payload:RequestFor<'imCreateGroup'>['body'],groupId:string) {
+      for(const id of payload.contactIds)if(this.contact(id).identity.kind!=='human')fail('GROUP_AGENT_NOT_ALLOWED')
+      chooseGroupLab(this,payload.labId)
       if (new Set(payload.contactIds).size !== payload.contactIds.length) fail('VALIDATION_ERROR')
       const social=!payload.plan&&payload.contactIds.some(id=>this.contact(id).labId!==this.c.actor.labId)
       for(const id of payload.contactIds)if(social?!socialContactAllowed(this,this.c.actor.id,id):!this.teamContact(this.contact(id)))fail('FORBIDDEN')
@@ -433,7 +442,7 @@ export class ChatService {
     const taskIds=payload.plan?(this.c.handlers.confirmPlan({params:{id:payload.plan.id},query:{},headers:{},body:{expectedVersion:payload.plan.version}}) as {data:{taskIds:string[]}}).data.taskIds:[]
     const sharedTaskIds=payload.sharedContext.artifactRefs.map(ref=>this.c.coordination.artifact(ref.id).model.taskId)
     const social=!payload.plan&&payload.contactIds.some(id=>this.contact(id).labId!==this.c.actor.labId)
-    const group=this.newConversation('group',payload.title,payload.contactIds,null,[...new Set([...taskIds,...sharedTaskIds])],social?true:undefined)
+    const group=this.newConversation('group',payload.title,payload.contactIds,null,[...new Set([...taskIds,...sharedTaskIds])],social?true:undefined,payload.labId)
     const resources:Resource[]=taskIds.map(id=>({kind:'task',ref:{id,version:this.c.task(id).version}}))
     for(const taskId of taskIds)for(const assignment of this.db.prepare("SELECT id,version FROM assignments WHERE task_id=? AND status='pending'").all(taskId))resources.push({kind:'assignment',ref:{id:String(assignment.id),version:Number(assignment.version)}})
     const shared:Resource[]=[...resources,...payload.sharedContext.artifactRefs.map(ref=>({kind:'artifact' as const,ref}))]
@@ -496,6 +505,7 @@ export class ChatService {
   }
   cursorMac(value: string) { return createHmac('sha256', signingKey(this.db)).update(`chat:${value}`).digest('hex') }
   authorize(name: ChatCommand, req: Request) {
+    if(authorizeGroupCommand(this,name,req))return
     if(workspaceAuthorize(this,name,req))return
     if(personalCommands.includes(name)){if(req.params.id){if(name.toLowerCase().includes('followup'))followup(this,req.params.id);else memory(this,req.params.id)}return}
     if(this.directory.authorize(name,req))return
@@ -514,6 +524,8 @@ export class ChatService {
       if (cached.request_hash !== fingerprint) fail('IDEMPOTENCY_CONFLICT')
       const previous = decode(cached.response_json)
       if(name==='withdrawChatMessage')return {data:chatMessageDetails(this,req.params.id!,req.params.messageId!)}
+      if(name==='updateGroupLab')return {data:this.conversation(req.params.id!)}
+      if(name==='withdrawGroupNotice')return handleGroupCommand(this,name,req)
       const workspaceResponse=workspaceReplay(this,name,previous);if(workspaceResponse)return route.response.parse(workspaceResponse)
       if(personalCommands.includes(name)){if(name==='updatePersonalMemorySettings')return route.response.parse({data:memorySettings(this)});return route.response.parse({data:name.toLowerCase().includes('followup')?followup(this,previous.data.id):memory(this,previous.data.id)})}
       if(['updateAgentConnection','disconnectAgentConnection'].includes(name))return route.response.parse({data:connectionStateForReplay(this,req.params.id!)})
@@ -532,6 +544,7 @@ export class ChatService {
     return response
   }
   handle(name: ChatCommand, req: Request, parsedFile?:ParsedAgentFile): unknown {
+    const governed=handleGroupCommand(this,name,req);if(governed)return governed
     const id = req.params.id!, b = req.body
     if(name==='chatTranscriptSync')return syncTranscript(this,id,(req.query as RequestFor<'chatTranscriptSync'>['query']).known)
     if(name==='chatMessageDetails')return {data:chatMessageDetails(this,id,req.params.messageId!)}
@@ -557,6 +570,7 @@ export class ChatService {
       const project=(id:string)=>{
         if(agentDeleted(this.db,id))fail('NOT_FOUND')
         const contact=this.contact(id)
+        if(contact.groupConversationId)fail('NOT_FOUND')
         if(req.query.view==='mine'&&!['own','accepted'].includes(contact.relationship.status))fail('NOT_FOUND')
         if(req.query.scope==='global'){
           const owner=contact.identity.kind==='human'?contact.identity.memberId:contact.identity.ownerMemberId
@@ -630,6 +644,10 @@ export class ChatService {
       const agents=group.members.filter(m=>m.status==='joined'&&this.contact(m.contactId).identity.kind!=='human')
       if(name!=='sendChatMessage'&&(group.kind==='group'||agents.length!==1))fail('FORBIDDEN')
       const input = SendChatMessage.parse(name!=='sendChatMessage'?{text:(b as {text?:string}).text??'请阅读这个附件，概括要点并说明阅读范围。',intent:'ask_agent',agentContactId:agents[0]!.contactId,budget:{maxTokens:4000,maxSeconds:90}}:b)
+      if(group.kind==='group'&&input.intent==='ask_agent'){
+        const targets=input.agentContactIds??[input.agentContactId!]
+        if(targets.length!==1||!isGroupAssistant(this,targets[0]!,group.id))fail('GROUP_AGENT_NOT_ALLOWED')
+      }
       if (!group.members.some(m => m.contactId === this.human().id && m.status === 'joined')) fail('FORBIDDEN')
       for (const mention of input.mentions) {
         const contact = this.contact(mention.contactId)
@@ -670,7 +688,7 @@ export class ChatService {
       if(name==='agentFileMessage'&&!fileDocument)fail('INVALID_STATE')
       if(fileSource){const document=fileDocument??this.fileDocument(fileSource.messageId,group.id);const questionPages=pageNumbersFromQuestion(input.text),requested=fileSource.pageNumbers??(questionPages.length?questionPages:undefined),numbers=requested?[...new Set(requested)]:undefined;if(numbers?.some(n=>!document.pages.some(page=>page.pageNumber===n)))fail('FILE_PAGE_UNAVAILABLE');fileSource={...fileSource,...(numbers?{pageNumbers:numbers}:{} )}}
       if(fileSource)input.budget=fileReadingBudget(fileDocument??this.fileDocument(fileSource.messageId,group.id),fileSource)
-      const workContext=input.intent==='ask_agent'&&isSocialGroup(this,group.id)?socialWorkContext(this,group.id,input.agentContactId!):{}
+      const workContext=input.intent==='ask_agent'&&isSocialGroup(this,group.id)&&!isGroupAssistant(this,input.agentContactId!,group.id)?socialWorkContext(this,group.id,input.agentContactId!):{}
       const nextInput:TurnInput={...(skill?{skill}:{}),...workContext,budget:input.budget!,context:input.context,conversationVersion:group.version,inputSequence:message.sequence,dailyChat:name!=='sendChatMessage'||isSocialGroup(this,group.id)||addressedGroupChat(group,input),...(external?{externalConsent:true}:{}),...(purpose?{purpose}:{}),...(name==='agentChatMessage'&&!skill&&!purpose&&!fileSource&&group.kind==='personal'&&agent?.profile.role==='coordinator'&&personalWorkRequest(input.text)?{personalAssistant:true,assistantMode:'coordinate' as const}:{}),...(fileDocument?{fileDocument}:{}),...(fileSource?{fileSource,fileRead:fileReadMetadata(fileDocument??this.fileDocument(fileSource.messageId,group.id))}:{})}
       // A fresh ordinary local conversation gets more room for continuity.
       // Explicit collaboration/file/external/creation/schedule budgets and all
@@ -756,6 +774,7 @@ export class ChatService {
       const group = this.conversation(id), body = b as RequestFor<'revokeChatMember'>['body']; if (group.kind !== 'group' || group.ownerMemberId !== this.c.actor.id) fail('FORBIDDEN')
       this.c.checkVersion(group.version, body.expectedConversationVersion)
       const member = group.members.find(m => m.contactId === req.params.contactId); if (!member) fail('NOT_FOUND')
+      if(isGroupAssistant(this,member.contactId,group.id))fail('GROUP_AGENT_NOT_ALLOWED')
       if (member.role === 'owner' || member.status === 'revoked') fail('INVALID_STATE'); this.c.checkVersion(member.version, body.expectedVersion)
       member.status = 'revoked'; member.version++
       this.db.prepare('UPDATE chat_members SET status=?,version=? WHERE conversation_id=? AND contact_id=?').run(member.status, member.version, id, member.contactId)

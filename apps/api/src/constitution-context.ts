@@ -66,8 +66,8 @@ export function personalRuleEntries(db:DatabaseSync,memberId:string):Entry[]{
 export function activePersonalRuleBytes(db:DatabaseSync,memberId:string,excludeId?:string):number{
   return [platformEntry(),...personalRuleEntries(db,memberId)].filter(e=>e.id!==excludeId).reduce((sum,e)=>sum+entrySize(e),0)
 }
-export type ConversationScope={readonly id:string;readonly kind:'personal'|'direct'|'group';readonly labId:string}
+export type ConversationScope={readonly id:string;readonly kind:'personal'|'direct'|'group';readonly labId:string|null}
 export function conversationRulesContext(db:DatabaseSync,conversation:ConversationScope,memberId?:string):RulesContext&{readonly ruleScope:'lab'|'platform'}{
-  if(conversation.kind==='group')return{...planningRulesContext(db,conversation.labId),ruleScope:'lab'}
+  if(conversation.kind==='group')return conversation.labId?{...planningRulesContext(db,conversation.labId),ruleScope:'lab'}:{...platformRulesContext(),ruleScope:'platform'}
   return{...assemble([platformEntry(),...(memberId?personalRuleEntries(db,memberId):[])]),ruleScope:'platform'}
 }

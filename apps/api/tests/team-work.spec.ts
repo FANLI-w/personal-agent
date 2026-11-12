@@ -35,7 +35,7 @@ async function setup(){
  const agent=(owner:string)=>contacts.find(c=>c.identity.kind==='personal_agent'&&c.identity.ownerMemberId===owner)!;
  const request=(await route('requestContact',{}, {id:human('member_B').id})).json().data.relationship;
  await route('decideContactRequest',{expectedVersion:request.version,decision:'accept'},{id:request.requestId},1);
- const created=await route('imCreateGroup',{title:'Synthetic literature group',contactIds:[human('member_B').id,agent('member_A').id,agent('member_B').id],plan:null,sharedContext:{selectedText:null,artifactRefs:[]}});
+ const created=await route('imCreateGroup',{title:'Synthetic literature group',contactIds:[human('member_B').id],plan:null,sharedContext:{selectedText:null,artifactRefs:[]}});
  expect(created.statusCode,created.body).toBe(200);const groupId=created.json().data.id;
  for(const actor of [0,1])for(const i of (await route('chatInvitations',null,{},actor)).json().data.filter((i:any)=>i.conversationId===groupId)){
   const accepted=await route('decideChatInvitation',{expectedVersion:i.version,decision:'accept'},{id:i.id},actor);expect(accepted.statusCode,accepted.body).toBe(200);
@@ -92,18 +92,21 @@ it('requires acceptance, arbitrates devices, retains uncertain locks and bounds 
  expect((await s.route('teamWork',null,{id:s.groupId})).json().data.find((i:any)=>i.taskId===items[0].taskId).status).toBe('ready');
 });
 it('revokes execution on group membership change while allowing the original device to close its process',{timeout:20000},async()=>{
- const s=await setup(),{items}=await assigned(s),id=items[0].taskId,params={kind:'research',id};await begin(s,id);
- const deviceId=randomUUID(),requestId=randomUUID(),claimed=await s.route('claimWorkExecution',{deviceId,requestId},params);expect(claimed.statusCode,claimed.body).toBe(200);
- const group=(await s.route('chatConversation',null,{id:s.groupId})).json().data,agentId=s.agent('member_A').id,member=group.members.find((m:any)=>m.contactId===agentId);
+ const s=await setup(),{items}=await assigned(s),id=items[1].taskId,params={kind:'research',id};await begin(s,id,1);
+ const deviceId=randomUUID(),requestId=randomUUID(),claimed=await s.route('claimWorkExecution',{deviceId,requestId},params,1);expect(claimed.statusCode,claimed.body).toBe(200);
+ const group=(await s.route('chatConversation',null,{id:s.groupId})).json().data,agentId=String(s.db.prepare("SELECT id FROM chat_contacts WHERE kind='human' AND owner_id='member_B'").get()!.id),member=group.members.find((m:any)=>m.contactId===agentId);
  const revoked=await s.route('revokeChatMember',{expectedVersion:member.version,expectedConversationVersion:group.version,reason:'Synthetic revoke'},{id:s.groupId,contactId:agentId});expect(revoked.statusCode,revoked.body).toBe(200);
  const report={executionId:claimed.json().data.id,deviceId,requestId,phase:'running'};
- const denied=await s.route('reportWorkExecution',report,params);expect(denied.statusCode,denied.body).toBe(404);
- expect((await s.route('reportWorkExecution',{...report,phase:'stopped'},params)).statusCode).toBe(200);
+ const denied=await s.route('reportWorkExecution',report,params,1);expect(denied.statusCode,denied.body).toBe(404);
+ expect((await s.route('reportWorkExecution',{...report,phase:'stopped'},params,1)).statusCode).toBe(200);
  expect((await s.route('teamWork',null,{id:s.groupId})).json().data.find((i:any)=>i.taskId===id).status).toBe('unavailable');
 });
 it('upgrades populated schema029 twice without changing old rows',{timeout:20000},async()=>{
- const s=await setup();s.db.exec('DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30');
- const tables=s.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name!='schema_migrations' AND name NOT LIKE 'sqlite_%'").all().map(r=>String(r.name));
+ const s=await setup();s.db.exec('DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30');
+ s.db.exec("DELETE FROM chat_members WHERE contact_id IN (SELECT id FROM chat_contacts WHERE principal GLOB 'group:*'); DELETE FROM chat_contacts WHERE principal GLOB 'group:*'");
+ // 035 intentionally changes group contacts/membership/version. Byte preservation
+ // of messages/commitments and the actual 034→035 transition are covered in group-governance.spec.
+ const tables=s.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT IN ('schema_migrations','chat_contacts','chat_conversations','chat_members','im_conversations') AND name NOT LIKE 'sqlite_%'").all().map(r=>String(r.name));
  const snapshot=()=>tables.map(t=>[t,s.db.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all()]);const before=snapshot();migrate(s.db);migrate(s.db);expect(snapshot()).toEqual(before);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
 });
 

@@ -1,4 +1,5 @@
 import { Alert, Button } from "antd";
+import {GroupNoticeCard} from './GroupNoticeCard';
 import { OpenImResearchPointer } from "@research-agent-platform/contracts";
 import { IMessageItemProps } from "@/pages/chat/queryChat/MessageItem";
 import { researchApi, supportsTranscriptSync } from "./api";
@@ -246,7 +247,7 @@ export default function ResearchMessageRender({
             />
           ) : (
             <>
-              {legacyInvite && read.data.fact.text ? (
+              {read.data.fact.noticeId ? <GroupNoticeCard id={read.data.fact.noticeId}/> : legacyInvite && read.data.fact.text ? (
                 <LegacyTaskInviteCard text={read.data.fact.text} />
               ) : (
                 read.data.fact.text && (

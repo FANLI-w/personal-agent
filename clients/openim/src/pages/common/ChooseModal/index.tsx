@@ -1,6 +1,8 @@
+import {useResearchRead} from "@/research/useResearchRead";
+import {useWorkspaceAvailability} from "@/research/useWorkspaceAvailability";
 import { CloseOutlined } from "@ant-design/icons";
 import { GroupType, SessionType } from "@openim/wasm-client-sdk";
-import { Alert, Button, Input, Modal, Upload, UploadProps } from "antd";
+import { Alert, Button, Input, Modal, Select, Upload, UploadProps } from "antd";
 import clsx from "clsx";
 import i18n, { t } from "i18next";
 import {
@@ -142,11 +144,16 @@ export const ChooseContact: FC<ChooseContactProps> = ({
     groupAvatar: "",
   });
 
+  const availability=useWorkspaceAvailability(researchMode && isOverlayOpen);
+  const [selectedLab,setSelectedLab]=useState<string>();
+  const labs=useResearchRead(signal=>researchApi("groupLabChoices",{signal}),`create-group-labs:${operationScope.scope}`,researchMode && isOverlayOpen && type==="CRATE_GROUP" && availability.supports(46),{poll:false});
+  const groupLabId=selectedLab??labs.data?.data.primaryLabId??labs.data?.data.labs[0]?.id??null;
   const { toSpecifiedConversation } = useConversationToggle();
 
   const resetState = useCallback(() => {
     chooseBoxRef.current?.resetState();
     setCreatedGroupId(undefined);
+    setSelectedLab(undefined);
     requestTicket.current++;
     sending.current = false;
     setLoading(false);
@@ -192,6 +199,7 @@ export const ChooseContact: FC<ChooseContactProps> = ({
     if (researchMode && type === "CRATE_GROUP" && choosedList.length > 20)
       return message.warning("一次建群最多选择20位成员。");
 
+    if(researchMode && type==="CRATE_GROUP" && (!availability.supports(46)||!labs.data))return message.warning(labs.error||"请等待群规则来源读取完成；此功能需要后台 0.46。");
     setLoading(true);
     setFailure("");
     sending.current = true;
@@ -217,6 +225,7 @@ export const ChooseContact: FC<ChooseContactProps> = ({
               await researchApi("imCreateGroup", {
                 body: {
                   title: groupBaseInfo.groupName.trim(),
+                  labId: groupLabId,
                   contactIds: ids,
                   sharedContext: { selectedText: null, artifactRefs: [] },
                   plan: null,
@@ -423,6 +432,11 @@ export const ChooseContact: FC<ChooseContactProps> = ({
               }
             />
           </div>
+          {researchMode && <div className="mb-4 space-y-2 text-sm">
+            {labs.data && labs.data.data.labs.length>1 && <Select aria-label="本群课题组" className="w-full" value={groupLabId} onChange={setSelectedLab} options={labs.data.data.labs.map(l=>({label:l.name,value:l.id}))} />}
+            <p>{labs.data?`本群将适用：平台规则${groupLabId?" + "+labs.data.data.labs.find(l=>l.id===groupLabId)?.name+"课题组规则":"（不关联课题组）"}`:availability.version&&!availability.supports(46)?"新建群聊需要后台升级到 0.46。":labs.error||"正在核对群规则来源…"}</p>
+            <p className="text-[var(--sub-text)]">后台 0.46 起，新群固定一个群助理，不读取个人规则、偏好或私聊。</p>
+          </div>}
           {!researchMode && (
             <div className="mb-6 flex items-center">
               <div className="min-w-[60px] font-medium">

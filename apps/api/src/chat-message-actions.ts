@@ -2,6 +2,7 @@ import { ChatMessageDetails } from '@research-agent-platform/contracts'
 import type { ChatService } from './chat.js'
 import { fail } from './errors.js'
 import { abortChatCall } from './continuous-chat.js'
+import {respondToGroupNotice} from './group-notices.js'
 
 export function isMessageRetracted(s: ChatService, id: string) {
   return !!s.db.prepare('SELECT 1 FROM chat_message_retractions WHERE message_id=?').get(id)
@@ -12,6 +13,7 @@ export function linkMessageReply(s: ChatService, id: string, replyTo?: string) {
   const source = s.projectedMessage(replyTo), target = s.projectedMessage(id)
   if (source.conversationId !== target.conversationId || source.sequence >= target.sequence || isMessageRetracted(s, replyTo)) fail('VALIDATION_ERROR')
   s.db.prepare('INSERT INTO chat_message_relations VALUES (?,?)').run(id, replyTo)
+  if(target.origin==='human'&&target.senderContactId===s.human().id)respondToGroupNotice(s,replyTo)
 }
 
 export function chatMessageDetails(s: ChatService, conversationId: string, id: string) {

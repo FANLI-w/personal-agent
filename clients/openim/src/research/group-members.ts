@@ -34,7 +34,7 @@ export async function readGroupCandidates(
 export function selectableGroupContacts(contacts: Contact[], actorId?: string) {
   return contacts.filter(
     (c) =>
-      c.allowedActions.includes("chat") &&
+      c.identity.kind === "human" && c.allowedActions.includes("chat") &&
       !(c.identity.kind === "human" && c.identity.memberId === actorId),
   );
 }
@@ -46,6 +46,7 @@ export function groupIdentityLabel(
 ) {
   if (contact.identity.kind === "human")
     return contact.username ? `联系人 · ${contact.username}` : "联系人";
+  if(contact.groupConversationId)return "群助理 · 本群专用";
   const ownerId = contact.identity.ownerMemberId;
   if (ownerId === actorId) return "我的智能体";
   const owner = contacts.find(

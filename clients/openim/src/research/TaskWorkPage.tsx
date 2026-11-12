@@ -411,7 +411,7 @@ export function TaskWorkPage({
           </Button>
           <span>
             {canActivate
-              ? "确认后才会建群并邀请参与人。"
+              ? "确认安排后开始工作；有真人协作成员时才创建群。"
               : "开始后就能在本机文件夹里动手，不需要先上传材料。"}
           </span>
         </div>

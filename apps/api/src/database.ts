@@ -3,7 +3,7 @@ import { readFileSync, mkdirSync, existsSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { createHash, randomBytes } from 'node:crypto'
 
-const migrations = ['001-foundation.sql', '002-collaboration.sql', '003-invitation-decisions.sql', '004-discovery.sql', '005-coordination.sql', '006-execution.sql', '007-authorized-reuse.sql', '008-pilot-operations.sql', '009-invite-registration.sql', '010-lab-invite-management.sql', '011-lab-ai-settings.sql', '012-research-chat.sql', '013-chat-viewer-state.sql', '014-agent-contacts.sql', '015-openim-bridge.sql', '016-personal-accounts-models.sql', '017-agent-connections.sql', '018-personal-assistant.sql', '019-recurring-agent-tasks.sql', '020-social-workspace.sql', '021-private-skills.sql', '022-research-library.sql', '023-feishu-readonly.sql', '024-feishu-library.sql', '025-lab-membership.sql', '026-peer-library.sql', '027-deleted-personal-agents.sql', '028-chat-message-relations.sql', '029-work-context.sql', '030-team-work.sql', '031-task-handoffs.sql', '032-library-index.sql', '033-team-library-repository.sql', '034-personal-work-rules.sql'].map((name, index) => {
+const migrations = ['001-foundation.sql', '002-collaboration.sql', '003-invitation-decisions.sql', '004-discovery.sql', '005-coordination.sql', '006-execution.sql', '007-authorized-reuse.sql', '008-pilot-operations.sql', '009-invite-registration.sql', '010-lab-invite-management.sql', '011-lab-ai-settings.sql', '012-research-chat.sql', '013-chat-viewer-state.sql', '014-agent-contacts.sql', '015-openim-bridge.sql', '016-personal-accounts-models.sql', '017-agent-connections.sql', '018-personal-assistant.sql', '019-recurring-agent-tasks.sql', '020-social-workspace.sql', '021-private-skills.sql', '022-research-library.sql', '023-feishu-readonly.sql', '024-feishu-library.sql', '025-lab-membership.sql', '026-peer-library.sql', '027-deleted-personal-agents.sql', '028-chat-message-relations.sql', '029-work-context.sql', '030-team-work.sql', '031-task-handoffs.sql', '032-library-index.sql', '033-team-library-repository.sql', '034-personal-work-rules.sql', '035-group-assistant.sql'].map((name, index) => {
   const sql = readFileSync(new URL(`../migrations/${name}`, import.meta.url), 'utf8')
   return { version: index + 1, sql, checksum: createHash('sha256').update(sql).digest('hex') }
 })
@@ -22,7 +22,10 @@ export function transaction<T>(db: DatabaseSync, fn: () => T): T {
 }
 export function migrate(db: DatabaseSync) {
   db.exec('PRAGMA journal_mode=WAL')
-  transaction(db, () => {
+  // Rebuilding referenced parent tables requires FK OFF outside the transaction.
+  // Validate the complete database before committing and always restore enforcement.
+  db.exec('PRAGMA foreign_keys=OFF')
+  try { transaction(db, () => {
     db.exec('CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, checksum TEXT NOT NULL, applied_at TEXT NOT NULL) STRICT')
     const rows = db.prepare('SELECT version, checksum FROM schema_migrations ORDER BY version').all()
     if (rows.some((row, index) => row.version !== migrations[index]?.version || row.checksum !== migrations[index]?.checksum)) throw new Error('Unknown migration or checksum mismatch')
@@ -31,7 +34,8 @@ export function migrate(db: DatabaseSync) {
       db.prepare('INSERT INTO schema_migrations VALUES (?, ?, ?)').run(migration.version, migration.checksum, new Date().toISOString())
     }
     db.prepare("INSERT INTO runtime_meta VALUES ('signing_key',?) ON CONFLICT(key) DO NOTHING").run(randomBytes(32).toString('hex'))
-  })
+    if(db.prepare('PRAGMA foreign_key_check').all().length)throw new Error('Migration foreign key check failed')
+  }) } finally { db.exec('PRAGMA foreign_keys=ON') }
 }
 export function checkMigrationHistory(db: DatabaseSync, current = true) {
   const rows = db.prepare('SELECT version, checksum FROM schema_migrations ORDER BY version').all()

@@ -3,7 +3,6 @@ import type { Conversation, SendChatMessage } from '@research-agent-platform/con
 import type { ChatService, TurnInput } from './chat.js'
 import { fail } from './errors.js'
 import {linkMessageReply} from './chat-message-actions.js'
-import { isSocialGroup, socialWorkContext, recordSocialWorkTurn } from './workspace.js'
 
 /** Plain @ chat also exists in legacy lab groups, independent of group storage. */
 export function addressedGroupChat(group: Conversation, input: SendChatMessage) {
@@ -15,20 +14,17 @@ export function addressedGroupChat(group: Conversation, input: SendChatMessage) 
 /** The route transaction rolls back the whole batch if any member or capacity check fails. */
 export function sendGroupAgents(s: ChatService, group: Conversation, input: SendChatMessage) {
   const ids = input.agentContactIds!
+  if(ids.length!==1)fail('GROUP_AGENT_NOT_ALLOWED')
   if (group.kind !== 'group' || input.intent !== 'ask_agent' || !input.budget) fail('VALIDATION_ERROR')
   for (const id of ids) {
     const agent = s.joinedAgent(group, id)
     if (agent.agentRuntime) fail('EXTERNAL_SCOPE_UNSUPPORTED')
   }
-  const tokens = Math.floor(input.budget.maxTokens / ids.length)
-  const seconds = Math.floor(input.budget.maxSeconds / ids.length)
+  const tokens = input.budget.maxTokens
+  const seconds = input.budget.maxSeconds
   if (tokens < 1 || seconds < 1) fail('VALIDATION_ERROR')
   // A linked work item has one primary request, not a new work item per mention.
   // Capture its version once so siblings do not invalidate each other's fence.
-  const work = isSocialGroup(s, group.id) ? socialWorkContext(s, group.id, ids[0]!) : {}
-  if (work.workTaskId) for (const id of ids) {
-    if (!s.db.prepare('SELECT 1 FROM personal_work_participants WHERE task_id=? AND contact_id=?').get(work.workTaskId,id)) fail('FORBIDDEN')
-  }
   const message = s.message(group.id, {
     senderContactId:s.human().id, origin:'human', text:input.text,
     mentions:input.mentions ?? [], resources:input.context ?? [], actionIds:[], turnId:null,
@@ -36,15 +32,13 @@ export function sendGroupAgents(s: ChatService, group: Conversation, input: Send
   linkMessageReply(s,message.id,input.replyToMessageId)
   const turns = ids.map(id => {
     const request: TurnInput = {
-      ...work,
       budget:{maxTokens:tokens,maxSeconds:seconds}, context:input.context ?? [],
       conversationVersion:group.version, inputSequence:message.sequence,
-      dailyChat:isSocialGroup(s, group.id) || addressedGroupChat(group, input),
+      dailyChat:true,
     }
     const turn = s.newTurn(group, message, id, request)
     return turn
   })
-  if (work.workTaskId) recordSocialWorkTurn(s,work.workTaskId,message.id,turns[0]!.id)
   message.turnId = turns[0]!.id
   const { files: _files, ...legacy } = message
   s.db.prepare('UPDATE chat_messages SET document=? WHERE id=?').run(JSON.stringify(legacy), message.id)

@@ -26,7 +26,9 @@ export function TeamWorkPanel({imID}:{imID?:string}){
   const operation=usePersonalOperation(!!id,`team-work:${id}`);
   const list=useResearchRead(signal=>researchApi('teamWork',{params:{id},signal}),`team-work:${id}`,!!id);
   const group=useResearchRead(signal=>researchApi('chatConversation',{params:{id},signal}),`team-work-source:${id}`,open);
-  const agents=roster.data?.data.filter(c=>c.identity.kind==='personal_agent'&&!c.agentRuntime)||[];
+  const identities=useResearchStore(s=>s.contacts);
+  const joinedOwners=new Set((roster.memberContacts??[]).filter(c=>c.identity.kind==='human').map(c=>c.identity.kind==='human'?c.identity.memberId:''));
+  const agents=identities.map(i=>i.contact).filter(c=>c.identity.kind==='personal_agent'&&!c.agentRuntime&&joinedOwners.has(c.identity.ownerMemberId));
   useEffect(()=>{setChosen({});setError('');setBusy(false);request.current=undefined;},[source?.messageId,id,generation]);
   useEffect(()=>{setDrawer(false);return()=>useTeamWorkDraft.setState({source:undefined});},[id,generation]);
   const close=()=>{if(!busy)useTeamWorkDraft.setState({source:undefined});};
@@ -56,9 +58,9 @@ export function TeamWorkPanel({imID}:{imID?:string}){
       </article>)}
     </Drawer>
     <Modal title="确认文献整理分工" open={open} onCancel={close} onOk={()=>void submit()} confirmLoading={busy} okText={request.current?'重试原分工':'确认分工'} okButtonProps={{disabled:!group.data||Object.keys(chosen).length===0||Object.values(chosen).some(v=>!v.title.trim()||!v.goal.trim())}}>
-      <p>只选择已加入本群的助手，最多 5 位。选择同事的助手后，会先邀请同事承接任务；不会立即运行，也不会读取其私人记忆。</p>
+      <p>由你明确选择本群真人成员的个人助手来辅助任务，最多 5 位；助手不会因此入群。选择同事的助手后，会先邀请同事承接任务；不会立即运行，也不会读取其私人记忆。</p>
       {(error||roster.error||group.error)&&<Alert type="error" message={error||roster.error||group.error}/>}
-      {!agents.length&&<p>本群还没有可参与的个人助手，请先在群详情邀请助手及其负责人。</p>}
+      {!agents.length&&<p>未找到已加入真人成员的可用助手；请到任务页面安排协作。</p>}
       {agents.map(agent=><div key={agent.id} style={{margin:'16px 0'}}>
         <Checkbox disabled={busy||!!request.current||(!chosen[agent.id]&&Object.keys(chosen).length>=5)} checked={!!chosen[agent.id]} onChange={e=>setChosen(old=>{const next={...old};if(e.target.checked)next[agent.id]={title:'文献整理',goal:''};else delete next[agent.id];return next;})}>{agent.displayName} · {groupContactDescription(agent,roster.data?.data||[],operation.actorId)}</Checkbox>
         {chosen[agent.id]&&<div style={{display:'grid',gap:8,marginTop:8}}>
