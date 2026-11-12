@@ -1,0 +1,537 @@
+.record-page,
+.library-page-shell {
+  color: #11191c;
+  background: #fcfcfc;
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  min-width: 0;
+  min-height: 0;
+  .ant-btn {
+    border-radius: 8px;
+    height: 34px;
+    padding-inline: 14px;
+    box-shadow: none;
+  }
+  .ant-btn-primary {
+    background: #1473c8;
+    color: white;
+    border-color: #1473c8;
+  }
+  .ant-btn-primary:not(:disabled):hover {
+    background: #1165b0;
+    color: white;
+  }
+  .ant-input,
+  .ant-input-affix-wrapper {
+    border-radius: 8px;
+  }
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid #1473c8;
+    outline-offset: 2px;
+  }
+  h2 {
+    font-size: 22px;
+    font-weight: 650;
+    line-height: 1.45;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+}
+.record-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding: 24px 28px;
+  gap: 20px;
+}
+.record-page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+  p {
+    margin: 7px 0 0;
+    font-size: 13px;
+    color: #697176;
+    max-width: 720px;
+  }
+}
+.record-page-actions,
+.record-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.record-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+  button {
+    padding: 8px 18px;
+    font: inherit;
+    color: #697176;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+  }
+  button[aria-current="page"],
+  button[aria-selected="true"] {
+    color: #1466aa;
+    background: #e8f4ff;
+    font-weight: 600;
+  }
+}
+.record-workspace {
+  display: grid;
+  grid-template-columns: minmax(240px, 30%) minmax(0, 1fr);
+  gap: 20px;
+  min-height: 0;
+  flex: 1;
+}
+.record-workspace-list {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 1px 4px 12px 1px;
+}
+.record-list-tools {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .ant-segmented {
+    background: #f3f4f5;
+    font-size: 12px;
+  }
+  .ant-segmented-item-label {
+    padding-inline: 8px;
+  }
+}
+.record-row {
+  display: block;
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  border: 1px solid #eeeef0;
+  border-radius: 10px;
+  text-align: left;
+  background: white;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  > div {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  strong {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  p {
+    color: #697176;
+    font-size: 13px;
+    margin: 6px 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+  small {
+    display: block;
+    color: #697176;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  &:hover {
+    border-color: #a7cfee;
+  }
+  &[aria-pressed="true"] {
+    background: #eaf5ff;
+    border-color: #badcf7;
+    box-shadow: inset 3px 0 #1473c8;
+  }
+}
+.record-workspace-detail {
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  background: white;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.record-workspace-detail-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 28px;
+  overflow: auto;
+}
+.record-workspace-footer {
+  flex-shrink: 0;
+  padding: 16px 28px;
+  border-top: 1px solid #eeeef0;
+  background: white;
+}
+.record-detail-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  h2 {
+    margin: 12px 0 8px;
+  }
+  p {
+    margin: 0;
+    color: #697176;
+    font-size: 13px;
+  }
+}
+.record-detail-section {
+  padding: 22px 0;
+  border-top: 1px solid #eeeef0;
+  p {
+    margin: 0;
+  }
+}
+.record-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 70ch;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.record-status {
+  display: inline-block;
+  width: max-content;
+  flex-shrink: 0;
+  border-radius: 12px;
+  padding: 1px 9px;
+  font-size: 12px;
+  line-height: 22px;
+  color: #52616c;
+  background: #f1f3f5;
+  &.is-active,
+  &.is-confirmed {
+    color: #167450;
+    background: #eaf8f0;
+  }
+  &.is-candidate,
+  &.is-draft {
+    color: #98600b;
+    background: #fff5e1;
+  }
+}
+.record-empty,
+.record-state {
+  padding: 24px 16px;
+  color: #697176;
+  font-size: 14px;
+  h3 {
+    color: #25323e;
+  }
+  p {
+    margin: 8px 0;
+  }
+}
+.record-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f1f8f3;
+  color: #216845;
+  font-size: 13px;
+}
+.record-steps {
+  list-style: decimal;
+  padding-left: 24px;
+  margin: 0;
+  li {
+    padding: 6px 0 12px 8px;
+  }
+  li::marker {
+    color: #1473c8;
+    font-weight: 600;
+  }
+  strong {
+    font-size: 14px;
+  }
+  p {
+    color: #697176;
+    font-size: 13px;
+    margin: 4px 0 0;
+  }
+}
+.record-questions {
+  padding: 14px 18px;
+  margin: 14px 0 22px;
+  background: #fff8ea;
+  border: 1px solid #f4dfb1;
+  border-radius: 8px;
+}
+.record-editor {
+  .ant-modal-content {
+    border-radius: 12px;
+    padding: 24px;
+  }
+  label {
+    display: block;
+    font-size: 14px;
+    margin: 16px 0 6px;
+  }
+  .workspace-standards-editor {
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: white;
+  }
+  .workspace-standards-editor > .ant-input {
+    margin-bottom: 14px;
+  }
+  .workspace-standards-actions {
+    margin-bottom: 16px;
+  }
+  .ant-btn {
+    border-radius: 8px;
+  }
+}
+.library-page-shell {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.library-section-nav {
+  width: 176px;
+  flex-shrink: 0;
+  padding: 26px 14px;
+  border-right: 1px solid #eeeef0;
+  background: #fcfcfc;
+  overflow: auto;
+  h1 {
+    font-size: 24px;
+    font-weight: 650;
+    margin: 0 14px 24px;
+  }
+  button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 14px;
+    margin: 5px 0;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: #58616a;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+  }
+  button[aria-current="page"] {
+    color: #1466aa;
+    background: #e8f4ff;
+    font-weight: 600;
+  }
+  .library-nav-secondary {
+    border-top: 1px solid #eeeef0;
+    margin-top: 24px;
+    padding-top: 14px;
+  }
+}
+.library-section-body {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  > .team-library {
+    padding: 24px 28px;
+    flex: 1;
+    overflow: auto;
+  }
+  > .library-workspace-content {
+    padding: 24px 28px;
+    flex: 1;
+    overflow: auto;
+  }
+  > .record-page {
+    flex: 1;
+  }
+}
+.team-library-page-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+}
+.workspace-library.library-page-shell {
+  flex-direction: row;
+}
+.personal-agent-desktop .social-workspace .record-page,
+.personal-agent-desktop .social-workspace.library-page-shell {
+  .ant-btn {
+    border-radius: 8px;
+  }
+  .ant-btn-primary {
+    background: #1473c8;
+    color: white;
+  }
+  .ant-btn-primary:hover:enabled {
+    background: #1165b0;
+    color: white;
+  }
+  .ant-btn-primary:disabled {
+    background: #f1f2f3;
+    color: #9ea5aa;
+  }
+  .ant-input,
+  .ant-input-affix-wrapper {
+    border-radius: 8px;
+  }
+}
+.record-editor .workspace-standards-editor {
+  display: grid;
+  gap: 14px;
+  padding-top: 12px;
+}
+.record-editor .workspace-standards-editor > div:last-child {
+  display: flex;
+  gap: 8px;
+}
+.workspace-workbench:has(.planning-history-page) > .workbench-content {
+  overflow: hidden;
+  padding-bottom: 0;
+}
+.record-platform {
+  max-width: 820px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 28px;
+  overflow: auto;
+}
+.planning-history-page > .record-page-heading p {
+  margin: 0;
+}
+.planning-history-page {
+  .record-detail-heading {
+    margin-bottom: 16px;
+  }
+  .record-detail-heading h2 {
+    margin: 8px 0 4px;
+  }
+  .record-detail-section {
+    padding: 16px 0;
+  }
+  .record-steps li {
+    padding: 2px 0 8px 8px;
+  }
+  .record-steps p {
+    line-height: 1.55;
+  }
+  .record-questions {
+    margin: 10px 0 16px;
+    padding: 12px 16px;
+  }
+}
+.planning-history-page h2.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.personal-agent-desktop
+  .workspace-workbench:has(.planning-history-page)
+  > .workspace-heading {
+  justify-content: flex-start;
+  gap: 28px;
+}
+.record-version-meta {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 12px;
+  font-size: 14px;
+  dt {
+    color: #697176;
+  }
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+@media (max-width: 1150px) {
+  .record-page {
+    padding: 20px;
+    gap: 16px;
+  }
+  .record-workspace {
+    grid-template-columns: minmax(220px, 34%) minmax(0, 1fr);
+    gap: 14px;
+  }
+  .record-workspace-detail-scroll {
+    padding: 22px;
+  }
+  .library-section-nav {
+    width: 156px;
+    padding-inline: 8px;
+  }
+}
+@media (max-width: 800px) {
+  .library-section-nav {
+    width: 135px;
+  }
+  .record-workspace {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+  }
+  .record-workspace-list {
+    flex: 0 0 auto;
+    max-height: 260px;
+  }
+  .record-workspace-detail {
+    flex: 1 0 auto;
+    overflow: visible;
+  }
+  .record-workspace-detail-scroll {
+    overflow: visible;
+  }
+  .record-page-heading {
+    flex-wrap: wrap;
+  }
+}

@@ -1,4 +1,4 @@
-import { Alert, Button, Drawer, Input, Modal, Segmented, Select } from "antd";
+import { Alert, Button, Input, Modal, Segmented, Select } from "antd";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import type { WorkbenchCard } from "@research-agent-platform/contracts";
@@ -125,13 +125,11 @@ function WorkbenchOverview({ card }: { card: WorkbenchCard }) {
 export function DesktopWorkbench() {
   const [params, setParams] = useSearchParams();
   const relocated = relocatedWorkspace(params);
-  // Two front doors only: the task list and the team overview. Saved planning
-  // links land on the list and open the assistant instead of a third tab.
+  // Saved planning links still open the assistant; history itself is a full page.
   const { tab, planning, planId, requestId, draft, filter } = workbenchView(params);
   const [planningLaunch, setPlanningLaunch] = useState(0);
   const [taskLaunch, setTaskLaunch] = useState(0);
   const [planningExpanded, setPlanningExpanded] = useState(false);
-  const [plansOpen, setPlansOpen] = useState(false);
   const [workbenchRevision, setWorkbenchRevision] = useState(0);
   const {
     id: requestedTask,
@@ -209,7 +207,12 @@ export function DesktopWorkbench() {
   const setTab = (value: WorkbenchTab) => {
     setPlanningLaunch(0);
     setSelected(undefined);
-    setParams(new URLSearchParams({ view: value }));
+    setParams(
+      new URLSearchParams({
+        view: value,
+        ...(value === "history" ? { returnTo: tab === "team" ? "team" : "tasks" } : {}),
+      }),
+    );
   };
   // A saved plan or planning link is a request to keep working on it, so the
   // assistant opens with that thread instead of a separate page being shown.
@@ -269,7 +272,7 @@ export function DesktopWorkbench() {
   // A task detail is read-and-act, not a place to start a new plan: the assistant
   // bar stays on the list so the detail screen keeps a single next action.
   const detailOpen = !!requestedTask && requestedValid;
-  const assistantBar = !!actor && !detailOpen;
+  const assistantBar = !!actor && !detailOpen && tab !== "history";
   // The assistant writes the task; the old form survives only where it cannot run.
   const assistantReady =
     Boolean(actor) &&
@@ -309,10 +312,10 @@ export function DesktopWorkbench() {
             options={[
               { label: "我的待办", value: "tasks" },
               { label: "团队任务", value: "team" },
+              { label: "计划记录", value: "history" },
             ]}
           />
-          <Button onClick={() => setPlansOpen(true)}>计划记录</Button>
-          {
+          {tab !== "history" && (
             <>
               <Button disabled={!supported} onClick={startPersonalTask}>
                 新建个人任务
@@ -329,7 +332,7 @@ export function DesktopWorkbench() {
                 </Button>
               </span>
             </>
-          }
+          )}
         </div>
       </header>
       <div className="workbench-content">
@@ -339,6 +342,24 @@ export function DesktopWorkbench() {
             pending={!availability.data && !availability.error}
             error={availability.error}
             onRetry={availability.refresh}
+          />
+        ) : tab === "history" ? (
+          <PlanningHistory
+            onBack={() => setTab(params.get("returnTo") === "team" ? "team" : "tasks")}
+            onOpen={(target) => {
+              if (target.task) {
+                setParams(
+                  new URLSearchParams(
+                    workbenchTaskPath(target.task, "research").split("?")[1],
+                  ),
+                );
+                return;
+              }
+              const next = new URLSearchParams({ view: "tasks" });
+              if (target.plan) next.set("plan", target.plan);
+              if (target.request) next.set("planning", target.request);
+              setParams(next);
+            }}
           />
         ) : tab === "team" ? (
           availability.supports(23) ? (
@@ -551,7 +572,7 @@ export function DesktopWorkbench() {
       </div>
       {!!actor && (
         <PlanningAgent
-          hidden={detailOpen}
+          hidden={detailOpen || tab === "history"}
           available={supported && availability.supports(23)}
           conversationAvailable={availability.supports(32)}
           focus={planningLaunch}
@@ -567,24 +588,6 @@ export function DesktopWorkbench() {
           onTeam={() => setTab("team")}
         />
       )}
-      <Drawer
-        title="研究计划记录"
-        placement="right"
-        width={520}
-        open={plansOpen}
-        onClose={() => setPlansOpen(false)}
-        className="workbench-plans-drawer"
-      >
-        <PlanningHistory
-          onOpen={(target) => {
-            setPlansOpen(false);
-            const next = new URLSearchParams({ view: "tasks" });
-            if (target.plan) next.set("plan", target.plan);
-            if (target.request) next.set("planning", target.request);
-            setParams(next);
-          }}
-        />
-      </Drawer>
       <Modal
         title="新建个人任务"
         open={creating}

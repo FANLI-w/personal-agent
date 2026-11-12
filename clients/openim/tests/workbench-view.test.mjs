@@ -30,7 +30,7 @@ const { workbenchView, personalTaskTitle } = await load(
   "../src/research/workbench-view.ts",
 );
 
-test("the workbench has two front doors and defaults to the task list", () => {
+test("the workbench defaults to tasks and supports the full history page", () => {
   const initial = workbenchView(new URLSearchParams());
   // Fields are compared one by one: the module is evaluated in another context,
   // so its objects do not share this realm's prototype.
@@ -40,6 +40,9 @@ test("the workbench has two front doors and defaults to the task list", () => {
   assert.equal(initial.requestId, undefined);
   assert.equal(initial.filter, "all");
   assert.equal(workbenchView(new URLSearchParams("view=team")).tab, "team");
+  const history = workbenchView(new URLSearchParams("view=history&plan=plan_demo"));
+  assert.equal(history.tab, "history");
+  assert.equal(history.planning, false);
   assert.equal(
     workbenchView(new URLSearchParams("view=tasks&category=completed")).filter,
     "completed",
@@ -74,13 +77,14 @@ test("a team view never opens the assistant, and junk ids are ignored", () => {
   assert.equal(junk.planning, false);
 });
 
-test("the page keeps only the two tabs and names the two kinds of task", async () => {
+test("task navigation includes full history and names the two kinds of task", async () => {
   const page = await readFile(
     new URL("../src/research/DesktopWorkbench.tsx", import.meta.url),
     "utf8",
   );
   assert.match(page, /label: "我的待办"/);
   assert.match(page, /label: "团队任务"/);
+  assert.match(page, /label: "计划记录"/);
   assert.doesNotMatch(page, /label: "计划"/);
   assert.doesNotMatch(page, /label: "定时"/);
   // Both entries start with 新建 and say what they make.
