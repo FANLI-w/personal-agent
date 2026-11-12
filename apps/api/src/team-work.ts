@@ -24,7 +24,9 @@ function lastExecution(s:ChatService,kind:string,id:string):WorkExecution|null {
 function teamAuthority(s:ChatService,row:TeamRow) {
   const group=s.conversation(row.conversation_id,false)
   if(group.kind!=='group'||isMessageRetracted(s,row.source_message_id))fail('FORBIDDEN')
-  const agent=s.joinedAgent(group,row.agent_id)
+  // Task authorization belongs to the joined human owner, independently from
+  // whether their personal assistant is present in this group's chat roster.
+  const agent=s.contact(row.agent_id)
   if(agent.identity.kind!=='personal_agent'||agent.agentRuntime||agent.identity.ownerMemberId!==row.owner_id)fail('FORBIDDEN')
   if(!group.members.some(m=>m.contactId===s.human(row.owner_id).id&&m.status==='joined'))fail('FORBIDDEN')
   s.c.member(row.owner_id)
@@ -79,7 +81,7 @@ export function runTeamWork(s:ChatService,name:Command,input:RequestFor<Command>
     if(new Set(b.assignments.map(a=>a.agentContactId)).size!==b.assignments.length)fail('VALIDATION_ERROR')
     if(Number(s.db.prepare('SELECT count(*) n FROM team_work WHERE conversation_id=?').get(id)!.n)+b.assignments.length>100)fail('RATE_LIMITED')
     const assignments=b.assignments.map(a=>{
-      const agent=s.joinedAgent(group,a.agentContactId)
+      const agent=s.contact(a.agentContactId)
       if(agent.identity.kind!=='personal_agent'||agent.agentRuntime)fail('FORBIDDEN')
       const ownerId=agent.identity.ownerMemberId,owner=s.c.member(ownerId)
       if(!group.members.some(m=>m.contactId===s.human(ownerId).id&&m.status==='joined'))fail('FORBIDDEN')

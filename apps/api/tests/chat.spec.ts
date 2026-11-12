@@ -21,7 +21,7 @@ afterEach(async () => { for (const fn of cleanup.splice(0).reverse()) await fn()
 const schedule = { suggested: null, hardDeadline: null, committed: null, estimatedHumanHours: null, checkpoint: null }
 // Business/ACL cases include multi-member groups and full authorized resources.
 const budget = { maxTokens: 25000, maxSeconds: 30 }
-const model = (value: unknown): ModelCall => async () => ({ text: JSON.stringify(value), failure: null, inputTokens: 100, outputTokens: 200, elapsedMs: 20 })
+const model = (value: unknown): ModelCall => async input => ({ text: JSON.stringify(input.system.startsWith('You are 群助理')?{answer:(value as {answer:string}).answer,requests:[]}:value), failure: null, inputTokens: 100, outputTokens: 200, elapsedMs: 20 })
 const reply = (answer = '这是合成模型的普通问答。', actions: unknown[] = []) => ({ answer, waitingInput: false, group: null, actions })
 const groupProfile = {displayName:'乙的文献助手',introduction:'合成简介',capabilityDescription:'仅整理当前群里的合成文字',personality:'简洁'}
 function address(contacts:Contact[], text='你好，请分别回答。') {
@@ -30,17 +30,12 @@ function address(contacts:Contact[], text='你好，请分别回答。') {
   return {text:prefix+text,mentions}
 }
 async function colleagueGroup(s:Awaited<ReturnType<typeof setup>>) {
-  const specialist=(await s.call('createPersonalAgent',groupProfile,{},1)).value.data as Contact
   await s.connect(s.human('member_B').id)
-  const created=await s.call('imCreateGroup',{title:'同事的讨论群',contactIds:[s.human('member_A').id,s.agent('member_B').id,specialist.id],plan:null,sharedContext:{selectedText:null,artifactRefs:[]}}, {},1)
+  const created=await s.call('imCreateGroup',{title:'同事讨论群',contactIds:[s.human('member_A').id],plan:null,sharedContext:{selectedText:null,artifactRefs:[]}}, {},1)
   expect(created.status,created.raw).toBe(200)
   const group=created.value.data as Conversation
-  // Group membership is direct: every selected contact is joined at creation,
-  // so no invitation has to be accepted before the group can be used.
-  for(const contactId of [s.human('member_A').id,s.agent('member_B').id,specialist.id])
-    expect(group.members.find(member=>member.contactId===contactId)!.status).toBe('joined')
-  expect((await s.call('chatInvitations',null,{},1)).value.data.filter((value:{conversationId:string})=>value.conversationId===group.id)).toEqual([])
-  return {group,agents:[s.agent('member_B'),specialist]}
+  const agent=(await s.call('chatContact',null,{id:`group_assistant_${group.id}`})).value.data as Contact
+  return {group,agents:[agent]}
 }
 function modelMessages(prompt:{messageColumns:string[];senderIds:string[];messages:unknown[][]}) {
   return prompt.messages.map(row=>{
@@ -82,7 +77,8 @@ async function setup(enabled = true, representativeMembers = 0) {
     const r = await call('sendChatMessage', { text, intent: 'ask_agent', agentContactId: agentId, budget, context }, { id: conversationId }, actor)
     expect(r.status, r.raw).toBe(201); return r.value.data
   }
-  async function groupProposal(contactIds = [human('member_B').id, publicAgent.id], initiallyInvite = false, context:unknown[] = []) {
+  async function groupProposal(contactIds = [human('member_B').id], initiallyInvite = false, context:unknown[] = []) {
+    contactIds=contactIds.filter(id=>contacts.find(c=>c.id===id)?.identity.kind==='human');if(!contactIds.length)contactIds=[human('member_B').id]
     const sent = await ask(personal.id,agent('member_A').id,context)
     const output = { ...reply('建议审核两项合成工作。'), group: { title: '合成任务群', contactIds, sharedContext: { selectedText: '只分享这段合成目标。', artifactRefs: [] }, plan: { labId: 'lab_synthetic', goal: '合成目标', proposedItems: [
       { id: 'human_item', title: '待邀请工作', goal: '整理文字', deliverable: '文字清单', acceptanceCriteria: '可检查', allocation: initiallyInvite ? {kind:'invitation',memberId:'member_B'} : { kind: 'claim', audience: 'lab_members', summary: '合成待承接工作' }, dependencies: [], schedule, inputArtifactIds: [], budget: null },
@@ -176,7 +172,7 @@ describe('group Agent mentions and shared status',()=>{
       const sent=await s.call('sendChatMessage',{...addressed,text,intent:'ask_agent',agentContactId:agents[0]!.id,budget:{maxTokens:16000,maxSeconds:90}},{id:group.id})
       expect(sent.status,sent.raw).toBe(201)
       let captured:Parameters<ModelCall>[0]|undefined
-      expect(await new ChatWorker(s.db,s.config,async input=>{captured=input;return {text:'这是一条协助请求，尚未自动分配任务。',failure:null,inputTokens:100,outputTokens:80,elapsedMs:10}}).tick()).toBe(true)
+      expect(await new ChatWorker(s.db,s.config,async input=>{captured=input;return {text:JSON.stringify({answer:'这是一条协助请求，尚未自动分配任务。',requests:[]}),failure:null,inputTokens:100,outputTokens:80,elapsedMs:10}}).tick()).toBe(true)
       expect(captured).toBeDefined();expect(captured!.maxTokens).toBe(4096)
       const p=JSON.parse(captured!.prompt);expect(p.currentRequest.messageIds).toEqual([sent.value.data.message.id]);expect(modelMessages(p).at(-1)!.text).toBe(text);expect(p.context).toBeUndefined()
       expect(chatInputTokenBound(captured!.system,captured!.prompt)+captured!.maxTokens).toBeLessThanOrEqual(16000)
@@ -185,62 +181,23 @@ describe('group Agent mentions and shared status',()=>{
     expect(s.db.prepare('SELECT count(*) n FROM personal_work_tasks').get()!.n).toBe(0)
   })
 
-  it('reads group-only Agents, persists one input and independent bounded replies, and replays all requests exactly once',async()=>{
-    const s=await setup(),{group,agents}=await colleagueGroup(s)
-    const mine=(await s.call('chatContacts',null,{},0,'?view=mine&limit=100')).value.data as Contact[]
-    expect(mine.some(c=>c.id===agents[1]!.id)).toBe(false)
-    const roster=await s.call('chatConversationContacts',null,{id:group.id},0,'?limit=100')
-    expect(roster.status,roster.raw).toBe(200)
-    expect(roster.value.data.map((c:Contact)=>c.id)).toEqual(expect.arrayContaining(agents.map(c=>c.id)))
-    expect((await s.call('chatConversationContacts',null,{id:group.id},2)).status).toBe(404)
-    const body={...address(agents),intent:'ask_agent',agentContactIds:agents.map(c=>c.id),budget:{maxTokens:32001,maxSeconds:181}},key=randomUUID()
-    const sent=await s.call('sendChatMessage',body,{id:group.id},0,'',key)
-    expect(sent.status,sent.raw).toBe(201)
-    const {message,turns}=sent.value.data
-    expect(turns).toHaveLength(2);expect(sent.value.data.turn.id).toBe(turns[0].id)
-    expect(new Set(turns.map((t:{inputMessageId:string})=>t.inputMessageId))).toEqual(new Set([message.id]))
-    expect(turns.map((t:{budget:unknown})=>t.budget)).toEqual([{maxTokens:16000,maxSeconds:90},{maxTokens:16000,maxSeconds:90}])
-    expect(s.db.prepare("SELECT count(*) n FROM chat_messages WHERE conversation_id=? AND json_extract(document,'$.origin')='human'").get(group.id)!.n).toBe(1)
-    const pending=await s.call('chatMessageAgentStatuses',null,{id:group.id,messageId:message.id},1)
-    expect(pending.status,pending.raw).toBe(200);expect(pending.value.data.requests.map((r:{status:string})=>r.status)).toEqual(['queued','queued'])
-    const calls:unknown[]=[]
-    const worker=new ChatWorker(s.db,s.config,async(input,signal,credential)=>{calls.push(input);return {text:'合成群聊回答。',failure:null,inputTokens:100,outputTokens:200,elapsedMs:20}})
-    expect(await worker.tick()).toBe(true);expect(await worker.tick()).toBe(true);expect(calls).toHaveLength(2)
-    const statuses=await s.call('chatMessageAgentStatuses',null,{id:group.id,messageId:message.id},1)
-    expect(statuses.value.data.requests.map((r:{status:string})=>r.status)).toEqual(['succeeded','succeeded'])
-    for(const receipt of statuses.value.data.requests)expect(Object.keys(receipt).sort()).toEqual(['id','agentContactId','displayName','status','failure','outputMessageId','updatedAt'].sort())
-    for(const turn of turns){expect((await s.call('chatTurn',null,{id:turn.id},1)).status).toBe(404);expect((await s.call('chatTurnProgress',null,{id:turn.id},1)).status).toBe(404)}
-    const messages=(await s.call('chatMessages',null,{id:group.id},1,'?limit=100')).value.data
-    expect(messages.filter((m:{origin:string})=>m.origin==='model')).toHaveLength(2)
-    expect(messages.filter((m:{origin:string})=>m.origin==='model').every((m:{text:string;turnId:string|null})=>m.text==='合成群聊回答。'&&m.turnId===null)).toBe(true)
-    expect(messages.find((m:{id:string})=>m.id===message.id).turnId).toBe(null)
-    const replay=await s.call('sendChatMessage',body,{id:group.id},0,'',key)
-    expect(replay.status,replay.raw).toBe(201)
-    expect(replay.value.data.turns.map((t:{status:string})=>t.status)).toEqual(['succeeded','succeeded'])
-    expect(replay.value.data.turns.map((t:{id:string})=>t.id)).toEqual(turns.map((t:{id:string})=>t.id))
-    expect(s.db.prepare('SELECT count(*) n FROM chat_turns WHERE conversation_id=?').get(group.id)!.n).toBe(2)
-    expect((await s.call('chatMessageAgentStatuses',null,{id:group.id,messageId:message.id},2)).status).toBe(404)
-    expect((await s.call('chatMessageAgentStatuses',null,{id:s.personal.id,messageId:message.id})).status).toBe(404)
-    s.db.prepare("UPDATE chat_members SET status='revoked' WHERE conversation_id=? AND contact_id=?").run(group.id,s.human('member_A').id)
-    expect((await s.call('chatMessageAgentStatuses',null,{id:group.id,messageId:message.id})).status).toBe(404)
-    expect((await s.call('chatMessages',null,{id:group.id})).status).toBe(404)
-    expect((await s.call('chatConversationContacts',null,{id:group.id})).status).toBe(404)
-  })
-  it('rejects invalid targets and rolls back a partially queued batch when request capacity is exceeded',async()=>{
-    const s=await setup(),{group,agents}=await colleagueGroup(s)
-    const before=()=>({messages:s.db.prepare('SELECT count(*) n FROM chat_messages WHERE conversation_id=?').get(group.id)!.n,turns:s.db.prepare('SELECT count(*) n FROM chat_turns WHERE conversation_id=?').get(group.id)!.n})
-    const initial=before(),base={...address(agents),intent:'ask_agent',agentContactIds:agents.map(c=>c.id),budget:{maxTokens:32000,maxSeconds:180}}
-    for(const body of [
-      {...base,agentContactIds:[agents[0]!.id,agents[0]!.id]},
-      {...base,mentions:[]},
-      {...base,agentContactId:agents[0]!.id},
-      {...base,...address([...agents,s.agent('member_C')]),agentContactIds:[...base.agentContactIds,s.agent('member_C').id]},
-      {...base,budget:{maxTokens:1,maxSeconds:1}},
-    ]){expect((await s.call('sendChatMessage',body,{id:group.id})).status).toBe(400);expect(before()).toEqual(initial)}
-    for(let i=0;i<4;i++)await s.ask()
-    expect((await s.call('sendChatMessage',base,{id:group.id})).status).toBe(429)
-    expect(before()).toEqual(initial)
-  })
+  it('shares one group assistant status without exposing requester controls; exact replay never dispatches twice',async()=>{
+ const s=await setup(),{group,agents}=await colleagueGroup(s),body={...address(agents),intent:'ask_agent',agentContactIds:agents.map(c=>c.id),budget},key=randomUUID();
+ const sent=await s.call('sendChatMessage',body,{id:group.id},0,'',key);expect(sent.status,sent.raw).toBe(201);expect(sent.value.data.turns).toHaveLength(1);expect(sent.value.data.turn.budget).toEqual(budget);
+ await new ChatWorker(s.db,s.config,model(reply('合成群回复'))).tick();
+ const statuses=await s.call('chatMessageAgentStatuses',null,{id:group.id,messageId:sent.value.data.message.id},1);expect(statuses.value.data.requests).toHaveLength(1);expect(statuses.value.data.requests[0].status).toBe('succeeded');expect(statuses.raw).not.toContain('budget');
+ expect((await s.call('sendChatMessage',body,{id:group.id},0,'',key)).value.data.turn.id).toBe(sent.value.data.turn.id);
+ expect(s.db.prepare('SELECT count(*) n FROM chat_turns WHERE conversation_id=?').get(group.id)!.n).toBe(1);
+ expect((await s.call('chatConversationContacts',null,{id:group.id},2)).status).toBe(404);
+})
+  it('rejects multiple/foreign assistants atomically before writing a group input',async()=>{
+ const s=await setup(),{group,agents}=await colleagueGroup(s),other=s.agent('member_A'),targets=[agents[0]!,other];
+ const count=()=>s.db.prepare('SELECT count(*) n FROM chat_messages WHERE conversation_id=?').get(group.id)!.n,before=count();
+ const bad=await s.call('sendChatMessage',{...address(targets),intent:'ask_agent',agentContactIds:targets.map(c=>c.id),budget},{id:group.id});
+ expect(bad.value.error.code).toBe('GROUP_AGENT_NOT_ALLOWED');expect(count()).toBe(before);
+ expect((await s.call('sendChatMessage',{...address([other]),intent:'ask_agent',agentContactId:other.id,budget},{id:group.id})).status).toBe(422);
+ expect(count()).toBe(before);
+})
   it('keeps singular calls compatible and preserves explicit low budgets instead of pretending a reply succeeded',async()=>{
     const s=await setup(),{group,agents}=await colleagueGroup(s)
     const sent=await s.call('sendChatMessage',{...address([agents[0]!]),intent:'ask_agent',agentContactId:agents[0]!.id,budget:{maxTokens:1,maxSeconds:10}},{id:group.id})
@@ -251,21 +208,13 @@ describe('group Agent mentions and shared status',()=>{
     const other=(await s.call('chatMessageAgentStatuses',null,{id:group.id,messageId:sent.value.data.message.id},1)).value.data.requests[0]
     expect(other.failure).toBe('BUDGET_EXCEEDED');expect(other.budget).toBeUndefined();expect(other.allowedActions).toBeUndefined()
   })
-  it('captures a shared work-item fence once so two requested Agents can both finish without creating extra tasks',async()=>{
-    const s=await setup()
-    const agents:Contact[]=[]
-    for(const displayName of ['合成文献助手','合成实验助手'])agents.push((await s.call('createPersonalAgent',{...groupProfile,displayName})).value.data)
-    const proposed=(await s.call('createPersonalWorkTask',{title:'一个合成研究任务',goal:'讨论同一份合成文字',contactIds:agents.map(c=>c.id),agentContactId:agents[0]!.id})).value.data
-    const active=await s.call('activatePersonalWorkTask',{expectedVersion:proposed.version},{id:proposed.id})
-    expect(active.status,active.raw).toBe(200)
-    const sent=await s.call('sendChatMessage',{...address(agents),intent:'ask_agent',agentContactIds:agents.map(c=>c.id),budget:{maxTokens:32000,maxSeconds:180}},{id:active.value.data.conversationId})
-    expect(sent.status,sent.raw).toBe(201)
-    const worker=new ChatWorker(s.db,s.config,async()=>({text:'合成讨论回复。',failure:null,inputTokens:100,outputTokens:50,elapsedMs:10}))
-    await worker.tick();await worker.tick()
-    for(const turn of sent.value.data.turns)expect((await s.call('chatTurn',null,{id:turn.id})).value.data.status).toBe('succeeded')
-    expect(s.db.prepare('SELECT count(*) n FROM personal_work_tasks').get()!.n).toBe(1)
-    expect((await s.call('personalWorkTask',null,{id:proposed.id})).value.data).toMatchObject({status:'awaiting_review',turnId:sent.value.data.turns[0].id})
-  })
+  it('activating a private task does not create an assistant-only group',async()=>{
+ const s=await setup(),agent=(await s.call('createPersonalAgent',groupProfile)).value.data;
+ const proposed=(await s.call('createPersonalWorkTask',{title:'个人合成事项',goal:'本机工作',contactIds:[agent.id],agentContactId:agent.id})).value.data;
+ const active=await s.call('activatePersonalWorkTask',{expectedVersion:proposed.version},{id:proposed.id});expect(active.status,active.raw).toBe(200);
+ expect((await s.call('chatConversation',null,{id:active.value.data.conversationId})).value.data.kind).toBe('direct');
+ expect(s.db.prepare("SELECT count(*) n FROM chat_conversations WHERE kind='group'").get()!.n).toBe(0);
+})
 })
 
 describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
@@ -273,7 +222,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     const s=await setup();await s.connect(s.human('member_B').id)
     await s.call('createPersonalMemory',{topic:'回复方式',content:'OWNER_PERSONAL_PREF_NOT_GROUP',scope:'general'})
     const text='请安排和已添加的同事一起整理材料',sent=(await s.call('agentChatMessage',{text},{id:s.personal.id})).value.data
-    const output={kind:'collaborate',answer:'先确认任务建议，同事仍需接受邀请。',group:{title:'合成协作',contactIds:[s.human('member_B').id,s.agent('member_A').id],sharedContext:{selectedText:text,artifactRefs:[]},plan:{labId:'lab_synthetic',goal:text,proposedItems:[{id:'organize',title:'整理材料',goal:'整理提供文字',deliverable:'文字清单',acceptanceCriteria:'清单可检查',allocation:{kind:'invitation',memberId:'member_B'},dependencies:[],schedule,inputArtifactIds:[],budget:null}],unresolvedQuestions:[]}}}
+    const output={kind:'collaborate',answer:'先确认任务建议，同事仍需接受邀请。',group:{title:'合成协作',contactIds:[s.human('member_B').id],sharedContext:{selectedText:text,artifactRefs:[]},plan:{labId:'lab_synthetic',goal:text,proposedItems:[{id:'organize',title:'整理材料',goal:'整理提供文字',deliverable:'文字清单',acceptanceCriteria:'清单可检查',allocation:{kind:'invitation',memberId:'member_B'},dependencies:[],schedule,inputArtifactIds:[],budget:null}],unresolvedQuestions:[]}}}
     await new ChatWorker(s.db,s.config,async input=>{const p=JSON.parse(input.prompt);expect(p.collaboratingHumans.map((v:{id:string})=>v.id)).toContain(s.human('member_B').id);expect(p.collaboratingHumans.map((v:{id:string})=>v.id)).not.toContain(s.human('member_C').id);return {text:JSON.stringify(output),failure:null,inputTokens:100,outputTokens:200,elapsedMs:20}}).tick()
     const turn=(await s.call('chatTurn',null,{id:sent.turn.id})).value.data;expect(turn.status).toBe('succeeded');expect(turn.assistantReceipt).toMatchObject({kind:'collaborate',planId:expect.any(String),actionIds:[expect.any(String)]})
     expect(s.db.prepare("SELECT count(*) n FROM chat_conversations WHERE kind='group'").get()!.n).toBe(0)
@@ -282,7 +231,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     const group=(await s.call('chatConversation',null,{id:decided.value.data.conversationId})).value.data
     expect(group.members.find((m:{contactId:string})=>m.contactId===s.human('member_B').id).status).toBe('joined')
     expect((await s.call('chatConversation',null,{id:group.id},1)).status).toBe(200)
-    await s.ask(group.id,s.agent('member_A').id,[],'合成群讨论')
+    await s.ask(group.id,`group_assistant_${group.id}`,[],'合成群讨论')
     await new ChatWorker(s.db,s.config,async input=>{expect(input.prompt).not.toContain('OWNER_PERSONAL_PREF_NOT_GROUP');return {text:JSON.stringify(reply()),failure:null,inputTokens:100,outputTokens:200,elapsedMs:20}}).tick()
   })
   it.each([1,2])('reserves total budget for short chat with %i UUID members and keeps measured usage',async memberCount=>{
@@ -472,7 +421,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     await new ChatWorker(s.db,s.config,async(input,signal,credential)=>{expect(input.prompt).toContain('OTHER_DIRECT_MEMORY_SENTINEL');expect(input.prompt).toContain('PERSONALITY_SENTINEL');expect(input.prompt).not.toContain('OWNER_PRIVATE_MEMORY_SENTINEL');expect(input.prompt).not.toContain('OWNER_DIRECT_MEMORY_SENTINEL');return model(reply())(input,signal,credential)}).tick()
     const created=await s.groupProposal([specialist.id]),groupId=created.group.id
     await s.call('createChatMemory',{scope:'conversation',scopeId:groupId,content:'GROUP_SHARED_MEMORY_SENTINEL',source:null})
-    await s.ask(groupId,specialist.id)
+    await s.ask(groupId,`group_assistant_${groupId}`)
     await new ChatWorker(s.db,s.config,async(input,signal,credential)=>{expect(input.prompt).toContain('GROUP_SHARED_MEMORY_SENTINEL');expect(input.prompt).not.toContain('OWNER_PRIVATE_MEMORY_SENTINEL');expect(input.prompt).not.toContain('OWNER_DIRECT_MEMORY_SENTINEL');expect(input.prompt).not.toContain('OTHER_DIRECT_MEMORY_SENTINEL');return model(reply())(input,signal,credential)}).tick()
   })
 
@@ -504,9 +453,9 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     await s.call('sendChatMessage',{text:'旧013真人聊天'},{id:direct.id});await s.call('updateChatPreferences',{expectedVersion:1,pinned:true},{id:direct.id})
     s.db.prepare('UPDATE chat_conversations SET scope_key=? WHERE id=?').run('direct:lab_synthetic:member_A:member_B',direct.id)
     const previous=s.db.prepare('SELECT document FROM chat_conversations WHERE id=?').get(direct.id)!.document
-    s.db.exec('DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DROP TABLE agent_connections; DROP INDEX chat_contact_owner; DROP TABLE personal_model_settings; DROP TABLE personal_model_configurations; DROP TABLE personal_spaces; DROP TRIGGER im_queue_research_message; DROP TABLE im_callback_receipts; DROP TABLE im_message_outbox; DROP TABLE im_token_leases; DROP TABLE im_conversations; DROP TABLE im_identities; DROP TABLE chat_memory_revisions; DROP TABLE chat_memories; DROP TABLE chat_contact_requests; DROP TABLE chat_contact_profiles; DELETE FROM schema_migrations WHERE version>=14')
+    s.db.exec('DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DROP TABLE agent_connections; DROP INDEX chat_contact_owner; DROP TABLE personal_model_settings; DROP TABLE personal_model_configurations; DROP TABLE personal_spaces; DROP TRIGGER im_queue_research_message; DROP TABLE im_callback_receipts; DROP TABLE im_message_outbox; DROP TABLE im_token_leases; DROP TABLE im_conversations; DROP TABLE im_identities; DROP TABLE chat_memory_revisions; DROP TABLE chat_memories; DROP TABLE chat_contact_requests; DROP TABLE chat_contact_profiles; DELETE FROM schema_migrations WHERE version>=14')
     migrate(s.db);migrate(s.db)
-    expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(34)
+    expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(35)
     expect(s.db.prepare('SELECT count(*) n FROM chat_contact_requests').get()!.n).toBe(1)
     expect(s.db.prepare('SELECT document FROM chat_conversations WHERE id=?').get(direct.id)!.document).toBe(previous)
     expect((await s.call('chatContact',null,{id:s.human('member_B').id})).value.data.relationship.status).toBe('accepted')
@@ -526,9 +475,9 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     const message = s.db.prepare('SELECT document FROM chat_messages WHERE conversation_id=?').get(s.personal.id)!.document
     // Reconstruct the exact 012 shape by removing only the new 013 table/history.
     // Existing applied checksums and all chat rows remain untouched.
-    s.db.exec('DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DROP TABLE agent_connections; DROP INDEX chat_contact_owner; DROP TABLE personal_model_settings; DROP TABLE personal_model_configurations; DROP TABLE personal_spaces; DROP TRIGGER im_queue_research_message; DROP TABLE im_callback_receipts; DROP TABLE im_message_outbox; DROP TABLE im_token_leases; DROP TABLE im_conversations; DROP TABLE im_identities; DROP TABLE chat_memory_revisions; DROP TABLE chat_memories; DROP TABLE chat_contact_requests; DROP TABLE chat_contact_profiles; DROP TABLE chat_viewer_states; DELETE FROM schema_migrations WHERE version>=13')
+    s.db.exec('DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DROP TABLE agent_connections; DROP INDEX chat_contact_owner; DROP TABLE personal_model_settings; DROP TABLE personal_model_configurations; DROP TABLE personal_spaces; DROP TRIGGER im_queue_research_message; DROP TABLE im_callback_receipts; DROP TABLE im_message_outbox; DROP TABLE im_token_leases; DROP TABLE im_conversations; DROP TABLE im_identities; DROP TABLE chat_memory_revisions; DROP TABLE chat_memories; DROP TABLE chat_contact_requests; DROP TABLE chat_contact_profiles; DROP TABLE chat_viewer_states; DELETE FROM schema_migrations WHERE version>=13')
     migrate(s.db); migrate(s.db)
-    expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(34)
+    expect(s.db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(35)
     expect(s.db.prepare('SELECT document FROM chat_conversations WHERE id=?').get(s.personal.id)!.document).toBe(previous)
     expect(s.db.prepare('SELECT document FROM chat_messages WHERE conversation_id=?').get(s.personal.id)!.document).toBe(message)
     expect((await s.call('chatConversation', null, { id: s.personal.id })).value.data.viewerState).toEqual({ readSequence: 0, unreadCount: 0, pinned: true, version: 1 })
@@ -609,7 +558,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     await s.call('sendChatMessage', { text: 'B 自己的群消息' }, { id: groupId }, 1)
     expect((await s.call('chatConversation', null, { id: groupId }, 1)).value.data.viewerState.unreadCount).toBe(0)
     const task = (await s.call('task', null, { id: created.tasks[1]! })).value.data.task
-    await s.ask(groupId, s.publicAgent.id, [{ kind: 'task', ref: { id: task.id, version: task.version } }], '本人任务的合成问答')
+    await s.ask(groupId, `group_assistant_${groupId}`, [{ kind: 'task', ref: { id: task.id, version: task.version } }], '本人任务的合成问答')
     await new ChatWorker(s.db, s.config, model(reply('MODEL_PRIVATE_CONTEXT_SENTINEL'))).tick()
     const messages = (await s.call('chatMessages', null, { id: groupId }, 1)).value.data
     expect(messages.some((message:{text:string})=>message.text === 'MODEL_PRIVATE_CONTEXT_SENTINEL')).toBe(false)
@@ -685,14 +634,9 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     const ordinary = await s.call('sendChatMessage', { text: mentionText, mentions: [{ contactId: s.human('member_B').id, start: 0, end: s.human('member_B').displayName.length + 1 }] }, { id: groupId })
     expect(ordinary.status, ordinary.raw).toBe(201)
     expect(ordinary.value.data.turn).toBeNull()
-    const action = await s.proposeAction(group, { kind: 'invite_task', contactId: s.human('member_B').id, task: { id: task.id, version: task.version }, scope: '整理合成材料', schedule }, [{ kind: 'task', ref: { id: task.id, version: task.version } }])
-    const invited = await s.call('decideChatAction', { expectedVersion: action.version, expectedConversationVersion: group.version, decision: 'confirm' }, { id: action.id })
-    expect(invited.status, invited.raw).toBe(200)
-    const assignment = s.db.prepare('SELECT document FROM assignments WHERE id=?').get(invited.value.data.resources[0].ref.id)!
-    expect(JSON.parse(String(assignment.document))).toMatchObject({ status: 'pending', commitment: null })
-    const bMessages=(await s.call('chatMessages',null,{id:groupId},1)).value.data.flatMap((m:{resources:{kind:string;ref:{id:string}}[]})=>m.resources)
-    expect(bMessages).toEqual(expect.arrayContaining([expect.objectContaining({kind:'assignment',ref:expect.objectContaining({id:invited.value.data.resources[0].ref.id})})]))
-    expect(bMessages.some((r:{ref:{id:string}})=>r.ref.id===created.tasks[1])).toBe(false)
+    const invitation=await s.call('invite',{expectedVersion:task.version,memberId:'member_B',scope:'整理合成材料',schedule},{id:task.id});expect(invitation.status,invitation.raw).toBe(201)
+    const assignment=s.db.prepare('SELECT document FROM assignments WHERE id=?').get(invitation.value.data.id)!
+    expect(JSON.parse(String(assignment.document))).toMatchObject({status:'pending',commitment:null})
     const humanTask = (await s.call('task', null, { id: task.id }, 1)).value.data
     expect((await s.call('invitationDecision', { expectedVersion: humanTask.pendingInvitation.version, expectedTaskVersion: humanTask.version, decision: 'accepted', comment: null }, { id: humanTask.pendingInvitation.id }, 1)).status).toBe(200)
     const aiTask = (await s.call('task', null, { id: created.tasks[1]! })).value.data.task
@@ -702,11 +646,10 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     group = (await s.call('chatConversation', null, { id: groupId })).value.data
     const cap = s.publicAgent.identity.kind === 'public_agent' ? s.publicAgent.identity.capability : null
     const runPayload = { kind: 'run_task', contactId: s.publicAgent.id, task: { id: currentTask.id, version: currentTask.version }, capability: cap, budget, inputArtifactRefs: [{ id: artifact.id, version: artifact.version }] }
-    const runAction = await s.proposeAction(group, runPayload, [{ kind: 'task', ref: runPayload.task }, { kind: 'artifact', ref: runPayload.inputArtifactRefs[0] }])
-    const key = randomUUID(), command = { expectedVersion: runAction.version, expectedConversationVersion: group.version, decision: 'confirm' }
-    const ran = await s.call('decideChatAction', command, { id: runAction.id }, 0, '', key); expect(ran.status, ran.raw).toBe(200)
-    expect((await s.call('decideChatAction', command, { id: runAction.id }, 0, '', key)).value.data.resources[0].ref.id).toBe(ran.value.data.resources[0].ref.id)
-    const runId = ran.value.data.resources[0].ref.id
+    const key=randomUUID(),command={expectedVersion:currentTask.version,capability:cap,budget,inputArtifactIds:[artifact.id],conclusionRefs:[]}
+    const ran=await s.call('run',command,{id:currentTask.id},0,'',key);expect(ran.status,ran.raw).toBe(202)
+    expect((await s.call('run',command,{id:currentTask.id},0,'',key)).value.data.id).toBe(ran.value.data.id)
+    const runId=ran.value.data.id
     // Existing public worker validates quotations against authorized artifact text.
     const result = { title: 'Synthetic evidence', items: [{ requirement: 'Evidence supplied', assessment: 'supported_by_input', citations: [{ artifactId: artifact.id, quote: 'Synthetic evidence is supplied.' }], gap: null }], limitations: ['Synthetic input only.'] }
     await new ExecutionWorker(s.db, s.config, model(result)).tick()
@@ -717,7 +660,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     const delivered = await s.call('submitCandidate', { expectedVersion: execution.version, expectedTaskVersion: execution.taskVersion }, { id: runId })
     expect(delivered.status, delivered.raw).toBe(201)
     expect(delivered.value.data.review).toBeNull()
-    expect((await s.call('chatMessages', null, { id: groupId })).raw).toContain(runId)
+    expect((await s.call('chatMessages', null, { id: groupId })).raw).not.toContain(runId) // Group assistant does not auto-dispatch or broadcast private execution.
     let detail = (await s.call('task', null, { id: aiTask.id })).value.data
     expect(detail.task.status).toBe('in_review')
     const reviewBody = { expectedVersion: delivered.value.data.version, expectedTaskVersion: detail.task.version, revision: delivered.value.data.revision, decision: 'accepted', comment: '合成指定版本验收' }
@@ -749,7 +692,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     expect((await s.call('artifact', null, { id: artifact.id }, 1)).status).toBe(404)
     expect((await s.call('content', null, { id: artifact.id }, 1)).status).toBe(404)
     expect((await s.call('sendChatMessage', { text: '入群未承接也能聊天' }, { id: groupId }, 1)).status).toBe(201)
-    const ordinaryAi = await s.ask(groupId, s.publicAgent.id, [], '入群未承接也能问 AI', 1)
+    const ordinaryAi = await s.ask(groupId, `group_assistant_${groupId}`, [], '入群未承接也能问 AI', 1)
     await new ChatWorker(s.db, s.config, async (input, signal, credential) => {
       const prompt = JSON.parse(input.prompt)
       expect(prompt.context??[]).toEqual([]); expect(prompt.conversation.taskIds).toEqual([created.tasks[0]])
@@ -759,7 +702,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     expect((await s.call('chatTurn', null, { id: ordinaryAi.turn.id }, 1)).value.data.status).toBe('succeeded')
     const before = Number(s.db.prepare('SELECT count(*) n FROM chat_messages WHERE conversation_id=?').get(groupId)!.n)
     for (const context of [[{kind:'task',ref:{id:created.tasks[0],version:1}}],[{kind:'artifact',ref:{id:artifact.id,version:artifact.version}}]]) {
-      const denied = await s.call('sendChatMessage', { text: '不能把摘要或他人的材料当授权输入', intent: 'ask_agent', agentContactId: s.publicAgent.id, budget, context }, { id: groupId }, 1)
+      const denied = await s.call('sendChatMessage', { text: '不能把摘要或他人的材料当授权输入', intent: 'ask_agent', agentContactId: `group_assistant_${groupId}`, budget, context }, { id: groupId }, 1)
       expect([403,404]).toContain(denied.status)
     }
     expect(Number(s.db.prepare('SELECT count(*) n FROM chat_messages WHERE conversation_id=?').get(groupId)!.n)).toBe(before)
@@ -768,7 +711,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     const summary = (await s.call('task', null, { id: created.tasks[0]! }, 1)).value.data
     expect((await s.call('claim', { expectedVersion: summary.version }, { id: summary.id }, 1)).status).toBe(200)
     const accepted = (await s.call('task', null, { id: summary.id }, 1)).value.data.task
-    const taskAi = await s.ask(groupId, s.publicAgent.id, [{kind:'task',ref:{id:accepted.id,version:accepted.version}}], '承接后读本人任务', 1)
+    const taskAi = await s.ask(groupId, `group_assistant_${groupId}`, [{kind:'task',ref:{id:accepted.id,version:accepted.version}}], '承接后读本人任务', 1)
     await new ChatWorker(s.db, s.config, model(reply('B_TASK_DERIVED_SENTINEL'))).tick()
     expect((await s.call('chatTurn', null, { id: taskAi.turn.id }, 1)).value.data.status).toBe('succeeded')
     expect((await s.call('chatMessages', null, { id: groupId }, 1)).raw).toContain('B_TASK_DERIVED_SENTINEL')
@@ -782,85 +725,21 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     expect((await s.call('sendChatMessage', { text: '失去任务权限后仍在群内聊天' }, { id: groupId }, 1)).status).toBe(201)
   })
 
-  it('rejects known-invalid invitation/run proposals and rechecks active execution when confirming and publishing late model output', async () => {
-    const s = await setup(), created = await s.groupProposal(), groupId = created.group.id
-    let group = (await s.call('chatConversation', null, { id: groupId })).value.data as Conversation
-    const task = (await s.call('task', null, { id: created.tasks[0]! })).value.data.task
-    expect((await s.call('invite', { expectedVersion: task.version, memberId: 'member_B', scope: '合成承接', schedule }, { id: task.id })).status).toBe(201)
-    const pendingTask = (await s.call('task', null, { id: task.id })).value.data.task
-    async function rejectedProposal(payload:unknown, context:unknown[]) {
-      const sent = await s.ask(groupId, s.publicAgent.id, context)
-      const before = Number(s.db.prepare('SELECT count(*) n FROM chat_actions WHERE conversation_id=?').get(groupId)!.n)
-      await new ChatWorker(s.db, s.config, model(reply('不应发布的建议', [payload]))).tick()
-      expect((await s.call('chatTurn', null, { id: sent.turn.id })).value.data).toMatchObject({status:'failed',failure:'INVALID_MODEL_OUTPUT',outputMessageId:null,usage:{inputTokens:100,outputTokens:200}})
-      expect(Number(s.db.prepare('SELECT count(*) n FROM chat_actions WHERE conversation_id=?').get(groupId)!.n)).toBe(before)
-    }
-    await rejectedProposal({kind:'invite_task',contactId:s.human('member_B').id,task:{id:pendingTask.id,version:pendingTask.version},scope:'重复邀请',schedule},[{kind:'task',ref:{id:pendingTask.id,version:pendingTask.version}}])
-    expect(s.db.prepare("SELECT count(*) n FROM assignments WHERE task_id=? AND status='pending'").get(task.id)!.n).toBe(1)
-    const aiTask = (await s.call('task', null, { id: created.tasks[1]! })).value.data.task
-    const uploaded = await s.call('upload', { taskId: aiTask.id, expectedVersion: aiTask.version, filename: 'same-task.txt', mediaType: 'text/plain', contentBase64: Buffer.from('Synthetic same task.').toString('base64') })
-    const otherUpload = await s.call('upload', { taskId: pendingTask.id, expectedVersion: pendingTask.version, filename: 'other-task.txt', mediaType: 'text/plain', contentBase64: Buffer.from('Synthetic other task.').toString('base64') })
-    expect(uploaded.status, uploaded.raw).toBe(201); expect(otherUpload.status, otherUpload.raw).toBe(201)
-    const artifact = uploaded.value.data, otherArtifact = otherUpload.value.data
-    let current = (await s.call('task', null, { id: aiTask.id })).value.data.task
-    const capability = s.publicAgent.identity.kind === 'public_agent' ? s.publicAgent.identity.capability : null
-    const payload = {kind:'run_task',contactId:s.publicAgent.id,task:{id:current.id,version:current.version},capability,budget,inputArtifactRefs:[{id:artifact.id,version:artifact.version}]}
-    const context = [{kind:'task',ref:payload.task},{kind:'artifact',ref:payload.inputArtifactRefs[0]}]
-    await rejectedProposal({...payload,inputArtifactRefs:[{id:otherArtifact.id,version:otherArtifact.version}]},[{kind:'task',ref:payload.task},{kind:'artifact',ref:{id:otherArtifact.id,version:otherArtifact.version}}])
-    await rejectedProposal({...payload,inputArtifactRefs:[...payload.inputArtifactRefs,...payload.inputArtifactRefs]},context)
-    group = (await s.call('chatConversation', null, { id: groupId })).value.data
-    const action = await s.proposeAction(group, payload, context)
-    expect(action.allowedDecisions).toContain('confirm')
-    const late = await s.ask(groupId, s.publicAgent.id, context)
-    let started!:()=>void, finish!:(result:Awaited<ReturnType<ModelCall>>)=>void
-    const began = new Promise<void>(resolve=>{started=resolve}), pending = new Promise<Awaited<ReturnType<ModelCall>>>(resolve=>{finish=resolve})
-    const working = new ChatWorker(s.db, s.config, async()=>{started();return pending}).tick(); await began
-    const competing = await s.call('run', {expectedVersion:current.version,capability,budget,inputArtifactIds:[],conclusionRefs:[]}, {id:current.id})
-    expect(competing.status, competing.raw).toBe(202); expect(competing.value.data.status).toBe('waiting_input')
-    const projected = (await s.call('chatActions', null, {id:groupId})).value.data.find((value:ChatAction)=>value.id===action.id)
-    expect(projected).toMatchObject({status:'stale',allowedDecisions:[]})
-    expect((await s.call('decideChatAction', {expectedVersion:action.version,expectedConversationVersion:group.version,decision:'confirm'}, {id:action.id})).value.error.code).toBe('INVALID_STATE')
-    finish({text:JSON.stringify(reply('ACTIVE_RUN_LATE_SENTINEL',[payload])),failure:null,inputTokens:11,outputTokens:12,elapsedMs:20}); await working
-    expect((await s.call('chatTurn', null, {id:late.turn.id})).value.data).toMatchObject({status:'failed',failure:'INVALID_MODEL_OUTPUT',outputMessageId:null,usage:{inputTokens:11,outputTokens:12}})
-    expect((await s.call('chatMessages', null, {id:groupId})).raw).not.toContain('ACTIVE_RUN_LATE_SENTINEL')
-    expect(s.db.prepare('SELECT count(*) n FROM execution_jobs WHERE task_id=?').get(current.id)!.n).toBe(1)
-    expect((await s.call('cancelRun', {expectedVersion:competing.value.data.version,reason:'合成取消后检查依赖'}, {id:competing.value.data.id})).status).toBe(200)
-    const change = await s.call('proposeChange', {expectedVersion:current.version,scope:'合成依赖修改',dependencies:[{taskId:task.id,kind:'accepted_deliverable',requiredRevision:null}],goal:current.goal,acceptanceCriteria:current.acceptanceCriteria,schedule:current.schedule,proposedLeadId:current.leadId,reason:'依赖未验收'}, {id:current.id})
-    expect(change.status, change.raw).toBe(201); expect(change.value.data.status).toBe('accepted')
-    current = (await s.call('task', null, {id:current.id})).value.data.task
-    expect((await s.call('run', {expectedVersion:current.version,capability,budget,inputArtifactIds:[artifact.id],conclusionRefs:[]}, {id:current.id})).status).toBe(202)
-    expect(s.db.prepare('SELECT count(*) n FROM dependency_bindings WHERE task_id=?').get(current.id)!.n).toBe(0)
-  })
+  it('rejects legacy business-action output from a group assistant without writing tasks or actions',async()=>{
+ const s=await setup(),{group,agents}=await colleagueGroup(s),sent=await s.ask(group.id,agents[0]!.id),before=s.db.prepare('SELECT count(*) n FROM tasks').get()!.n;
+ await new ChatWorker(s.db,s.config,async()=>({text:JSON.stringify(reply('不应执行',[{kind:'invite_contact',contactId:s.human('member_C').id}])),failure:null,inputTokens:12,outputTokens:20,elapsedMs:1})).tick();
+ expect((await s.call('chatTurn',null,{id:sent.turn.id})).value.data).toMatchObject({status:'failed',failure:'INVALID_MODEL_OUTPUT',outputMessageId:null});
+ expect(s.db.prepare('SELECT count(*) n FROM tasks').get()!.n).toBe(before);expect(s.db.prepare('SELECT count(*) n FROM chat_actions WHERE conversation_id=?').get(group.id)!.n).toBe(0);
+})
 
-  it('adds agents directly without leaking their owner private history, and fences revoked agents late output', async () => {
-    const s = await setup(), bPersonal = (await s.call('personalConversation', {}, {}, 1)).value.data.conversation
-    await s.call('sendChatMessage', { text: 'B_OWNER_PRIVATE_SENTINEL' }, { id: bPersonal.id }, 1)
-    expect(s.agent('member_B').availability.reason).toBe('owner_authorization_required')
-    const created = await s.groupProposal([s.human('member_B').id, s.agent('member_B').id, s.publicAgent.id]), groupId = created.group.id
-    // Selecting an Agent joins it immediately; no invitation round is created.
-    const initial = (await s.call('chatConversation', null, { id: groupId })).value.data as Conversation
-    expect(initial.members.find(m => m.contactId === s.agent('member_B').id)!.status).toBe('joined')
-    expect((await s.call('chatInvitations', null, {}, 1)).value.data.filter((i:{conversationId:string})=>i.conversationId===groupId)).toEqual([])
-    // Joining an Agent must not join its owner's browser: an Agent-only group
-    // keeps member_B out of the group itself.
-    const agentOnly = await s.groupProposal([s.agent('member_B').id])
-    expect((await s.call('chatConversation',null,{id:agentOnly.group.id},1)).status).toBe(404)
-    expect((await s.call('sendChatMessage',{text:'仅agent加入不能真人发送'},{id:agentOnly.group.id},1)).status).toBe(404)
-    const asked = await s.ask(groupId, s.agent('member_B').id)
-    let inspected = false
-    await new ChatWorker(s.db, s.config, async (input, signal, credential) => { inspected = true; expect(input.prompt).not.toContain('B_OWNER_PRIVATE_SENTINEL'); expect(input.prompt).not.toContain(bPersonal.id); return model(reply('群内受限回答'))(input, signal, credential) }).tick()
-    expect(inspected).toBe(true); expect((await s.call('chatTurn', null, { id: asked.turn.id })).value.data.status).toBe('succeeded')
-    const late = await s.ask(groupId, s.agent('member_B').id)
-    let started!: () => void, finish!: (r: Awaited<ReturnType<ModelCall>>) => void
-    const began = new Promise<void>(r => { started = r }), pending = new Promise<Awaited<ReturnType<ModelCall>>>(r => { finish = r })
-    const running = new ChatWorker(s.db, s.config, async () => { started(); return pending }).tick(); await began
-    const group = (await s.call('chatConversation', null, { id: groupId })).value.data as Conversation, member = group.members.find(m => m.contactId === s.agent('member_B').id)!
-    expect((await s.call('revokeChatMember', { expectedVersion: member.version, expectedConversationVersion: group.version, reason: '合成撤权' }, { id: groupId, contactId: member.contactId })).status).toBe(200)
-    finish({ text: JSON.stringify(reply('LATE_OUTPUT_SENTINEL')), failure: null, inputTokens: 10, outputTokens: 10, elapsedMs: 20 }); await running
-    expect(JSON.parse(String(s.db.prepare('SELECT document FROM chat_turns WHERE id=?').get(late.turn.id)!.document)).status).toBe('cancelled')
-    expect((await s.call('chatMessages', null, { id: groupId })).raw).not.toContain('LATE_OUTPUT_SENTINEL')
-    expect((await s.call('chatMessages', null, { id: bPersonal.id })).status).toBe(404)
-  })
+  it('rejects private-agent group enrollment and fences late replies when the requesting human leaves',async()=>{
+ const s=await setup(),{group,agents}=await colleagueGroup(s);
+ expect((await s.call('imInviteContact',{expectedConversationVersion:group.version,contactId:s.agent('member_B').id},{id:group.id})).value.error.code).toBe('GROUP_AGENT_NOT_ALLOWED');
+ const asked=await s.ask(group.id,agents[0]!.id,[],'合成请求',0);
+ await new ChatWorker(s.db,s.config,async()=>{const current=(await s.call('chatConversation',null,{id:group.id})).value.data,member=current.members.find((m:{contactId:string})=>m.contactId===s.human('member_A').id);expect((await s.call('revokeChatMember',{expectedVersion:member.version,expectedConversationVersion:current.version,reason:'synthetic'},{id:group.id,contactId:member.contactId},1)).status).toBe(200);return {text:JSON.stringify({answer:'LATE_GROUP_SENTINEL',requests:[]}),failure:null,inputTokens:11,outputTokens:12,elapsedMs:2}}).tick();
+ expect((await s.call('chatMessages',null,{id:group.id},1)).raw).not.toContain('LATE_GROUP_SENTINEL');
+ expect((await s.call('chatTurn',null,{id:asked.turn.id},0)).status).toBe(404);
+})
 
   it('binds cursor to account and filter, preserves high water and denies old pages after revocation', async () => {
     const s = await setup(), created = await s.groupProposal(), groupId = created.group.id
@@ -908,7 +787,7 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     expect(await new ChatWorker(s.db,s.config,model(reply('STALE_TASK_SENTINEL'))).tick()).toBe(false)
     expect((await s.call('chatTurn',null,{id:sent.turn.id})).value.data).toMatchObject({status:'cancelled',failure:'INPUT_CHANGED'})
     const other=(await s.call('createPlan',{labId:'lab_synthetic',goal:'Private',proposedItems:[],unresolvedQuestions:[]})).value.data
-    const forbidden=await s.call('sendChatMessage',{text:'请读取私人方案',intent:'ask_agent',agentContactId:s.publicAgent.id,budget,context:[{kind:'plan',ref:{id:other.id,version:other.version}}]},{id:groupId})
+    const forbidden=await s.call('sendChatMessage',{text:'请读取私人方案',intent:'ask_agent',agentContactId:`group_assistant_${groupId}`,budget,context:[{kind:'plan',ref:{id:other.id,version:other.version}}]},{id:groupId})
     expect(forbidden.status).toBe(403)
     const invalid=await s.ask();const before=s.db.prepare('SELECT count(*) n FROM plans').get()!.n
     await new ChatWorker(s.db,s.config,model({...reply(),group:{title:'Invalid',contactIds:['unknown_contact'],sharedContext:{selectedText:null,artifactRefs:[]},plan:{labId:'lab_synthetic',goal:'invalid',proposedItems:[],unresolvedQuestions:[]}}})).tick()
@@ -939,23 +818,11 @@ describe('CHAT1 real service with synthetic ModelCall', {timeout:15000}, () => {
     expect((await s.call('retryChatTurn',{expectedVersion:unknown.version,budget},{id:unknown.id})).status).toBe(409)
   })
 
-  it('passes stable same-name mention IDs and requested-agent identity without substituting names',async()=>{
-    const s=await setup();s.db.prepare("UPDATE members SET display_name='同名成员' WHERE id IN ('member_B','member_C')").run()
-    const created=await s.groupProposal([s.human('member_B').id,s.human('member_C').id,s.agent('member_B').id,s.publicAgent.id]),groupId=created.group.id
-    const text='@同名成员 请核对',mention={contactId:s.human('member_B').id,start:0,end:5}
-    const sent=await s.call('sendChatMessage',{text,mentions:[mention],intent:'ask_agent',agentContactId:s.agent('member_B').id,budget},{id:groupId})
-    expect(sent.status,sent.raw).toBe(201)
-    await new ChatWorker(s.db,s.config,async(input,signal,credential)=>{
-      const prompt=JSON.parse(input.prompt)
-      expect(prompt.requestedAgent).toMatchObject({id:s.agent('member_B').id,identity:{kind:'personal_agent',ownerMemberId:'member_B'}})
-      const messages=modelMessages(prompt)
-      expect(messages.at(-1)!.mentions).toEqual([mention])
-      expect(messages.at(-1)!.resources).toEqual([])
-      expect(prompt.requestedAgent.id).not.toBe(s.publicAgent.id)
-      return model(reply())(input,signal,credential)
-    }).tick()
-    expect((await s.call('chatTurn',null,{id:sent.value.data.turn.id})).value.data.status).toBe('succeeded')
-  })
+  it('keeps explicit human mention IDs separate from the one fixed group assistant',async()=>{
+ const s=await setup(),{group,agents}=await colleagueGroup(s),agent=agents[0]!,human=s.human('member_B'),input=address([human,agent]);
+ const sent=await s.call('sendChatMessage',{...input,intent:'ask_agent',agentContactId:agent.id,budget},{id:group.id});expect(sent.status,sent.raw).toBe(201);
+ await new ChatWorker(s.db,s.config,async args=>{const p=JSON.parse(args.prompt);expect(p.requestedAgent.id).toBe(agent.id);expect((modelMessages(p).at(-1)!.mentions as {contactId:string}[]).map((m:{contactId:string})=>m.contactId)).toEqual([human.id,agent.id]);return {text:JSON.stringify({answer:'合成回复',requests:[]}),failure:null,inputTokens:100,outputTokens:20,elapsedMs:2}}).tick();
+})
 
   it('withdraws derived draft and pending assignment projections after source authority changes',async()=>{
     const s=await setup(),source=await s.groupProposal(),sourceTask=(await s.call('task',null,{id:source.tasks[1]!})).value.data.task

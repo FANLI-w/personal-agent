@@ -192,17 +192,17 @@ export function PersonalWorkDetail({
             onClick={() =>
               confirm(
                 "确认这项协作安排？",
-                "将建立任务群并邀请上面的成员，对方同意后参与。之后可以在任务里请 Agent 处理。",
+                "个人任务留在本人的工作范围；有真人协作成员时才创建群。任务承接仍由对方确认。",
                 () =>
                   researchApi("activatePersonalWorkTask", {
                     params: { id: task.id },
                     body: { expectedVersion: task.version },
                   }),
-                "协作安排已确认，成员邀请已按实际权限发出。",
+                "安排已确认，请按实际任务状态继续处理。",
               )
             }
           >
-            确认并建立任务群
+            确认安排
           </Button>
         )}
         {(["accept", "decline"] as const).map(

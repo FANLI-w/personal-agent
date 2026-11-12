@@ -43,7 +43,7 @@ export function projectConversationWorkflow(
     const assignees = [...new Set(data.assignments.filter(a => a.status === 'accepted').map(a => {
       if (a.memberId) return memberName(a.memberId);
       const capability = a.capability;
-      return contacts.find(c => c.identity.kind === 'public_agent' && capability
+      return contacts.find(c => c.identity.kind === 'public_agent' && c.identity.capability && capability
         && c.identity.capability.id === capability.id && c.identity.capability.version === capability.version)?.displayName
         ?? '已接受的公共 AI 能力';
     }))];

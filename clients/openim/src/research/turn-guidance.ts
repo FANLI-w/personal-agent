@@ -144,6 +144,10 @@ export function turnGuidance(turn: AgentTurn, manager = false): Guidance {
         tone: "error",
       };
     }
+    case "GROUP_NOTICE_LIMIT":
+      return {title:"今天的转达次数已用完",nextStep:"本群每人每天最多 20 条通知或询问，可直接和对方沟通，明天再试。",tone:"error"};
+    case "GROUP_ASSIGN_NOT_AVAILABLE":
+      return {title:"群助理暂不指派任务",nextStep:"请在任务页面明确邀请对方承接，群助理不能代替批准。",tone:"error"};
     case "INVALID_MODEL_OUTPUT":
       return {
         title: "这次回复格式出了问题",

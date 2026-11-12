@@ -19,6 +19,11 @@ export function validationMessage(issues: readonly ValidationIssue[]): string {
 }
 
 const messages: Record<string, string> = {
+  GROUP_AGENT_NOT_ALLOWED: "群内固定一个群助理，不能再加入或调用个人智能体。旧客户端请升级。",
+  GROUP_LAB_REQUIRED: "请选择本群关联的课题组。",
+  GROUP_OWNER_TRANSFER_REQUIRED: "退出前请先指定一位已加入的真人成员接任群主。",
+  GROUP_NOTICE_LIMIT: "本群今天已达到你的 20 条转达上限，请稍后再试。",
+  GROUP_ASSIGN_NOT_AVAILABLE: "群助理暂不支持指派任务，请在任务页面明确邀请对方。",
   LAB_MEMBER_HAS_ACTIVE_TASKS:
     "该成员仍担任未完成任务的发起人或审阅人，请先完成或取消相关任务，再退出或移除。",
   LAB_ALREADY_MANAGED: "你已有负责的课题组，请在当前组邀请和管理成员。",

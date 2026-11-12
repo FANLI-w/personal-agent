@@ -30,9 +30,11 @@ export class ContactDirectory {
   }
   relationRow(contact: Contact) { return this.db.prepare('SELECT * FROM chat_contact_requests WHERE relation_key=?').get(this.relationKey(contact)) }
   owns(contact: Contact) { return contact.identity.kind === 'human' ? contact.identity.memberId === this.actor.id : contact.identity.kind === 'personal_agent' && contact.identity.ownerMemberId === this.actor.id }
-  mayEdit(contact: Contact) { return this.owns(contact) || (contact.identity.kind === 'public_agent' && isLabManager(this.db,this.actor)) }
+  mayEdit(contact: Contact) { return !contact.groupConversationId && (this.owns(contact) || (contact.identity.kind === 'public_agent' && isLabManager(this.db,this.actor))) }
   contact(id: string): Contact {
-    const value = this.chat.baseContact(id), p = this.profile(id), { displayName, ...profile } = p
+    const value = this.chat.baseContact(id)
+    if(value.groupConversationId)return value
+    const p = this.profile(id), { displayName, ...profile } = p
     value.profile = profile; if (displayName) value.displayName = displayName
     if (agentDeleted(this.db, id)) {
       value.displayName = value.displayName.slice(0, 150) + '（已删除）'
@@ -104,6 +106,7 @@ export class ContactDirectory {
     if(name==='deletePersonalAgent'){deletionOwner(this.chat,id);return true}
     if((connectionCommands as readonly string[]).includes(name)||name==='exportAgentProfile'){ownedSpecialist(this.chat,id);return true}
     if(['chatContact','requestContact','revokeContact','updateContactProfile'].includes(name)) {
+      if(name!=='chatContact'&&this.contact(id).groupConversationId)fail('GROUP_AGENT_NOT_ALLOWED')
       const contact=this.contact(id); if(name!=='chatContact')requireActiveAgent(this.db,id); if(name==='updateContactProfile'&&!this.mayEdit(contact))fail('FORBIDDEN')
     } else if(['decideContactRequest','revokeContactRequest'].includes(name)) {
       const request=this.request(id); if(name==='decideContactRequest'&&request.deciderMemberId!==this.actor.id)fail('FORBIDDEN')

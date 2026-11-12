@@ -1,4 +1,4 @@
-import { Alert, Button, Input, Segmented, Spin } from "antd";
+import { Alert, Button, Input, Spin } from "antd";
 import { useState } from "react";
 import CheckItem, {
   type CheckListItem,
@@ -6,7 +6,7 @@ import CheckItem, {
 import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import { useResearchStore } from "./store";
-import { contactDirectoryKind, type DirectoryKind } from "./contact-directory";
+
 import {
   groupIdentityLabel,
   readGroupCandidates,
@@ -22,7 +22,6 @@ export function ResearchGroupPicker({
   checkClick: (item: CheckListItem) => void;
   isChecked: (item: CheckListItem) => boolean;
 }) {
-  const [kind, setKind] = useState<DirectoryKind>("people");
   const [search, setSearch] = useState("");
   const actorId = useResearchStore((s) => s.actor?.member.id);
   const mapping = useResearchStore((s) =>
@@ -54,7 +53,6 @@ export function ResearchGroupPicker({
   const contacts = read.data?.contacts || [];
   const candidates = selectableGroupContacts(contacts, actorId).filter(
     (c) =>
-      contactDirectoryKind(c) === kind &&
       `${c.displayName} ${c.username || ""} ${groupIdentityLabel(c, contacts, actorId)}`
         .toLocaleLowerCase()
         .includes(search.trim().toLocaleLowerCase()),
@@ -62,19 +60,9 @@ export function ResearchGroupPicker({
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="research-group-picker">
       <div className="space-y-3 px-3 pb-3">
-        <Segmented
-          block
-          aria-label="成员类型"
-          value={kind}
-          options={[
-            { label: "联系人", value: "people" },
-            { label: "智能体", value: "agents" },
-          ]}
-          onChange={(value) => setKind(value as DirectoryKind)}
-        />
         <Input
           aria-label="搜索群成员"
-          placeholder={kind === "people" ? "搜索联系人" : "搜索智能体或所属成员"}
+          placeholder="搜索联系人"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           allowClear
@@ -118,14 +106,12 @@ export function ResearchGroupPicker({
           <p className="p-4 text-sm text-[var(--sub-text)]">
             {search
               ? "没有匹配的结果"
-              : kind === "people"
-              ? "暂无可邀请的联系人，请先在通讯录添加联系人。"
-              : "暂无可邀请的智能体，请先在通讯录添加智能体。"}
+              : "暂无可邀请的联系人，请先在通讯录添加联系人。"}
           </p>
         )}
       </div>
       <p className="px-3 py-2 text-xs text-[var(--sub-text)]">
-        选中的联系人和智能体会直接入群；已加入的成员也可以邀请。
+        选中的联系人直接入群。后台 0.46 起，每群固定一个群助理，不再邀请个人智能体。
       </p>
     </div>
   );

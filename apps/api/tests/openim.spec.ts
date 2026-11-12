@@ -197,7 +197,7 @@ describe('OpenIM bridge with explicit synthetic management adapter, not live ser
     expect(s.calls.filter(c=>c.path==='/auth/get_user_token')).toEqual([])
   })
   it('creates and invites without AI, with authorized idempotent replay and direct joined membership',async()=>{
-    const s=await setup(false),body={title:'真实讨论群',contactIds:[s.human('member_B').id,s.agent('member_C').id],sharedContext:context,plan:null},key=randomUUID()
+    const s=await setup(false),body={title:'真实讨论群',contactIds:[s.human('member_B').id],sharedContext:context,plan:null},key=randomUUID()
     const created=await s.request('imCreateGroup',body,{},0,key);expect(created.status,created.raw).toBe(200)
     let group=created.value.data as Conversation;expect(group.taskIds).toEqual([]);expect(s.db.prepare('SELECT count(*) n FROM tasks').get()!.n).toBe(0)
     expect((await s.request('imCreateGroup',body,{},0,key)).value.data.id).toBe(group.id)
@@ -218,38 +218,30 @@ describe('OpenIM bridge with explicit synthetic management adapter, not live ser
     expect((await s.request('imInviteContact',command,{id:group.id},1,inviteKey)).status).toBe(200)
     expect(s.db.prepare('SELECT count(*) n FROM chat_invitations WHERE conversation_id=?').get(group.id)!.n).toBe(0)
   })
-  it('lets a joined colleague add their own assistant while keeping management and replay member-scoped',async()=>{
-    const s=await setup();await s.request('imSession',{platformID:5},{},1)
-    let group=(await s.request('imCreateGroup',{title:'同事邀请自己的助手',contactIds:[s.human('member_B').id,s.agent('member_C').id],sharedContext:context,plan:null})).value.data as Conversation
-    const initialMapping=(await s.request('imSyncConversation',{}, {id:group.id},1)).value.data
-    expect(initialMapping.transportStatus).toBe('ready')
-    // An Agent membership never grants its absent owner access to the group.
-    expect((await s.request('imInviteContact',{contactId:s.human('member_C').id,expectedConversationVersion:group.version},{id:group.id},2)).status).toBe(404)
-    const key=randomUUID(),command={contactId:s.agent('member_B').id,expectedConversationVersion:group.version}
-    const added=await s.request('imInviteContact',command,{id:group.id},1,key)
-    expect(added.status,added.raw).toBe(200);group=added.value.data
-    expect(group.members.find(m=>m.contactId===s.agent('member_B').id)!.status).toBe('joined')
-    expect((await s.request('imSyncConversation',{}, {id:group.id},1)).value.data.transportStatus).toBe('ready')
-    expect(s.groups.get(initialMapping.groupID)!.some(m=>m.userID===s.identity(s.agent('member_B').id,1))).toBe(true)
+  it('lets joined humans invite colleagues but rejects private agents, with member-scoped replay',async()=>{
+    const s=await setup();let group=(await s.request('imCreateGroup',{title:'单群助理',contactIds:[s.human('member_B').id],sharedContext:context,plan:null})).value.data as Conversation
+    expect((await s.request('imInviteContact',{contactId:s.agent('member_B').id,expectedConversationVersion:group.version},{id:group.id},1)).value.error.code).toBe('GROUP_AGENT_NOT_ALLOWED')
+    const key=randomUUID(),command={contactId:s.human('member_C').id,expectedConversationVersion:group.version}
+    const added=await s.request('imInviteContact',command,{id:group.id},1,key);expect(added.status,added.raw).toBe(200);group=added.value.data
     expect((await s.request('imInviteContact',command,{id:group.id},1,key)).value.data.version).toBe(group.version)
-    expect((await s.request('imInviteContact',{...command,expectedConversationVersion:group.version-1},{id:group.id},1)).status).toBe(409)
-    expect((await s.request('revokeChatMember',{expectedVersion:group.members.find(m=>m.contactId===s.human('member_A').id)!.version,expectedConversationVersion:group.version,reason:'普通成员不能移除群主'},{id:group.id,contactId:s.human('member_A').id},1)).status).toBe(403)
+    const mapped=(await s.request('imSyncConversation',{}, {id:group.id},1)).value.data;expect(mapped.transportStatus).toBe('ready')
+    expect(s.groups.get(mapped.groupID)!.some(m=>m.userID===s.identity(`group_assistant_${group.id}`,1))).toBe(true)
     const member=group.members.find(m=>m.contactId===s.human('member_B').id)!
-    expect((await s.request('revokeChatMember',{expectedVersion:member.version,expectedConversationVersion:group.version,reason:'群主移除同事'},{id:group.id,contactId:member.contactId})).status).toBe(200)
+    expect((await s.request('revokeChatMember',{expectedVersion:member.version,expectedConversationVersion:group.version,reason:'明确退群'},{id:group.id,contactId:member.contactId})).status).toBe(200)
     expect((await s.request('imInviteContact',command,{id:group.id},1,key)).status).toBe(404)
   })
   it('uses admin-only IM owner, reconciles joined recipients and rejects native role/registration bypasses',async()=>{
     const s=await setup();await s.request('imSession',{platformID:5});await s.request('imSession',{platformID:5},{},1)
-    const created=await s.request('imCreateGroup',{title:'权限群',contactIds:[s.human('member_B').id,s.publicAgent.id],sharedContext:context,plan:null});expect(created.status,created.raw).toBe(200)
+    const created=await s.request('imCreateGroup',{title:'权限群',contactIds:[s.human('member_B').id],sharedContext:context,plan:null});expect(created.status,created.raw).toBe(200)
     let group=created.value.data as Conversation,mapped=(await s.request('imSyncConversation',{}, {id:group.id})).value.data
-    expect(mapped.transportStatus).toBe('ready');expect(s.groups.get(mapped.groupID)!.map(m=>m.userID)).toEqual(expect.arrayContaining(['imAdmin',s.identity(s.human('member_A').id),s.identity(s.publicAgent.id)]))
+    expect(mapped.transportStatus).toBe('ready');expect(s.groups.get(mapped.groupID)!.map(m=>m.userID)).toEqual(expect.arrayContaining(['imAdmin',s.identity(s.human('member_A').id),s.identity(`group_assistant_${group.id}`)]))
     expect((await s.callback('callbackBeforeSendGroupMsgCommand',{groupID:mapped.groupID,sendID:'imAdmin',senderPlatformID:0,msgFrom:200,contentType:1501,content:'{}'})).value.nextCode).toBe(0)
     expect(s.groups.get(mapped.groupID)!.find(m=>m.userID===s.identity(s.human('member_A').id))!.roleLevel).toBe(20)
     const msg={groupID:mapped.groupID,sendID:s.identity(s.human('member_B').id),senderPlatformID:5,msgFrom:100,contentType:101,content:'{"content":"hello"}'}
     // Joined at creation: the first group message needs no invitation round.
     expect((await s.callback('callbackBeforeSendGroupMsgCommand',msg)).value.nextCode).toBe(0)
     // A real IM identity that is not a member of this group still cannot send into it.
-    const outsider=await s.request('imCreateGroup',{title:'没有乙的群',contactIds:[s.publicAgent.id],sharedContext:context,plan:null});expect(outsider.status,outsider.raw).toBe(200)
+    const outsider=await s.request('imCreateGroup',{title:'没有乙的群',contactIds:[s.human('member_C').id],sharedContext:context,plan:null});expect(outsider.status,outsider.raw).toBe(200)
     const outsiderMapping=(await s.request('imSyncConversation',{}, {id:outsider.value.data.id})).value.data
     expect(outsiderMapping.transportStatus).toBe('ready')
     expect((await s.callback('callbackBeforeSendGroupMsgCommand',{...msg,groupID:outsiderMapping.groupID})).value.nextCode).toBe(1)
@@ -339,7 +331,7 @@ describe('OpenIM bridge with explicit synthetic management adapter, not live ser
     const names=['001-foundation.sql','002-collaboration.sql','003-invitation-decisions.sql','004-discovery.sql','005-coordination.sql','006-execution.sql','007-authorized-reuse.sql','008-pilot-operations.sql','009-invite-registration.sql','010-lab-invite-management.sql','011-lab-ai-settings.sql','012-research-chat.sql','013-chat-viewer-state.sql','014-agent-contacts.sql']
     for(const [index,name] of names.entries()){const sql=readFileSync(new URL(`../migrations/${name}`,import.meta.url),'utf8');db.exec(sql);db.prepare('INSERT INTO schema_migrations VALUES (?,?,?)').run(index+1,createHash('sha256').update(sql).digest('hex'),'2026-01-01T00:00:00Z')}
     seed(db,'test');db.prepare("INSERT INTO chat_conversations VALUES ('old','lab_synthetic','member_A','personal','old_scope','{}')").run();db.prepare("INSERT INTO chat_messages VALUES ('old_message','old',1,'{}')").run()
-    migrate(db);migrate(db);checkDatabase(db);expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(34)
+    migrate(db);migrate(db);checkDatabase(db);expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(35)
     expect(db.prepare('SELECT count(*) n FROM chat_messages').get()!.n).toBe(1);expect(db.prepare('SELECT count(*) n FROM im_message_outbox').get()!.n).toBe(0)
   })
 })
