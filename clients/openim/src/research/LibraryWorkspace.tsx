@@ -1,7 +1,7 @@
 import "./workspace.scss";
 import "./library-workspace.scss";
 
-import { Segmented } from "antd";
+import { Button, Segmented, Spin } from "antd";
 import { useSearchParams } from "react-router-dom";
 
 import { LabStandards } from "./LabStandards";
@@ -9,7 +9,7 @@ import { LibraryIndexPage } from "./LibraryIndexPage";
 import { ResearchLibrary } from "./ResearchLibrary";
 import { useWorkspaceAvailability } from "./useWorkspaceAvailability";
 import { WorkspaceReports } from "./WorkspaceReports";
-import { TeamLibraryWorkspace } from './TeamLibraryWorkspace';
+import { TeamLibraryWorkspace } from "./TeamLibraryWorkspace";
 
 export function LibraryWorkspace() {
   const [params, setParams] = useSearchParams();
@@ -21,7 +21,43 @@ export function LibraryWorkspace() {
   const reports = params.get("panel") === "reports";
   const standards = params.get("panel") === "standards" && standardsReady;
   const index = params.get("panel") === "index" && indexReady;
-  if(availability.supports(44)) return <main className="social-workspace workspace-library"><header className="workspace-heading"><h1>资料</h1></header><TeamLibraryWorkspace supported initialPanel={params.get('panel')}/></main>;
+  // Unknown compatibility is not an old server. Do not mount the legacy
+  // library (and its Agent) while the first health read is still pending.
+  // Local reports remain usable without waiting for the backend.
+  if (!availability.version && !reports)
+    return (
+      <main className="social-workspace workspace-library">
+        <header className="workspace-heading">
+          <h1>资料</h1>
+        </header>
+        <section
+          className="library-workspace-availability"
+          role={availability.error ? "alert" : "status"}
+        >
+          {availability.error ? (
+            <>
+              <p>暂时无法确认资料服务</p>
+              <p>{availability.error}</p>
+              <Button onClick={() => void availability.refresh()}>重新检查</Button>
+            </>
+          ) : (
+            <>
+              <Spin />
+              <p>正在确认资料服务…</p>
+            </>
+          )}
+        </section>
+      </main>
+    );
+  if (availability.supports(44))
+    return (
+      <main className="social-workspace workspace-library">
+        <header className="workspace-heading">
+          <h1>资料</h1>
+        </header>
+        <TeamLibraryWorkspace supported initialPanel={params.get("panel")} />
+      </main>
+    );
   return (
     <main className="social-workspace workspace-library">
       <header className="workspace-heading">
