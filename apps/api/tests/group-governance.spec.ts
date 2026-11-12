@@ -20,7 +20,7 @@ const clean:(()=>unknown|Promise<unknown>)[]=[]
 afterEach(async()=>{for(const f of clean.splice(0).reverse())await f()})
 async function setup(legacy=false){
   const dir=mkdtempSync(join(tmpdir(),'rap-group35-'));clean.push(()=>rmSync(dir,{recursive:true,force:true}))
-  const key=join(dir,'synthetic.key');writeFileSync(key,randomBytes(32).toString('hex'))
+  const key=join(dir,'synthetic.key');writeFileSync(key,randomBytes(32).toString('hex'),{mode:0o600})
   const config=readConfig({NODE_ENV:'test',DATABASE_PATH:join(dir,'db.sqlite'),BLOB_ROOT:join(dir,'blobs'),APP_ORIGIN:'http://127.0.0.1:4173',B3_AI_ENABLED:'1',LAB_CREDENTIAL_KEY_FILE:key})
   mkdirSync(config.blobRoot);const db=openDatabase(config.databasePath,true);clean.push(()=>db.close())
   if(legacy){

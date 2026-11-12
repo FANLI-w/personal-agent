@@ -3087,3 +3087,8 @@ PR200，固定产品提交e4c8fc562cb92e9b8fdce56de73541e90549222f（含PR199）
 - 隔离无头Edge/Playwright（Browser插件不可用）1280×900，用实际选择器/群设置/转达组件与合成HTTP验证真人过滤、选中、无课题组说明、继任者选择、撤回状态更新，console errors=[]。真实账号、真实OpenIM服务、设备送达及模型效果待负责人验收，未操作私人客户端。
 - 失败记录保留：早期nullable类型、旧多助手目标断言、生产入口旧迁移数、新增建群说明挤占回复预算（压缩说明修复，不放宽预算），以及夹具构建依赖、mock分页形状、重复aria定位。根最终日志ci-complete.log；LF迁移复验migration-lf-final.json/group-lf-final.log；其他证据D:/deepseek-agent/.runtime/group-assistant-20261112，早期CI日志另在C:/Users/luo/.codex/group-governance-ci*.log。
 - 生产0.45/034、公开Windows0.10.104保持。尚未合main、部署或公开发布；旧034程序严格拒绝035，不能只切旧镜像回退。需配套客户端升级，另行授权静止备份/恢复副本迁移后部署，优先兼容前滚，彻底回退需完整一致备份。说明docs/development/group-assistant-governance.md；roadmap已记录新单群助理方向及旧字段清理条件。PR204/205和此前Windows分享未跟踪目录保持独立。
+
+
+## 2026-11-12 PR206 合并发布前跨平台复核
+
+负责人已授权合并、打包和公开发布。PR206/8e06d29的Windows Foundation与NSIS CI通过，但两个Linux Foundation均在新增群治理测试的updateLabAiSettings准备步骤返回503；临时synthetic.key默认权限过宽，触发既有凭据文件保护。测试夹具改为mode0600，与其他同类测试一致，不放宽产品凭据权限、不修改业务逻辑；本地9项定向复验通过，等待最终提交各平台CI后合并。初始日志保留D:/deepseek-agent/.runtime/release-0.10.105-20261112/pr206-linux-initial.log。后台035部署不包含在本次授权中，仍单独安排。
