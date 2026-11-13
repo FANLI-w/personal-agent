@@ -69,6 +69,8 @@ function settings(s: ChatService): AssistantMemorySettings {
   const r = s.db.prepare('SELECT * FROM assistant_memory_settings WHERE member_id=?').get(s.c.actor.id)!
   return AssistantMemorySettings.parse({ candidateLearning: r.candidate_learning === 1, timeZone: r.time_zone, quietHours: r.quiet_hours_json ? JSON.parse(String(r.quiet_hours_json)) : null, version: r.version })
 }
+const topicOf = (body: { payload: { type: string; topic?: string } }) =>
+  body.payload.type === 'preference' ? body.payload.topic ?? '未分类' : '未分类'
 function scopeInput(body: { scope?: 'personal' | 'agent'; subjectId?: string | null }) {
   if (body.scope === 'agent' && !body.subjectId) fail('VALIDATION_ERROR')
   if (body.scope !== 'agent' && body.subjectId) fail('VALIDATION_ERROR')
@@ -105,13 +107,13 @@ export function handleAssistantMemory(s: ChatService, name: string, req: ChatReq
     scopeInput(body)
     if (body.scope === 'agent') agentOwner(s, body.subjectId!)
     const id = randomUUID(), at = now()
-    s.db.prepare("INSERT INTO assistant_memories(id,owner_id,lab_id,scope,subject_id,type,status,origin,source_kind,source_id,source_version,source_label,summary,detail,payload_json,schema_version,version,created_at,updated_at) VALUES(?,?,?,?,?,?,'confirmed','explicit',?,?,?,?,?,?,?,1,1,?,?)").run(id, s.c.actor.id, body.scope === 'agent' ? s.c.actor.labId : null, body.scope, body.subjectId, body.type, body.source.kind, body.source.id, body.source.version, body.source.label, body.summary, body.detail, JSON.stringify(body.payload), created, at)
+    s.db.prepare("INSERT INTO assistant_memories(id,owner_id,lab_id,scope,subject_id,type,topic,status,origin,source_kind,source_id,source_version,source_label,summary,detail,payload_json,schema_version,version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'confirmed','explicit',?,?,?,?,?,?,?,1,1,?,?)").run(id, s.c.actor.id, body.scope === 'agent' ? s.c.actor.labId : null, body.scope, body.subjectId, body.type, topicOf(body), body.source.kind, body.source.id, body.source.version, body.source.label, body.summary, body.detail, JSON.stringify(body.payload), created, at)
     const value = view(row(s, id)); revision(s, value); return { data: value }
   }
   if (name === 'updateAssistantMemory') {
     const current = view(row(s, req.params.id!)), body = AssistantMemoryUpdate.parse(req.body)
     s.c.checkVersion(current.version, body.expectedVersion)
-    s.db.prepare('UPDATE assistant_memories SET type=?,summary=?,detail=?,payload_json=?,source_kind=?,source_id=?,source_version=?,source_label=?,version=version+1,updated_at=? WHERE id=?').run(body.type, body.summary, body.detail, JSON.stringify(body.payload), body.source.kind, body.source.id, body.source.version, body.source.label, now(), current.id)
+    s.db.prepare('UPDATE assistant_memories SET type=?,topic=?,summary=?,detail=?,payload_json=?,source_kind=?,source_id=?,source_version=?,source_label=?,version=version+1,updated_at=? WHERE id=?').run(body.type, topicOf(body), body.summary, body.detail, JSON.stringify(body.payload), body.source.kind, body.source.id, body.source.version, body.source.label, now(), current.id)
     const value = view(row(s, current.id)); revision(s, value); return { data: value }
   }
   if (name === 'decideAssistantMemory') {

@@ -51,8 +51,8 @@ export function saveMemory(s:ChatService,value:unknown,origin:'explicit'|'feedba
  const target=id??existing?.id??randomUUID(),sourceId=source?.id??(existingRow?.source_kind==='message'?existingRow.source_id:null)
  const summary=body.content.slice(0,300),detail=body.content
  const document=JSON.stringify({type:'preference',topic:body.topic,value:body.content,appliesTo:body.scope})
- if(id||existing)s.db.prepare("UPDATE assistant_memories SET status=?,origin=?,source_kind=?,source_id=?,summary=?,detail=?,payload_json=?,version=version+1,updated_at=? WHERE id=?").run(status,origin,sourceId?'message':'manual',sourceId,summary,detail,document,now,target)
- else s.db.prepare("INSERT INTO assistant_memories(id,owner_id,lab_id,scope,subject_id,type,status,origin,source_kind,source_id,source_version,summary,detail,payload_json,schema_version,version,created_at,updated_at) VALUES(?,?,NULL,'personal',NULL,'preference',?,?,?,?,NULL,?,?,?,1,1,?,?)").run(target,s.c.actor.id,status,origin,sourceId?'message':'manual',sourceId,summary,detail,document,now,now)
+ if(id||existing)s.db.prepare("UPDATE assistant_memories SET topic=?,status=?,origin=?,source_kind=?,source_id=?,summary=?,detail=?,payload_json=?,version=version+1,updated_at=? WHERE id=?").run(body.topic,status,origin,sourceId?'message':'manual',sourceId,summary,detail,document,now,target)
+ else s.db.prepare("INSERT INTO assistant_memories(id,owner_id,lab_id,scope,subject_id,type,topic,status,origin,source_kind,source_id,source_version,summary,detail,payload_json,schema_version,version,created_at,updated_at) VALUES(?,?,NULL,'personal',NULL,'preference',?,?,?,?,?,NULL,?,?,?,1,1,?,?)").run(target,s.c.actor.id,body.topic,status,origin,sourceId?'message':'manual',sourceId,summary,detail,document,now,now)
  return revision(s,memory(s,target))
 }
 export function handleMemory(s:ChatService,name:string,req:ChatRequest):unknown{
