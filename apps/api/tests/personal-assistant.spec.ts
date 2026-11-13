@@ -461,5 +461,17 @@ describe('recurring reminders and persistent local Agent jobs; synthetic model c
   expect(secondJob.result.conflicts).toBe(2)
   const rows=await list();expect(rows).toHaveLength(2);expect(rows.every((row:any)=>row.conflict)).toBe(true)
  })
+ it('lets the model group similar topics before the deterministic merge',async()=>{
+  const s=await setup(),agent=(await s.call('createPersonalAgent',profile)).value.data
+  const note=(topic:string,detail:string)=>({scope:'agent',subjectId:agent.id,topic,type:'note',summary:detail,detail,payload:{type:'note',text:detail},source:{kind:'manual',id:null,version:null,label:null}})
+  const list=async()=>(await s.call('assistantMemories',null,{},0,`?scope=agent&subjectId=${agent.id}`)).value.data as any[]
+  for(const topic of ['引用','引用格式'])expect((await s.call('createAssistantMemory',note(topic,'保留页码'),{},0)).status).toBe(201)
+  const ids=(await list()).map(row=>row.id)
+  const worker=new MemoryCompressionWorker(s.db,s.config,Date.now,async()=>({text:JSON.stringify({groups:[{topic:'引用格式',ids}]}),failure:null,inputTokens:1,outputTokens:1,elapsedMs:1}))
+  const queued=await s.call('compressAssistantMemories',{subjectId:agent.id})
+  expect(queued.status,queued.text).toBe(202);await worker.tick()
+  const job=(await s.call('assistantMemoryCompressionJob',null,{id:queued.value.data.id})).value.data
+  expect(job.status).toBe('succeeded');expect(job.result.merged).toBe(1);expect(await list()).toHaveLength(1)
+ })
 })
 
