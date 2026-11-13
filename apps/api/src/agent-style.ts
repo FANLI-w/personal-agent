@@ -1,6 +1,6 @@
 import type { ChatMemory, Contact, Conversation, ChatMessage } from '@research-agent-platform/contracts'
 import type { ChatService, ChatRequest } from './chat.js'
-import { ownLocalMemoryScope } from './personal-memories.js'
+import { directlyStatedReplyStyle, ownLocalMemoryScope } from './personal-memories.js'
 import { agentStyleInstruction } from '@research-agent-platform/contracts'
 export { agentStyleInstruction } from '@research-agent-platform/contracts'
 
@@ -10,7 +10,8 @@ const source = '本人明确保存的本助手交流偏好'
 
 export function agentStyleCommand(s: ChatService, agent: Contact, group: Conversation, message: ChatMessage) {
   if (!ownLocalMemoryScope(s, agent, group) || message.origin !== 'human' || message.senderContactId !== s.human().id) return null
-  const instruction = agentStyleInstruction(message.text ?? '')
+  const text = message.text?.trim() ?? ''
+  const instruction = agentStyleInstruction(text) ?? (agent.profile.role === 'specialist' && directlyStatedReplyStyle(text) ? { kind: 'save' as const, content: text } : null)
   if (!instruction) return null
   const row = s.db.prepare("SELECT id FROM chat_memories WHERE scope='private_agent' AND scope_id=? AND created_by=? AND source=? AND status='active' ORDER BY created_at,id LIMIT 1").get(agent.id, s.c.actor.id, source)
   const current = row ? s.directory.memory(String(row.id), true) : null

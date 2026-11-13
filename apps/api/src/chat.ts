@@ -1,3 +1,4 @@
+import { enqueueFeedback } from './feedback-queue.js'
 import {PeerLibraryService} from './peer-library.js'
 import {authorizeGroupCommand,handleGroupCommand,chooseGroupLab,ensureGroupAssistant,groupAssistantContact,isGroupAssistant} from './group-governance.js'
 import {chatMessageDetails,withdrawChatMessage,isMessageRetracted,linkMessageReply} from './chat-message-actions.js'
@@ -680,9 +681,11 @@ export class ChatService {
       // request, not permission inferred from a quoted/older first sentence.
       if(pending){const old=decode(pending.request_json) as TurnInput;if(purpose&&old.purpose!=='create_agent'||!skill&&!purpose&&!old.assistantMode&&!old.fileSource&&group.kind==='personal'&&agent?.profile.role==='coordinator'&&personalWorkRequest(input.text)){supersedeTurn(this,String(pending.id));pending=undefined}}
       const style=name==='agentChatMessage'&&!skill&&!purpose&&!(b as {fileSelection?:unknown}).fileSelection&&agent?agentStyleCommand(this,agent,group,message):null
-      const management=!style&&name==='agentChatMessage'&&!skill&&!purpose&&!(b as {fileSelection?:unknown}).fileSelection&&agent&&ownLocalMemoryScope(this,agent,group)?{memory:memoryCommand(this,input.text,message),followup:followupCommand(this,input.text,message)}:null
+      const management=!style&&name==='agentChatMessage'&&!skill&&!purpose&&!(b as {fileSelection?:unknown}).fileSelection&&agent&&ownLocalMemoryScope(this,agent,group)?{memory:memoryCommand(this,input.text,message,group.kind==='personal'&&agent.profile.role==='coordinator'),followup:followupCommand(this,input.text,message)}:null
       const limitation=name==='agentChatMessage'&&!skill&&!purpose&&!(b as {fileSelection?:unknown}).fileSelection&&group.kind==='personal'&&agent?.profile.role==='coordinator'?unsupportedCollaboration(this,input.text):null
       if(style||management?.memory||management?.followup||limitation){if(pending)supersedeTurn(this,String(pending.id));const turn=this.newTurn(group,message,input.agentContactId!,{budget:input.budget!,context:[],conversationVersion:group.version,inputSequence:message.sequence,dailyChat:true,personalAssistant:true});const result=style??management?.memory??management?.followup;if(management?.memory)turn.memoryReceipt=management.memory.receipt;else if(management?.followup)turn.followupReceipt=management.followup.receipt;const response=this.message(group.id,{senderContactId:input.agentContactId!,origin:'service',text:result?.text??limitation!,mentions:[],resources:[],actionIds:[],turnId:turn.id});turn.status='succeeded';turn.failure=null;turn.outputMessageId=response.id;turn.version++;turn.updatedAt=instant();this.saveTurn(turn);message.turnId=turn.id;this.db.prepare('UPDATE chat_messages SET document=? WHERE id=?').run(encode(legacyChatMessage(message)),message.id);return {data:{message:this.projectedMessage(message.id),turn:this.turn(turn.id)}}}
+      if (agent && !external && !purpose && input.text && input.intent === 'ask_agent')
+        enqueueFeedback(this.db, this.c.actor.id, this.c.labId, group.kind === 'group' ? group.id : '', 'chat', message.id)
       let fileSource=name==='agentFileMessage'?{messageId:message.id}:name==='agentChatMessage'&&!purpose&&!external?this.dailyFileSource(group.id,input.text,(b as {fileSelection?:AgentFileSelection}).fileSelection):undefined
       const fileDocument=name==='agentFileMessage'&&parsedFile?{...parsedFile,metadata:{...parsedFile.metadata,messageId:message.id}}:undefined
       if(name==='agentFileMessage'&&!fileDocument)fail('INVALID_STATE')

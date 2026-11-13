@@ -293,7 +293,7 @@ describe('B3 durable service with explicit deterministic model doubles (not G3 l
       const before=tables.map(t=>JSON.stringify(legacy.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all()))
       migrate(legacy);migrate(legacy)
       expect(tables.map(t=>JSON.stringify(legacy.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all()))).toEqual(before)
-      expect(legacy.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(35)
+      expect(legacy.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(36)
       const original=databasePath;databasePath=legacyPath;let upgraded:Awaited<ReturnType<typeof startServer>>
       try{upgraded=await startServer()}finally{databasePath=original}
       const read=await request('task',{client:clients.A,params:{id},target:upgraded.url});expect(read.status).toBe(200);expect(read.value.data).toEqual(expected)
@@ -302,6 +302,8 @@ describe('B3 durable service with explicit deterministic model doubles (not G3 l
   })
 
   it('A11 actual worker kill/restart leaves interrupted evidence; controlled local transport is not live-model proof',async()=>{
+    // Prior scenarios share this database. Only the capability job should reach this deliberately hanging transport.
+    db.prepare('DELETE FROM assistant_feedback').run()
     const q=await queue();let hit!:()=>void
     const called=new Promise<void>(resolve=>{hit=resolve})
     const transport=createHttpServer((req,_res)=>{req.resume();hit()})

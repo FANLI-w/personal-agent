@@ -1,3 +1,4 @@
+import { currentHabit } from './feedback-queue.js'
 import {GroupAssistantOutput} from '@research-agent-platform/contracts'
 import {groupAssistantSystem,groupPublicContext} from './group-assistant-context.js'
 import {queueGroupNotice} from './group-notices.js'
@@ -55,6 +56,9 @@ export function reconcileChat(db: DatabaseSync, config: Config) {
     }
   }
 }
+// Re-evaluate conversational style from the dialogue actually selected for this turn.
+const dialogueStyle = 'Adapt reply length, tone and approach to the sender’s latest feedback.'
+
 export class ChatWorker {
   readonly owner = randomUUID()
   constructor(readonly db: DatabaseSync, readonly config: Config, readonly call: ModelCall = callHarness, readonly externalCall:ExternalAgentCall=callExternalAgent,readonly clock:()=>number=Date.now) {}
@@ -88,7 +92,7 @@ export class ChatWorker {
         if(personal.records.length||agentContext.memories.length)console.log(`CHAT_MEMORY conversation=${group.id} ${lifecycleReceipt({preference:personal.records.length+agentContext.memories.length,turn:1})} omitted=${personal.omitted}`)
         const required=new Set(input.continuous?.messageIds??[turn.inputMessageId]),recent=recentDialogue(s,group.id,input.inputSequence,[...required]),notes=olderDialogue(s,group.id,input.inputSequence,recent,current),tasks=dialogueTaskState(s,group,current)
         let layers:DialogueLayers={messages:[],notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]}
-        system=personalAssistantSystem+(complex?'\nComplex work: JSON {kind:"team",title:string,contactIds:[listed_ID]}. Save only a proposal. Owner confirms group creation; humans and Agent owners accept independently. No automatic execution or material sharing.':'')
+        system=personalAssistantSystem+'\n'+dialogueStyle+(complex?'\nComplex work: JSON {kind:"team",title:string,contactIds:[listed_ID]}. Save only a proposal. Owner confirms group creation; humans and Agent owners accept independently. No automatic execution or material sharing.':'')
         system+=rulesSuffix
         const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'\nAnswer currentRequest only; forwarded names may differ from the sender.')
         system=contextSystem(layers)
@@ -130,9 +134,14 @@ export class ChatWorker {
       if(personal.records.length||agentContext.memories.length)console.log(`CHAT_MEMORY conversation=${group.id} ${lifecycleReceipt({preference:personal.records.length+agentContext.memories.length,turn:1})} omitted=${personal.omitted}`)
       input.agentContextFingerprint=agentContext.fingerprint
       this.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(input),turn.id)
+      const habits = group.kind === 'group' || !personal.fingerprint
+        ? currentHabit(this.db, s.c.actor.id, group.kind === 'group' ? group.id : '').content : ''
       const contactColumns=['id','displayName','identity','availability','profile']
       const selectedTasks=input.context.filter(ref=>ref.kind==='task').map(ref=>s.c.task(ref.ref.id))
       system=group.kind==='group'?groupAssistantSystem:input.dailyChat?dailyChatSystem:chatModelSystem({group:group.kind==='personal'&&agentContext.agent.profile.role==='coordinator',inviteContact:false,inviteTask:false,runTask:false})
+      if (input.dailyChat && !input.scheduledFollowupId) {
+        system += '\n' + dialogueStyle
+      }
       if(input.scheduledFollowupId)system+='\nThe latest service message is an explicitly owner-authorized scheduled instruction. Execute that instruction within the provided conversation text only, and return the result conversationally. It does not grant web browsing, tools, filesystem access, business mutations, contact creation, or further scheduling. State any missing inputs/access plainly; never claim to have performed actions outside this scope.'
       if(input.assistantMode==='coordinate')system=personalAssistantSystem+'\n'+chatModelSystem({group:true,inviteContact:false,inviteTask:false,runTask:false}).split('\n').filter(line=>/^(Ref=|Group=|Item=|S=|s=string)/.test(line)).join('\n')
       const selectedSkill=input.skill?skillContext(s,input.skill,turn.agentContactId):undefined
@@ -157,7 +166,7 @@ export class ChatWorker {
         // IDs locate the complete current batch; optional old rows need no
         // duplicate UUIDs. Source quotes carry their own durable provenance.
         const messageRows=selected.map(m=>messageColumns.map(key=>key==='id'?currentIds.includes(m.id)?m.id:null:key==='sender'?m.senderContactId===null?null:senderIds.indexOf(m.senderContactId):m[key as keyof typeof m]))
-        return JSON.stringify({...(group.kind==='group'?{groupContext:groupPublicContext(s,group)}:{}),...(input.dailyChat?{currentRequest:{messageIds:currentIds}}:{}),...(selectedSkill?{selectedSkill}:{}),...(library?{researchLibrary:{retrieval:library.retrieval,limitation:library.limitation,excerpts:libraryExcerpts.map((e,i)=>({label:`R${i+1}`,...e}))}}:{}),...(!input.dailyChat||selectedSkill?{ownerId:s.c.actor.id,labId:s.c.actor.labId}:{}),requestedAgent,conversation,contactColumns,contacts:contacts.map(c=>contactColumns.map(key=>c[key as keyof typeof c])),senderIds,messageColumns,messages:messageRows,...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(input.assistantMode==='coordinate'?{currentRequest:s.projectedMessage(turn.inputMessageId).text,localSpecialists:assistantCandidates(s),collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(context.length?{context}:{}),...(earlierMessagesOmitted?{earlierMessagesOmitted:true}:{}),...(read?{fileRead:read,fileExcerpts}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
+        return JSON.stringify({...(habits ? { senderWorkPreferences: habits } : {}),...(group.kind==='group'?{groupContext:groupPublicContext(s,group)}:{}),...(input.dailyChat?{currentRequest:{messageIds:currentIds}}:{}),...(selectedSkill?{selectedSkill}:{}),...(library?{researchLibrary:{retrieval:library.retrieval,limitation:library.limitation,excerpts:libraryExcerpts.map((e,i)=>({label:`R${i+1}`,...e}))}}:{}),...(!input.dailyChat||selectedSkill?{ownerId:s.c.actor.id,labId:s.c.actor.labId}:{}),requestedAgent,conversation,contactColumns,contacts:contacts.map(c=>contactColumns.map(key=>c[key as keyof typeof c])),senderIds,messageColumns,messages:messageRows,...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(input.assistantMode==='coordinate'?{currentRequest:s.projectedMessage(turn.inputMessageId).text,localSpecialists:assistantCandidates(s),collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(context.length?{context}:{}),...(earlierMessagesOmitted?{earlierMessagesOmitted:true}:{}),...(read?{fileRead:read,fileExcerpts}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
       }
       prompt=serialize(messages)
       if(input.dailyChat){

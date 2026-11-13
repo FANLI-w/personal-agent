@@ -48,7 +48,7 @@ export function personalMemoryContext(s:ChatService,agent:Contact,group:Conversa
  const settings=memorySettings(s),all=s.db.prepare('SELECT id,version,status FROM personal_memories WHERE member_id=? ORDER BY id').all(s.c.actor.id)
  const fingerprint=hash(JSON.stringify({settings:settings.version,all}))
  const match=(topic:string)=>{const target=(text+' '+agent.displayName+' '+agent.profile.capabilityDescription).normalize('NFKC').toLocaleLowerCase();return contextTerms(topic).some(term=>target.includes(term))}
- const candidates=s.db.prepare("SELECT id FROM personal_memories WHERE member_id=? AND status='confirmed' ORDER BY updated_at DESC,id").all(s.c.actor.id).map(r=>memory(s,String(r.id))).filter(v=>v.scope==='general'||match(v.topic)).sort((a,b)=>Number(['回复方式','称呼','语言'].includes(b.topic))-Number(['回复方式','称呼','语言'].includes(a.topic))||relatedScore(b.topic+' '+b.content,text)-relatedScore(a.topic+' '+a.content,text)).map(v=>({id:v.id,topic:v.topic,content:v.content,scope:v.scope,origin:v.origin}))
+ const candidates=s.db.prepare("SELECT id FROM personal_memories WHERE member_id=? AND status='confirmed' ORDER BY updated_at DESC,id").all(s.c.actor.id).map(r=>memory(s,String(r.id))).filter(v=>v.scope==='general'||match(v.topic)).sort((a,b)=>Number(['交流与工作习惯','回复方式','称呼','语言'].includes(b.topic))-Number(['交流与工作习惯','回复方式','称呼','语言'].includes(a.topic))||relatedScore(b.topic+' '+b.content,text)-relatedScore(a.topic+' '+a.content,text)).map(v=>({id:v.id,topic:v.topic,content:v.content,scope:v.scope,origin:v.origin}))
  const records:typeof candidates=[];let bytes=0
  for(const record of candidates){const size=Buffer.byteLength(JSON.stringify(record),'utf8');if(records.length>=memoryRecordLimit||bytes+size>memoryBudget)continue;records.push(record);bytes+=size}
  return {fingerprint,records,omitted:records.length<candidates.length}
@@ -61,15 +61,18 @@ function memoryTopic(content:string){
  if(/(?:我在|我的)(?:.{1,40})(?:工作|任职)|工作单位|所在实验室/.test(content))return '工作单位'
  return null
 }
-export function memoryCommand(s:ChatService,text:string,message:ChatMessage){
+export function directlyStatedReplyStyle(value:string) { return /^(?:我(?:更)?(?:喜欢|希望)你|我习惯你)(?:以后|平时)?(?:回复|回答|说话)(?:时)?[，, ]*(?:先说结论|先给结论|直接一点|简短一点|短一点|详细一点|口语一点|自然一点|别列清单)[。！!]?$/u.test(value) }
+export function memoryCommand(s:ChatService,text:string,message:ChatMessage,personalAssistant=false){
  const value=text.trim(),first=value.split(/[，,。;；\n]/)[0]!
  if(/[?？]$/.test(first)||/[，,。;；]\s*(?:但|不过|其实)?\s*(?:只是引用|只是举例|不要保存|别保存|不要记住|别记住|不是真的)/.test(value))return null
  const forget=/^(?:请)?(?:忘记|删除记忆)\s*[:：]?\s*(.+?)\s*[。.]?$/.exec(value)
  if(forget){let topic=forget[1]!.trim();topic=memoryTopic(topic)??topic;const matches=s.db.prepare("SELECT id FROM personal_memories WHERE member_id=? AND status!='revoked' AND (id=? OR topic=?)").all(s.c.actor.id,topic,topic);if(matches.length!==1)return {receipt:{operation:'clarify' as const,memoryId:null,topic:null,status:null,version:0,question:'请明确要忘记的记忆主题或编号。'},text:'请明确要忘记的记忆主题或编号；尚未修改。'};const saved=revokeMemory(s,String(matches[0]!.id));return {receipt:{operation:'forgotten' as const,memoryId:saved.id,topic:saved.topic,status:saved.status,version:saved.version,question:null},text:`已撤回本人记忆“${saved.topic}”。`}}
  const explicit=/^(?:请)?记住\s*[:：]?\s*(.+)$/.exec(value),correction=/^(?:请)?(?:纠正|更正)(?:我的)?(?:偏好|记忆)\s*[:：]\s*(.+)$/.exec(value),future=/^以后(?:请)?(?:回答|回复|称呼我|叫我|写作|分析|处理材料)[^?？]+$/.test(value)
- const inferred=!explicit&&!correction&&!future&&/^(?:我通常|我一般|我习惯|我更喜欢)[^?？]+$/.test(value)&&memorySettings(s).candidateLearning
- if(!explicit&&!correction&&!future&&!inferred)return null
- let content=(explicit?.[1]??correction?.[1]??value).trim(),topic=memoryTopic(content),scope:'general'|'topic'='general'
+ // A directly stated, durable reply preference can arrive in ordinary conversation.
+ const statedStyle = personalAssistant && directlyStatedReplyStyle(value)
+ const inferred=!statedStyle&&!explicit&&!correction&&!future&&/^(?:我通常|我一般|我习惯|我更喜欢)[^?？]+$/.test(value)&&memorySettings(s).candidateLearning
+ if(!statedStyle&&!explicit&&!correction&&!future&&!inferred)return null
+ let content=(explicit?.[1]??correction?.[1]??value).trim(),topic=statedStyle?'回复方式':memoryTopic(content),scope:'general'|'topic'='general'
  const labeled=/^\[([^\]]{1,80})\]\s*[:：]?\s*(.+)$/.exec(content);if(labeled){topic=labeled[1]!;content=labeled[2]!;scope='topic'}
  if(correction&&!topic)return {receipt:{operation:'clarify' as const,memoryId:null,topic:null,status:null,version:0,question:'还没确定要改哪条偏好。可以写“纠正记忆：[饮食] 我喜欢茶”，原记录会先保留。'},text:'这次还没改动记忆，先确认要改的那条内容。'}
  if(!content||content.length>1000)return {receipt:{operation:'clarify' as const,memoryId:null,topic:null,status:null,version:0,question:'请把要保存的单条偏好明确写在 1000 字内。'},text:'请把要保存的单条偏好明确写在 1000 字内；尚未保存。'}
