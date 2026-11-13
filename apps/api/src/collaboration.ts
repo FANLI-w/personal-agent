@@ -1,3 +1,4 @@
+import { enqueueFeedback } from './feedback-queue.js'
 import { ReuseService } from './reuse.js'
 import { AiService } from './ai.js'
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
@@ -583,6 +584,7 @@ export class Collaboration {
       this.db.prepare('INSERT INTO reviews VALUES (?,?,?,?)').run(delivery.id, delivery.revision, this.actor.id, encode(delivery.review))
       this.db.prepare('UPDATE deliverables SET version=?,document=? WHERE id=?').run(delivery.version, encode(delivery), delivery.id)
       task.status = body.decision === 'accepted' ? 'completed' : 'changes_requested'; task.version++; task.updatedAt = now(); this.saveTask(task); this.event(task, 'reviewed')
+      if (body.comment?.trim()) enqueueFeedback(this.db, this.actor.id, this.labId, '', 'review', delivery.id)
       if(body.decision==='changes_requested') this.coordination.impact(task,'review_returned')
       return { data: delivery }
     },

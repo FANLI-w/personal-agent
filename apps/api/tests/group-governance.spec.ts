@@ -11,6 +11,8 @@ import {provisionTestAccounts} from '../src/auth.js'
 import {createServer} from '../src/server.js'
 import {ChatService} from '../src/chat.js'
 import {serviceFor} from '../src/execution-worker.js'
+import {FeedbackWorker} from '../src/feedback-worker.js'
+import { currentHabit } from '../src/feedback-queue.js'
 import {ChatWorker} from '../src/chat-worker.js'
 import {GroupNoticeWorker,queueGroupNotice} from '../src/group-notices.js'
 import {OpenImBridge} from '../src/openim-bridge.js'
@@ -139,6 +141,32 @@ it('injects only platform/group lab rules, same-group memory and title/status; m
   expect(conversationRulesContext(s.db,{id:g.id,kind:'group',labId:null},'member_A').rules.map(r=>r.layer)).toEqual(['system'])
 })
 
+it('learns group feedback only for its speaker and group', async () => {
+  const s = await setup()
+  await s.call('updateLabAiSettings',{expectedVersion:0,enabled:true,model:'deepseek-flash',apiKey:'sk-synthetic-only'},'lab_synthetic')
+  const group = await s.create(null), other = await s.create(null)
+  const agent = 'group_assistant_' + group.id
+  const send = (text:string, actor:number) => s.call('sendChatMessage',{text:'@群助理 '+text,intent:'ask_agent',agentContactId:agent,mentions:[{contactId:agent,start:0,end:4}],budget:{maxTokens:25000,maxSeconds:30}},group.id,actor)
+  let prompt = ''
+  const reply = new ChatWorker(s.db,s.config,async input => {
+    prompt = input.prompt
+    return {text:JSON.stringify({answer:'收到',requests:[]}),failure:null,inputTokens:50,outputTokens:10,elapsedMs:1}
+  })
+  const evidence = '以后对照方案时给我列出取舍依据'
+  const summary = '对照方案时列出取舍依据'
+  expect((await send(evidence,0)).status).toBe(201)
+  await reply.tick()
+  await new FeedbackWorker(s.db,s.config,async () => ({text:JSON.stringify({evidence,summary}),failure:null,inputTokens:50,outputTokens:10,elapsedMs:1})).tick()
+  expect(currentHabit(s.db,'member_A',group.id).content).toBe(summary)
+  for (const [member,scope] of [['member_A',''],['member_A',other.id],['member_B',group.id]] as const)
+    expect(currentHabit(s.db,member,scope).content).toBe('')
+  for (const actor of [0,1]) {
+    expect((await send('对比这两个方案',actor)).status).toBe(201)
+    await reply.tick()
+    expect(JSON.parse(prompt).senderWorkPreferences).toBe(actor===0 ? summary : undefined)
+  }
+})
+
 it('upgrades a populated 034 copy twice: retires group agents, preserves message bytes, task commitments, IM IDs and FK enforcement',async()=>{
   const {db,config}=await setup(true),at='2026-11-01T00:00:00Z'
   db.prepare("INSERT INTO personal_spaces VALUES ('lab_synthetic','member_A')").run()
@@ -159,8 +187,8 @@ it('upgrades a populated 034 copy twice: retires group agents, preserves message
   const count=Number(db.prepare("SELECT count(*) n FROM sqlite_master WHERE type='table'").get()!.n)
   migrate(db);migrate(db);checkDatabase(db)
   expect(db.prepare('PRAGMA foreign_keys').get()!.foreign_keys).toBe(1);expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
-  expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(35)
-  expect(Number(db.prepare("SELECT count(*) n FROM sqlite_master WHERE type='table'").get()!.n)).toBe(count+3)
+  expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(36)
+  expect(Number(db.prepare("SELECT count(*) n FROM sqlite_master WHERE type='table'").get()!.n)).toBe(count+5)
   expect(db.prepare("SELECT lab_id,document FROM chat_conversations WHERE id='old_group'").get()).toMatchObject({lab_id:null})
   expect(db.prepare("SELECT status FROM chat_members WHERE contact_id='old_agent'").get()!.status).toBe('revoked')
   expect(db.prepare("SELECT status FROM personal_work_participants WHERE task_id='old_work'").get()!.status).toBe('accepted')

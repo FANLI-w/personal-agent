@@ -327,7 +327,7 @@ function AssistantPreferences({ contactId }: { contactId: string }) {
     ...(agent.data?.data ?? []).filter(m => m.source === "本人明确保存的本助手交流偏好" && m.status === "active")
       .flatMap(m => m.content.split("\n").filter(line => line.startsWith("- ")).reverse().map(line => line.slice(2))),
     ...(agent.data?.data ?? []).filter(m => m.status === "active" && m.source?.startsWith("聊天中形成的习惯：")).map(m => m.content),
-    ...(personal.data?.data ?? []).filter(m => ["回复方式", "称呼", "语言", "写作"].includes(m.topic)).map(m => m.content),
+    ...(personal.data?.data ?? []).filter(m => ["交流与工作习惯", "回复方式", "称呼", "语言", "写作"].includes(m.topic)).map(m => m.content),
   ];
   return <section className="rounded-lg bg-slate-50 p-4">
     <h3 className="mb-2 text-sm font-medium">我们的交流习惯</h3>

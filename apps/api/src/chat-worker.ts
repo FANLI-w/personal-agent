@@ -1,3 +1,4 @@
+import { currentHabit } from './feedback-queue.js'
 import {GroupAssistantOutput} from '@research-agent-platform/contracts'
 import {groupAssistantSystem,groupPublicContext} from './group-assistant-context.js'
 import {queueGroupNotice} from './group-notices.js'
@@ -133,6 +134,8 @@ export class ChatWorker {
       if(personal.records.length||agentContext.memories.length)console.log(`CHAT_MEMORY conversation=${group.id} ${lifecycleReceipt({preference:personal.records.length+agentContext.memories.length,turn:1})} omitted=${personal.omitted}`)
       input.agentContextFingerprint=agentContext.fingerprint
       this.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(input),turn.id)
+      const habits = group.kind === 'group' || !personal.fingerprint
+        ? currentHabit(this.db, s.c.actor.id, group.kind === 'group' ? group.id : '').content : ''
       const contactColumns=['id','displayName','identity','availability','profile']
       const selectedTasks=input.context.filter(ref=>ref.kind==='task').map(ref=>s.c.task(ref.ref.id))
       system=group.kind==='group'?groupAssistantSystem:input.dailyChat?dailyChatSystem:chatModelSystem({group:group.kind==='personal'&&agentContext.agent.profile.role==='coordinator',inviteContact:false,inviteTask:false,runTask:false})
@@ -163,7 +166,7 @@ export class ChatWorker {
         // IDs locate the complete current batch; optional old rows need no
         // duplicate UUIDs. Source quotes carry their own durable provenance.
         const messageRows=selected.map(m=>messageColumns.map(key=>key==='id'?currentIds.includes(m.id)?m.id:null:key==='sender'?m.senderContactId===null?null:senderIds.indexOf(m.senderContactId):m[key as keyof typeof m]))
-        return JSON.stringify({...(group.kind==='group'?{groupContext:groupPublicContext(s,group)}:{}),...(input.dailyChat?{currentRequest:{messageIds:currentIds}}:{}),...(selectedSkill?{selectedSkill}:{}),...(library?{researchLibrary:{retrieval:library.retrieval,limitation:library.limitation,excerpts:libraryExcerpts.map((e,i)=>({label:`R${i+1}`,...e}))}}:{}),...(!input.dailyChat||selectedSkill?{ownerId:s.c.actor.id,labId:s.c.actor.labId}:{}),requestedAgent,conversation,contactColumns,contacts:contacts.map(c=>contactColumns.map(key=>c[key as keyof typeof c])),senderIds,messageColumns,messages:messageRows,...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(input.assistantMode==='coordinate'?{currentRequest:s.projectedMessage(turn.inputMessageId).text,localSpecialists:assistantCandidates(s),collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(context.length?{context}:{}),...(earlierMessagesOmitted?{earlierMessagesOmitted:true}:{}),...(read?{fileRead:read,fileExcerpts}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
+        return JSON.stringify({...(habits ? { senderWorkPreferences: habits } : {}),...(group.kind==='group'?{groupContext:groupPublicContext(s,group)}:{}),...(input.dailyChat?{currentRequest:{messageIds:currentIds}}:{}),...(selectedSkill?{selectedSkill}:{}),...(library?{researchLibrary:{retrieval:library.retrieval,limitation:library.limitation,excerpts:libraryExcerpts.map((e,i)=>({label:`R${i+1}`,...e}))}}:{}),...(!input.dailyChat||selectedSkill?{ownerId:s.c.actor.id,labId:s.c.actor.labId}:{}),requestedAgent,conversation,contactColumns,contacts:contacts.map(c=>contactColumns.map(key=>c[key as keyof typeof c])),senderIds,messageColumns,messages:messageRows,...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(input.assistantMode==='coordinate'?{currentRequest:s.projectedMessage(turn.inputMessageId).text,localSpecialists:assistantCandidates(s),collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(context.length?{context}:{}),...(earlierMessagesOmitted?{earlierMessagesOmitted:true}:{}),...(read?{fileRead:read,fileExcerpts}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
       }
       prompt=serialize(messages)
       if(input.dailyChat){
