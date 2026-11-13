@@ -210,7 +210,7 @@ export class ContactDirectory {
       if(memory.status!=='active')fail('INVALID_STATE');if(memory.version>=100)fail('RATE_LIMITED')
       if(memory.scope==='private_agent'){
         const content=name==='reviseChatMemory'?body.content:memory.content,source=name==='reviseChatMemory'?body.source:memory.source
-        this.db.prepare("UPDATE assistant_memories SET status=?,summary=?,detail=?,payload_json=?,source_label=?,version=version+1,updated_at=? WHERE id=?").run(name==='revokeChatMemory'?'revoked':'confirmed',content.slice(0,300),content,JSON.stringify({type:'note',text:content}),source,instant(),id)
+        this.db.prepare("UPDATE assistant_memories SET status=?,summary=?,detail=?,payload_json=?,source_label=?,conflict=0,version=version+1,updated_at=? WHERE id=?").run(name==='revokeChatMemory'?'revoked':'confirmed',content.slice(0,300),content,JSON.stringify({type:'note',text:content}),source,instant(),id)
       }else this.db.prepare('UPDATE chat_memories SET content=?,source=?,status=?,version=version+1,updated_at=? WHERE id=?').run(name==='reviseChatMemory'?body.content:memory.content,name==='reviseChatMemory'?body.source:memory.source,name==='revokeChatMemory'?'revoked':'active',instant(),id)
       const value=this.memory(id,true);this.saveMemory(value);return {data:value}
     }

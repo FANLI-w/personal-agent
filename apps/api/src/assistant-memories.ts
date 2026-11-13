@@ -199,7 +199,7 @@ export function handleAssistantMemory(s: ChatService, name: string, req: ChatReq
   if (name === 'updateAssistantMemory') {
     const current = view(row(s, req.params.id!)), body = AssistantMemoryUpdate.parse(req.body)
     s.c.checkVersion(current.version, body.expectedVersion)
-    s.db.prepare('UPDATE assistant_memories SET type=?,topic=?,summary=?,detail=?,payload_json=?,source_kind=?,source_id=?,source_version=?,source_label=?,version=version+1,updated_at=? WHERE id=?').run(body.type, body.topic, body.summary, body.detail, JSON.stringify(body.payload), body.source.kind, body.source.id, body.source.version, body.source.label, now(), current.id)
+    s.db.prepare('UPDATE assistant_memories SET type=?,topic=?,summary=?,detail=?,payload_json=?,source_kind=?,source_id=?,source_version=?,source_label=?,conflict=0,version=version+1,updated_at=? WHERE id=?').run(body.type, body.topic, body.summary, body.detail, JSON.stringify(body.payload), body.source.kind, body.source.id, body.source.version, body.source.label, now(), current.id)
     const value = view(row(s, current.id)); revision(s, value)
     if (value.scope === 'agent') maybeCompress(s, value.subjectId!)
     return { data: value }

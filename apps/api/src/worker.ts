@@ -41,6 +41,6 @@ try {
     const chat = await workerStep('CHAT', () => chatWorker.tick())
     const execution = await workerStep('EXECUTION', () => worker.tick())
     const im = await workerStep('IM', () => imWorker.tick())
-    if (!invitation && !reminder && !memoryFlight && !chat && !execution && !im) await new Promise(resolve => setTimeout(resolve, 1000))
+    if (!invitation && !reminder && !chat && !execution && !im) await new Promise(resolve => setTimeout(resolve, 1000))
   } while (!stopping && !process.argv.includes('--once'))
 } finally { catalogWorker.close(); await catalogFlight; await memoryFlight; db.close() }
