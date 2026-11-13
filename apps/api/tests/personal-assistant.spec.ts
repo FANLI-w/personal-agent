@@ -452,7 +452,9 @@ describe('recurring reminders and persistent local Agent jobs; synthetic model c
   const worker=new MemoryCompressionWorker(s.db,s.config)
   const first=await s.call('compressAssistantMemories',{subjectId:agent.id})
   expect(first.status,first.text).toBe(202);await worker.tick()
-  const firstJob=(await s.call('assistantMemoryCompressionJob',null,{id:first.value.data.id})).value.data
+  const firstRead=await s.call('assistantMemoryCompressionJob',null,{id:first.value.data.id})
+  expect(firstRead.status,firstRead.text).toBe(200)
+  const firstJob=firstRead.value.data
   expect(firstJob.status).toBe('succeeded');expect(firstJob.result.merged).toBe(1);expect(await list()).toHaveLength(1)
   expect((await s.call('createAssistantMemory',note('引用格式','去掉页码'),{},0)).status).toBe(201)
   const second=await s.call('compressAssistantMemories',{subjectId:agent.id})
@@ -470,7 +472,9 @@ describe('recurring reminders and persistent local Agent jobs; synthetic model c
   const worker=new MemoryCompressionWorker(s.db,s.config,Date.now,async()=>({text:JSON.stringify({groups:[{topic:'引用格式',ids}]}),failure:null,inputTokens:1,outputTokens:1,elapsedMs:1}))
   const queued=await s.call('compressAssistantMemories',{subjectId:agent.id})
   expect(queued.status,queued.text).toBe(202);await worker.tick()
-  const job=(await s.call('assistantMemoryCompressionJob',null,{id:queued.value.data.id})).value.data
+  const read=await s.call('assistantMemoryCompressionJob',null,{id:queued.value.data.id})
+  expect(read.status,read.text).toBe(200)
+  const job=read.value.data
   expect(job.status).toBe('succeeded');expect(job.result.merged).toBe(1);expect(await list()).toHaveLength(1)
  })
 })

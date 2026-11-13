@@ -57,7 +57,8 @@ const jobView = (row: JobRow): AssistantMemoryCompressionJob => ({
 const jobRow = (s: ChatService, id: string) => {
   const value = s.db.prepare('SELECT * FROM assistant_memory_compression_jobs WHERE id=? AND owner_id=?').get(id, s.c.actor.id) as JobRow | undefined
   if (!value) fail('NOT_FOUND')
-  agentOwner(s, value.subject_id)
+  // Ownership is fixed at enqueue time; a later agent deletion must not hide
+  // the owner's own job receipt.
   return value
 }
 const agentOwner = (s: ChatService, subjectId: string) => {
