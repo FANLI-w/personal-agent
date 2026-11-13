@@ -36,7 +36,7 @@ function asPersonalMemory(memory: AssistantMemory): PersonalMemory {
   };
   return {
     id: memory.id,
-    topic: payload.topic || memory.summary,
+    topic: memory.topic,
     content: memory.detail || payload.value || memory.summary,
     scope: payload.appliesTo || "general",
     status: memory.status,
@@ -54,12 +54,12 @@ const memoryFields = (
   content: string,
   scope: PersonalMemory["scope"],
 ) => ({
+  topic,
   type: "preference" as const,
   summary: content.slice(0, 300),
   detail: content,
   payload: {
     type: "preference" as const,
-    topic,
     value: content,
     appliesTo: scope,
   },

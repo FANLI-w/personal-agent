@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { AssistantMemory, AssistantMemoryIndex, AssistantMemoryInput } from '../src/index.js'
 
 const base = {
+  topic: '称呼',
   type: 'preference',
   summary: '称呼：小王',
   detail: null,
-  payload: { type: 'preference', topic: '称呼', value: '小王' },
-  source: { kind: 'manual', id: null, version: null },
+  payload: { type: 'preference', value: '小王', appliesTo: 'general' },
+  source: { kind: 'manual', id: null, version: null, label: null },
 } as const
 
 describe('assistant memory contract', () => {
@@ -34,7 +35,9 @@ describe('assistant memory contract', () => {
       id: 'memory_a',
       scope: 'personal',
       subjectId: null,
+      topic: '称呼',
       type: 'preference',
+      conflict: false,
       summary: '称呼：小王',
       status: 'confirmed',
       version: 1,

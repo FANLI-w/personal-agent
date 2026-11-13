@@ -17,8 +17,10 @@ type Row = {
   owner_id: string
   scope: 'personal' | 'agent'
   subject_id: string | null
+  topic: string
   type: 'preference' | 'decision' | 'commitment' | 'note'
   status: 'candidate' | 'confirmed' | 'revoked'
+  conflict: number
   origin: 'explicit' | 'feedback' | 'inferred'
   source_kind: 'manual' | 'message' | 'task' | 'conversation'
   source_id: string | null
@@ -48,7 +50,9 @@ function view(row: Row): AssistantMemory {
     id: row.id,
     scope: row.scope,
     subjectId: row.subject_id,
+    topic: row.topic,
     type: row.type,
+    conflict: row.conflict === 1,
     summary: row.summary,
     detail: row.detail,
     payload: JSON.parse(String(row.payload_json)),
@@ -69,14 +73,67 @@ function settings(s: ChatService): AssistantMemorySettings {
   const r = s.db.prepare('SELECT * FROM assistant_memory_settings WHERE member_id=?').get(s.c.actor.id)!
   return AssistantMemorySettings.parse({ candidateLearning: r.candidate_learning === 1, timeZone: r.time_zone, quietHours: r.quiet_hours_json ? JSON.parse(String(r.quiet_hours_json)) : null, version: r.version })
 }
-const topicOf = (body: { payload: { type: string; topic?: string } }) =>
-  body.payload.type === 'preference' ? body.payload.topic ?? '未分类' : '未分类'
 function scopeInput(body: { scope?: 'personal' | 'agent'; subjectId?: string | null }) {
   if (body.scope === 'agent' && !body.subjectId) fail('VALIDATION_ERROR')
   if (body.scope !== 'agent' && body.subjectId) fail('VALIDATION_ERROR')
 }
+const normalizeTopic = (value: string) => value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase()
+const normalizeLine = (value: string) => value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase()
+const detailBytes = (rows: Row[]) => rows.reduce((sum, row) => sum + Buffer.byteLength(String(row.detail ?? ''), 'utf8'), 0)
+const agentDetailBudget = 8_000
+const agentRecordLimit = 20
+function compressAgent(s: ChatService, subjectId: string) {
+  const rows = s.db.prepare("SELECT * FROM assistant_memories WHERE owner_id=? AND scope='agent' AND subject_id=? AND status='confirmed' ORDER BY updated_at DESC,id DESC").all(s.c.actor.id, subjectId) as Row[]
+  let merged = 0, archived = 0, conflicts = 0
+  const groups = new Map<string, Row[]>()
+  for (const row of rows) {
+    const key = normalizeTopic(row.topic)
+    groups.set(key, [...(groups.get(key) ?? []), row])
+  }
+  for (const group of groups.values()) {
+    if (group.length < 2) continue
+    const lines = group.map(row => String(row.detail ?? '').split('\n').map(normalizeLine).filter(Boolean))
+    const largest = [...lines].sort((a, b) => b.length - a.length)[0] ?? []
+    const mergedLines = [...new Set(lines.flat())]
+    const compatible = lines.every(set => set.every(line => largest.includes(line)))
+    if (!compatible) {
+      for (const entry of group) if (entry.conflict !== 1) {
+        s.db.prepare('UPDATE assistant_memories SET conflict=1,version=version+1,updated_at=? WHERE id=?').run(now(), entry.id)
+        revision(s, view(row(s, entry.id)))
+      }
+      conflicts += group.length
+      continue
+    }
+    const target = group[0]!, content = mergedLines.join('\n')
+    s.db.prepare("UPDATE assistant_memories SET detail=?,payload_json=?,conflict=0,version=version+1,updated_at=? WHERE id=?").run(content, JSON.stringify({ type: 'note', text: content }), now(), target.id)
+    revision(s, view(row(s, target.id)))
+    merged += group.length - 1
+    for (const extra of group.slice(1)) {
+      s.db.prepare("UPDATE assistant_memories SET status='revoked',version=version+1,updated_at=? WHERE id=?").run(now(), extra.id)
+      revision(s, view(row(s, extra.id)))
+    }
+  }
+  let current = s.db.prepare("SELECT * FROM assistant_memories WHERE owner_id=? AND scope='agent' AND subject_id=? AND status='confirmed' ORDER BY updated_at ASC,id ASC").all(s.c.actor.id, subjectId) as Row[]
+  while (current.length > agentRecordLimit || detailBytes(current) > agentDetailBudget) {
+    const oldest = current[0]
+    if (!oldest) break
+    s.db.prepare("UPDATE assistant_memories SET status='revoked',version=version+1,updated_at=? WHERE id=?").run(now(), oldest.id)
+    revision(s, view(row(s, oldest.id)))
+    archived += 1
+    current = current.slice(1)
+  }
+  return { scope: 'agent' as const, subjectId, merged, archived, conflicts, detailBytes: detailBytes(current) }
+}
+function maybeCompress(s: ChatService, subjectId: string) {
+  const rows = s.db.prepare("SELECT * FROM assistant_memories WHERE owner_id=? AND scope='agent' AND subject_id=? AND status='confirmed'").all(s.c.actor.id, subjectId) as Row[]
+  if (rows.length > agentRecordLimit || detailBytes(rows) > agentDetailBudget) compressAgent(s, subjectId)
+}
 export function authorizeAssistantMemory(s: ChatService, name: string, req: ChatRequest) {
   if (req.params.id) { row(s, req.params.id); return }
+  if (name === 'compressAssistantMemories') {
+    agentOwner(s, String((req.body as { subjectId?: string }).subjectId))
+    return
+  }
   if (name === 'createAssistantMemory') {
     const body = req.body as { scope?: 'personal' | 'agent'; subjectId?: string | null }
     scopeInput(body)
@@ -107,14 +164,18 @@ export function handleAssistantMemory(s: ChatService, name: string, req: ChatReq
     scopeInput(body)
     if (body.scope === 'agent') agentOwner(s, body.subjectId!)
     const id = randomUUID(), at = now()
-    s.db.prepare("INSERT INTO assistant_memories(id,owner_id,lab_id,scope,subject_id,type,topic,status,origin,source_kind,source_id,source_version,source_label,summary,detail,payload_json,schema_version,version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'confirmed','explicit',?,?,?,?,?,?,?,1,1,?,?)").run(id, s.c.actor.id, body.scope === 'agent' ? s.c.actor.labId : null, body.scope, body.subjectId, body.type, topicOf(body), body.source.kind, body.source.id, body.source.version, body.source.label, body.summary, body.detail, JSON.stringify(body.payload), created, at)
-    const value = view(row(s, id)); revision(s, value); return { data: value }
+    s.db.prepare("INSERT INTO assistant_memories(id,owner_id,lab_id,scope,subject_id,type,topic,status,origin,source_kind,source_id,source_version,source_label,summary,detail,payload_json,schema_version,version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'confirmed','explicit',?,?,?,?,?,?,?,1,1,?,?)").run(id, s.c.actor.id, body.scope === 'agent' ? s.c.actor.labId : null, body.scope, body.subjectId, body.type, body.topic, body.source.kind, body.source.id, body.source.version, body.source.label, body.summary, body.detail, JSON.stringify(body.payload), created, at)
+    const value = view(row(s, id)); revision(s, value)
+    if (body.scope === 'agent') maybeCompress(s, body.subjectId!)
+    return { data: value }
   }
   if (name === 'updateAssistantMemory') {
     const current = view(row(s, req.params.id!)), body = AssistantMemoryUpdate.parse(req.body)
     s.c.checkVersion(current.version, body.expectedVersion)
-    s.db.prepare('UPDATE assistant_memories SET type=?,topic=?,summary=?,detail=?,payload_json=?,source_kind=?,source_id=?,source_version=?,source_label=?,version=version+1,updated_at=? WHERE id=?').run(body.type, topicOf(body), body.summary, body.detail, JSON.stringify(body.payload), body.source.kind, body.source.id, body.source.version, body.source.label, now(), current.id)
-    const value = view(row(s, current.id)); revision(s, value); return { data: value }
+    s.db.prepare('UPDATE assistant_memories SET type=?,topic=?,summary=?,detail=?,payload_json=?,source_kind=?,source_id=?,source_version=?,source_label=?,version=version+1,updated_at=? WHERE id=?').run(body.type, body.topic, body.summary, body.detail, JSON.stringify(body.payload), body.source.kind, body.source.id, body.source.version, body.source.label, now(), current.id)
+    const value = view(row(s, current.id)); revision(s, value)
+    if (value.scope === 'agent') maybeCompress(s, value.subjectId!)
+    return { data: value }
   }
   if (name === 'decideAssistantMemory') {
     const current = view(row(s, req.params.id!)), b = req.body as { expectedVersion: number; decision: 'confirm' | 'revoke' }
@@ -122,7 +183,13 @@ export function handleAssistantMemory(s: ChatService, name: string, req: ChatReq
     if (b.decision === 'revoke' && current.status === 'revoked') fail('INVALID_STATE')
     if (b.decision === 'confirm' && current.status !== 'candidate') fail('INVALID_STATE')
     s.db.prepare('UPDATE assistant_memories SET status=?,version=version+1,updated_at=? WHERE id=?').run(b.decision === 'confirm' ? 'confirmed' : 'revoked', now(), current.id)
-    const value = view(row(s, current.id)); revision(s, value); return { data: value }
+    const value = view(row(s, current.id)); revision(s, value)
+    if (value.scope === 'agent') maybeCompress(s, value.subjectId!)
+    return { data: value }
+  }
+  if (name === 'compressAssistantMemories') {
+    const body = req.body as { subjectId: string }
+    return { data: compressAgent(s, body.subjectId) }
   }
   if (name === 'assistantMemoryHistory') {
     const memory = view(row(s, req.params.id!))

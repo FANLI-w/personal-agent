@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.47.0"
+    "version": "0.48.0"
   },
   "paths": {
     "/api/v1/library/repository": {
@@ -30101,6 +30101,11 @@
                               }
                             ]
                           },
+                          "topic": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
                           "type": {
                             "type": "string",
                             "enum": [
@@ -30136,11 +30141,6 @@
                                     "type": "string",
                                     "const": "preference"
                                   },
-                                  "topic": {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 80
-                                  },
                                   "value": {
                                     "type": "string",
                                     "minLength": 1,
@@ -30157,7 +30157,6 @@
                                 },
                                 "required": [
                                   "type",
-                                  "topic",
                                   "value",
                                   "appliesTo"
                                 ],
@@ -30346,6 +30345,10 @@
                               "revoked"
                             ]
                           },
+                          "conflict": {
+                            "default": false,
+                            "type": "boolean"
+                          },
                           "origin": {
                             "type": "string",
                             "enum": [
@@ -30385,6 +30388,7 @@
                         "required": [
                           "scope",
                           "subjectId",
+                          "topic",
                           "type",
                           "summary",
                           "detail",
@@ -30392,6 +30396,7 @@
                           "source",
                           "id",
                           "status",
+                          "conflict",
                           "origin",
                           "version",
                           "createdAt",
@@ -30616,6 +30621,11 @@
                       }
                     ]
                   },
+                  "topic": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
                   "type": {
                     "type": "string",
                     "enum": [
@@ -30651,11 +30661,6 @@
                             "type": "string",
                             "const": "preference"
                           },
-                          "topic": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 80
-                          },
                           "value": {
                             "type": "string",
                             "minLength": 1,
@@ -30672,7 +30677,6 @@
                         },
                         "required": [
                           "type",
-                          "topic",
                           "value",
                           "appliesTo"
                         ],
@@ -30853,6 +30857,7 @@
                 "required": [
                   "scope",
                   "subjectId",
+                  "topic",
                   "type",
                   "summary",
                   "detail",
@@ -30864,12 +30869,12 @@
               "example": {
                 "scope": "personal",
                 "subjectId": null,
+                "topic": "synthetic",
                 "type": "preference",
                 "summary": "synthetic",
                 "detail": null,
                 "payload": {
                   "type": "preference",
-                  "topic": "synthetic",
                   "value": "synthetic",
                   "appliesTo": "general"
                 },
@@ -30915,6 +30920,11 @@
                             }
                           ]
                         },
+                        "topic": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -30950,11 +30960,6 @@
                                   "type": "string",
                                   "const": "preference"
                                 },
-                                "topic": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 80
-                                },
                                 "value": {
                                   "type": "string",
                                   "minLength": 1,
@@ -30971,7 +30976,6 @@
                               },
                               "required": [
                                 "type",
-                                "topic",
                                 "value",
                                 "appliesTo"
                               ],
@@ -31160,6 +31164,10 @@
                             "revoked"
                           ]
                         },
+                        "conflict": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "origin": {
                           "type": "string",
                           "enum": [
@@ -31199,6 +31207,7 @@
                       "required": [
                         "scope",
                         "subjectId",
+                        "topic",
                         "type",
                         "summary",
                         "detail",
@@ -31206,6 +31215,7 @@
                         "source",
                         "id",
                         "status",
+                        "conflict",
                         "origin",
                         "version",
                         "createdAt",
@@ -31224,12 +31234,12 @@
                   "data": {
                     "scope": "personal",
                     "subjectId": null,
+                    "topic": "synthetic",
                     "type": "preference",
                     "summary": "synthetic",
                     "detail": null,
                     "payload": {
                       "type": "preference",
-                      "topic": "synthetic",
                       "value": "synthetic",
                       "appliesTo": "general"
                     },
@@ -31241,11 +31251,270 @@
                     },
                     "id": "synthetic",
                     "status": "candidate",
+                    "conflict": false,
                     "origin": "explicit",
                     "version": 1,
                     "createdAt": "2026-09-21T08:00:00+08:00",
                     "updatedAt": "2026-09-21T08:00:00+08:00",
                     "allowedActions": []
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/assistant-memories/compress": {
+      "post": {
+        "operationId": "compressAssistantMemories",
+        "description": "Owner of the agent scope only. Deterministic duplicate and line-subset merge by topic; conflicts stay separate and are reported. Model-assisted similar-topic grouping is a follow-up; old versions remain in revisions.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,128}$"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "subjectId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                  }
+                },
+                "required": [
+                  "subjectId"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "subjectId": "synthetic"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "scope": {
+                          "type": "string",
+                          "const": "agent"
+                        },
+                        "subjectId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "merged": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "archived": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "conflicts": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "detailBytes": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "scope",
+                        "subjectId",
+                        "merged",
+                        "archived",
+                        "conflicts",
+                        "detailBytes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "scope": "agent",
+                    "subjectId": "synthetic",
+                    "merged": 0,
+                    "archived": 0,
+                    "conflicts": 0,
+                    "detailBytes": 0
                   }
                 }
               }
@@ -31438,6 +31707,11 @@
                             }
                           ]
                         },
+                        "topic": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -31473,11 +31747,6 @@
                                   "type": "string",
                                   "const": "preference"
                                 },
-                                "topic": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 80
-                                },
                                 "value": {
                                   "type": "string",
                                   "minLength": 1,
@@ -31494,7 +31763,6 @@
                               },
                               "required": [
                                 "type",
-                                "topic",
                                 "value",
                                 "appliesTo"
                               ],
@@ -31683,6 +31951,10 @@
                             "revoked"
                           ]
                         },
+                        "conflict": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "origin": {
                           "type": "string",
                           "enum": [
@@ -31722,6 +31994,7 @@
                       "required": [
                         "scope",
                         "subjectId",
+                        "topic",
                         "type",
                         "summary",
                         "detail",
@@ -31729,6 +32002,7 @@
                         "source",
                         "id",
                         "status",
+                        "conflict",
                         "origin",
                         "version",
                         "createdAt",
@@ -31747,12 +32021,12 @@
                   "data": {
                     "scope": "personal",
                     "subjectId": null,
+                    "topic": "synthetic",
                     "type": "preference",
                     "summary": "synthetic",
                     "detail": null,
                     "payload": {
                       "type": "preference",
-                      "topic": "synthetic",
                       "value": "synthetic",
                       "appliesTo": "general"
                     },
@@ -31764,6 +32038,7 @@
                     },
                     "id": "synthetic",
                     "status": "candidate",
+                    "conflict": false,
                     "origin": "explicit",
                     "version": 1,
                     "createdAt": "2026-09-21T08:00:00+08:00",
@@ -31953,6 +32228,11 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "topic": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
                   "type": {
                     "type": "string",
                     "enum": [
@@ -31988,11 +32268,6 @@
                             "type": "string",
                             "const": "preference"
                           },
-                          "topic": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 80
-                          },
                           "value": {
                             "type": "string",
                             "minLength": 1,
@@ -32009,7 +32284,6 @@
                         },
                         "required": [
                           "type",
-                          "topic",
                           "value",
                           "appliesTo"
                         ],
@@ -32193,6 +32467,7 @@
                   }
                 },
                 "required": [
+                  "topic",
                   "type",
                   "summary",
                   "detail",
@@ -32203,12 +32478,12 @@
                 "additionalProperties": false
               },
               "example": {
+                "topic": "synthetic",
                 "type": "preference",
                 "summary": "synthetic",
                 "detail": null,
                 "payload": {
                   "type": "preference",
-                  "topic": "synthetic",
                   "value": "synthetic",
                   "appliesTo": "general"
                 },
@@ -32255,6 +32530,11 @@
                             }
                           ]
                         },
+                        "topic": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -32290,11 +32570,6 @@
                                   "type": "string",
                                   "const": "preference"
                                 },
-                                "topic": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 80
-                                },
                                 "value": {
                                   "type": "string",
                                   "minLength": 1,
@@ -32311,7 +32586,6 @@
                               },
                               "required": [
                                 "type",
-                                "topic",
                                 "value",
                                 "appliesTo"
                               ],
@@ -32500,6 +32774,10 @@
                             "revoked"
                           ]
                         },
+                        "conflict": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "origin": {
                           "type": "string",
                           "enum": [
@@ -32539,6 +32817,7 @@
                       "required": [
                         "scope",
                         "subjectId",
+                        "topic",
                         "type",
                         "summary",
                         "detail",
@@ -32546,6 +32825,7 @@
                         "source",
                         "id",
                         "status",
+                        "conflict",
                         "origin",
                         "version",
                         "createdAt",
@@ -32564,12 +32844,12 @@
                   "data": {
                     "scope": "personal",
                     "subjectId": null,
+                    "topic": "synthetic",
                     "type": "preference",
                     "summary": "synthetic",
                     "detail": null,
                     "payload": {
                       "type": "preference",
-                      "topic": "synthetic",
                       "value": "synthetic",
                       "appliesTo": "general"
                     },
@@ -32581,6 +32861,7 @@
                     },
                     "id": "synthetic",
                     "status": "candidate",
+                    "conflict": false,
                     "origin": "explicit",
                     "version": 1,
                     "createdAt": "2026-09-21T08:00:00+08:00",
@@ -32830,6 +33111,11 @@
                             }
                           ]
                         },
+                        "topic": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -32865,11 +33151,6 @@
                                   "type": "string",
                                   "const": "preference"
                                 },
-                                "topic": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 80
-                                },
                                 "value": {
                                   "type": "string",
                                   "minLength": 1,
@@ -32886,7 +33167,6 @@
                               },
                               "required": [
                                 "type",
-                                "topic",
                                 "value",
                                 "appliesTo"
                               ],
@@ -33075,6 +33355,10 @@
                             "revoked"
                           ]
                         },
+                        "conflict": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "origin": {
                           "type": "string",
                           "enum": [
@@ -33114,6 +33398,7 @@
                       "required": [
                         "scope",
                         "subjectId",
+                        "topic",
                         "type",
                         "summary",
                         "detail",
@@ -33121,6 +33406,7 @@
                         "source",
                         "id",
                         "status",
+                        "conflict",
                         "origin",
                         "version",
                         "createdAt",
@@ -33139,12 +33425,12 @@
                   "data": {
                     "scope": "personal",
                     "subjectId": null,
+                    "topic": "synthetic",
                     "type": "preference",
                     "summary": "synthetic",
                     "detail": null,
                     "payload": {
                       "type": "preference",
-                      "topic": "synthetic",
                       "value": "synthetic",
                       "appliesTo": "general"
                     },
@@ -33156,6 +33442,7 @@
                     },
                     "id": "synthetic",
                     "status": "candidate",
+                    "conflict": false,
                     "origin": "explicit",
                     "version": 1,
                     "createdAt": "2026-09-21T08:00:00+08:00",
@@ -33356,6 +33643,11 @@
                                 }
                               ]
                             },
+                            "topic": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 80
+                            },
                             "type": {
                               "type": "string",
                               "enum": [
@@ -33391,11 +33683,6 @@
                                       "type": "string",
                                       "const": "preference"
                                     },
-                                    "topic": {
-                                      "type": "string",
-                                      "minLength": 1,
-                                      "maxLength": 80
-                                    },
                                     "value": {
                                       "type": "string",
                                       "minLength": 1,
@@ -33412,7 +33699,6 @@
                                   },
                                   "required": [
                                     "type",
-                                    "topic",
                                     "value",
                                     "appliesTo"
                                   ],
@@ -33601,6 +33887,10 @@
                                 "revoked"
                               ]
                             },
+                            "conflict": {
+                              "default": false,
+                              "type": "boolean"
+                            },
                             "origin": {
                               "type": "string",
                               "enum": [
@@ -33640,6 +33930,7 @@
                           "required": [
                             "scope",
                             "subjectId",
+                            "topic",
                             "type",
                             "summary",
                             "detail",
@@ -33647,6 +33938,7 @@
                             "source",
                             "id",
                             "status",
+                            "conflict",
                             "origin",
                             "version",
                             "createdAt",
@@ -33680,6 +33972,11 @@
                                     "type": "null"
                                   }
                                 ]
+                              },
+                              "topic": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 80
                               },
                               "type": {
                                 "type": "string",
@@ -33716,11 +34013,6 @@
                                         "type": "string",
                                         "const": "preference"
                                       },
-                                      "topic": {
-                                        "type": "string",
-                                        "minLength": 1,
-                                        "maxLength": 80
-                                      },
                                       "value": {
                                         "type": "string",
                                         "minLength": 1,
@@ -33737,7 +34029,6 @@
                                     },
                                     "required": [
                                       "type",
-                                      "topic",
                                       "value",
                                       "appliesTo"
                                     ],
@@ -33926,6 +34217,10 @@
                                   "revoked"
                                 ]
                               },
+                              "conflict": {
+                                "default": false,
+                                "type": "boolean"
+                              },
                               "origin": {
                                 "type": "string",
                                 "enum": [
@@ -33965,6 +34260,7 @@
                             "required": [
                               "scope",
                               "subjectId",
+                              "topic",
                               "type",
                               "summary",
                               "detail",
@@ -33972,6 +34268,7 @@
                               "source",
                               "id",
                               "status",
+                              "conflict",
                               "origin",
                               "version",
                               "createdAt",
@@ -33999,12 +34296,12 @@
                     "memory": {
                       "scope": "personal",
                       "subjectId": null,
+                      "topic": "synthetic",
                       "type": "preference",
                       "summary": "synthetic",
                       "detail": null,
                       "payload": {
                         "type": "preference",
-                        "topic": "synthetic",
                         "value": "synthetic",
                         "appliesTo": "general"
                       },
@@ -34016,6 +34313,7 @@
                       },
                       "id": "synthetic",
                       "status": "candidate",
+                      "conflict": false,
                       "origin": "explicit",
                       "version": 1,
                       "createdAt": "2026-09-21T08:00:00+08:00",
@@ -79882,7 +80180,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.47.0"
+                          "const": "0.48.0"
                         },
                         "checks": {
                           "type": "object",
@@ -79941,7 +80239,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.47.0",
+                    "contractVersion": "0.48.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -80115,7 +80413,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.47.0"
+                          "const": "0.48.0"
                         },
                         "checks": {
                           "type": "object",
@@ -80174,7 +80472,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.47.0",
+                    "contractVersion": "0.48.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -80326,7 +80624,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.47.0"
+                          "const": "0.48.0"
                         },
                         "checks": {
                           "type": "object",
@@ -80385,7 +80683,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.47.0",
+                    "contractVersion": "0.48.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",

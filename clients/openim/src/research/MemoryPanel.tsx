@@ -9,6 +9,7 @@ import { useResearchRead } from "./useResearchRead";
 
 type MemoryView = {
   id: string;
+  topic: string;
   content: string;
   source: string | null;
   status: "active" | "revoked";
@@ -20,6 +21,7 @@ function fromAssistant(memory: AssistantMemory): MemoryView {
   const payload = memory.payload as { text?: string; value?: string };
   return {
     id: memory.id,
+    topic: memory.topic,
     content: memory.detail || payload.text || payload.value || memory.summary,
     source: memory.source.label || memory.source.id,
     status: memory.status === "revoked" ? "revoked" : "active",
@@ -30,6 +32,7 @@ function fromAssistant(memory: AssistantMemory): MemoryView {
 function fromChat(memory: ChatMemory): MemoryView {
   return {
     id: memory.id,
+    topic: "记忆",
     content: memory.content,
     source: memory.source,
     status: memory.status,
@@ -58,7 +61,8 @@ async function readMemories(
     nextCursor: response.nextCursor,
   };
 }
-const noteFields = (content: string, source: string | null) => ({
+const noteFields = (topic: string, content: string, source: string | null) => ({
+  topic,
   type: "note" as const,
   summary: content.slice(0, 300),
   detail: content,
@@ -86,6 +90,7 @@ export function MemoryPanel({
     () => readMemories(scope, scopeId),
     `${scope}:${scopeId}`,
   );
+  const [topic, setTopic] = useState("");
   const [content, setContent] = useState("");
   const [source, setSource] = useState("");
   const [editing, setEditing] = useState<MemoryView>();
@@ -101,7 +106,7 @@ export function MemoryPanel({
           await researchApi("updateAssistantMemory", {
             params: { id: editing.id },
             body: {
-              ...noteFields(content, source || null),
+              ...noteFields(topic || editing.topic || "记忆", content, source || null),
               expectedVersion: editing.version,
             },
           });
@@ -115,13 +120,14 @@ export function MemoryPanel({
           body: {
             scope: "agent",
             subjectId: scopeId,
-            ...noteFields(content, source || null),
+            ...noteFields(topic || "记忆", content, source || null),
           },
         });
       else
         await researchApi("createChatMemory", {
           body: { scope, scopeId, content, source: source || null },
         });
+      setTopic("");
       setContent("");
       setSource("");
       setEditing(undefined);
@@ -160,6 +166,7 @@ export function MemoryPanel({
                 disabled={busy}
                 onClick={() => {
                   setEditing(memory);
+                  setTopic(memory.topic === "记忆" ? "" : memory.topic);
                   setContent(memory.content);
                   setSource(memory.source || "");
                 }}
@@ -227,6 +234,13 @@ export function MemoryPanel({
       )}
       {canManage && (
         <div className="space-y-2">
+          <Input
+            aria-label="记忆主题"
+            placeholder="主题，例如：引用格式"
+            value={topic}
+            maxLength={80}
+            onChange={(e) => setTopic(e.target.value)}
+          />
           <label>
             {editing ? `编辑记忆 · 版本 ${editing.version}` : "保存记忆"}
             <Input.TextArea

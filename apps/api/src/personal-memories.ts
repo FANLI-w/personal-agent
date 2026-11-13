@@ -8,10 +8,10 @@ import {contextTerms,relatedScore} from './dialogue-context.js'
 
 export const personalCommands=Object.keys(personalAssistantRoutes)
 
-type PersonalRow={id:string;owner_id:string;status:'candidate'|'confirmed'|'revoked';origin:'explicit'|'feedback'|'inferred';source_kind:string;source_id:string|null;summary:string;detail:string|null;payload_json:string;version:number;created_at:string;updated_at:string}
-const payload=(row:{payload_json:string})=>JSON.parse(String(row.payload_json)) as {topic?:string;value?:string;appliesTo?:'general'|'topic'}
+type PersonalRow={id:string;owner_id:string;topic:string;status:'candidate'|'confirmed'|'revoked';origin:'explicit'|'feedback'|'inferred';source_kind:string;source_id:string|null;summary:string;detail:string|null;payload_json:string;version:number;created_at:string;updated_at:string}
+const payload=(row:{payload_json:string})=>JSON.parse(String(row.payload_json)) as {value?:string;appliesTo?:'general'|'topic'}
 function personal(s:ChatService,row:PersonalRow):PersonalMemory{
- const p=payload(row),topic=p.topic??'',content=row.detail??p.value??''
+ const p=payload(row),topic=row.topic,content=row.detail??p.value??''
  return PersonalMemory.parse({id:row.id,topic,content,scope:p.appliesTo??'general',status:row.status,origin:row.origin,
   sourceMessageId:row.source_kind==='message'?row.source_id:null,version:row.version,createdAt:row.created_at,updatedAt:row.updated_at,
   allowedActions:row.status==='revoked'?[]:row.status==='candidate'?['edit','confirm','revoke']:['edit','revoke']})
@@ -42,15 +42,15 @@ export function saveMemory(s:ChatService,value:unknown,origin:'explicit'|'feedba
  body.topic=aliases[body.topic]??body.topic
  const existingRow=id?row(s,id):null
  if(id&&existingRow?.status==='revoked')fail('INVALID_STATE')
- const existing=id?null:s.db.prepare("SELECT id FROM assistant_memories WHERE owner_id=? AND scope='personal' AND type='preference' AND status=? AND json_extract(payload_json,'$.topic')=? ORDER BY updated_at DESC LIMIT 1").get(s.c.actor.id,status,body.topic) as {id:string}|undefined
+ const existing=id?null:s.db.prepare("SELECT id FROM assistant_memories WHERE owner_id=? AND scope='personal' AND type='preference' AND status=? AND topic=? ORDER BY updated_at DESC LIMIT 1").get(s.c.actor.id,status,body.topic) as {id:string}|undefined
  if(status==='confirmed'){
-  const other=s.db.prepare("SELECT id FROM assistant_memories WHERE owner_id=? AND scope='personal' AND type='preference' AND status='confirmed' AND json_extract(payload_json,'$.topic')=?").get(s.c.actor.id,body.topic) as {id:string}|undefined
+  const other=s.db.prepare("SELECT id FROM assistant_memories WHERE owner_id=? AND scope='personal' AND type='preference' AND status='confirmed' AND topic=?").get(s.c.actor.id,body.topic) as {id:string}|undefined
   if(other&&other.id!==(id??existing?.id))revokeMemory(s,String(other.id))
   if(!id&&!existing&&Number(s.db.prepare("SELECT count(*) n FROM assistant_memories WHERE owner_id=? AND scope='personal' AND type='preference' AND status='confirmed'").get(s.c.actor.id)!.n)>=50)fail('RATE_LIMITED')
  }else if(!id&&!existing&&Number(s.db.prepare("SELECT count(*) n FROM assistant_memories WHERE owner_id=? AND scope='personal' AND type='preference' AND status='candidate'").get(s.c.actor.id)!.n)>=20)fail('RATE_LIMITED')
  const target=id??existing?.id??randomUUID(),sourceId=source?.id??(existingRow?.source_kind==='message'?existingRow.source_id:null)
  const summary=body.content.slice(0,300),detail=body.content
- const document=JSON.stringify({type:'preference',topic:body.topic,value:body.content,appliesTo:body.scope})
+ const document=JSON.stringify({type:'preference',value:body.content,appliesTo:body.scope})
  if(id||existing)s.db.prepare("UPDATE assistant_memories SET topic=?,status=?,origin=?,source_kind=?,source_id=?,summary=?,detail=?,payload_json=?,version=version+1,updated_at=? WHERE id=?").run(body.topic,status,origin,sourceId?'message':'manual',sourceId,summary,detail,document,now,target)
  else s.db.prepare("INSERT INTO assistant_memories(id,owner_id,lab_id,scope,subject_id,type,topic,status,origin,source_kind,source_id,source_version,summary,detail,payload_json,schema_version,version,created_at,updated_at) VALUES(?,?,NULL,'personal',NULL,'preference',?,?,?,?,?,NULL,?,?,?,1,1,?,?)").run(target,s.c.actor.id,body.topic,status,origin,sourceId?'message':'manual',sourceId,summary,detail,document,now,now)
  return revision(s,memory(s,target))
@@ -109,7 +109,7 @@ export function memoryCommand(s:ChatService,text:string,message:ChatMessage){
  const forget=/^(?:请)?(?:忘记|删除记忆)\s*[:：]?\s*(.+?)\s*[。.]?$/.exec(value)
  if(forget){
   let topic=forget[1]!.trim();topic=memoryTopic(topic)??topic
-  const matches=s.db.prepare("SELECT id FROM assistant_memories WHERE owner_id=? AND scope='personal' AND status!='revoked' AND (id=? OR json_extract(payload_json,'$.topic')=?)").all(s.c.actor.id,topic,topic)
+  const matches=s.db.prepare("SELECT id FROM assistant_memories WHERE owner_id=? AND scope='personal' AND status!='revoked' AND (id=? OR topic=?)").all(s.c.actor.id,topic,topic)
   if(matches.length!==1)return {receipt:{operation:'clarify' as const,memoryId:null,topic:null,status:null,version:0,question:'请明确要忘记的记忆主题或编号。'},text:'请明确要忘记的记忆主题或编号；尚未修改。'}
   const saved=revokeMemory(s,String(matches[0]!.id))
   return {receipt:{operation:'forgotten' as const,memoryId:saved.id,topic:saved.topic,status:saved.status,version:saved.version,question:null},text:`已撤回本人记忆“${saved.topic}”。`}
@@ -122,6 +122,6 @@ export function memoryCommand(s:ChatService,text:string,message:ChatMessage){
  if(correction&&!topic)return {receipt:{operation:'clarify' as const,memoryId:null,topic:null,status:null,version:0,question:'还没确定要改哪条偏好。可以写“纠正记忆：[饮食] 我喜欢茶”，原记录会先保留。'},text:'这次还没改动记忆，先确认要改的那条内容。'}
  if(!content||content.length>1000)return {receipt:{operation:'clarify' as const,memoryId:null,topic:null,status:null,version:0,question:'请把要保存的单条偏好明确写在 1000 字内。'},text:'请把要保存的单条偏好明确写在 1000 字内；尚未保存。'}
  topic??=content.length<=70?content:content.slice(0,60)+'…'+hash(content).slice(0,8)
- const existed=s.db.prepare("SELECT 1 FROM assistant_memories WHERE owner_id=? AND scope='personal' AND type='preference' AND status='confirmed' AND json_extract(payload_json,'$.topic')=?").get(s.c.actor.id,topic),saved=saveMemory(s,{topic,content,scope},inferred?'inferred':correction?'feedback':'explicit',message)
+ const existed=s.db.prepare("SELECT 1 FROM assistant_memories WHERE owner_id=? AND scope='personal' AND type='preference' AND status='confirmed' AND topic=?").get(s.c.actor.id,topic),saved=saveMemory(s,{topic,content,scope},inferred?'inferred':correction?'feedback':'explicit',message)
  return {receipt:{operation:inferred?'candidate' as const:existed?'corrected' as const:'saved' as const,memoryId:saved.id,topic:saved.topic,status:saved.status,version:saved.version,question:null},text:inferred?`已记为待确认候选“${topic}”，确认后才用于后续聊天。`:`已${existed?'更新':'保存'}本人长期记忆“${topic}”。`}
 }

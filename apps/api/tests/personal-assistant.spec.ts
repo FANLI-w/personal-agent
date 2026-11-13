@@ -443,5 +443,17 @@ describe('recurring reminders and persistent local Agent jobs; synthetic model c
   const before=JSON.stringify(s.db.prepare('SELECT * FROM personal_followups ORDER BY id').all());migrate(s.db);migrate(s.db)
   expect(JSON.stringify(s.db.prepare('SELECT * FROM personal_followups ORDER BY id').all())).toBe(before);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
  })
+ it('compresses identical private-agent notes and reports conflicts',async()=>{
+  const s=await setup(false),agent=(await s.call('createPersonalAgent',profile)).value.data
+  const note=(topic:string,detail:string)=>({scope:'agent',subjectId:agent.id,topic,type:'note',summary:detail,detail,payload:{type:'note',text:detail},source:{kind:'manual',id:null,version:null,label:null}})
+  const list=async()=>(await s.call('assistantMemories',null,{},0,`?scope=agent&subjectId=${agent.id}`)).value.data as any[]
+  for(let i=0;i<2;i++)expect((await s.call('createAssistantMemory',note('引用格式','保留页码'),{},0)).status).toBe(201)
+  const first=await s.call('compressAssistantMemories',{subjectId:agent.id})
+  expect(first.status,first.text).toBe(200);expect(first.value.data.merged).toBe(1);expect(await list()).toHaveLength(1)
+  expect((await s.call('createAssistantMemory',note('引用格式','去掉页码'),{},0)).status).toBe(201)
+  const second=await s.call('compressAssistantMemories',{subjectId:agent.id})
+  expect(second.value.data.conflicts).toBe(2)
+  const rows=await list();expect(rows).toHaveLength(2);expect(rows.every((row:any)=>row.conflict)).toBe(true)
+ })
 })
 
