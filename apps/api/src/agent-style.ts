@@ -12,7 +12,7 @@ export function agentStyleCommand(s: ChatService, agent: Contact, group: Convers
   if (!ownLocalMemoryScope(s, agent, group) || message.origin !== 'human' || message.senderContactId !== s.human().id) return null
   const instruction = agentStyleInstruction(message.text ?? '')
   if (!instruction) return null
-  const row = s.db.prepare("SELECT id FROM assistant_memories WHERE scope='agent' AND subject_id=? AND owner_id=? AND source_id=? AND status='confirmed' ORDER BY created_at,id LIMIT 1").get(agent.id, s.c.actor.id, source)
+  const row = s.db.prepare("SELECT id FROM assistant_memories WHERE scope='agent' AND subject_id=? AND owner_id=? AND source_label=? AND status='confirmed' ORDER BY created_at,id LIMIT 1").get(agent.id, s.c.actor.id, source)
   const current = row ? s.directory.memory(String(row.id), true) : null
   const request = (body: unknown, id?: string): ChatRequest => ({ params: id ? { id } : {}, query: {}, headers: { 'Idempotency-Key': `style_${message.id}` }, body })
   const manage = '可在这位助手的联系人资料 → 私人记忆里查看、修改或撤回。'

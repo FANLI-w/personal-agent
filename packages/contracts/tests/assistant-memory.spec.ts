@@ -38,7 +38,7 @@ describe('assistant memory contract', () => {
       summary: '称呼：小王',
       status: 'confirmed',
       version: 1,
-      source: { kind: 'manual', id: null, version: null },
+      source: { kind: 'manual', id: null, version: null, label: null },
       updatedAt: '2026-11-13T00:00:00Z',
     }
     expect(AssistantMemoryIndex.parse(index)).toEqual(index)
