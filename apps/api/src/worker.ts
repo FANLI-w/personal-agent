@@ -7,6 +7,7 @@ import { OpenImWorker } from './openim-worker.js'
 import { PersonalFollowupWorker } from './personal-followups.js'
 import { CommunityCatalogWorker } from './community-catalog.js'
 import { TaskInvitationWorker } from './task-invitation.js'
+import { MemoryCompressionWorker } from './memory-compression-worker.js'
 import { waitForWorkerDatabase, workerStep } from './worker-database.js'
 const config=readConfig()
 const releaseProcess=processGuard(config.databasePath);process.once('exit',releaseProcess)
@@ -24,6 +25,7 @@ const chatWorker=new ChatWorker(db,config)
 const imWorker=new OpenImWorker(db,config)
 const followupWorker=new PersonalFollowupWorker(db,config)
 const invitationWorker=new TaskInvitationWorker(db,config)
+const memoryWorker=new MemoryCompressionWorker(db,config)
 console.log('B3 worker started; task invitation notices enabled; historical notification kinds remain dormant.')
 try {
   do {
@@ -32,9 +34,10 @@ try {
     }).finally(() => { catalogFlight = undefined })
     const invitation = await workerStep('INVITATION', () => invitationWorker.tick())
     const reminder = await workerStep('FOLLOWUP', () => followupWorker.tick())
+    const memory = await workerStep('MEMORY', () => memoryWorker.tick())
     const chat = await workerStep('CHAT', () => chatWorker.tick())
     const execution = await workerStep('EXECUTION', () => worker.tick())
     const im = await workerStep('IM', () => imWorker.tick())
-    if (!invitation && !reminder && !chat && !execution && !im) await new Promise(resolve => setTimeout(resolve, 1000))
+    if (!invitation && !reminder && !memory && !chat && !execution && !im) await new Promise(resolve => setTimeout(resolve, 1000))
   } while (!stopping && !process.argv.includes('--once'))
 } finally { catalogWorker.close(); await catalogFlight; db.close() }

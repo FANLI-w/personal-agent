@@ -137,6 +137,15 @@ export const AssistantMemoryCompression = z.strictObject({
   detailBytes: z.number().int().nonnegative(),
 })
 
+export const AssistantMemoryCompressionJob = z.strictObject({
+  id: Id,
+  status: z.enum(['queued', 'running', 'succeeded', 'failed']),
+  result: AssistantMemoryCompression.nullable(),
+  failure: z.string().max(300).nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
 export type AssistantMemory = z.infer<typeof AssistantMemory>
 export type AssistantMemoryInput = z.infer<typeof AssistantMemoryInput>
 export type AssistantMemoryUpdate = z.infer<typeof AssistantMemoryUpdate>
@@ -144,6 +153,7 @@ export type AssistantMemoryIndex = z.infer<typeof AssistantMemoryIndex>
 export type AssistantMemoryHistory = z.infer<typeof AssistantMemoryHistory>
 export type AssistantMemorySettings = z.infer<typeof AssistantMemorySettings>
 export type AssistantMemoryCompression = z.infer<typeof AssistantMemoryCompression>
+export type AssistantMemoryCompressionJob = z.infer<typeof AssistantMemoryCompressionJob>
 
 const empty = z.strictObject({})
 const id = z.strictObject({ id: Id })
@@ -184,7 +194,8 @@ export const assistantMemoryRoutes = {
   assistantMemorySettings: route('GET', '/me/assistant-memory-settings', empty, empty, z.null(), data(AssistantMemorySettings), 200, 'Current member only; candidate learning, timezone and quiet hours. No model call.'),
   updateAssistantMemorySettings: route('POST', '/me/assistant-memory-settings', empty, empty, z.strictObject({ expectedVersion: Version, candidateLearning: z.boolean(), timeZone: Timezone, quietHours: AssistantMemoryQuietHours.nullable() }), data(AssistantMemorySettings), 200, 'Owner-versioned assistant-memory policy; fences local preference consumers.'),
   assistantMemories: route('GET', '/me/assistant-memories', empty, pagination.extend({ scope: AssistantMemoryScope.default('personal'), subjectId: Id.optional(), status: z.enum(['confirmed', 'candidate', 'revoked', 'all']).default('all') }), z.null(), page(AssistantMemory), 200, 'Current owner only. personal scope has no subject; agent scope is an owned personal_agent. Candidates are not applied until confirmed.'),
-  compressAssistantMemories: route('POST', '/me/assistant-memories/compress', empty, empty, z.strictObject({ subjectId: Id }), data(AssistantMemoryCompression), 200, 'Owner of the agent scope only. Deterministic duplicate and line-subset merge by topic; conflicts stay separate and are reported. Model-assisted similar-topic grouping is a follow-up; old versions remain in revisions.'),
+  compressAssistantMemories: route('POST', '/me/assistant-memories/compress', empty, empty, z.strictObject({ subjectId: Id }), data(AssistantMemoryCompressionJob), 202, 'Queue one manual compression for an owned agent. The request returns before the model runs; one active job per owner and agent.'),
+  assistantMemoryCompressionJob: route('GET', '/me/assistant-memories/compression-jobs/{id}', z.strictObject({ id: Id }), empty, z.strictObject({ id: Id }), data(AssistantMemoryCompressionJob), 200, 'Owner only. The job exposes only status, counts and failure code; memory details stay in the memory routes.'),
   assistantMemory: route('GET', '/me/assistant-memories/{id}', id, empty, z.null(), data(AssistantMemory), 200, 'Current owner or live agent scope only, including revoked records; no cross-owner discovery.'),
   createAssistantMemory: route('POST', '/me/assistant-memories', empty, empty, AssistantMemoryInput, data(AssistantMemory), 201, 'Explicit owner save; personal or owned-agent scope. Correct the current confirmed same-topic preference atomically; no model required.'),
   updateAssistantMemory: route('POST', '/me/assistant-memories/{id}', id, empty, AssistantMemoryUpdate, data(AssistantMemory), 200, 'Current manager only; exact version; scope/subject immutable; append revision and fence older model context.'),

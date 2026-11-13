@@ -6,7 +6,7 @@ import {
   AssistantMemorySettings,
   AssistantMemoryUpdate,
   assistantMemoryRoutes,
-  type RequestFor,
+  type AssistantMemoryCompressionJob,
 } from '@research-agent-platform/contracts'
 import { fail } from './errors.js'
 import type { ChatService, ChatRequest } from './chat.js'
@@ -33,7 +33,33 @@ type Row = {
   created_at: string
   updated_at: string
 }
+type JobRow = {
+  id: string
+  owner_id: string
+  subject_id: string
+  status: 'queued' | 'running' | 'succeeded' | 'failed'
+  attempts: number
+  lease_until: number | null
+  result_json: string | null
+  failure: string | null
+  created_at: string
+  updated_at: string
+}
 const now = () => new Date().toISOString()
+const jobView = (row: JobRow): AssistantMemoryCompressionJob => ({
+  id: row.id,
+  status: row.status,
+  result: row.result_json ? JSON.parse(String(row.result_json)) : null,
+  failure: row.failure,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+})
+const jobRow = (s: ChatService, id: string) => {
+  const value = s.db.prepare('SELECT * FROM assistant_memory_compression_jobs WHERE id=? AND owner_id=?').get(id, s.c.actor.id) as JobRow | undefined
+  if (!value) fail('NOT_FOUND')
+  agentOwner(s, value.subject_id)
+  return value
+}
 const agentOwner = (s: ChatService, subjectId: string) => {
   const contact = s.contact(subjectId)
   if (contact.identity.kind !== 'personal_agent' || contact.identity.ownerMemberId !== s.c.actor.id) fail('NOT_FOUND')
@@ -82,7 +108,7 @@ const normalizeLine = (value: string) => value.normalize('NFKC').trim().replace(
 const detailBytes = (rows: Row[]) => rows.reduce((sum, row) => sum + Buffer.byteLength(String(row.detail ?? ''), 'utf8'), 0)
 const agentDetailBudget = 8_000
 const agentRecordLimit = 20
-function compressAgent(s: ChatService, subjectId: string) {
+export function compressAgent(s: ChatService, subjectId: string) {
   const rows = s.db.prepare("SELECT * FROM assistant_memories WHERE owner_id=? AND scope='agent' AND subject_id=? AND status='confirmed' ORDER BY updated_at DESC,id DESC").all(s.c.actor.id, subjectId) as Row[]
   let merged = 0, archived = 0, conflicts = 0
   const groups = new Map<string, Row[]>()
@@ -129,6 +155,7 @@ function maybeCompress(s: ChatService, subjectId: string) {
   if (rows.length > agentRecordLimit || detailBytes(rows) > agentDetailBudget) compressAgent(s, subjectId)
 }
 export function authorizeAssistantMemory(s: ChatService, name: string, req: ChatRequest) {
+  if (name === 'assistantMemoryCompressionJob') { jobRow(s, req.params.id!); return }
   if (req.params.id) { row(s, req.params.id); return }
   if (name === 'compressAssistantMemories') {
     agentOwner(s, String((req.body as { subjectId?: string }).subjectId))
@@ -189,8 +216,13 @@ export function handleAssistantMemory(s: ChatService, name: string, req: ChatReq
   }
   if (name === 'compressAssistantMemories') {
     const body = req.body as { subjectId: string }
-    return { data: compressAgent(s, body.subjectId) }
+    const active = s.db.prepare("SELECT * FROM assistant_memory_compression_jobs WHERE owner_id=? AND subject_id=? AND status IN ('queued','running') ORDER BY created_at LIMIT 1").get(s.c.actor.id, body.subjectId) as JobRow | undefined
+    if (active) return { data: jobView(active) }
+    const id = randomUUID(), at = now()
+    s.db.prepare("INSERT INTO assistant_memory_compression_jobs(id,owner_id,subject_id,status,created_at,updated_at) VALUES(?,?,?,'queued',?,?)").run(id, s.c.actor.id, body.subjectId, at, at)
+    return { data: jobView(jobRow(s, id)) }
   }
+  if (name === 'assistantMemoryCompressionJob') return { data: jobView(jobRow(s, req.params.id!)) }
   if (name === 'assistantMemoryHistory') {
     const memory = view(row(s, req.params.id!))
     const revisions = s.db.prepare('SELECT document FROM assistant_memory_revisions WHERE memory_id=? ORDER BY version').all(memory.id).flatMap(r => {

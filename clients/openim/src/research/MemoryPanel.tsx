@@ -165,9 +165,20 @@ export function MemoryPanel({
             setCompressing(true);
             setFailure("");
             try {
-              await researchApi("compressAssistantMemories", {
+              let response = await researchApi("compressAssistantMemories", {
                 body: { subjectId: scopeId },
               });
+              while (
+                response.data.status === "queued" ||
+                response.data.status === "running"
+              ) {
+                await new Promise((resolve) => setTimeout(resolve, 400));
+                response = await researchApi("assistantMemoryCompressionJob", {
+                  params: { id: response.data.id },
+                });
+              }
+              if (response.data.status === "failed")
+                throw new Error(response.data.failure || "压缩失败");
               await refresh();
             } catch (err) {
               setFailure(err instanceof Error ? err.message : "压缩失败");

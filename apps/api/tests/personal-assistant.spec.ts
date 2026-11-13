@@ -16,6 +16,7 @@ import { nextRecurring,scheduledRequest } from '../src/recurring-time.js'
 import { personalWorkRequest } from '../src/personal-assistant.js'
 import { agentCreationBoundary } from '../src/agent-creation.js'
 import { chatInputTokenBound } from '../src/chat-model-input.js'
+import { MemoryCompressionWorker } from '../src/memory-compression-worker.js'
 import { researchConversationPolicy } from '../src/conversation-policy.js'
 import { agentStyleInstruction } from '../src/agent-style.js'
 import { backup,restore } from '../src/recovery.js'
@@ -448,11 +449,16 @@ describe('recurring reminders and persistent local Agent jobs; synthetic model c
   const note=(topic:string,detail:string)=>({scope:'agent',subjectId:agent.id,topic,type:'note',summary:detail,detail,payload:{type:'note',text:detail},source:{kind:'manual',id:null,version:null,label:null}})
   const list=async()=>(await s.call('assistantMemories',null,{},0,`?scope=agent&subjectId=${agent.id}`)).value.data as any[]
   for(let i=0;i<2;i++)expect((await s.call('createAssistantMemory',note('引用格式','保留页码'),{},0)).status).toBe(201)
+  const worker=new MemoryCompressionWorker(s.db,s.config)
   const first=await s.call('compressAssistantMemories',{subjectId:agent.id})
-  expect(first.status,first.text).toBe(200);expect(first.value.data.merged).toBe(1);expect(await list()).toHaveLength(1)
+  expect(first.status,first.text).toBe(202);await worker.tick()
+  const firstJob=(await s.call('assistantMemoryCompressionJob',null,{id:first.value.data.id})).value.data
+  expect(firstJob.status).toBe('succeeded');expect(firstJob.result.merged).toBe(1);expect(await list()).toHaveLength(1)
   expect((await s.call('createAssistantMemory',note('引用格式','去掉页码'),{},0)).status).toBe(201)
   const second=await s.call('compressAssistantMemories',{subjectId:agent.id})
-  expect(second.value.data.conflicts).toBe(2)
+  expect(second.status,second.text).toBe(202);await worker.tick()
+  const secondJob=(await s.call('assistantMemoryCompressionJob',null,{id:second.value.data.id})).value.data
+  expect(secondJob.result.conflicts).toBe(2)
   const rows=await list();expect(rows).toHaveLength(2);expect(rows.every((row:any)=>row.conflict)).toBe(true)
  })
 })

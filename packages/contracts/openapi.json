@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.48.0"
+    "version": "0.49.0"
   },
   "paths": {
     "/api/v1/library/repository": {
@@ -31398,7 +31398,7 @@
     "/api/v1/me/assistant-memories/compress": {
       "post": {
         "operationId": "compressAssistantMemories",
-        "description": "Owner of the agent scope only. Deterministic duplicate and line-subset merge by topic; conflicts stay separate and are reported. Model-assisted similar-topic grouping is a follow-up; old versions remain in revisions.",
+        "description": "Queue one manual compression for an owned agent. The request returns before the model runs; one active job per owner and agent.",
         "x-stage": "CHAT1",
         "x-implemented": true,
         "security": [
@@ -31451,7 +31451,7 @@
           }
         },
         "responses": {
-          "200": {
+          "202": {
             "description": "CHAT1 contract; implemented",
             "content": {
               "application/json": {
@@ -31462,42 +31462,93 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "scope": {
-                          "type": "string",
-                          "const": "agent"
-                        },
-                        "subjectId": {
+                        "id": {
                           "type": "string",
                           "pattern": "^[A-Za-z0-9_-]{1,96}$"
                         },
-                        "merged": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 9007199254740991
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "queued",
+                            "running",
+                            "succeeded",
+                            "failed"
+                          ]
                         },
-                        "archived": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 9007199254740991
+                        "result": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "scope": {
+                                  "type": "string",
+                                  "const": "agent"
+                                },
+                                "subjectId": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                "merged": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "archived": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "conflicts": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "detailBytes": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "scope",
+                                "subjectId",
+                                "merged",
+                                "archived",
+                                "conflicts",
+                                "detailBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
-                        "conflicts": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 9007199254740991
+                        "failure": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
-                        "detailBytes": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 9007199254740991
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
                         }
                       },
                       "required": [
-                        "scope",
-                        "subjectId",
-                        "merged",
-                        "archived",
-                        "conflicts",
-                        "detailBytes"
+                        "id",
+                        "status",
+                        "result",
+                        "failure",
+                        "createdAt",
+                        "updatedAt"
                       ],
                       "additionalProperties": false
                     }
@@ -31509,12 +31560,288 @@
                 },
                 "example": {
                   "data": {
-                    "scope": "agent",
-                    "subjectId": "synthetic",
-                    "merged": 0,
-                    "archived": 0,
-                    "conflicts": 0,
-                    "detailBytes": 0
+                    "id": "synthetic",
+                    "status": "queued",
+                    "result": null,
+                    "failure": null,
+                    "createdAt": "synthetic",
+                    "updatedAt": "synthetic"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/assistant-memories/compression-jobs/{id}": {
+      "get": {
+        "operationId": "assistantMemoryCompressionJob",
+        "description": "Owner only. The job exposes only status, counts and failure code; memory details stay in the memory routes.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "queued",
+                            "running",
+                            "succeeded",
+                            "failed"
+                          ]
+                        },
+                        "result": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "scope": {
+                                  "type": "string",
+                                  "const": "agent"
+                                },
+                                "subjectId": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                                },
+                                "merged": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "archived": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "conflicts": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "detailBytes": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "scope",
+                                "subjectId",
+                                "merged",
+                                "archived",
+                                "conflicts",
+                                "detailBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "failure": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "result",
+                        "failure",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": {
+                    "id": "synthetic",
+                    "status": "queued",
+                    "result": null,
+                    "failure": null,
+                    "createdAt": "synthetic",
+                    "updatedAt": "synthetic"
                   }
                 }
               }
@@ -80180,7 +80507,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.48.0"
+                          "const": "0.49.0"
                         },
                         "checks": {
                           "type": "object",
@@ -80239,7 +80566,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.48.0",
+                    "contractVersion": "0.49.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -80413,7 +80740,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.48.0"
+                          "const": "0.49.0"
                         },
                         "checks": {
                           "type": "object",
@@ -80472,7 +80799,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.48.0",
+                    "contractVersion": "0.49.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -80624,7 +80951,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.48.0"
+                          "const": "0.49.0"
                         },
                         "checks": {
                           "type": "object",
@@ -80683,7 +81010,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.48.0",
+                    "contractVersion": "0.49.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
