@@ -447,7 +447,7 @@ describe('recurring reminders and persistent local Agent jobs; synthetic model c
  it('compresses identical private-agent notes and reports conflicts',async()=>{
   const s=await setup(false),agent=(await s.call('createPersonalAgent',profile)).value.data
   const note=(topic:string,detail:string)=>({scope:'agent',subjectId:agent.id,topic,type:'note',summary:detail,detail,payload:{type:'note',text:detail},source:{kind:'manual',id:null,version:null,label:null}})
-  const list=async()=>(await s.call('assistantMemories',null,{},0,`?scope=agent&subjectId=${agent.id}`)).value.data as any[]
+  const list=async()=>(await s.call('assistantMemories',null,{},0,`?scope=agent&subjectId=${agent.id}&status=confirmed`)).value.data as any[]
   for(let i=0;i<2;i++)expect((await s.call('createAssistantMemory',note('引用格式','保留页码'),{},0)).status).toBe(201)
   const worker=new MemoryCompressionWorker(s.db,s.config)
   const first=await s.call('compressAssistantMemories',{subjectId:agent.id})
@@ -466,7 +466,7 @@ describe('recurring reminders and persistent local Agent jobs; synthetic model c
  it('lets the model group similar topics before the deterministic merge',async()=>{
   const s=await setup(),agent=(await s.call('createPersonalAgent',profile)).value.data
   const note=(topic:string,detail:string)=>({scope:'agent',subjectId:agent.id,topic,type:'note',summary:detail,detail,payload:{type:'note',text:detail},source:{kind:'manual',id:null,version:null,label:null}})
-  const list=async()=>(await s.call('assistantMemories',null,{},0,`?scope=agent&subjectId=${agent.id}`)).value.data as any[]
+  const list=async()=>(await s.call('assistantMemories',null,{},0,`?scope=agent&subjectId=${agent.id}&status=confirmed`)).value.data as any[]
   for(const topic of ['引用','引用格式'])expect((await s.call('createAssistantMemory',note(topic,'保留页码'),{},0)).status).toBe(201)
   const ids=(await list()).map(row=>row.id)
   const worker=new MemoryCompressionWorker(s.db,s.config,Date.now,async()=>({text:JSON.stringify({groups:[{topic:'引用格式',ids}]}),failure:null,inputTokens:1,outputTokens:1,elapsedMs:1}))
