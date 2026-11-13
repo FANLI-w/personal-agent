@@ -26,7 +26,7 @@ import { fileReadMetadata,pageNumbersFromQuestion,fileReadingBudget } from './ag
 import type { FileDocument, ParsedAgentFile } from './agent-files.js'
 import type { AgentFileSelection } from '@research-agent-platform/contracts'
 import { personalCommands,handleMemory,memory,memorySettings,ownLocalMemoryScope,personalMemoryContext,memoryCommand } from './personal-memories.js'
-import { agentStyleCommand } from './agent-style.js'
+import { agentStyleCommand, learnFromChatFeedback } from './agent-style.js'
 import { socialGroupContacts } from './group-membership.js'
 import { handleFollowup,followup,followupCommand } from './personal-followups.js'
 import { personalWorkRequest,assistantDirectoryFingerprint,unsupportedCollaboration } from './personal-assistant.js'
@@ -679,6 +679,8 @@ export class ChatService {
       // A fresh explicit creation/work imperative after small talk is a new
       // request, not permission inferred from a quoted/older first sentence.
       if(pending){const old=decode(pending.request_json) as TurnInput;if(purpose&&old.purpose!=='create_agent'||!skill&&!purpose&&!old.assistantMode&&!old.fileSource&&group.kind==='personal'&&agent?.profile.role==='coordinator'&&personalWorkRequest(input.text)){supersedeTurn(this,String(pending.id));pending=undefined}}
+      if (name === 'agentChatMessage' && !skill && !purpose && !(b as {fileSelection?: unknown}).fileSelection && agent)
+        learnFromChatFeedback(this, agent, group, message)
       const style=name==='agentChatMessage'&&!skill&&!purpose&&!(b as {fileSelection?:unknown}).fileSelection&&agent?agentStyleCommand(this,agent,group,message):null
       const management=!style&&name==='agentChatMessage'&&!skill&&!purpose&&!(b as {fileSelection?:unknown}).fileSelection&&agent&&ownLocalMemoryScope(this,agent,group)?{memory:memoryCommand(this,input.text,message,group.kind==='personal'&&agent.profile.role==='coordinator'),followup:followupCommand(this,input.text,message)}:null
       const limitation=name==='agentChatMessage'&&!skill&&!purpose&&!(b as {fileSelection?:unknown}).fileSelection&&group.kind==='personal'&&agent?.profile.role==='coordinator'?unsupportedCollaboration(this,input.text):null

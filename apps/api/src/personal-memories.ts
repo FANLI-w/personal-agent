@@ -61,6 +61,7 @@ function memoryTopic(content:string){
  if(/(?:我在|我的)(?:.{1,40})(?:工作|任职)|工作单位|所在实验室/.test(content))return '工作单位'
  return null
 }
+export function directlyStatedReplyStyle(value:string) { return /^(?:我(?:更)?(?:喜欢|希望)你|我习惯你)(?:以后|平时)?(?:回复|回答|说话)(?:时)?[，, ]*(?:先说结论|先给结论|直接一点|简短一点|短一点|详细一点|口语一点|自然一点|别列清单)[。！!]?$/u.test(value) }
 export function memoryCommand(s:ChatService,text:string,message:ChatMessage,personalAssistant=false){
  const value=text.trim(),first=value.split(/[，,。;；\n]/)[0]!
  if(/[?？]$/.test(first)||/[，,。;；]\s*(?:但|不过|其实)?\s*(?:只是引用|只是举例|不要保存|别保存|不要记住|别记住|不是真的)/.test(value))return null
@@ -68,7 +69,7 @@ export function memoryCommand(s:ChatService,text:string,message:ChatMessage,pers
  if(forget){let topic=forget[1]!.trim();topic=memoryTopic(topic)??topic;const matches=s.db.prepare("SELECT id FROM personal_memories WHERE member_id=? AND status!='revoked' AND (id=? OR topic=?)").all(s.c.actor.id,topic,topic);if(matches.length!==1)return {receipt:{operation:'clarify' as const,memoryId:null,topic:null,status:null,version:0,question:'请明确要忘记的记忆主题或编号。'},text:'请明确要忘记的记忆主题或编号；尚未修改。'};const saved=revokeMemory(s,String(matches[0]!.id));return {receipt:{operation:'forgotten' as const,memoryId:saved.id,topic:saved.topic,status:saved.status,version:saved.version,question:null},text:`已撤回本人记忆“${saved.topic}”。`}}
  const explicit=/^(?:请)?记住\s*[:：]?\s*(.+)$/.exec(value),correction=/^(?:请)?(?:纠正|更正)(?:我的)?(?:偏好|记忆)\s*[:：]\s*(.+)$/.exec(value),future=/^以后(?:请)?(?:回答|回复|称呼我|叫我|写作|分析|处理材料)[^?？]+$/.test(value)
  // A directly stated, durable reply preference can arrive in ordinary conversation.
- const statedStyle = personalAssistant && /^(?:我(?:更)?(?:喜欢|希望)你|我习惯你)(?:以后|平时)?(?:回复|回答|说话)(?:时)?[，, ]*(?:先说结论|先给结论|直接一点|简短一点|短一点|详细一点|口语一点|自然一点|别列清单)[。！!]?$/u.test(value)
+ const statedStyle = personalAssistant && directlyStatedReplyStyle(value)
  const inferred=!statedStyle&&!explicit&&!correction&&!future&&/^(?:我通常|我一般|我习惯|我更喜欢)[^?？]+$/.test(value)&&memorySettings(s).candidateLearning
  if(!statedStyle&&!explicit&&!correction&&!future&&!inferred)return null
  let content=(explicit?.[1]??correction?.[1]??value).trim(),topic=statedStyle?'回复方式':memoryTopic(content),scope:'general'|'topic'='general'

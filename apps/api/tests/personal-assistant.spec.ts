@@ -112,6 +112,32 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
    return modelResult('先说结论。')
   })
  })
+ it('learns recurring feedback for an owned specialist, revises it, and honors revocation', async () => {
+  const s = await setup(), agent = (await s.call('createPersonalAgent', profile)).value.data
+  const direct = (await s.call('createDirectConversation', { contactId: agent.id })).value.data
+  async function reply(text: string) {
+   const sent = await s.send(direct.id, text)
+   await s.tick(async input => {
+    expect(input.system).toContain('Adapt reply length')
+    return modelResult('好的。')
+   })
+   expect((await s.turn(sent.turn.id)).status).toBe('succeeded')
+  }
+  const memories = async () => (await s.call('chatMemories', null, {}, 0, `?scope=private_agent&scopeId=${agent.id}`)).value.data
+  await reply('短一点')
+  expect(await memories()).toHaveLength(0)
+  await reply('请简洁一点')
+  const [first] = await memories()
+  expect(first.content).toBe('回答简洁一些')
+  await reply('详细一点')
+  await reply('详细点')
+  const [next] = await memories()
+  expect(next).toMatchObject({ id: first.id, content: '回答详细一些', version: 2 })
+  await s.call('revokeChatMemory', { expectedVersion: next.version }, { id: next.id })
+  await reply('短一点')
+  expect(await memories()).toHaveLength(0)
+  expect(s.count('personal_memories')).toBe(0)
+ })
  it('saves explicit colleague preferences only in this owned Agent, deduplicates replay and preserves corrections across restart without billing',async()=>{
   const s=await setup(false),agent=(await s.call('createPersonalAgent',profile)).value.data,direct=(await s.call('createDirectConversation',{contactId:agent.id})).value.data,key=randomUUID()
   const sent=await s.send(direct.id,'以后和我聊天，先给自己的判断，别每次列清单。',0,key)

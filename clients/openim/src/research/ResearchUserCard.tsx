@@ -37,10 +37,15 @@ export const ResearchUserCard = forwardRef<
     isOverlayOpen && !!contactId,
   );
   const contact = data?.data;
-  const personalAssistant = contact?.identity.kind === "personal_agent" &&
-    contact.identity.ownerMemberId === actor?.member.id && contact.profile.role === "coordinator" && !contact.agentRuntime;
+  const assistant = Boolean(contact && contact.identity.kind !== "human");
+  const ownerId = contact?.identity.kind === "personal_agent" ? contact.identity.ownerMemberId : undefined;
+  const ownAssistant = Boolean(ownerId && ownerId === actor?.member.id);
+  const ownerName = ownerId && !ownAssistant
+    ? contacts.find(({ contact: member }) => member.identity.kind === "human" && member.identity.memberId === ownerId)?.contact.displayName
+    : undefined;
   const [editing, setEditing] = useState(false);
   const [memories, setMemories] = useState(false);
+  const [roleDetails, setRoleDetails] = useState(false);
   const [connection, setConnection] = useState(false);
   const [form, setForm] = useState({
     displayName: "",
@@ -70,6 +75,7 @@ export const ResearchUserCard = forwardRef<
   useEffect(() => {
     setEditing(false);
     setMemories(false);
+    setRoleDetails(false);
     setConnection(false);
     setFailure("");
     setBusy(false);
@@ -113,13 +119,13 @@ export const ResearchUserCard = forwardRef<
   };
   return (
     <Modal
-      title={personalAssistant ? "我的个人助理" : props.isSelf ? "我的资料" : "联系人资料"}
+      title={assistant ? (ownAssistant ? "我的助理" : "助理资料") : props.isSelf ? "我的资料" : "联系人资料"}
       open={isOverlayOpen}
       onCancel={close}
       footer={null}
       destroyOnClose
       centered
-      width={personalAssistant ? 480 : contact?.identity.kind !== "human" ? 680 : 500}
+      width={assistant ? 480 : 500}
       styles={{ body: { maxHeight: "calc(100vh - 180px)", overflowY: "auto" } }}
     >
       {(error || failure) && <Alert type="error" showIcon message={error || failure} />}
@@ -133,25 +139,25 @@ export const ResearchUserCard = forwardRef<
             <div className="flex-1">
               <strong>{contact.displayName}</strong>
               <div>
-                {!personalAssistant && <Tag>
-                  {contact.identity.kind === "human"
-                    ? "真人"
-                    : contact.profile.role === "coordinator" &&
-                      contact.identity.ownerMemberId === actor?.member.id
-                    ? "你的 AI 联系人"
-                    : "AI Agent"}
-                </Tag>}
+                {!assistant && <Tag>真人</Tag>}
+                {ownerName && <small>{ownerName}的助理</small>}
               </div>
             </div>
-            {personalAssistant && !editing && contact.allowedActions.includes("edit_profile") && (
-              <Dropdown trigger={["click"]} menu={{ items: [{key: "edit", label: "自定义角色"}], onClick: edit }}>
+            {assistant && !editing && (
+              <Dropdown trigger={["click"]} menu={{
+                items: [
+                  { key: "details", label: "查看角色" },
+                  ...(contact.allowedActions.includes("edit_profile") ? [{ key: "edit", label: "自定义角色" }] : []),
+                ],
+                onClick: ({ key }) => key === "edit" ? edit() : setRoleDetails(value => !value),
+              }}>
                 <Button type="text" aria-label="更多助理设置">•••</Button>
               </Dropdown>
             )}
           </div>
           {contact.identity.kind === "human" && <AcceptCatAccountNumber username={contact.username}
             isSelf={contact.identity.memberId === actor?.member.id} active={isOverlayOpen} />}
-          {!personalAssistant && <>
+          {!assistant && <>
           <p className="text-xs text-slate-600">
             关系：
             {
@@ -166,23 +172,16 @@ export const ResearchUserCard = forwardRef<
               }[contact.relationship.status]
             }
           </p>
-          {contact.identity.kind !== "human" && (
-            <p className="text-xs text-slate-600">
-              主人：
-              {contact.identity.ownerMemberId === actor?.member.id ? actor.member.displayName : contacts.find(
-                (c) =>
-                  c.contact.identity.kind === "human" &&
-                  c.contact.identity.memberId ===
-                    (contact.identity.kind === "human"
-                      ? ""
-                      : contact.identity.ownerMemberId),
-              )?.contact.displayName || "此 Agent 的所属账号"}
-            </p>
-          )}
-          {contact.identity.kind !== "human" && <div className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-            {contact.agentRuntime ? <><strong>外部文字服务</strong><p className="break-all">{contact.agentRuntime.serviceOrigin}</p><p>仅发送逐条授权的当前文字；费用由主人连接的外部账号承担。{contact.agentRuntime.callerAllowed ? "当前账号获准调用。" : "当前账号不能调用，请联系主人。"}</p><p>连接验证：{contact.agentRuntime.verification === "passed" ? "最近测试通过" : contact.agentRuntime.verification === "failed" ? "最近测试失败" : "尚未确认可用"}。本站的记忆、附件与协作不会转发；远端自身功能以该服务为准，本站不作验证。</p></> : <><strong>平台 Agent</strong><p>使用发送者的模型设置和获准记忆。能力描述是交流人设，不代表已配置联网、执行工具或已验证研究结果。</p></>}
-          </div>}
           </>}
+          {contact?.agentRuntime && (
+            <div className="text-sm text-slate-600">
+              <strong>外部文字服务</strong>
+              <p className="break-all">{contact.agentRuntime.serviceOrigin}</p>
+              <p>仅发送本次授权的文字，费用由连接服务的账号承担。</p>
+              <p>{contact.agentRuntime.verification === "passed" ? "最近连接测试通过" : contact.agentRuntime.verification === "failed" ? "最近连接测试失败" : "尚未测试连接"}</p>
+              <p>{contact.agentRuntime.callerAllowed ? "当前账号可调用" : "请联系所属成员开通调用权限"}</p>
+            </div>
+          )}
           {editing ? (
             <div className="space-y-2">
               {(
@@ -233,9 +232,10 @@ export const ResearchUserCard = forwardRef<
             </div>
           ) : (
             <>
-              {personalAssistant ? <>
+              {assistant ? <>
                 {contact.profile.introduction && <p>{contact.profile.introduction}</p>}
-                <AssistantPreferences contactId={contact.id} />
+                {roleDetails && <AgentRoleDocuments contact={contact} />}
+                {ownAssistant && !contact.agentRuntime && contact.allowedActions.includes("manage_private_memory") && <AssistantPreferences contactId={contact.id} />}
               </> : <dl>
                 {(
                   [
@@ -252,7 +252,6 @@ export const ResearchUserCard = forwardRef<
                   </div>
                 ))}
               </dl>}
-              {!personalAssistant && contact.identity.kind !== "human" && <details className="my-4"><summary className="cursor-pointer py-2 text-sm">角色文件</summary><AgentRoleDocuments contact={contact} /></details>}
               <Space wrap>
                 {contact.allowedActions.includes("chat") && (
                   <Button
@@ -285,7 +284,7 @@ export const ResearchUserCard = forwardRef<
                   </Button>
                 )}
                 <ContactRemovalButton contact={contact} active={isOverlayOpen} onRemoved={close} />
-                {!personalAssistant && contact.allowedActions.includes("edit_profile") && (
+                {!assistant && contact.allowedActions.includes("edit_profile") && (
                   <Button onClick={edit}>{contact.identity.kind === "human" ? "编辑资料" : "编辑角色"}</Button>
                 )}
                 {contact.allowedActions.includes("manage_private_memory") && (
@@ -327,6 +326,7 @@ function AssistantPreferences({ contactId }: { contactId: string }) {
   const lines = [
     ...(agent.data?.data ?? []).filter(m => m.source === "本人明确保存的本助手交流偏好" && m.status === "active")
       .flatMap(m => m.content.split("\n").filter(line => line.startsWith("- ")).reverse().map(line => line.slice(2))),
+    ...(agent.data?.data ?? []).filter(m => m.status === "active" && m.source?.startsWith("聊天中形成的习惯：")).map(m => m.content),
     ...(personal.data?.data ?? []).filter(m => ["回复方式", "称呼", "语言", "写作"].includes(m.topic)).map(m => m.content),
   ];
   return <section className="rounded-lg bg-slate-50 p-4">
