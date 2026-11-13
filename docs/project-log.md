@@ -3121,3 +3121,9 @@ PR206发版前补充：公网只读ready仍0.45.0/三项ok；新客户端的固�
 
 模拟模型配合 HTTP 与 SQLite 验证跨助手复用、规划纠正、撤回和群隔离；执行恢复、个人助手和群治理三个套件 58 项通过，桌面类型检查通过。初测发现测试夹具误取会话 ID、缺少课题组、旧表数、提醒预算断言及故障模拟混入后台归纳请求，均已纠正。日志在系统临时目录 acceptcat-feedback-focused.log、acceptcat-feedback-retest.log、acceptcat-semantic-feedback-ci.log 和 acceptcat-semantic-feedback-final-ci.log。真实模型和线上体验待验收，未部署。
 本次最终本地 pnpm run ci 通过，80 个测试文件、958 项测试全部通过。
+
+## 2026-11-14 · PR213合并与Windows0.10.106公开发布
+
+PR213与版本PR214各四项CI通过后普通合并，最终main/tag为0fff9b693e4ae8463d15e96dd51884329ad3ac89。北京时间01:28:43，0.10.106公开为Latest。冻结1747份输入、EXE实际135份构建资源、更新清单、隔离启动与禁网缓存通过。桌面安装包421242186字节，SHA256 942638cb0b0fd3362e6b832380855eb2c22d002e6bdca963df54b74e0977559e，远端四附件digest一致。原根958项、客户端类型和远端检查通过，真实模型学习效果待验收。
+
+后台ready实测0.46.0/三项ok，上一批回执为035。电脑锁屏阻止Workbench操作，本批未执行备份、036迁移或切换容器，已准备恢复副本连续迁移与旧数据保全脚本，待解锁后继续。失败及成功证据在D:/deepseek-agent/.runtime/release-0.10.106-20261114，详见deployment/acceptcat-0.10.106-release.md。
