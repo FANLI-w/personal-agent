@@ -3318,7 +3318,7 @@
         },
         "query": {},
         "headers": {},
-        "body": {}
+        "body": null
       },
       "response": {
         "data": {
