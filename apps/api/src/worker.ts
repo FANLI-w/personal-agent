@@ -18,6 +18,7 @@ await waitForWorkerDatabase(() => checkDatabase(db))
 let stopping=false
 const catalogWorker=new CommunityCatalogWorker(db,config)
 let catalogFlight:Promise<unknown>|undefined
+let memoryFlight:Promise<unknown>|undefined
 const stop=()=>{stopping=true;catalogWorker.close()}
 process.once('SIGINT',stop);process.once('SIGTERM',stop)
 const worker=new ExecutionWorker(db,config)
@@ -32,12 +33,14 @@ try {
     if (!catalogFlight && !stopping) catalogFlight = catalogWorker.tick().catch(() => {
       console.error('Community catalog synchronization failed; prior catalog preserved.')
     }).finally(() => { catalogFlight = undefined })
+    if (!memoryFlight && !stopping) memoryFlight = memoryWorker.tick().catch(() => {
+      console.error('Assistant memory compression failed; prior memories preserved.')
+    }).finally(() => { memoryFlight = undefined })
     const invitation = await workerStep('INVITATION', () => invitationWorker.tick())
     const reminder = await workerStep('FOLLOWUP', () => followupWorker.tick())
-    const memory = await workerStep('MEMORY', () => memoryWorker.tick())
     const chat = await workerStep('CHAT', () => chatWorker.tick())
     const execution = await workerStep('EXECUTION', () => worker.tick())
     const im = await workerStep('IM', () => imWorker.tick())
-    if (!invitation && !reminder && !memory && !chat && !execution && !im) await new Promise(resolve => setTimeout(resolve, 1000))
+    if (!invitation && !reminder && !memoryFlight && !chat && !execution && !im) await new Promise(resolve => setTimeout(resolve, 1000))
   } while (!stopping && !process.argv.includes('--once'))
-} finally { catalogWorker.close(); await catalogFlight; db.close() }
+} finally { catalogWorker.close(); await catalogFlight; await memoryFlight; db.close() }
