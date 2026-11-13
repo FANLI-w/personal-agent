@@ -77,7 +77,17 @@ export class ContactDirectory {
       if(write && !conversation.allowedActions.includes('manage_memory'))fail('FORBIDDEN')
     }
   }
+  privateAgentMemory(row:Record<string,unknown>, write=false):ChatMemory {
+    const scopeId=String(row.subject_id)
+    this.memoryScope('private_agent',scopeId,write)
+    let mayEdit=true;try{this.memoryScope('private_agent',scopeId,true)}catch{mayEdit=false}
+    const payload=JSON.parse(String(row.payload_json)) as {text?:string;value?:string}
+    const status=row.status==='revoked'?'revoked':'active'
+    return ChatMemory.parse({id:String(row.id),scope:'private_agent',scopeId,content:String(row.detail??payload.text??payload.value??''),source:row.source_label?String(row.source_label):(row.source_id?String(row.source_id):null),status,version:Number(row.version),createdByMemberId:String(row.owner_id),createdAt:String(row.created_at),updatedAt:String(row.updated_at),allowedActions:mayEdit&&status==='active'?['edit','revoke']:[]})
+  }
   memory(id:string,write=false):ChatMemory {
+    const agentRow=this.db.prepare("SELECT * FROM assistant_memories WHERE id=? AND scope='agent'").get(id) as Record<string,unknown>|undefined
+    if(agentRow)return this.privateAgentMemory(agentRow,write)
     const row=this.db.prepare('SELECT * FROM chat_memories WHERE id=?').get(id)
     if(!row)fail('NOT_FOUND')
     this.memoryScope(row.scope as ChatMemory['scope'],String(row.scope_id),write)
@@ -86,13 +96,15 @@ export class ContactDirectory {
   }
   saveMemory(value:ChatMemory) {
     const {allowedActions:_allowed,...revision}=value
-    this.db.prepare('INSERT INTO chat_memory_revisions VALUES (?,?,?)').run(value.id,value.version,JSON.stringify({...revision,allowedActions:[]}))
+    if(value.scope==='private_agent')this.db.prepare('INSERT INTO assistant_memory_revisions VALUES (?,?,?,?)').run(value.id,value.version,JSON.stringify({...revision,allowedActions:[]}),value.updatedAt)
+    else this.db.prepare('INSERT INTO chat_memory_revisions VALUES (?,?,?)').run(value.id,value.version,JSON.stringify({...revision,allowedActions:[]}))
   }
   modelContext(agentId:string,conversationId:string) {
     const agent=this.contact(agentId), conversation=this.chat.conversation(conversationId,false)
     const privateAllowed=agent.identity.kind==='personal_agent' && agent.identity.ownerMemberId===this.actor.id && (conversation.kind==='personal'||conversation.kind==='direct')
-    const rows=this.db.prepare("SELECT id FROM chat_memories WHERE status='active' AND ((scope='conversation' AND scope_id=?) OR (scope='private_agent' AND scope_id=?)) ORDER BY id").all(conversationId,privateAllowed?agentId:'')
-    const memories=rows.map(row=>this.memory(String(row.id)))
+    const rows=this.db.prepare("SELECT id FROM chat_memories WHERE status='active' AND scope='conversation' AND scope_id=? ORDER BY id").all(conversationId)
+    const agentRows=privateAllowed?this.db.prepare("SELECT * FROM assistant_memories WHERE scope='agent' AND subject_id=? AND status='confirmed' ORDER BY id").all(agentId) as Record<string,unknown>[]:[]
+    const memories=[...rows.map(row=>this.memory(String(row.id))),...agentRows.map(row=>this.privateAgentMemory(row))].sort((a,b)=>a.id.localeCompare(b.id))
     const relation=this.relationRow(agent)
     // Coordinator recommendations depend on the bounded public roster. A changed
     // candidate profile cannot leave an older matching proposal publishable.
@@ -175,20 +187,39 @@ export class ContactDirectory {
       const contact=this.contact(id),row=this.relationRow(contact);if(!row)fail('NOT_FOUND')
       this.revokeRequest(String(row.id),(b as RequestFor<'revokeContact'>['body']).expectedVersion);return {data:this.contact(id)}
     }
-    if(name==='chatMemories')return this.chat.page(name,req.query,this.db.prepare("SELECT id FROM chat_memories WHERE scope=? AND scope_id=? AND status='active' ORDER BY created_at DESC,id DESC").all(req.query.scope!,req.query.scopeId!).map(row=>String(row.id)),id=>{const memory=this.memory(id);if(memory.status!=='active')fail('NOT_FOUND');return memory})
+    if(name==='chatMemories'){
+      const scope=req.query.scope as ChatMemory['scope']
+      const ids=scope==='private_agent'
+        ?this.db.prepare("SELECT id FROM assistant_memories WHERE scope='agent' AND subject_id=? AND status='confirmed' ORDER BY created_at DESC,id DESC").all(req.query.scopeId!).map(row=>String(row.id))
+        :this.db.prepare("SELECT id FROM chat_memories WHERE scope='conversation' AND scope_id=? AND status='active' ORDER BY created_at DESC,id DESC").all(req.query.scopeId!).map(row=>String(row.id))
+      return this.chat.page(name,req.query,ids,id=>{const memory=this.memory(id);if(memory.status!=='active')fail('NOT_FOUND');return memory})
+    }
     if(name==='createChatMemory') {
-      const body=b as RequestFor<'createChatMemory'>['body'];if(Number(this.db.prepare("SELECT count(*) n FROM chat_memories WHERE scope=? AND scope_id=? AND status='active'").get(body.scope,body.scopeId)!.n)>=10)fail('RATE_LIMITED')
-      const now=instant(),memoryId=randomUUID();this.db.prepare("INSERT INTO chat_memories VALUES (?,?,?,?,?,'active',1,?,?,?,?)").run(memoryId,this.actor.labId,body.scope,body.scopeId,this.actor.id,body.content,body.source,now,now)
+      const body=b as RequestFor<'createChatMemory'>['body'],now=instant(),memoryId=randomUUID()
+      if(body.scope==='private_agent'){
+        if(Number(this.db.prepare("SELECT count(*) n FROM assistant_memories WHERE scope='agent' AND subject_id=? AND status='confirmed'").get(body.scopeId)!.n)>=10)fail('RATE_LIMITED')
+        this.db.prepare("INSERT INTO assistant_memories(id,owner_id,lab_id,scope,subject_id,type,status,origin,source_kind,source_id,source_version,source_label,summary,detail,payload_json,schema_version,version,created_at,updated_at) VALUES(?,?,?,'agent',?,'note','confirmed','explicit','manual',NULL,NULL,?,?,?,?,1,1,?,?)").run(memoryId,this.actor.id,this.actor.labId,body.scopeId,body.source,body.content.slice(0,300),body.content,JSON.stringify({type:'note',text:body.content}),now,now)
+      }else{
+        if(Number(this.db.prepare("SELECT count(*) n FROM chat_memories WHERE scope='conversation' AND scope_id=? AND status='active'").get(body.scopeId)!.n)>=10)fail('RATE_LIMITED')
+        this.db.prepare("INSERT INTO chat_memories VALUES (?,?,?,?,?,'active',1,?,?,?,?)").run(memoryId,this.actor.labId,body.scope,body.scopeId,this.actor.id,body.content,body.source,now,now)
+      }
       const value=this.memory(memoryId,true);this.saveMemory(value);return {data:value}
     }
     if(name==='reviseChatMemory'||name==='revokeChatMemory') {
       const memory=this.memory(id,true),body=b as RequestFor<'reviseChatMemory'>['body'];this.chat.c.checkVersion(memory.version,body.expectedVersion)
       if(memory.status!=='active')fail('INVALID_STATE');if(memory.version>=100)fail('RATE_LIMITED')
-      this.db.prepare('UPDATE chat_memories SET content=?,source=?,status=?,version=version+1,updated_at=? WHERE id=?').run(name==='reviseChatMemory'?body.content:memory.content,name==='reviseChatMemory'?body.source:memory.source,name==='revokeChatMemory'?'revoked':'active',instant(),id)
+      if(memory.scope==='private_agent'){
+        const content=name==='reviseChatMemory'?body.content:memory.content,source=name==='reviseChatMemory'?body.source:memory.source
+        this.db.prepare("UPDATE assistant_memories SET status=?,summary=?,detail=?,payload_json=?,source_label=?,version=version+1,updated_at=? WHERE id=?").run(name==='revokeChatMemory'?'revoked':'confirmed',content.slice(0,300),content,JSON.stringify({type:'note',text:content}),source,instant(),id)
+      }else this.db.prepare('UPDATE chat_memories SET content=?,source=?,status=?,version=version+1,updated_at=? WHERE id=?').run(name==='reviseChatMemory'?body.content:memory.content,name==='reviseChatMemory'?body.source:memory.source,name==='revokeChatMemory'?'revoked':'active',instant(),id)
       const value=this.memory(id,true);this.saveMemory(value);return {data:value}
     }
     if(name==='chatMemoryHistory') {
-      const memory=this.memory(id),revisions=this.db.prepare('SELECT document FROM chat_memory_revisions WHERE memory_id=? ORDER BY version').all(id).map(row=>ChatMemory.parse({...JSON.parse(String(row.document)),allowedActions:[]}))
+      const memory=this.memory(id)
+      const rows=memory.scope==='private_agent'
+        ?this.db.prepare('SELECT document FROM assistant_memory_revisions WHERE memory_id=? ORDER BY version').all(id)
+        :this.db.prepare('SELECT document FROM chat_memory_revisions WHERE memory_id=? ORDER BY version').all(id)
+      const revisions=rows.map(row=>ChatMemory.parse({...JSON.parse(String(row.document)),allowedActions:[]}))
       return {data:{memory,revisions}}
     }
     fail('NOT_IMPLEMENTED')

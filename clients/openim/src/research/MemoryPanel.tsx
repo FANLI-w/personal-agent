@@ -1,8 +1,75 @@
 import { Alert, Button, Input, Modal, Space } from "antd";
 import { useState } from "react";
-import type { ChatMemory } from "@research-agent-platform/contracts";
+import type {
+  AssistantMemory,
+  ChatMemory,
+} from "@research-agent-platform/contracts";
 import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
+
+type MemoryView = {
+  id: string;
+  content: string;
+  source: string | null;
+  status: "active" | "revoked";
+  version: number;
+  allowedActions: string[];
+};
+
+function fromAssistant(memory: AssistantMemory): MemoryView {
+  const payload = memory.payload as { text?: string; value?: string };
+  return {
+    id: memory.id,
+    content: memory.detail || payload.text || payload.value || memory.summary,
+    source: memory.source.label || memory.source.id,
+    status: memory.status === "revoked" ? "revoked" : "active",
+    version: memory.version,
+    allowedActions: memory.allowedActions,
+  };
+}
+function fromChat(memory: ChatMemory): MemoryView {
+  return {
+    id: memory.id,
+    content: memory.content,
+    source: memory.source,
+    status: memory.status,
+    version: memory.version,
+    allowedActions: memory.allowedActions,
+  };
+}
+async function readMemories(
+  scope: "private_agent" | "conversation",
+  scopeId: string,
+) {
+  if (scope === "private_agent") {
+    const response = await researchApi("assistantMemories", {
+      query: { scope: "agent", subjectId: scopeId, limit: 100 },
+    });
+    return {
+      data: response.data.map(fromAssistant),
+      nextCursor: response.nextCursor,
+    };
+  }
+  const response = await researchApi("chatMemories", {
+    query: { scope, scopeId, limit: 100 },
+  });
+  return {
+    data: response.data.map(fromChat),
+    nextCursor: response.nextCursor,
+  };
+}
+const noteFields = (content: string, source: string | null) => ({
+  type: "note" as const,
+  summary: content.slice(0, 300),
+  detail: content,
+  payload: { type: "note" as const, text: content },
+  source: {
+    kind: "manual" as const,
+    id: null,
+    version: null,
+    label: source,
+  },
+});
 
 export function MemoryPanel({
   scope,
@@ -16,23 +83,40 @@ export function MemoryPanel({
   styleChatAvailable?: boolean;
 }) {
   const { data, error, refresh } = useResearchRead(
-    () => researchApi("chatMemories", { query: { scope, scopeId, limit: 100 } }),
+    () => readMemories(scope, scopeId),
     `${scope}:${scopeId}`,
   );
   const [content, setContent] = useState("");
   const [source, setSource] = useState("");
-  const [editing, setEditing] = useState<ChatMemory>();
-  const [history, setHistory] = useState<ChatMemory[]>();
+  const [editing, setEditing] = useState<MemoryView>();
+  const [history, setHistory] = useState<MemoryView[]>();
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
   const save = async () => {
     setBusy(true);
     setFailure("");
     try {
-      if (editing)
-        await researchApi("reviseChatMemory", {
-          params: { id: editing.id },
-          body: { expectedVersion: editing.version, content, source: source || null },
+      if (editing) {
+        if (scope === "private_agent")
+          await researchApi("updateAssistantMemory", {
+            params: { id: editing.id },
+            body: {
+              ...noteFields(content, source || null),
+              expectedVersion: editing.version,
+            },
+          });
+        else
+          await researchApi("reviseChatMemory", {
+            params: { id: editing.id },
+            body: { expectedVersion: editing.version, content, source: source || null },
+          });
+      } else if (scope === "private_agent")
+        await researchApi("createAssistantMemory", {
+          body: {
+            scope: "agent",
+            subjectId: scopeId,
+            ...noteFields(content, source || null),
+          },
         });
       else
         await researchApi("createChatMemory", {
@@ -93,10 +177,16 @@ export function MemoryPanel({
                     title: "移除这条记忆？",
                     content: "保留历史记录，后续 AI 请求不再使用该内容。",
                     onOk: async () => {
-                      await researchApi("revokeChatMemory", {
-                        params: { id: memory.id },
-                        body: { expectedVersion: memory.version },
-                      });
+                      if (scope === "private_agent")
+                        await researchApi("decideAssistantMemory", {
+                          params: { id: memory.id },
+                          body: { expectedVersion: memory.version, decision: "revoke" },
+                        });
+                      else
+                        await researchApi("revokeChatMemory", {
+                          params: { id: memory.id },
+                          body: { expectedVersion: memory.version },
+                        });
                       await refresh();
                     },
                   })
@@ -109,13 +199,17 @@ export function MemoryPanel({
               size="small"
               onClick={async () => {
                 try {
-                  setHistory(
-                    (
-                      await researchApi("chatMemoryHistory", {
-                        params: { id: memory.id },
-                      })
-                    ).data.revisions,
-                  );
+                  if (scope === "private_agent") {
+                    const response = await researchApi("assistantMemoryHistory", {
+                      params: { id: memory.id },
+                    });
+                    setHistory(response.data.revisions.map(fromAssistant));
+                  } else {
+                    const response = await researchApi("chatMemoryHistory", {
+                      params: { id: memory.id },
+                    });
+                    setHistory(response.data.revisions.map(fromChat));
+                  }
                 } catch (err) {
                   setFailure(String(err));
                 }

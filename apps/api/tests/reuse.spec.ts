@@ -308,7 +308,7 @@ describe('B4a A14a–f: actual HTTP processes, durable DB and explicit determini
     legacy.exec('CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, checksum TEXT NOT NULL, applied_at TEXT NOT NULL) STRICT')
     for(const [index,name] of names.entries()){const sql=readFileSync(new URL(`../migrations/${name}`,import.meta.url),'utf8');legacy.exec(sql);legacy.prepare('INSERT INTO schema_migrations VALUES(?,?,?)').run(index+1,createHash('sha256').update(sql).digest('hex'),'2026-09-30T00:00:00Z')}
    })
-   const tables=legacy.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT IN ('schema_migrations','sqlite_sequence') ORDER BY rowid").all().map(r=>String(r.name))
+   const tables=legacy.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT IN ('schema_migrations','sqlite_sequence') ORDER BY rowid").all().map(r=>String(r.name)).filter(n=>!['personal_memories','personal_memory_revisions','personal_memory_settings'].includes(n))
    transaction(legacy,()=>{for(const table of tables)for(const row of db.prepare(`SELECT * FROM ${table}`).all()){const columns=Object.keys(row);legacy.prepare(`INSERT OR REPLACE INTO ${table} (${columns.join(',')}) VALUES (${columns.map(()=>'?').join(',')})`).run(...Object.values(row))}})
    legacy.prepare("UPDATE execution_jobs SET document=json_remove(document,'$.methodVersion','$.configurationGeneration','$.methodTrial','$.conclusionRefs') WHERE kind='capability'").run()
    const before=String(legacy.prepare("SELECT version FROM public_capabilities WHERE lab_id='lab_synthetic'").get()!.version),jobs=legacy.prepare('SELECT id,kind,status,version,request_json FROM execution_jobs ORDER BY id').all()
@@ -319,7 +319,7 @@ describe('B4a A14a–f: actual HTTP processes, durable DB and explicit determini
    for(const saved of documents){const prior=JSON.parse(String(saved.document)),after=JSON.parse(String(legacy.prepare('SELECT document FROM execution_jobs WHERE id=?').get(saved.id!)!.document));for(const field of ['methodVersion','configurationGeneration','methodTrial','conclusionRefs'])delete after[field];expect(after).toEqual(prior)}
    expect(String(legacy.prepare("SELECT version FROM public_capabilities WHERE lab_id='lab_synthetic'").get()!.version)).toBe(before)
    expect(legacy.prepare('SELECT id,kind,status,version,request_json FROM execution_jobs ORDER BY id').all()).toEqual(jobs)
-      expect(legacy.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(35)
+      expect(legacy.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(37)
    expect(legacy.prepare('SELECT action,generation FROM method_events').all()).toEqual([{action:'legacy_import',generation:Number(before)}])
    const origin=JSON.parse(String(legacy.prepare('SELECT document FROM public_methods WHERE version=1').get()!.document));expect(origin.origin).toBe('legacy_b3');expect(origin.createdBy).toBeNull()
    expect(legacy.prepare("SELECT count(*) n FROM execution_jobs WHERE kind='capability' AND json_extract(document,'$.methodVersion')=1").get()!.n).toBeGreaterThan(0)
