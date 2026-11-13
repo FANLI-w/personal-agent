@@ -3318,9 +3318,7 @@
         },
         "query": {},
         "headers": {},
-        "body": {
-          "id": "synthetic"
-        }
+        "body": {}
       },
       "response": {
         "data": {
