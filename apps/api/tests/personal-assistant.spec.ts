@@ -88,6 +88,30 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
   }
  })
 
+ it('adapts ordinary personal replies using earlier owner turns without creating permanent entries', async () => {
+  const s = await setup(), own = await s.own()
+  await s.send(own.conversation.id, '这次说得口语一点。')
+  await s.tick(async () => modelResult('好。'))
+  const next = await s.send(own.conversation.id, '那明天呢？')
+  await s.tick(async input => {
+   expect(input.system).toContain('Adapt reply length')
+   expect(input.prompt).toContain('这次说得口语一点。')
+   return modelResult('明天再接着聊。')
+  })
+  expect((await s.turn(next.turn.id)).status).toBe('succeeded')
+  expect(s.count('personal_memories')).toBe(0)
+ })
+ it('revises a directly stated conversation preference under the same topic', async () => {
+  const s = await setup(), own = await s.own()
+  const first = await s.send(own.conversation.id, '我喜欢你说话自然一点。')
+  const next = await s.send(own.conversation.id, '我更希望你回答先说结论。')
+  expect(next.turn.memoryReceipt).toMatchObject({ operation: 'corrected', memoryId: first.turn.memoryReceipt.memoryId, version: 2 })
+  await s.send(own.conversation.id, '讨论一下这个方案')
+  await s.tick(async input => {
+   expect(JSON.parse(input.prompt).personalMemories.map((m: {content: string}) => m.content)).toEqual(['我更希望你回答先说结论。'])
+   return modelResult('先说结论。')
+  })
+ })
  it('saves explicit colleague preferences only in this owned Agent, deduplicates replay and preserves corrections across restart without billing',async()=>{
   const s=await setup(false),agent=(await s.call('createPersonalAgent',profile)).value.data,direct=(await s.call('createDirectConversation',{contactId:agent.id})).value.data,key=randomUUID()
   const sent=await s.send(direct.id,'以后和我聊天，先给自己的判断，别每次列清单。',0,key)

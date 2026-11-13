@@ -1,4 +1,4 @@
-import { Alert, Button, Input, Modal, Space, Tag } from "antd";
+import { Alert, Button, Dropdown, Input, Modal, Space, Tag } from "antd";
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { OverlayVisibleHandle, useOverlayVisible } from "@/hooks/useOverlayVisible";
 import OIMAvatar from "@/research/ResearchAvatar";
@@ -37,6 +37,8 @@ export const ResearchUserCard = forwardRef<
     isOverlayOpen && !!contactId,
   );
   const contact = data?.data;
+  const personalAssistant = contact?.identity.kind === "personal_agent" &&
+    contact.identity.ownerMemberId === actor?.member.id && contact.profile.role === "coordinator" && !contact.agentRuntime;
   const [editing, setEditing] = useState(false);
   const [memories, setMemories] = useState(false);
   const [connection, setConnection] = useState(false);
@@ -111,13 +113,13 @@ export const ResearchUserCard = forwardRef<
   };
   return (
     <Modal
-      title={props.isSelf ? "我的资料" : "联系人资料"}
+      title={personalAssistant ? "我的个人助理" : props.isSelf ? "我的资料" : "联系人资料"}
       open={isOverlayOpen}
       onCancel={close}
       footer={null}
       destroyOnClose
       centered
-      width={contact?.identity.kind !== "human" ? 680 : 500}
+      width={personalAssistant ? 480 : contact?.identity.kind !== "human" ? 680 : 500}
       styles={{ body: { maxHeight: "calc(100vh - 180px)", overflowY: "auto" } }}
     >
       {(error || failure) && <Alert type="error" showIcon message={error || failure} />}
@@ -128,22 +130,28 @@ export const ResearchUserCard = forwardRef<
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <OIMAvatar contact={contact} text={contact.displayName} size={48} />
-            <div>
+            <div className="flex-1">
               <strong>{contact.displayName}</strong>
               <div>
-                <Tag>
+                {!personalAssistant && <Tag>
                   {contact.identity.kind === "human"
                     ? "真人"
                     : contact.profile.role === "coordinator" &&
                       contact.identity.ownerMemberId === actor?.member.id
                     ? "你的 AI 联系人"
                     : "AI Agent"}
-                </Tag>
+                </Tag>}
               </div>
             </div>
+            {personalAssistant && !editing && contact.allowedActions.includes("edit_profile") && (
+              <Dropdown trigger={["click"]} menu={{ items: [{key: "edit", label: "自定义角色"}], onClick: edit }}>
+                <Button type="text" aria-label="更多助理设置">•••</Button>
+              </Dropdown>
+            )}
           </div>
           {contact.identity.kind === "human" && <AcceptCatAccountNumber username={contact.username}
             isSelf={contact.identity.memberId === actor?.member.id} active={isOverlayOpen} />}
+          {!personalAssistant && <>
           <p className="text-xs text-slate-600">
             关系：
             {
@@ -174,6 +182,7 @@ export const ResearchUserCard = forwardRef<
           {contact.identity.kind !== "human" && <div className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">
             {contact.agentRuntime ? <><strong>外部文字服务</strong><p className="break-all">{contact.agentRuntime.serviceOrigin}</p><p>仅发送逐条授权的当前文字；费用由主人连接的外部账号承担。{contact.agentRuntime.callerAllowed ? "当前账号获准调用。" : "当前账号不能调用，请联系主人。"}</p><p>连接验证：{contact.agentRuntime.verification === "passed" ? "最近测试通过" : contact.agentRuntime.verification === "failed" ? "最近测试失败" : "尚未确认可用"}。本站的记忆、附件与协作不会转发；远端自身功能以该服务为准，本站不作验证。</p></> : <><strong>平台 Agent</strong><p>使用发送者的模型设置和获准记忆。能力描述是交流人设，不代表已配置联网、执行工具或已验证研究结果。</p></>}
           </div>}
+          </>}
           {editing ? (
             <div className="space-y-2">
               {(
@@ -224,7 +233,10 @@ export const ResearchUserCard = forwardRef<
             </div>
           ) : (
             <>
-              <dl>
+              {personalAssistant ? <>
+                {contact.profile.introduction && <p>{contact.profile.introduction}</p>}
+                <AssistantPreferences contactId={contact.id} />
+              </> : <dl>
                 {(
                   [
                     ["introduction", "介绍"],
@@ -239,8 +251,8 @@ export const ResearchUserCard = forwardRef<
                     </dd>
                   </div>
                 ))}
-              </dl>
-              {contact.identity.kind !== "human" && <details className="my-4"><summary className="cursor-pointer py-2 text-sm">角色文件</summary><AgentRoleDocuments contact={contact} /></details>}
+              </dl>}
+              {!personalAssistant && contact.identity.kind !== "human" && <details className="my-4"><summary className="cursor-pointer py-2 text-sm">角色文件</summary><AgentRoleDocuments contact={contact} /></details>}
               <Space wrap>
                 {contact.allowedActions.includes("chat") && (
                   <Button
@@ -273,7 +285,7 @@ export const ResearchUserCard = forwardRef<
                   </Button>
                 )}
                 <ContactRemovalButton contact={contact} active={isOverlayOpen} onRemoved={close} />
-                {contact.allowedActions.includes("edit_profile") && (
+                {!personalAssistant && contact.allowedActions.includes("edit_profile") && (
                   <Button onClick={edit}>{contact.identity.kind === "human" ? "编辑资料" : "编辑角色"}</Button>
                 )}
                 {contact.allowedActions.includes("manage_private_memory") && (
@@ -302,3 +314,26 @@ export const ResearchUserCard = forwardRef<
     </Modal>
   );
 });
+
+function AssistantPreferences({ contactId }: { contactId: string }) {
+  const personal = useResearchRead(
+    (signal) => researchApi("personalMemories", { query: { status: "confirmed", limit: 100 }, signal }),
+    contactId, true, { poll: false },
+  );
+  const agent = useResearchRead(
+    (signal) => researchApi("chatMemories", { query: { scope: "private_agent", scopeId: contactId, limit: 100 }, signal }),
+    contactId, true, { poll: false },
+  );
+  const lines = [
+    ...(agent.data?.data ?? []).filter(m => m.source === "本人明确保存的本助手交流偏好" && m.status === "active")
+      .flatMap(m => m.content.split("\n").filter(line => line.startsWith("- ")).reverse().map(line => line.slice(2))),
+    ...(personal.data?.data ?? []).filter(m => ["回复方式", "称呼", "语言", "写作"].includes(m.topic)).map(m => m.content),
+  ];
+  return <section className="rounded-lg bg-slate-50 p-4">
+    <h3 className="mb-2 text-sm font-medium">我们的交流习惯</h3>
+    {lines.length > 0 && <ul className="space-y-2">{Array.from(new Set(lines)).map(line =>
+      <li key={line} className="whitespace-pre-wrap break-words">{line}</li>)}</ul>}
+    {(agent.error || personal.error) && <p role="status">部分交流习惯暂时无法读取。</p>}
+    <p className="mt-2 text-sm text-slate-600">想调整时，直接告诉我就好。比如「以后回答先给结论」。</p>
+  </section>;
+}
