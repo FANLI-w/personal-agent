@@ -13,6 +13,7 @@ type MemoryView = {
   content: string;
   source: string | null;
   status: "active" | "revoked";
+  conflict: boolean;
   version: number;
   allowedActions: string[];
 };
@@ -25,6 +26,7 @@ function fromAssistant(memory: AssistantMemory): MemoryView {
     content: memory.detail || payload.text || payload.value || memory.summary,
     source: memory.source.label || memory.source.id,
     status: memory.status === "revoked" ? "revoked" : "active",
+    conflict: memory.conflict,
     version: memory.version,
     allowedActions: memory.allowedActions,
   };
@@ -36,6 +38,7 @@ function fromChat(memory: ChatMemory): MemoryView {
     content: memory.content,
     source: memory.source,
     status: memory.status,
+    conflict: false,
     version: memory.version,
     allowedActions: memory.allowedActions,
   };
@@ -96,6 +99,7 @@ export function MemoryPanel({
   const [editing, setEditing] = useState<MemoryView>();
   const [history, setHistory] = useState<MemoryView[]>();
   const [busy, setBusy] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [failure, setFailure] = useState("");
   const save = async () => {
     setBusy(true);
@@ -153,12 +157,37 @@ export function MemoryPanel({
         </p>
       )}
       {(error || failure) && <Alert type="error" showIcon message={error || failure} />}
+      {scope === "private_agent" && canManage && (
+        <Button
+          size="small"
+          loading={compressing}
+          onClick={async () => {
+            setCompressing(true);
+            setFailure("");
+            try {
+              await researchApi("compressAssistantMemories", {
+                body: { subjectId: scopeId },
+              });
+              await refresh();
+            } catch (err) {
+              setFailure(err instanceof Error ? err.message : "压缩失败");
+            } finally {
+              setCompressing(false);
+            }
+          }}
+        >
+          压缩记忆
+        </Button>
+      )}
       {data?.data.map((memory) => (
         <article key={memory.id} className="rounded border p-3">
           <p className="whitespace-pre-wrap">{memory.content}</p>
           <p className="text-xs text-slate-500">
             {memory.source || "未填写来源"} · 版本 {memory.version}
           </p>
+          {memory.conflict && (
+            <p className="text-xs text-amber-600">存在冲突，待确认</p>
+          )}
           <Space wrap>
             {memory.allowedActions.includes("edit") && (
               <Button
