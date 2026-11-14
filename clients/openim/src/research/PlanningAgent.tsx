@@ -749,7 +749,11 @@ function PlanningAgentSession({
         throw error;
       }
       if (!isCurrent()) return;
-      update((t) => ({ ...t, deadline: undefined, deadlineQuestion: false }));
+      update((t) => ({
+        ...t,
+        deadline: undefined,
+        deadlineQuestion: reviewed.dateChanged ? false : t.deadlineQuestion,
+      }));
       setEditing(undefined);
       await plan.refresh();
     });
