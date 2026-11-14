@@ -199,7 +199,7 @@ test("native attachment preserves custom folder and exact session; only metadata
     async () => {}
   ).open(task);
   assert.equal(resumed.sessionId, original.sessionId);
-  assert.equal(resumed.directory, folder);
+  assert.equal(resumed.directory, await fs.realpath(folder));
   assert.equal((await fs.readdir(folder)).length, 0);
   assert(!calls.includes("session/prompt"));
   assert(
