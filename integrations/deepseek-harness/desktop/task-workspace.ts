@@ -21,6 +21,8 @@ export type TaskContext = TaskTarget & {
   version: number;
   agentId?: string;
 };
+export type TaskDiscussionRef = { conversationId: string; messageId: string };
+export type TaskChatContext = { messages: (TaskDiscussionRef & { turnId?: string; text: string })[] };
 export type TaskSource = {
   kind: "artifact" | "library";
   id: string;
@@ -36,6 +38,9 @@ export type TaskBinding = TaskTarget & {
   sessionHistory?: {sessionId:string;title:string;at:string}[];
   contextFingerprint?: string;
   contextReceipt?: ContextReceipt;
+  contextAttachment?: ContextReceipt & { path: string };
+  discussionRefs?: TaskDiscussionRef[];
+  teamMaterialReceipts?: {repository:string;revision:string;entries:{id:string;name:string;sha256:string}[];createdAt:string}[];
   handoffs?: Handoff[];
   preferences?: {personalMemory:boolean;skills:string[]};
   deviceId: string;
@@ -397,6 +402,50 @@ export class DshTaskWorkspace {
       const b = await this.load(target);
       if (!b) throw Error("请先打开任务。");
       b.note = note;
+      await this.save(b);
+    });
+  }
+  /** Ephemeral native context. Only a receipt and exact source refs persist;
+   * private text is never written to the user's working directory. */
+  async nativeContext(context: TaskContext, inputs: WorkInputs) {
+      const b = await this.load(context);
+      if (!b) throw Error('请先打开任务工作区。');
+      return packWorkContext('', inputs, { id:context.taskId, version:context.version, kind:'task', title:context.title,
+        content:context.goal+'\n资料路径只是参考；当前工作文件与修订由科研插件的已选文件状态决定，不能用资料清单覆盖该选择。成果由本人核对后提交，任务完成以实际验收记录为准。' }, b.handoffs?.at(-1), [
+        ...b.sources.map(s=>({id:s.id,version:s.version,kind:'source' as const,title:s.filename,content:JSON.stringify({...s,path:path.join(b.directory,s.localName)})})),
+        ...(b.localMaterials||[]).map(s=>({id:s.sha256,version:1,kind:'source' as const,title:s.filename,content:JSON.stringify({...s,path:path.join(b.directory,s.localName),origin:'local',note:'校验值对应选入版本，读取当前文件后再作结论。'})})),
+      ]);
+  }
+  async attachContext(context: TaskContext, inputs: WorkInputs, discussionRefs: TaskDiscussionRef[]) {
+    return this.exclusive(context, async () => {
+      const b = await this.load(context);
+      if (!b) throw Error('请先打开任务工作区。');
+      const packed = await this.nativeContext(context,inputs);
+      b.contextAttachment = {...packed.receipt,path:'session:'+b.sessionId};
+      b.discussionRefs=discussionRefs;
+      await this.save(b);
+      return this.status(context);
+    });
+  }
+  async invalidateContext(target: TaskTarget) {
+    return this.exclusive(target, async()=>{
+      const b=await this.load(target);if(!b?.contextAttachment)return;
+      delete b.contextAttachment;await this.save(b);
+    });
+  }
+  async verifyNativeFeedback(target:TaskTarget,value:{sessionId:string;seq:number;messageId:string;text:string}) {
+    const b=await this.load(target);
+    if(!b||b.sessionId!==value.sessionId||!Number.isSafeInteger(value.seq)||value.seq<0||typeof value.messageId!=='string'||!safeId.test(value.messageId)||typeof value.text!=='string')throw Error('习惯反馈来源无效。');
+    const page=await this.rpc('session/page',{address:{kind:'session',sessionId:b.sessionId},throughSeq:value.seq,maxMessages:10});
+    const event=page.records.map((r:any)=>r.event).find((e:any)=>e.seq===value.seq);
+    const text=(event?.data?.content||[]).filter((p:any)=>p.type==='text').map((p:any)=>p.text).join('\n');
+    if(event?.type!=='user/message'||!['user','user-rpc'].includes(event.data.source?.kind)||event.data.id!==value.messageId||text!==value.text)throw Error('习惯反馈与原始会话不一致。');
+  }
+  async recordTeamMaterials(target:TaskTarget,receipt:NonNullable<TaskBinding['teamMaterialReceipts']>[number]){
+    return this.exclusive(target,async()=>{
+      const b=await this.load(target);if(!b)throw Error('请先打开任务工作区。');
+      const prior=b.teamMaterialReceipts||[];
+      b.teamMaterialReceipts=[...prior.filter(r=>r.repository!==receipt.repository||r.revision!==receipt.revision||JSON.stringify(r.entries)!==JSON.stringify(receipt.entries)),receipt].slice(-20);
       await this.save(b);
     });
   }

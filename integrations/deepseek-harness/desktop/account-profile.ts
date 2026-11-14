@@ -1,5 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { nativeTaskContextPlugin, nativeTaskContextClient } from './native-task-context-plugin';
 
 /** Official --patch overlay; the user's profile and installed plugin list remain owned by DSH. */
 export async function prepareAccountProfile(home: string, gateway: { baseURL: string; protocol: string; provider?: string; model: string; maxTokens: number }) {
@@ -9,6 +11,8 @@ export async function prepareAccountProfile(home: string, gateway: { baseURL: st
   const nativeDeepSeek = gateway.provider === 'deepseek' && gateway.protocol === 'anthropic-messages'
     && ['deepseek-flash', 'deepseek-v4-pro'].includes(gateway.model);
   const file = path.join(home, 'acceptcat-managed.patch.json');
+  const plugin = path.join(home, 'acceptcat-task-context');
+  const profileExists=await fs.access(path.join(home,'profiles','web','package.json')).then(()=>true,()=>false);
   const entries = [
     { id: 'llm-pi-ai', config: { providers: { acceptcat: {
       displayName: 'AcceptCat', apiKeyEnv: 'ACCEPTCAT_DSH_TOKEN', api: gateway.protocol,
@@ -38,8 +42,14 @@ export async function prepareAccountProfile(home: string, gateway: { baseURL: st
     // AcceptCat handles onboarding. Suppress only the pinned DSH rc.3 product notice
     // through its public settings field; tool permissions and other prompts stay intact.
     { id: 'ui-settings-general', config: { welcomeNoticeVersion: '2026-09-28.1' } },
+    ...(profileExists?[{ insert: [{ id:'acceptcat-task-context', name:'acceptcat-task-context', config:{baseURL:gateway.baseURL} }] }]:[]),
   ];
   await fs.mkdir(home, { recursive: true });
+  await fs.mkdir(plugin,{recursive:true});
+  await fs.writeFile(path.join(plugin,'index.mjs'), nativeTaskContextPlugin, { mode:0o600 });
+  await fs.writeFile(path.join(plugin,'client.mjs'), nativeTaskContextClient, { mode:0o600 });
+  const version='1.0.0-'+createHash('sha256').update(nativeTaskContextPlugin+nativeTaskContextClient).digest('hex').slice(0,16);
+  await fs.writeFile(path.join(plugin,'package.json'),JSON.stringify({name:'acceptcat-task-context',version,type:'module',main:'./index.mjs',exports:{'.':'./index.mjs','./client':'./client.mjs','./package.json':'./package.json'},dsh:{client:{inject:['@deepseek-ai/dsh-client-ui-workspace'],platform:'web'}}}),{mode:0o600});
   await fs.writeFile(file + '.tmp', JSON.stringify(entries, null, 2), { mode: 0o600 });
   await fs.rename(file + '.tmp', file);
   return file;

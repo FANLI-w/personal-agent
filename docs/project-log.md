@@ -3187,3 +3187,7 @@ Design QA根design-qa.md与D:/deepseek-agent/.runtime/experience-refresh-2026111
 预览全部改动及三处P2补修经PR223四项检查通过，fb9599b以0fae1d3合入main，完整源码树与固定成品输入相同。UTC15:51:41Z公开v0.10.110为Latest；1777份输入、137份实际载荷、626项桌面、双类型、隔离启动、禁网跨进程缓存、成品两种Git URL、更新清单及四附件SHA256核对通过。匿名latest.yml字节相同、正式EXE HEAD200/421265849字节。桌面C:/Users/luo/Desktop/AcceptCat_0.10.110.exe，SHA256 cd075cbb9b20a1be01f111432364bc961495b7a51a41b7def698337189dd1539。本地证据D:/deepseek-agent/.runtime/release-0.10.110-20261114，正式回执docs/deployment/acceptcat-0.10.110-release.md。
 
 Windows CI新增回执/习惯回归，任务组件回归放入既有CI测试文件。未清空聊天/记忆/账号，不部署后台，继续0.49/039。真实模型、SDK投递与原生拖放按原范围待验收；既有框架和日志提示、隔离fixture失败及连接器403记录保留。README下载入口核对实际公开版本后更新，移除过时发布/后台版本陈述；发布记录采用普通文档PR回主线。
+
+## 2026-11-15 · 本机工作台任务上下文预览
+
+在 codex/workbench-auto-resume 整合入口与 Electron/DSH 会话桥，使用 main 59e476d 和插件 4572c4b。对照插件源码后保留其科研工具、工作副本及 Office 保存流程，复用平台既有习惯和任务交付接口。插件回归 23 项通过；本地真实组件浏览器覆盖入口、资料选择、错误恢复与文件回交，详情见 D:/deepseek-agent/.runtime/workbench-auto-resume-20261115/launch-ui。Windows 原生运行时测试保留初版扩展加载失败的诊断；全部实验数据在本机证据目录，不接触正式账号。本批仅本地试用，不涉及数据库迁移。

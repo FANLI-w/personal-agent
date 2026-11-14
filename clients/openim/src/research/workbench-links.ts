@@ -35,6 +35,7 @@ export async function findAssistantWorkTask(
 ) {
   let cursor: string | undefined;
   const seen = new Set<string>();
+  const matched = new Set<string>();
   for (let page = 0; page < 10; page++) {
     signal.throwIfAborted();
     const cards = await read("workbench", {
@@ -57,18 +58,22 @@ export async function findAssistantWorkTask(
         });
         signal.throwIfAborted();
         if (
+          task.id === card.taskId &&
           !task.summaryOnly &&
           task.turnId === receipt.turnId &&
           task.conversationId === receipt.conversationId
         )
-          return task.id;
+          matched.add(task.id);
       } catch (error) {
         signal.throwIfAborted();
         if ((error as { status?: number }).status !== 404) throw error;
       }
     }
     cursor = cards.nextCursor || undefined;
-    if (!cursor) return undefined;
+    if (!cursor) {
+      if (matched.size > 1) throw new Error("这次安排关联了多项任务，请在任务列表核对后打开。");
+      return matched.values().next().value as string | undefined;
+    }
     if (seen.has(cursor)) break;
     seen.add(cursor);
   }

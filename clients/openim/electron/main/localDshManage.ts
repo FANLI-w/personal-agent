@@ -5,7 +5,7 @@ import { authority } from "./localFolderManage";
 import { dshAccount, createDshRelay } from "./localDshAccount";
 import { registerTaskDshBridge } from './taskDshManage';
 import type { DshBounds } from "../../src/types/localDsh";
-import { ensureResearchPlugin, researchPlugin } from "../utils/dshPlugin";
+import { ensureResearchPlugin, ensureTaskContextPlugin, researchPlugin } from "../utils/dshPlugin";
 // Built independently by vite.config.ts; the packaged module has no repository-relative imports.
 const { LocalDshRuntime, prepareAccountProfile, dshBrowserCompatibility } = require("./localDshRuntime") as typeof import("../../../../integrations/deepseek-harness/desktop/local-runtime");
 
@@ -18,6 +18,7 @@ export function registerLocalDshBridge() {
   let relay: Awaited<ReturnType<typeof createDshRelay>> | undefined;
   let account: Awaited<ReturnType<typeof dshAccount>> | undefined;
   let generation = 0;
+  let taskHooks:ReturnType<typeof registerTaskDshBridge>;
   const accountWatch = setInterval(() => { if (account) void account.valid().catch(() => stop().catch(() => {})); }, 2000);
   accountWatch.unref();
   const snapshot = () => ({ ...runtime.state, ...(pageError ? { error: pageError } : {}), pageReady,
@@ -78,7 +79,10 @@ export function registerLocalDshBridge() {
         disposeView(); await relay?.close(); relay = undefined; account = undefined;
         await runtime.stop();
         if (epoch !== generation) return;
-        const connection = await createDshRelay(next);
+        const connection = await createDshRelay(next,{
+          taskContext:sessionId=>taskHooks.taskContext(sessionId),
+          taskFeedback:value=>taskHooks.taskFeedback(value),
+        });
         if (epoch !== generation) { await connection.close(); return; }
         relay = connection; account = next;
         const home = path.join(app.getPath('userData'), 'local-dsh', 'accounts', next.identity);
@@ -91,7 +95,11 @@ export function registerLocalDshBridge() {
       // own pnpm so the profile and its lockfile stay DSH's; a fresh profile only
       // appears after the first start, so that case is retried and reloaded once.
       const tarball = path.join(path.resolve(directory, ".."), "tools", "plugins", `${researchPlugin.name}-${researchPlugin.version}.tgz`);
-      const ensure = () => ensureResearchPlugin({ runtime: directory, home: runtime.state.home, tarball });
+      const ensure = async () => {
+        const research=await ensureResearchPlugin({ runtime: directory, home: runtime.state.home, tarball });
+        const context=await ensureTaskContextPlugin({runtime:directory,home:runtime.state.home});
+        return {changed:research.changed||context.changed,reason:research.reason||context.reason};
+      };
       // Never replace dependencies beneath a live plugin/Office job. A fresh
       // installation is reconciled before start; existing running DSH is reused.
       const first = runtime.state.phase === "running" ? { changed: false, reason: undefined } : await ensure();
@@ -99,6 +107,7 @@ export function registerLocalDshBridge() {
       if (first.reason === "profile 尚未创建") {
         await runtime.stop();
         await ensure();
+        await prepareAccountProfile(runtime.state.home,{...next.metadata,baseURL:relay!.baseURL});
         url = await runtime.start();
       }
       // Do not mount a late startup over another conversation or a replaced document.
@@ -175,12 +184,27 @@ export function registerLocalDshBridge() {
     await validate();
     return result.canceled ? undefined : result.filePaths[0];
   });
-  registerTaskDshBridge(async (event) => {
+  taskHooks=registerTaskDshBridge(async (event) => {
     authorize(event, false);
     if (!account || !view || !pageReady || runtime.state.phase !== 'running') await start(event);
     if (!account || !view || !pageReady || runtime.state.phase !== 'running') throw Error(pageError || '本地 DSH 尚未就绪。');
     await account.valid();
     return { account, session: view.webContents.session, origin: new URL(view.webContents.getURL()).origin };
+  },async(sessionId)=>{
+    const current=view,epoch=generation;
+    if(!current||!pageReady||!account)throw Error('工作台尚未连接。');
+    await account.valid();
+    const selected=await current.webContents.executeJavaScript(`new Promise((resolve,reject)=>{
+      const sessionId=${JSON.stringify(sessionId)},nonce=${JSON.stringify(randomUUID())};
+      const opened=event=>{if(event.detail?.nonce!==nonce)return;cleanup();event.detail.error?reject(Error(event.detail.error)):resolve(event.detail.sessionId);};
+      const send=()=>window.dispatchEvent(new CustomEvent('acceptcat-open-task',{detail:{sessionId,nonce}}));
+      const cleanup=()=>{clearTimeout(deadline);clearInterval(retry);window.removeEventListener('acceptcat-task-opened',opened);};
+      window.addEventListener('acceptcat-task-opened',opened);
+      const deadline=setTimeout(()=>{cleanup();reject(Error('工作台任务会话未能打开，请重试连接。'));},10000);
+      const retry=setInterval(send,500);send();
+    })`);
+    if(current!==view||epoch!==generation||selected!==sessionId)throw Error('工作台连接已变化。');
+    await account.valid();
   });
   ipcMain.handle('local-dsh-connect', async (event) => { authorize(event, false); await start(event); return snapshot(); });
   ipcMain.handle('local-dsh-disconnect', async (event) => { authorize(event, false); await stop(); });

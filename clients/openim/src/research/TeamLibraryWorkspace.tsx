@@ -42,12 +42,24 @@ import { useResearchRead } from "./useResearchRead";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchStore } from "./store";
 import { nativeWorkbenchTaskPath } from "./workbench-links";
+import { readWorkbenchServiceOrigin } from "./native-workbench-handoff";
+import {
+  storeWorkbenchInstruction,
+  workbenchInstructionKey,
+} from "./local-dsh-context";
 import { RepositoryEditor } from "./RepositoryEditor";
 import { LibraryIndexPage } from "./LibraryIndexPage";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { TeamLibraryFileImport } from "./TeamLibraryFileImport";
 import { findTeamMaterials } from "./team-material-selection";
 import "./team-library.scss";
+
+const canUseMaterials = (card: WorkbenchCard) =>
+  !!card.taskId &&
+  !card.summaryOnly &&
+  card.source !== "followup" &&
+  card.category !== "completed" &&
+  card.allowedActions.some((a) => ["run", "submit"].includes(a));
 
 const purposes = {
   background: "项目背景",
@@ -292,7 +304,7 @@ export function TeamLibraryWorkspace({
       }
     }
   };
-  const chooseTask = async (cursor?: string) => {
+  const chooseTask = async (cursor?: string, selected = chosenIds) => {
     const ticket = operation.capture();
     setTaskBusy(true);
     setError("");
@@ -302,6 +314,16 @@ export function TeamLibraryWorkspace({
         query: { category: "all", limit: 100, cursor },
       });
       if (ticket.isCurrent()) {
+        const available = response.data.filter(canUseMaterials);
+        if (
+          !cursor &&
+          !response.nextCursor &&
+          available.length === 1 &&
+          selected.length
+        ) {
+          await useEntry(available[0], selected);
+          return;
+        }
         setTasks((old) =>
           cursor ? [...(old || []), ...response.data] : response.data,
         );
@@ -313,9 +335,10 @@ export function TeamLibraryWorkspace({
       if (ticket.isCurrent()) setTaskBusy(false);
     }
   };
-  const useEntry = (card: WorkbenchCard) => {
-    if (!snapshot || !card.taskId || card.summaryOnly) return;
-    const ids = chosenIds.length ? chosenIds : entry ? [entry.id] : [];
+  const useEntry = async (card: WorkbenchCard, selected = chosenIds) => {
+    if (!snapshot || !card.taskId || card.summaryOnly || !actor) return;
+    const ticket = operation.capture();
+    const ids = selected.length ? selected : entry ? [entry.id] : [];
     if (!ids.length) return;
     const target = nativeWorkbenchTaskPath(
       card.taskId,
@@ -325,12 +348,26 @@ export function TeamLibraryWorkspace({
     for (const id of ids) params.append("teamEntry", id);
     params.set("teamRevision", snapshot.revision);
     params.set("teamRules", String(includeRules));
-    if (question.trim())
-      sessionStorage.setItem(
-        "team-library-question:" + actor?.member.id + ":" + card.taskId,
-        question.trim().slice(0, 4000),
+    try {
+      const serviceOrigin = await readWorkbenchServiceOrigin();
+      if (!ticket.isCurrent()) return;
+      const key = workbenchInstructionKey(
+        {
+          memberId: actor.member.id,
+          labId: actor.member.labId,
+          generation: operation.generation,
+          serviceOrigin,
+        },
+        {
+          taskId: card.taskId,
+          kind: card.source === "research_task" ? "research" : "personal",
+        },
       );
-    navigate("/dsh?" + params.toString());
+      storeWorkbenchInstruction(sessionStorage, key, question);
+      navigate("/dsh?" + params.toString());
+    } catch (failure) {
+      if (ticket.isCurrent()) setError(message(failure));
+    }
   };
   const run = async (action: () => Promise<unknown>) => {
     const ticket = operation.capture();
@@ -381,10 +418,24 @@ export function TeamLibraryWorkspace({
                 </Button>
               )}
               {snapshot && (
-                <Dropdown trigger={["click"]} menu={{ items: [
-                  { key: "history", label: "更新记录", icon: <HistoryOutlined /> },
-                  { key: "sources", label: "添加更多来源", icon: <PlusOutlined />, disabled: !bridge },
-                ], onClick: ({ key }) => { if (key === "history") void openHistory(); else setEditing(true); } }}>
+                <Dropdown
+                  trigger={["click"]}
+                  menu={{
+                    items: [
+                      { key: "history", label: "更新记录", icon: <HistoryOutlined /> },
+                      {
+                        key: "sources",
+                        label: "添加更多来源",
+                        icon: <PlusOutlined />,
+                        disabled: !bridge,
+                      },
+                    ],
+                    onClick: ({ key }) => {
+                      if (key === "history") void openHistory();
+                      else setEditing(true);
+                    },
+                  }}
+                >
                   <Button icon={<MoreOutlined />} aria-label="更多资料操作" />
                 </Dropdown>
               )}
@@ -639,9 +690,7 @@ export function TeamLibraryWorkspace({
                   )}
                 </div>
                 <div className="team-library-agent">
-                  <label htmlFor="team-library-question">
-                    查找资料并带入任务
-                  </label>
+                  <label htmlFor="team-library-question">查找资料并带入任务</label>
                   <Input.TextArea
                     id="team-library-question"
                     value={question}
@@ -755,7 +804,7 @@ export function TeamLibraryWorkspace({
                         loading={taskBusy}
                         onClick={() => {
                           setChosenIds([entry.id]);
-                          void chooseTask();
+                          void chooseTask(undefined, [entry.id]);
                         }}
                       >
                         用于任务
@@ -953,14 +1002,7 @@ export function TeamLibraryWorkspace({
           style={{ marginBottom: 16 }}
         />
         {tasks
-          ?.filter(
-            (c) =>
-              c.taskId &&
-              !c.summaryOnly &&
-              c.source !== "followup" &&
-              c.category !== "completed" &&
-              c.allowedActions.some((a) => ["run", "submit"].includes(a)),
-          )
+          ?.filter(canUseMaterials)
           .filter(
             (c) =>
               !taskSearch || c.title.toLowerCase().includes(taskSearch.toLowerCase()),
@@ -980,15 +1022,9 @@ export function TeamLibraryWorkspace({
               {c.title}
             </Button>
           ))}
-        {tasks &&
-          !tasks.some(
-            (c) =>
-              c.taskId &&
-              !c.summaryOnly &&
-              c.source !== "followup" &&
-              c.category !== "completed" &&
-              c.allowedActions.some((a) => ["run", "submit"].includes(a)),
-          ) && <p>暂无可取用资料的任务。请先在任务页确认或开始一项任务。</p>}
+        {tasks && !tasks.some(canUseMaterials) && (
+          <p>暂无可取用资料的任务。请先在任务页确认或开始一项任务。</p>
+        )}
         {taskCursor && (
           <Button loading={taskBusy} onClick={() => chooseTask(taskCursor)}>
             继续加载任务

@@ -199,3 +199,6 @@ export * from './work-memory';
 export { WorkContext } from "../../../packages/contracts/src/work-context";
 
 export { TeamExecution } from './team-execution';
+export { verifiedTaskDiscussion, nativePreferenceInput } from './native-task-context';
+export { effectivePersonalPreferences } from '../../../packages/research-core/src/personal-preferences';
+export { nativeTaskContextPlugin } from './native-task-context-plugin';

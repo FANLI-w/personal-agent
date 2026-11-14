@@ -8,6 +8,8 @@ import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { legacyTaskInvitation, taskStatusLabel } from "./task-notice";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { workbenchTaskPath } from "./workbench-links";
+import { NativeWorkbenchTaskButton } from "./NativeWorkbenchTaskButton";
+import type { WorkbenchMessageSource } from "./native-workbench-handoff";
 
 type ChatResource = ChatMessage["resources"][number];
 
@@ -99,7 +101,7 @@ function useTaskFacts(resource: ChatResource): {
   };
 }
 
-function TaskCardBody({ resource }: { resource: ChatResource }) {
+function TaskCardBody({ resource, source }: { resource: ChatResource; source?: WorkbenchMessageSource }) {
   const navigate = useNavigate();
   const { facts, failed, reload } = useTaskFacts(resource);
   const known = facts && facts.kind !== "unknown" ? facts : undefined;
@@ -120,9 +122,12 @@ function TaskCardBody({ resource }: { resource: ChatResource }) {
         <p className="truncate text-sm font-medium text-slate-800">{title}</p>
         {status && <p className="text-xs text-slate-500">{status}</p>}
       </div>
-      <Button size="small" onClick={open}>
-        {known ? "打开任务" : "重新读取"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button size="small" onClick={open}>
+          {known ? "打开任务" : "重新读取"}
+        </Button>
+        {known && <NativeWorkbenchTaskButton target={{ taskId: resource.ref.id, kind: known.kind }} source={source} />}
+      </div>
     </div>
   );
 }
@@ -135,9 +140,11 @@ function TaskCardBody({ resource }: { resource: ChatResource }) {
 export function ResearchTaskCard({
   resource,
   text,
+  source,
 }: {
   resource: ChatResource;
   text?: string;
+  source?: WorkbenchMessageSource;
 }) {
   if (text)
     return (
@@ -145,13 +152,13 @@ export function ResearchTaskCard({
         <p className="text-xs font-medium text-slate-500">{legacyTaskInvitation(text) ? `${text.split("邀请你承接任务")[0]}发来的任务` : "任务邀请"}</p>
         {!legacyTaskInvitation(text) && <SafeMessageMarkdown text={text} />}
         <div className="border-t border-slate-200 pt-2">
-          <TaskCardBody resource={resource} />
+          <TaskCardBody resource={resource} source={source} />
         </div>
       </div>
     );
   return (
     <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-      <TaskCardBody resource={resource} />
+      <TaskCardBody resource={resource} source={source} />
     </div>
   );
 }

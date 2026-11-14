@@ -1,5 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { hash } from './auth.js'
+import { effectivePersonalPreferences, preferenceTopicKey } from '@research-agent-platform/research-core'
+export { preferenceTopicKey } from '@research-agent-platform/research-core'
 
 export type PersonalPreference = {
   id: string
@@ -11,11 +13,6 @@ export type PersonalPreference = {
   version: number
   updatedAt: string
   store: 'personal' | 'assistant_personal'
-}
-const aliases: Record<string, string> = { '回答方式': '回复方式', '回复风格': '回复方式', '回答风格': '回复方式', '名字': '称呼' }
-export function preferenceTopicKey(topic: string) {
-  const normalized = topic.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase()
-  return aliases[normalized] ?? normalized
 }
 
 /** Read both authorities without copying records or changing either history. */
@@ -32,13 +29,7 @@ export function readPersonalPreferences(db: DatabaseSync, owner: string) {
   })
   // A candidate is a suggestion. Confirmed updates and revocations compete by
   // their actual write time; equal timestamps retain the legacy authority.
-  const effective = new Map<string, PersonalPreference>()
-  for (const value of [...assistant, ...legacy]) {
-    if (value.status === 'candidate') continue
-    const topic = preferenceTopicKey(value.topic), previous = effective.get(topic)
-    if (!previous || value.updatedAt >= previous.updatedAt) effective.set(topic, value)
-  }
-  return { legacy, assistant, effective: [...effective.values()] }
+  return { legacy, assistant, effective: effectivePersonalPreferences(legacy, assistant) }
 }
 
 export function personalPreferencesFingerprint(db: DatabaseSync, owner: string, settingsVersion: number) {

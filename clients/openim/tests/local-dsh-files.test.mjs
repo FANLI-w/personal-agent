@@ -33,7 +33,7 @@ const managed = (await esbuild.build({entryPoints:[path.join(client,'electron/ma
     build.onLoad({filter:/taskDshManage\.ts$/},()=>({contents:'export const registerTaskDshBridge=()=>{};',loader:'js'}));
     // This fixture tests the frame/account boundary, not package installation.
     // The real bootstrap has separate filesystem/process tests in dsh-plugin.
-    build.onLoad({filter:/dshPlugin\.ts$/},()=>({contents:'export const researchPlugin={name:"dsh-research-workbench",version:"0.4.0"};export const ensureResearchPlugin=async()=>({changed:false});',loader:'js'}));
+    build.onLoad({filter:/dshPlugin\.ts$/},()=>({contents:'export const researchPlugin={name:"dsh-research-workbench",version:"0.4.0"};export const ensureResearchPlugin=async()=>({changed:false});export const ensureTaskContextPlugin=async()=>({changed:false});',loader:'js'}));
   }}],
 })).outputFiles[0].text;
 
