@@ -2,7 +2,7 @@ import { randomBytes, randomUUID, createHash } from 'node:crypto'
 import { EventEmitter } from 'node:events'
 import { createRequire } from 'node:module'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { readFile, readdir } from 'node:fs/promises'
+import { readFile, readdir, realpath } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -163,7 +163,7 @@ it('automatic native attachment reaches the real pre-step hook with verified dis
   expect(material.sha256).toBe(createHash('sha256').update('VERIFIED MATERIAL CONTENT').digest('hex'))
   const entries = JSON.parse(text.split('\n')[1]!)
   const materialContext = JSON.parse(entries.find((entry: any) => entry.title === 'selected-material.txt').content)
-  expect(materialContext.path).toBe(path.join(f.work, material.localName))
+  expect(materialContext.path).toBe(await realpath(path.join(f.work, material.localName)))
   expect(await readFile(path.join(f.work, material.localName), 'utf8')).toBe('VERIFIED MATERIAL CONTENT')
   expect(attached.binding.contextAttachment.path).toBe('session:' + opened.binding.sessionId)
   expect(f.selected).toEqual([opened.binding.sessionId]); expect(f.rpcCalls).not.toContain('session/prompt')
