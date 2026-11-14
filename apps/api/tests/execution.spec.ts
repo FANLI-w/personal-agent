@@ -286,7 +286,7 @@ describe('B3 durable service with explicit deterministic model doubles (not G3 l
           const sql=readFileSync(new URL(`../migrations/${name}`,import.meta.url),'utf8');legacy.exec(sql);legacy.prepare('INSERT INTO schema_migrations VALUES (?,?,?)').run(index+1,createHash('sha256').update(sql).digest('hex'),'2026-09-30T00:00:00Z')
         }
       })
-      const tables=legacy.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT IN ('schema_migrations','sqlite_sequence') ORDER BY rowid").all().map(r=>String(r.name)).filter(n=>!['personal_memories','personal_memory_revisions','personal_memory_settings'].includes(n))
+      const tables=legacy.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT IN ('schema_migrations','sqlite_sequence') ORDER BY rowid").all().map(r=>String(r.name))
       transaction(legacy,()=>{for(const table of tables)for(const row of db.prepare(`SELECT * FROM ${table}`).all()){
         const cols=Object.keys(row);legacy.prepare(`INSERT OR REPLACE INTO ${table} (${cols.join(',')}) VALUES (${cols.map(()=>'?').join(',')})`).run(...Object.values(row))
       }})
@@ -302,6 +302,8 @@ describe('B3 durable service with explicit deterministic model doubles (not G3 l
   })
 
   it('A11 actual worker kill/restart leaves interrupted evidence; controlled local transport is not live-model proof',async()=>{
+    // Prior scenarios share this database. Only the capability job should reach this deliberately hanging transport.
+    db.prepare('DELETE FROM assistant_feedback').run()
     const q=await queue();let hit!:()=>void
     const called=new Promise<void>(resolve=>{hit=resolve})
     const transport=createHttpServer((req,_res)=>{req.resume();hit()})

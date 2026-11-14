@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { readFile, readdir, unlink, open, writeFile, mkdtemp, rm, mkdir, copyFile } from 'node:fs/promises';
+import { readFile, readdir, unlink, open, writeFile, mkdtemp, rm, mkdir, copyFile, rename } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
@@ -375,7 +375,11 @@ export function registerTaskDshBridge(
     const a=await authorized(event,target,true), library=await teamLibraryContext(event);
     if(a.c.account.metadata.memberId!==library.memberId)throw Error('资料与工作台账号不一致。');
     const {entry,manifest}=await library.store.entry(selection);
-    const entries=[entry,...(selection.includeRules?manifest.entries.filter(e=>e.id!==entry.id&&e.projectId===entry.projectId&&e.purpose==='rule'):[])];
+    if(selection.entryIds!==undefined && (!Array.isArray(selection.entryIds)||selection.entryIds.length>19||selection.entryIds.some(id=>typeof id!=='string')))throw Error('一次最多取用19份资料。');
+    const ids=[...new Set([entry.id,...(selection.entryIds||[])])];
+    const selected=ids.map(id=>{const value=manifest.entries.find(e=>e.id===id);if(!value)throw Error('所选资料已变化，请同步后重新选择。');return value;});
+    const projects=new Set(selected.map(e=>e.projectId));
+    const entries=[...selected,...(selection.includeRules?manifest.entries.filter(e=>!ids.includes(e.id)&&projects.has(e.projectId)&&e.purpose==='rule'):[])];
     if(entries.length>19)throw Error('本次项目规范超过18份，请分批取用。');
     await a.coordinator.idle(target);
     if(!(await a.store.load(target)))throw Error('请先选择任务工作文件夹，再取用资料。');
@@ -388,7 +392,7 @@ export function registerTaskDshBridge(
         if(current.source.kind==='git'){
           const local=await library.store.read({...selection,entryId:current.id}),folder=path.join(temporary,current.id);await mkdir(folder);
           const file=path.join(folder,path.basename(current.source.path));await writeFile(file,local.bytes,{flag:'wx'});files.push(file);
-          receipts.push({id:current.id,name:current.name,purpose:current.purpose,source:current.source,sha256:current.source.sha256});
+          receipts.push({id:current.id,name:current.name,projectId:current.projectId,purpose:current.purpose,source:current.source,sha256:current.source.sha256});
         }else if(current.source.kind==='local'){
           const local=await localLibraryPaths([current.source.path]);
           if(local.length!==1)throw Error('本机缺少这份资料，请先在“我的资料”登记资料文件夹。');
@@ -396,7 +400,7 @@ export function registerTaskDshBridge(
           const folder=path.join(temporary,current.id);await mkdir(folder);const file=path.join(folder,path.basename(current.source.path));await copyFile(local[0],file);
           const hash=createHash('sha256');for await(const chunk of createReadStream(file))hash.update(chunk);const digest=hash.digest('hex');
           if(digest!==current.source.sha256)throw Error('本地资料与发布版本不同，未交给工作台。');
-          files.push(file);receipts.push({id:current.id,name:current.name,purpose:current.purpose,source:current.source,sha256:digest});
+          files.push(file);receipts.push({id:current.id,name:current.name,projectId:current.projectId,purpose:current.purpose,source:current.source,sha256:digest});
         }else{
           const selected={kind:'library' as const,id:current.source.fileId,version:current.source.version},s=await source(a.c,selected,target);
           if(s.metadata.sha256!==current.source.sha256)throw Error('共享原件版本校验失败。');
@@ -405,7 +409,7 @@ export function registerTaskDshBridge(
           await authorized(event,target,true);await a.c.account.valid();await library.current();await a.coordinator.idle(target);
           if((await a.store.status(target))?.phase==='running')throw Error('助手已开始执行，请等本轮结束再取用。');
           await a.store.importOriginal(target,{...selected,sha256:s.metadata.sha256,filename:s.metadata.filename},file);
-          receipts.push({id:current.id,name:current.name,purpose:current.purpose,source:current.source,sha256:s.metadata.sha256});
+          receipts.push({id:current.id,name:current.name,projectId:current.projectId,purpose:current.purpose,source:current.source,sha256:s.metadata.sha256});
         }
       }
       const provenance=path.join(temporary,'团队资料来源-'+entry.id+'.json');
@@ -538,20 +542,104 @@ export function registerTaskDshBridge(
         : "",
     };
   });
-  ipcMain.handle(
-    "task-dsh-submit",
-    async (event, target: TaskTarget, summary: string, names: string[]) => {
-      const a = await authorized(event, target);
-      const b = await a.store.load(target);
-      for (const s of b?.sources || []) await source(a.c, s, target);
-      await a.coordinator.idle(target);
-      return a.store.deliver(
-        a.context,
-        summary,
-        names,
-        (url, body, key) => business(a.c, url, body, key),
-        a.task.allowedActions.includes("submit"),
-      );
-    },
-  );
+  const deliveryFlights = new Set<string>();
+  async function submitSelected(event: Electron.IpcMainInvokeEvent, target: TaskTarget, summary: string, names: string[]) {
+    const a = await authorized(event, target);
+    const b = target.kind === "personal" && a.task.allowedActions.includes("submit")
+      ? await a.store.prepareDelivery(a.context) : await a.store.load(target);
+    const replay = b?.delivery && b.delivery.summary === summary && JSON.stringify(b.delivery.names) === JSON.stringify(names)
+      && (b.delivery.status === "pending" || !a.task.allowedActions.includes("submit"));
+    if (!a.task.allowedActions.includes("submit") && !replay) throw Error("当前任务不能提交成果。");
+    const flightKey = a.store.root + ":" + taskKey(target);
+    if (deliveryFlights.has(flightKey)) throw Error("这项任务正在提交，请等回执后再操作。");
+    deliveryFlights.add(flightKey);
+    try {
+    await a.coordinator.idle(target);
+    for (const item of b?.sources || []) await source(a.c, item, target);
+    if (!replay && target.kind === "research" && names.length) {
+      if (!b || names.length > 5) throw Error("每次最多提交 5 个文件。");
+      const collectionKey = createHash("sha256").update(a.c.account.identity + ":delivery:" + target.taskId).digest("hex");
+      const selectedHashes: Record<string, string> = {};
+      for (const name of names) {
+        const stagedHash = /^delivery-([a-f0-9]{64})[\\/]/.exec(name)?.[1];
+        const hash = createHash("sha256");
+        for await (const chunk of createReadStream(await a.store.filePath(b, name))) hash.update(chunk);
+        selectedHashes[name] = hash.digest("hex");
+        if (stagedHash && selectedHashes[name] !== stagedHash) throw Error("待交文件已经变化，请重新选择后确认提交。");
+      }
+      const created = await business(a.c, "/api/v1/research-library/collections", {
+        name: "任务交付 · " + target.taskId, description: "此任务明确提交的文件", scope: "task_scoped", taskIds: [target.taskId],
+      }, collectionKey);
+      const readCollection = async () => {
+        const list = await business(a.c, `/api/v1/research-library/collections?scope=mine&limit=100&q=${encodeURIComponent(target.taskId)}`);
+        const value = list.find((item: any) => item.id === created.id);
+        if (!value) throw Error("任务交付资料暂不可用，请重试。");
+        return value;
+      };
+      const collection = await readCollection();
+      const current = b.archive;
+      const same = current && current.collectionId === collection.id && JSON.stringify(current.names) === JSON.stringify(names)
+        && (current.status === "pending" || (current.files.length === names.length && current.files.every(file => file.sha256 === selectedHashes[file.name])));
+      const selection: ArchiveSelection = same ? {
+        ...current, expectedCollectionVersion: current.versionConflict ? collection.version : current.expectedCollectionVersion,
+      } : {
+        requestId: randomUUID(), collectionId: collection.id, collectionName: collection.name,
+        scope: "task_scoped", expectedCollectionVersion: collection.version, names,
+      };
+      const checkCollection = async () => {
+        await authorized(event, target);
+        const latest = await readCollection();
+        if (!latest.owned || latest.scope !== "task_scoped" || (latest.taskIds.length !== 1 || latest.taskIds[0] !== target.taskId)) throw Error("交付文件的任务访问范围已变化，请核对后重试。");
+      };
+      await a.store.archive(target, selection, checkCollection,
+        async (url, body, key) => { if (url.endsWith("/uploads")) await requireLargeOriginals(a.c); return business(a.c, url, body, key); }, Boolean(same && current?.versionConflict), selectedHashes);
+    }
+    const latest = await authorized(event, target);
+    return await latest.store.deliver(latest.context, summary, names,
+      (url, body, key) => business(latest.c, url, body, key), latest.task.allowedActions.includes("submit"));
+    } finally { deliveryFlights.delete(flightKey); }
+  }
+  ipcMain.handle("task-dsh-stage-delivery", async (event, target: TaskTarget, paths?: string[]) => {
+    const a = await authorized(event, target, true);
+    if (!a.task.allowedActions.includes("submit")) throw Error("当前任务不能提交成果。");
+    let selected = paths;
+    if (selected === undefined) {
+      const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
+        title: "选择要提交的文件", properties: ["openFile", "multiSelections"],
+      });
+      if (result.canceled) return [];
+      selected = result.filePaths;
+    }
+    await a.coordinator.idle(target);
+    await authorized(event, target, true);
+    return a.store.stageDelivery(a.context, selected);
+  });
+  ipcMain.handle("task-dsh-submit", submitSelected);
+  ipcMain.handle("task-dsh-download-delivery", async (event, target: TaskTarget, locator: string) => {
+    const a = await authorized(event, target);
+    const match = typeof locator === "string" && /^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$/.exec(locator);
+    const permitted = target.kind === "research" && a.data.deliverables?.some((delivery: any) => delivery.sources?.some((item: any) => item.locator === locator));
+    if (!match || !permitted) throw Error("这份文件不在当前任务的交付记录中。");
+    const selected = { kind: "library" as const, id: match[1], version: Number(match[2]) };
+    const original = await source(a.c, selected, target);
+    if (original.metadata.sha256 !== match[3]) throw Error("交付版本校验值不一致，请联系提交人。");
+    if (!Number.isSafeInteger(original.metadata.byteLength) || original.metadata.byteLength < 1 || original.metadata.byteLength > 512 * 1048576) throw Error("交付文件大小无效或超过 512 MiB。");
+    const result = await dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender)!, {
+      title: "保存交付文件", defaultPath: path.basename(original.metadata.filename),
+    });
+    if (result.canceled || !result.filePath) return false;
+    await authorized(event, target);
+    const temporary = path.join(path.dirname(result.filePath), ".acceptcat-" + randomUUID() + ".download");
+    try {
+      await downloadOriginal(a.c, original.url, temporary, original.metadata.byteLength);
+      const hash = createHash("sha256");
+      for await (const chunk of createReadStream(temporary)) hash.update(chunk);
+      if (hash.digest("hex") !== match[3]) throw Error("文件校验失败，请重试下载。");
+      await authorized(event, target);
+      await source(a.c, selected, target);
+      await a.c.account.valid();
+      await rename(temporary, result.filePath);
+      return true;
+    } finally { await unlink(temporary).catch(() => {}); }
+  });
 }

@@ -6,7 +6,7 @@ import ts from 'typescript';
 const source=await readFile(new URL('../src/research/task-inbox.ts',import.meta.url),'utf8');
 const mod={exports:{}};
 vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:mod,exports:mod.exports,Set,Error,Promise});
-const {collectTaskInbox}=mod.exports;
+const {collectTaskInbox,workbenchNextAction}=mod.exports;
 const signal=()=>new AbortController().signal;
 const card=(id,source='research_task')=>({id,taskId:id,source,title:'同名任务',allowedActions:['claim']});
 const page=(data,nextCursor=null)=>({data,nextCursor});
@@ -48,4 +48,16 @@ test('cancellation prevents late reads from establishing an inbox for another ac
 test('personal spaces and old services do not require the laboratory-only scope API',async()=>{
  const result=await collectTaskInbox(async()=>page([card('personal','personal_task')]),undefined,signal());
  assert.equal(result.data[0].id,'personal');assert.equal(result.truncated,false);
+});
+
+test('next action uses current grants so observers wait while reviewers and contributors can act',()=>{
+ const task={source:'research_task',summaryOnly:false,status:'in_review',allowedActions:[],progress:{label:'in_review'}};
+ assert.equal(workbenchNextAction(task),'等待验收意见');
+ assert.equal(workbenchNextAction({...task,allowedActions:['review']}),'查看成果并验收');
+ assert.equal(workbenchNextAction({...task,status:'in_progress'}),'查看进展，等待成员交付');
+ assert.equal(workbenchNextAction({...task,status:'in_progress',allowedActions:['submit']}),'提交文件或阶段成果');
+ assert.equal(workbenchNextAction({...task,status:'changes_requested'}),'等待承接人修改');
+ assert.equal(workbenchNextAction({...task,status:'changes_requested',allowedActions:['submit']}),'修改后重新提交');
+ assert.equal(workbenchNextAction({...task,status:'awaiting_acceptance',summaryOnly:true,allowedActions:['decide']}),'确认是否承接');
+ assert.equal(workbenchNextAction({...task,status:'completed',allowedActions:['review']}),'查看已验收成果');
 });

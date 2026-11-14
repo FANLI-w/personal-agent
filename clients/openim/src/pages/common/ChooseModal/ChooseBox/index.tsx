@@ -51,6 +51,7 @@ interface IChooseBoxProps {
   checkMemberRole?: boolean;
   researchGroupPick?: boolean;
   groupID?: string;
+  initialSearch?: string;
   disabled?: boolean;
 }
 
@@ -158,6 +159,7 @@ const ChooseBox: ForwardRefRenderFunction<ChooseBoxHandle, IChooseBoxProps> = (
 
         {researchGroupPick ? (
           <ResearchGroupPicker
+            initialSearch={props.initialSearch}
             groupID={groupID}
             isChecked={isChecked}
             checkClick={checkClick}

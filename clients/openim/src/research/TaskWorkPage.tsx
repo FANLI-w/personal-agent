@@ -13,6 +13,8 @@ import { LocalLibraryPicker } from "./LocalLibraryPicker";
 import { researchScopeLabels } from "./research-library-api";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { taskEventRows } from "./task-dsh-events";
+import { TaskDeliveryPanel } from "./TaskDeliveryPanel";
+import { deliveryReceiptLabel } from "./task-delivery-command";
 import { TaskArchivePanel } from "./TaskArchivePanel";
 import { TaskExecutionStatus } from "./TaskExecutionStatus";
 import { TaskKnowledgePanel } from "./TaskKnowledgePanel";
@@ -218,6 +220,7 @@ export function TaskWorkPage({
   );
   const task = detail.data?.task,
     actions: string[] = task?.allowedActions || [];
+  const serviceStatus = task && "status" in task ? task.status : "";
   const canWork =
     kind === "research"
       ? actions.includes("submit")
@@ -287,7 +290,7 @@ export function TaskWorkPage({
     if (follow.current && transcript.current)
       transcript.current.scrollTop = transcript.current.scrollHeight;
   }, [state?.events.at(-1)?.seq]);
-  const command = async (action: () => Promise<unknown>) => {
+  const command = async (action: () => Promise<unknown>, propagate = false) => {
     if (flight.current) return;
     const { isCurrent } = operation.capture();
     flight.current = true;
@@ -306,6 +309,7 @@ export function TaskWorkPage({
         setError(e instanceof Error ? e.message : "操作未完成，请重试。");
         await refresh().catch(() => {});
       }
+      if (propagate) throw e;
     } finally {
       if (isCurrent()) {
         flight.current = false;
@@ -366,13 +370,13 @@ export function TaskWorkPage({
     ...(state?.binding.localMaterials || []).map((source) => source.localName),
   ]);
   const outputs = (state?.files || []).filter((file) => !inputNames.has(file.name));
-  const submitted = state?.binding.delivery;
-  const submit = () =>
+  const submitted = state?.binding.delivery?.status === "submitted" ? state.binding.delivery : undefined;
+  const submit = (selectedNames?: string[], summaryText?: string) =>
     command(async () => {
       const { isCurrent } = operation.capture();
-      const names = kind === "personal" ? [] : outputs.map((file) => file.name);
+      const names = kind === "personal" ? [] : selectedNames || (state?.binding.delivery?.status === "pending" ? state.binding.delivery.names : outputs.map((file) => file.name));
       // The reviewer needs the file list, not a second essay.
-      const summary = [
+      const summary = summaryText || [
         names.length
           ? `提交 ${names.length} 个文件：${names.join("、")}`
           : "提交本任务成果",
@@ -382,10 +386,10 @@ export function TaskWorkPage({
         .join("\n\n");
       await bridge!.taskSubmit(target, summary, names);
       if (isCurrent()) {
-        setNotice("成果已提交，等待验收。");
+        setNotice("提交回执已确认。");
         setSection((value) => ({ ...value, plan: true, materials: false }));
       }
-    });
+    }, true);
   return (
     <section className="task-work-page" aria-label="任务工作页">
       <header className="task-work-heading">
@@ -426,6 +430,14 @@ export function TaskWorkPage({
         />
       )}
       {notice && <Alert type="success" message={notice} />}
+      {(actions.includes("submit") || state?.binding.delivery) && bridge?.taskStageDelivery && (
+        <TaskDeliveryPanel key={operation.scope} target={target} title={task?.title || "当前任务"} outputs={outputs}
+          currentStatus={serviceStatus} canSubmit={actions.includes("submit")}
+          disabled={busy || !actions.includes("submit") || state?.binding.delivery?.status === "pending"} submitted={submitted} submit={submit}
+          pending={state?.binding.delivery?.status === "pending"}
+          retry={() => command(async () => { const delivery = state?.binding.delivery; if (delivery) await bridge.taskSubmit(target, delivery.summary, delivery.names); }, true)}
+          stage={paths => bridge.taskStageDelivery(target, paths)} />
+      )}
       {task && "goal" in task && task.goal && (
         <TaskBrief
           goal={task.goal}
@@ -671,9 +683,9 @@ export function TaskWorkPage({
           </div>
         ))}
         {preview && <pre className="task-work-preview">{preview}</pre>}
-        {submitted ? (
+        {submitted && !actions.includes("submit") ? (
           <div className="task-work-submitted">
-            <strong>已提交，等待验收</strong>
+            <strong>{deliveryReceiptLabel(serviceStatus)}</strong>
             <p>{submitted.names.join("、") || "已提交文字说明"}</p>
             <small>{submitted.summary}</small>
           </div>
@@ -697,7 +709,7 @@ export function TaskWorkPage({
                   (kind === "research" && !outputs.length) ||
                   !actions.includes("submit")
                 }
-                onClick={() => void submit()}
+                onClick={() => void submit().catch(() => {})}
               >
                 提交这些文件
               </Button>
@@ -724,7 +736,7 @@ export function TaskWorkPage({
                           plan: true,
                           materials: false,
                         }));
-                        setNotice("成果已提交，等待验收。");
+                        setNotice("提交回执已确认。");
                       })
                     }
                   >

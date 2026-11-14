@@ -185,11 +185,6 @@ function route<P extends z.ZodType, Q extends z.ZodType, B extends z.ZodType, R 
   }
 }
 
-/**
- * Contract draft for the personal-assistant memory table. Routes are not merged
- * into `routes` until the database migration and handlers exist; keeping this
- * module separate prevents a half-wired public API.
- */
 export const assistantMemoryRoutes = {
   assistantMemorySettings: route('GET', '/me/assistant-memory-settings', empty, empty, z.null(), data(AssistantMemorySettings), 200, 'Current member only; candidate learning, timezone and quiet hours. No model call.'),
   updateAssistantMemorySettings: route('POST', '/me/assistant-memory-settings', empty, empty, z.strictObject({ expectedVersion: Version, candidateLearning: z.boolean(), timeZone: Timezone, quietHours: AssistantMemoryQuietHours.nullable() }), data(AssistantMemorySettings), 200, 'Owner-versioned assistant-memory policy; fences local preference consumers.'),

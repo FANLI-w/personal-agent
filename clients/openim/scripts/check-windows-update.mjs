@@ -12,10 +12,24 @@ const { load } = runtimeRequire("js-yaml");
 const version = JSON.parse(
   readFileSync(path.join(root, "package.json"), "utf8"),
 ).version;
+const args = process.argv.slice(2);
+if (args.some((arg) => arg !== "--allow-preview"))
+  throw Error("Usage: node scripts/check-windows-update.mjs [--allow-preview]");
+const allowPreview = args.includes("--allow-preview");
+const stable = /^\d+\.\d+\.\d+$/.test(version);
+const preview = /^\d+\.\d+\.\d+-preview\.(?:0|[1-9]\d*)$/.test(version);
+if (!stable && !(allowPreview && preview))
+  throw Error(
+    allowPreview
+      ? "Stable or x.y.z-preview.N semver required"
+      : "Stable semver required",
+  );
 const directory = path.join(root, "release", "Base", version);
 const name = `AcceptCat_${version}.exe`;
 const bytes = readFileSync(path.join(directory, name));
-const manifest = load(readFileSync(path.join(directory, "latest.yml"), "utf8"));
+// GitHub uses prerelease releases, with latest.yml for this configured provider.
+const manifestName = "latest.yml";
+const manifest = load(readFileSync(path.join(directory, manifestName), "utf8"));
 const feed = load(
   readFileSync(
     path.join(directory, "win-unpacked", "resources", "app-update.yml"),
@@ -26,7 +40,6 @@ const sha512 = createHash("sha512").update(bytes).digest("base64");
 const need = (value, message) => {
   if (!value) throw Error(message);
 };
-need(/^\d+\.\d+\.\d+$/.test(version), "Stable semver required");
 need(
   manifest.version === version && manifest.files?.length === 1,
   "Update manifest version/files mismatch",
@@ -56,10 +69,11 @@ need(
 const report = {
   status: "passed",
   version,
+  channel: preview ? "preview" : "stable",
   provider: "public GitHub Releases",
   bytes: bytes.length,
   sha256: createHash("sha256").update(bytes).digest("hex"),
   sha512,
-  assets: [name, name + ".blockmap", "latest.yml"],
+  assets: [name, name + ".blockmap", manifestName],
 };
 console.log(JSON.stringify(report, null, 2));

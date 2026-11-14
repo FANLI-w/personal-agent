@@ -50,7 +50,7 @@ export function PersonalFollowupPanel({ active }: { active: boolean }) {
   const [pages, setPages] = useState<(string | undefined)[]>([undefined]);
   const cursor = pages[pages.length - 1];
   const list = useResearchRead(() => researchApi("personalFollowups", { query: { status: filter, limit: 30, cursor } }), `personal-followups:${operation.scope}:${filter}:${cursor || ""}`, active);
-  const settings = useResearchRead(() => researchApi("assistantMemorySettings"), "personal-followup-settings", active);
+  const settings = useResearchRead(() => researchApi("personalMemorySettings"), "personal-followup-settings", active);
   const [body, setBody] = useState(""), [due, setDue] = useState(""), [zone, setZone] = useState("");
   const [editing, setEditing] = useState<PersonalFollowup>();
   const [formOpen, setFormOpen] = useState(false), [frequency, setFrequency] = useState<"once" | "daily" | "weekly">("once");

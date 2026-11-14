@@ -1,9 +1,7 @@
-import { Alert, Button, Input, Modal, Space } from "antd";
-import { useState } from "react";
-import type {
-  AssistantMemory,
-  ChatMemory,
-} from "@research-agent-platform/contracts";
+import { Alert, Button, Input, Modal, Segmented, Space } from "antd";
+import { useEffect, useState } from "react";
+import type { AssistantMemory, ChatMemory } from "@research-agent-platform/contracts";
+import { useWorkspaceAvailability } from "./useWorkspaceAvailability";
 import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
 
@@ -28,7 +26,9 @@ function fromAssistant(memory: AssistantMemory): MemoryView {
     status: memory.status === "revoked" ? "revoked" : "active",
     conflict: memory.conflict,
     version: memory.version,
-    allowedActions: memory.allowedActions,
+    allowedActions: memory.allowedActions.filter(
+      (action) => action !== "edit" || memory.type === "note",
+    ),
   };
 }
 function fromChat(memory: ChatMemory): MemoryView {
@@ -46,10 +46,13 @@ function fromChat(memory: ChatMemory): MemoryView {
 async function readMemories(
   scope: "private_agent" | "conversation",
   scopeId: string,
+  notes: boolean,
+  signal: AbortSignal,
 ) {
-  if (scope === "private_agent") {
+  if (notes) {
     const response = await researchApi("assistantMemories", {
-      query: { scope: "agent", subjectId: scopeId, limit: 100 },
+      signal,
+      query: { scope: "agent", subjectId: scopeId, status: "confirmed", limit: 100 },
     });
     return {
       data: response.data.map(fromAssistant),
@@ -57,6 +60,7 @@ async function readMemories(
     };
   }
   const response = await researchApi("chatMemories", {
+    signal,
     query: { scope, scopeId, limit: 100 },
   });
   return {
@@ -78,20 +82,49 @@ const noteFields = (topic: string, content: string, source: string | null) => ({
   },
 });
 
-export function MemoryPanel({
-  scope,
-  scopeId,
-  canManage,
-  styleChatAvailable = false,
-}: {
+type MemoryPanelProps = {
   scope: "private_agent" | "conversation";
   scopeId: string;
   canManage: boolean;
   styleChatAvailable?: boolean;
-}) {
+};
+
+export function MemoryPanel(props: MemoryPanelProps) {
+  const availability = useWorkspaceAvailability(props.scope === "private_agent");
+  const [tab, setTab] = useState("habits");
+  const hasNotes = props.scope === "private_agent" && availability.supports(49);
+  const notes = hasNotes && tab === "notes";
+  return (
+    <>
+      {hasNotes && (
+        <Segmented
+          value={tab}
+          onChange={(value) => setTab(String(value))}
+          options={[
+            { label: "交流习惯", value: "habits" },
+            { label: "助理笔记", value: "notes" },
+          ]}
+        />
+      )}
+      <MemoryPanelBody
+        key={JSON.stringify([props.scope, props.scopeId, notes])}
+        {...props}
+        notes={notes}
+      />
+    </>
+  );
+}
+
+function MemoryPanelBody({
+  scope,
+  scopeId,
+  canManage,
+  styleChatAvailable,
+  notes,
+}: MemoryPanelProps & { notes: boolean }) {
   const { data, error, refresh } = useResearchRead(
-    () => readMemories(scope, scopeId),
-    `${scope}:${scopeId}`,
+    (signal) => readMemories(scope, scopeId, notes, signal),
+    `${scope}:${scopeId}:${notes}`,
   );
   const [topic, setTopic] = useState("");
   const [content, setContent] = useState("");
@@ -101,12 +134,24 @@ export function MemoryPanel({
   const [busy, setBusy] = useState(false);
   const [compressing, setCompressing] = useState(false);
   const [failure, setFailure] = useState("");
+  const [jobId, setJobId] = useState("");
+  const job = useResearchRead(
+    (signal) =>
+      researchApi("assistantMemoryCompressionJob", { params: { id: jobId }, signal }),
+    `compression:${jobId}`,
+    Boolean(jobId),
+    { poll: (value) => !value || ["queued", "running"].includes(value.data.status) },
+  );
+  const status = job.data?.data.status;
+  useEffect(() => {
+    if (status === "succeeded") void refresh();
+  }, [status, refresh]);
   const save = async () => {
     setBusy(true);
     setFailure("");
     try {
       if (editing) {
-        if (scope === "private_agent")
+        if (notes)
           await researchApi("updateAssistantMemory", {
             params: { id: editing.id },
             body: {
@@ -119,7 +164,7 @@ export function MemoryPanel({
             params: { id: editing.id },
             body: { expectedVersion: editing.version, content, source: source || null },
           });
-      } else if (scope === "private_agent")
+      } else if (notes)
         await researchApi("createAssistantMemory", {
           body: {
             scope: "agent",
@@ -151,35 +196,30 @@ export function MemoryPanel({
           : "当前会话的共享记忆；已加入的真人成员可查看，负责人管理。"}{" "}
         内容仅在获准的范围内用于后续 AI 请求。
       </p>
-      {scope === "private_agent" && canManage && styleChatAvailable && (
+      {!notes && scope === "private_agent" && canManage && styleChatAvailable && (
         <p className="text-xs text-slate-600">
           希望它记住你的交流习惯，可以直接在私聊里说：“以后和我聊天，先给你的判断，别每次列清单。”保存后会在这里显示，可随时修改或撤回。
         </p>
       )}
       {(error || failure) && <Alert type="error" showIcon message={error || failure} />}
-      {scope === "private_agent" && canManage && (
+      {notes && canManage && (
         <Button
           size="small"
           loading={compressing}
+          disabled={
+            Boolean(jobId) &&
+            !job.error &&
+            status !== "failed" &&
+            status !== "succeeded"
+          }
           onClick={async () => {
             setCompressing(true);
             setFailure("");
             try {
-              let response = await researchApi("compressAssistantMemories", {
+              const response = await researchApi("compressAssistantMemories", {
                 body: { subjectId: scopeId },
               });
-              while (
-                response.data.status === "queued" ||
-                response.data.status === "running"
-              ) {
-                await new Promise((resolve) => setTimeout(resolve, 400));
-                response = await researchApi("assistantMemoryCompressionJob", {
-                  params: { id: response.data.id },
-                });
-              }
-              if (response.data.status === "failed")
-                throw new Error(response.data.failure || "压缩失败");
-              await refresh();
+              setJobId(response.data.id);
             } catch (err) {
               setFailure(err instanceof Error ? err.message : "压缩失败");
             } finally {
@@ -189,6 +229,18 @@ export function MemoryPanel({
         >
           压缩记忆
         </Button>
+      )}
+      {job.error && <Alert type="error" message={job.error} />}
+      {status && (
+        <p role="status">
+          {status === "failed"
+            ? job.data?.data.failure || "压缩失败"
+            : status === "succeeded"
+            ? "压缩完成"
+            : status === "queued"
+            ? "等待压缩"
+            : "正在压缩"}
+        </p>
       )}
       {data?.data.map((memory) => (
         <article key={memory.id} className="rounded border p-3">
@@ -224,7 +276,7 @@ export function MemoryPanel({
                     title: "移除这条记忆？",
                     content: "保留历史记录，后续 AI 请求不再使用该内容。",
                     onOk: async () => {
-                      if (scope === "private_agent")
+                      if (notes)
                         await researchApi("decideAssistantMemory", {
                           params: { id: memory.id },
                           body: { expectedVersion: memory.version, decision: "revoke" },
@@ -246,7 +298,7 @@ export function MemoryPanel({
               size="small"
               onClick={async () => {
                 try {
-                  if (scope === "private_agent") {
+                  if (notes) {
                     const response = await researchApi("assistantMemoryHistory", {
                       params: { id: memory.id },
                     });
@@ -274,13 +326,15 @@ export function MemoryPanel({
       )}
       {canManage && (
         <div className="space-y-2">
-          <Input
-            aria-label="记忆主题"
-            placeholder="主题，例如：引用格式"
-            value={topic}
-            maxLength={80}
-            onChange={(e) => setTopic(e.target.value)}
-          />
+          {notes && (
+            <Input
+              aria-label="记忆主题"
+              placeholder="主题，例如：引用格式"
+              value={topic}
+              maxLength={80}
+              onChange={(e) => setTopic(e.target.value)}
+            />
+          )}
           <label>
             {editing ? `编辑记忆 · 版本 ${editing.version}` : "保存记忆"}
             <Input.TextArea

@@ -1,7 +1,8 @@
 import { app, ipcMain, net, shell, type IpcMainInvokeEvent } from "electron";
 import { createHash } from "node:crypto";
 import path from "node:path";
-const { TeamRepositoryBinding } = require("./localDshRuntime") as typeof import("@research-agent-platform/contracts");
+const { TeamRepositoryBinding } =
+  require("./localDshRuntime") as typeof import("@research-agent-platform/contracts");
 import { authority } from "./localFolderManage";
 import { desktopSessionCookie } from "../utils/desktopServer";
 import { getResearchServiceStatus } from "./windowManage";
@@ -200,7 +201,13 @@ export function registerTeamLibraryBridge() {
   );
   ipcMain.handle(
     "team-library-propose",
-    (e, revision: string, entry: TeamLibraryEntry, text?: string) =>
+    (
+      e,
+      revision: string,
+      entry: TeamLibraryEntry,
+      text?: string,
+      fileBytes?: Uint8Array,
+    ) =>
       inContext(e, async (c) => {
         if (entry?.source?.kind === "shared") {
           const selected = entry.source;
@@ -224,7 +231,7 @@ export function registerTeamLibraryBridge() {
           )
             throw Error("只能登记当前可访问且版本一致的团队共享原件。");
         }
-        return c.store.propose(revision, entry, text);
+        return c.store.propose(revision, entry, text, fileBytes);
       }),
   );
   ipcMain.handle("team-library-changes", (e) => inContext(e, (c) => c.store.changes()));

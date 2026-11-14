@@ -1,3 +1,4 @@
+import { FeedbackWorker } from './feedback-worker.js'
 import { processGuard } from './process-guard.js'
 import { readConfig } from './config.js'
 import { openDatabase,checkDatabase } from './database.js'
@@ -19,6 +20,8 @@ let stopping=false
 const catalogWorker=new CommunityCatalogWorker(db,config)
 let catalogFlight:Promise<unknown>|undefined
 let memoryFlight:Promise<unknown>|undefined
+const feedbackWorker = new FeedbackWorker(db, config)
+let feedbackFlight: Promise<void> | undefined
 const stop=()=>{stopping=true;catalogWorker.close()}
 process.once('SIGINT',stop);process.once('SIGTERM',stop)
 const worker=new ExecutionWorker(db,config)
@@ -41,6 +44,9 @@ try {
     const chat = await workerStep('CHAT', () => chatWorker.tick())
     const execution = await workerStep('EXECUTION', () => worker.tick())
     const im = await workerStep('IM', () => imWorker.tick())
+    if (!feedbackFlight && !stopping) feedbackFlight = feedbackWorker.tick().then(() => {}).catch(() => {
+      console.error('Assistant feedback worker unavailable')
+    }).finally(() => { feedbackFlight = undefined })
     if (!invitation && !reminder && !chat && !execution && !im) await new Promise(resolve => setTimeout(resolve, 1000))
   } while (!stopping && !process.argv.includes('--once'))
-} finally { catalogWorker.close(); await catalogFlight; await memoryFlight; db.close() }
+} finally { catalogWorker.close(); await Promise.all([catalogFlight, memoryFlight, feedbackFlight]); db.close() }

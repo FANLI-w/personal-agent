@@ -772,3 +772,13 @@ test("unsupported or ambiguous deadlines require clarification instead of silent
     false,
   );
 });
+
+test("editing a deadline keeps the reviewed supplements attached to the same task", () => {
+  const plan = makePlan();
+  plan.supplements = [{ id: "supp_qa", nodeId: plan.proposedItems[0].id, kind: "material", text: "已有实验结果" }];
+  const input = plannerPlanInput(plan, { date: "2026-11-20", target: "final" });
+  assert.deepEqual(input.supplements, plan.supplements);
+  assert.equal(input.proposedItems.length, plan.proposedItems.length);
+  assert.equal(input.proposedItems.at(-1).schedule.hardDeadline.value.date, "2026-11-20");
+  assert.equal(plan.proposedItems.at(-1).schedule.hardDeadline, null);
+});

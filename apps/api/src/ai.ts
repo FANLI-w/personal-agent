@@ -1,3 +1,4 @@
+import { enqueueFeedback } from './feedback-queue.js'
 import { ReuseService } from './reuse.js'
 import { renderChecklist } from '@research-agent-platform/research-core'
 import { randomUUID } from 'node:crypto'
@@ -155,7 +156,9 @@ export class AiService {
         input.colleagueBinding={...b.colleague,fingerprint:context.fingerprint}
       }
       if(this.planningModel){const {source,provider,model,fingerprint}=this.planningModel;input.modelBinding={source,provider,model,fingerprint}}
-      this.insert('planning',p,input);reuse.bind('job',p.id,b.conclusionRefs??[]);return {data:p}
+      this.insert('planning',p,input)
+      if (p.status === 'queued') enqueueFeedback(this.db, this.c.actor.id, this.c.labId, '', 'planning', p.id)
+      reuse.bind('job',p.id,b.conclusionRefs??[]);return {data:p}
     }
     if(name==='cancelPlanning'){
       const p=this.getPlanning(id),b=req.body as RequestFor<'cancelPlanning'>['body'];this.c.checkVersion(p.version,b.expectedVersion)

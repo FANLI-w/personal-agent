@@ -1,3 +1,4 @@
+import { FeedbackWorker } from '../src/feedback-worker.js'
 import { agentRoles, roleDefaults } from '@research-agent-platform/research-skills/role-catalog'
 import { randomBytes, randomUUID,createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync,readFileSync } from 'node:fs'
@@ -9,14 +10,14 @@ import { readConfig } from '../src/config.js'
 import { openDatabase, migrate } from '../src/database.js'
 import { createServer } from '../src/server.js'
 import { ChatWorker } from '../src/chat-worker.js'
-import type { ModelCall, ModelResult } from '../src/execution-worker.js'
+import { ExecutionWorker, type ModelCall, type ModelResult } from '../src/execution-worker.js'
+import { MemoryCompressionWorker } from '../src/memory-compression-worker.js'
 import { PersonalFollowupWorker,outsideQuiet } from '../src/personal-followups.js'
 import { reminderRequest } from '../src/personal-time.js'
 import { nextRecurring,scheduledRequest } from '../src/recurring-time.js'
 import { personalWorkRequest } from '../src/personal-assistant.js'
 import { agentCreationBoundary } from '../src/agent-creation.js'
 import { chatInputTokenBound } from '../src/chat-model-input.js'
-import { MemoryCompressionWorker } from '../src/memory-compression-worker.js'
 import { researchConversationPolicy } from '../src/conversation-policy.js'
 import { agentStyleInstruction } from '../src/agent-style.js'
 import { backup,restore } from '../src/recovery.js'
@@ -89,12 +90,78 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
   }
  })
 
+ it('adapts ordinary personal replies using earlier owner turns without creating permanent entries', async () => {
+  const s = await setup(), own = await s.own()
+  await s.send(own.conversation.id, '这次说得口语一点。')
+  await s.tick(async () => modelResult('好。'))
+  const next = await s.send(own.conversation.id, '那明天呢？')
+  await s.tick(async input => {
+   expect(input.system).toContain('Adapt reply length')
+   expect(input.prompt).toContain('这次说得口语一点。')
+   return modelResult('明天再接着聊。')
+  })
+  expect((await s.turn(next.turn.id)).status).toBe('succeeded')
+  expect(s.count('personal_memories')).toBe(0)
+ })
+ it('revises a directly stated conversation preference under the same topic', async () => {
+  const s = await setup(), own = await s.own()
+  const first = await s.send(own.conversation.id, '我喜欢你说话自然一点。')
+  const next = await s.send(own.conversation.id, '我更希望你回答先说结论。')
+  expect(next.turn.memoryReceipt).toMatchObject({ operation: 'corrected', memoryId: first.turn.memoryReceipt.memoryId, version: 2 })
+  await s.send(own.conversation.id, '讨论一下这个方案')
+  await s.tick(async input => {
+   expect(JSON.parse(input.prompt).personalMemories.map((m: {content: string}) => m.content)).toEqual(['我更希望你回答先说结论。'])
+   return modelResult('先说结论。')
+  })
+ })
+ it('summarizes open-ended work feedback, reuses it across assistants, revises it from planning and honors revocation', async () => {
+  const s = await setup(), agent = (await s.call('createPersonalAgent', profile)).value.data
+  const direct = (await s.call('createDirectConversation', { contactId: agent.id })).value.data
+  const first = '比较方案时，我习惯先看每种方法的反例，再看优点。'
+  const correction = '以后比较方案先摆证据矩阵，把反例放在最后一列。'
+  const analyze = async (feedback: string, previous: string, summary: string) => {
+   expect(await new FeedbackWorker(s.db,s.config,async input => {
+    expect(JSON.parse(input.prompt)).toMatchObject({feedback,previous})
+    return modelResult(JSON.stringify({ evidence: feedback, summary }))
+   }).tick()).toBe(true)
+  }
+  await s.send(direct.id,first)
+  await s.tick(async () => modelResult('好。'))
+  await analyze(first,'','比较方案先列反例。')
+  const own = await s.own()
+  await s.send(own.conversation.id,'帮我比较甲乙两个方案')
+  let nextPrompt = ''
+  await s.tick(async input => { nextPrompt = input.prompt; return modelResult('好。') })
+  expect(nextPrompt).toContain('比较方案先列反例。')
+  await new FeedbackWorker(s.db,s.config,async () => modelResult('null')).tick()
+  const labId = (await s.call('createLab',{name:'Synthetic lab'})).value.data.id
+  const plan = await s.call('planRequest',{labId,replyMode:'conversation',prompt:correction, intent:'draft',inputArtifactIds:[],budget:{maxTokens:32000,maxSeconds:90}})
+  expect(plan.status,plan.text).toBe(202)
+  // The projection is allowed to run once the planning job has finished.
+  let planningPrompt = ''
+  await new ExecutionWorker(s.db,s.config,async input => {
+   planningPrompt = input.prompt
+   return modelResult(JSON.stringify({answer:'好。',plan:null}))
+  }).tick()
+  expect(planningPrompt).toContain('比较方案先列反例。')
+  await analyze(correction,'比较方案先列反例。','比较方案先列证据矩阵，最后一列放反例。')
+  const records = (await s.call('personalMemories')).value.data
+  expect(records).toHaveLength(1)
+  expect(records[0]).toMatchObject({topic:'交流与工作习惯',version:2,content:'比较方案先列证据矩阵，最后一列放反例。'})
+  expect((await s.call('personalMemories',null,{},1)).value.data).toEqual([])
+  await s.call('decidePersonalMemory',{expectedVersion:2,decision:'revoke'},{id:records[0].id})
+  await s.send(direct.id,first)
+  await s.tick(async () => modelResult('好。'))
+  let calls=0
+  await new FeedbackWorker(s.db,s.config,async () => {calls++;return modelResult('null')}).tick()
+  expect(calls).toBe(0)
+ })
  it('saves explicit colleague preferences only in this owned Agent, deduplicates replay and preserves corrections across restart without billing',async()=>{
   const s=await setup(false),agent=(await s.call('createPersonalAgent',profile)).value.data,direct=(await s.call('createDirectConversation',{contactId:agent.id})).value.data,key=randomUUID()
   const sent=await s.send(direct.id,'以后和我聊天，先给自己的判断，别每次列清单。',0,key)
   expect(sent.turn).toMatchObject({status:'succeeded',usage:null});expect(sent.turn.memoryReceipt).toBeUndefined()
   expect((await s.send(direct.id,'以后和我聊天，先给自己的判断，别每次列清单。',0,key)).turn.id).toBe(sent.turn.id)
-  expect(Number(s.db.prepare("SELECT count(*) n FROM assistant_memories WHERE scope='personal'").get()!.n)).toBe(0);expect(Number(s.db.prepare("SELECT count(*) n FROM assistant_memories WHERE scope='agent' AND subject_id=?").get(agent.id)!.n)).toBe(1)
+  expect(s.count('personal_memories')).toBe(0);expect(s.count('chat_memories')).toBe(1)
   const query=`?scope=private_agent&scopeId=${agent.id}`
   let entries=(await s.call('chatMemories',null,{},0,query)).value.data
   expect(entries[0]).toMatchObject({scope:'private_agent',scopeId:agent.id,version:1});expect(entries[0].content).toContain('先给自己的判断')
@@ -122,7 +189,7 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
   const other=(await s.call('createDirectConversation',{contactId:agent.id},{},1)).value.data
   await s.send(other.id,'调整你的交流方式：FOREIGN_STYLE_MUST_NOT_SAVE',1)
   await s.tick(async input=>{expect(input.prompt).not.toContain('PRIVATE_STYLE_ONLY');return modelResult('只能当前讨论。')})
-  expect(s.db.prepare("SELECT detail AS content FROM assistant_memories WHERE scope='agent' AND subject_id=? AND status='confirmed'").all(agent.id)).toHaveLength(1)
+  expect(s.db.prepare("SELECT content FROM chat_memories WHERE scope_id=? AND status='active'").all(agent.id)).toHaveLength(1)
   const late=await s.send(direct.id,'继续分析');let release!:(v:ModelResult)=>void,entered!:()=>void
   const entering=new Promise<void>(r=>{entered=r}),pending=s.tick(async()=>{entered();return new Promise<ModelResult>(r=>{release=r})});await entering
   await s.send(direct.id,'清除你的交流偏好')
@@ -134,20 +201,20 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
   const s=await setup(false),own=await s.own()
   for(let i=0;i<10;i++)expect((await s.call('createChatMemory',{scope:'private_agent',scopeId:own.agent.id,content:`保留原记忆${i}`,source:null})).status).toBe(201)
   const sent=await s.send(own.conversation.id,'调整你的交流方式：直接指出证据不足')
-  expect(sent.turn.status).toBe('succeeded');expect(Number(s.db.prepare("SELECT count(*) n FROM assistant_memories WHERE scope='agent' AND subject_id=?").get(own.agent.id)!.n)).toBe(10);expect(Number(s.db.prepare("SELECT count(*) n FROM assistant_memory_revisions r JOIN assistant_memories m ON m.id=r.memory_id WHERE m.scope='agent' AND m.subject_id=?").get(own.agent.id)!.n)).toBe(10)
+  expect(sent.turn.status).toBe('succeeded');expect(s.count('chat_memories')).toBe(10);expect(s.count('chat_memory_revisions')).toBe(10)
   expect(JSON.parse(String(s.db.prepare('SELECT document FROM chat_messages WHERE id=?').get(sent.turn.outputMessageId)!.document)).text).toContain('还没保存')
  })
  it('keeps independent explicit facts, normalizes a correction topic and clarifies ambiguous corrections without a model',async()=>{
   const s=await setup(false),own=await s.own(),key=randomUUID()
   const coffee=await s.send(own.conversation.id,'记住我喜欢咖啡',0,key),work=await s.send(own.conversation.id,'记住我在 IFRC 工作')
   expect(coffee.turn).toMatchObject({status:'succeeded',memoryReceipt:{operation:'saved',topic:'我喜欢咖啡'}})
-  expect(work.turn.memoryReceipt.topic).toBe('工作单位');expect(Number(s.db.prepare("SELECT count(*) n FROM assistant_memories WHERE scope='personal' AND type='preference' AND status='confirmed'").get()!.n)).toBe(2)
+  expect(work.turn.memoryReceipt.topic).toBe('工作单位');expect(s.count('personal_memories')).toBe(2)
   expect((await s.send(own.conversation.id,'记住我喜欢咖啡',0,key)).turn.id).toBe(coffee.turn.id)
   const preference=await s.send(own.conversation.id,'以后回答先给结论');expect(preference.turn.memoryReceipt.topic).toBe('回复方式')
   const updated=await s.call('createPersonalMemory',{topic:'回答方式',content:'先给一句结论，再解释。',scope:'general'})
   expect(updated.value.data).toMatchObject({id:preference.turn.memoryReceipt.memoryId,topic:'回复方式',version:2})
-  const before=s.count('assistant_memory_revisions'),ambiguous=await s.send(own.conversation.id,'纠正偏好：换一种吧')
-  expect(ambiguous.turn.memoryReceipt.operation).toBe('clarify');expect(s.count('assistant_memory_revisions')).toBe(before)
+  const before=s.count('personal_memory_revisions'),ambiguous=await s.send(own.conversation.id,'纠正偏好：换一种吧')
+  expect(ambiguous.turn.memoryReceipt.operation).toBe('clarify');expect(s.count('personal_memory_revisions')).toBe(before)
   const forgotten=await s.send(own.conversation.id,'忘记回复方式');expect(forgotten.turn.memoryReceipt.operation).toBe('forgotten')
   expect((await s.call('personalMemory',null,{id:coffee.turn.memoryReceipt.memoryId},1)).status).toBe(404)
   let calls=0;expect(await s.tick(async()=>{calls++;return modelResult('不应调用')})).toBe(false);expect(calls).toBe(0)
@@ -156,7 +223,7 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
  it('learns only explicit opt-in candidates and retains the original source on confirmation',async()=>{
   const s=await setup(),own=await s.own()
   for(const text of ['这次短一点','我通常喜欢先看结论','“记住我喜欢咖啡”','记住这件事？','材料：以后回答先给结论']){const sent=await s.send(own.conversation.id,text);expect(sent.turn.memoryReceipt).toBeUndefined();await s.tick(async()=>modelResult('只讨论当前文字。'))}
-  expect(Number(s.db.prepare("SELECT count(*) n FROM assistant_memories WHERE scope='personal'").get()!.n)).toBe(0)
+  expect(s.count('personal_memories')).toBe(0)
   const settings=(await s.call('personalMemorySettings')).value.data
   expect(settings).toMatchObject({candidateLearning:false,timeZone:'Asia/Shanghai'})
   await s.call('updatePersonalMemorySettings',{...settings,candidateLearning:true,expectedVersion:settings.version,version:undefined})
@@ -307,8 +374,8 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
   const queued=await s.send(own.conversation.id,'帮我修改论文');await s.stop();const source=join(s.dir,'backup'),target=join(s.dir,'restored')
   expect(backup(s.config,source,'synthetic_operator','a'.repeat(40),'synthetic').completed).toBe(true);expect(restore(source,target,'synthetic_operator').completed).toBe(true)
   const restored=openDatabase(join(target,'platform.sqlite'));cleanup.push(()=>restored.close())
-  expect(restored.prepare('SELECT candidate_learning,version FROM assistant_memory_settings WHERE member_id=?').get(s.clients[0]!.id)).toMatchObject({candidate_learning:0,version:3})
-  expect(restored.prepare("SELECT detail AS content,status FROM assistant_memories WHERE scope='personal'").get()).toMatchObject({content:'本人保留偏好',status:'confirmed'});expect(restored.prepare('SELECT status FROM personal_followups WHERE id=?').get(f.id)!.status).toBe('paused')
+  expect(restored.prepare('SELECT candidate_learning,version FROM personal_memory_settings WHERE member_id=?').get(s.clients[0]!.id)).toMatchObject({candidate_learning:0,version:3})
+  expect(restored.prepare('SELECT content,status FROM personal_memories').get()).toMatchObject({content:'本人保留偏好',status:'confirmed'});expect(restored.prepare('SELECT status FROM personal_followups WHERE id=?').get(f.id)!.status).toBe('paused')
   const config={...s.config,databasePath:join(target,'platform.sqlite'),blobRoot:join(target,'blobs')};let calls=0;expect(await new ChatWorker(restored,config,async()=>{calls++;return modelResult('不应调用')}).tick()).toBe(false);expect(calls).toBe(0);expect(restored.prepare('SELECT status FROM chat_turns WHERE id=?').get(queued.turn.id)!.status).toBe('cancelled')
   expect(await new PersonalFollowupWorker(restored,config,()=>due+1).tick()).toBe(false)
  })
@@ -347,8 +414,8 @@ it('parses full local/relative dates, rejects DST gaps/overlaps, and keeps expli
 })
 it('migration017→020 changes no old table row and is repeatable',async()=>{
  const s=await setup(),own=await s.own();await s.send(own.conversation.id,'已有旧消息')
- s.db.exec('DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DROP VIEW IF EXISTS assistant_memory_index; DROP TABLE IF EXISTS assistant_memory_revisions; DROP TABLE IF EXISTS assistant_memory_settings; DROP TABLE IF EXISTS assistant_memory_compression_jobs; DROP TABLE IF EXISTS assistant_memories; DELETE FROM schema_migrations WHERE version=39; DELETE FROM schema_migrations WHERE version=38; DELETE FROM schema_migrations WHERE version=37; DELETE FROM schema_migrations WHERE version=36; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE IF EXISTS personal_memory_revisions; DROP TABLE IF EXISTS personal_memories; DROP TABLE IF EXISTS personal_memory_settings; DELETE FROM schema_migrations WHERE version>=18')
- const tables=s.db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(r=>String(r.name)).filter(n=>!['personal_memories','personal_memory_revisions','personal_memory_settings'].includes(n))
+ s.db.exec('DROP VIEW IF EXISTS assistant_memory_index; DROP TABLE IF EXISTS assistant_memory_compression_jobs; DROP TABLE IF EXISTS assistant_memory_revisions; DROP TABLE IF EXISTS assistant_memories; DELETE FROM schema_migrations WHERE version>=37; DROP TABLE IF EXISTS assistant_feedback; DROP TABLE IF EXISTS group_dialogue_preferences; DELETE FROM schema_migrations WHERE version=36; DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DELETE FROM schema_migrations WHERE version>=18')
+ const tables=s.db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(r=>String(r.name))
  const digest=()=>Object.fromEntries(tables.filter(t=>t!=='schema_migrations').map(t=>[t,createHash('sha256').update(JSON.stringify(s.db.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all())).digest('hex')]))
  const before=digest();migrate(s.db);migrate(s.db);expect(digest()).toEqual(before);expect(s.db.prepare('SELECT max(version) v FROM schema_migrations').get()!.v).toBe(39);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
 })
@@ -440,9 +507,19 @@ describe('recurring reminders and persistent local Agent jobs; synthetic model c
   const current=(await s.call('personalFollowup',null,{id:created.id})).value.data
   expect((await s.call('updatePersonalFollowup',{...fields(due+86400000),expectedVersion:current.version,recurrence:{frequency:'daily'},execution:{kind:'agent',contactId:own.agent.id}},{id:created.id})).status).toBe(200)
   expect((await s.call('personalFollowup',null,{id:created.id})).value.data.lastRun.status).toBe('cancelled');expect(await s.tick(async()=>result('旧指令不能执行'))).toBe(false)
-  s.db.exec('DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DROP VIEW IF EXISTS assistant_memory_index; DROP TABLE IF EXISTS assistant_memory_revisions; DROP TABLE IF EXISTS assistant_memory_settings; DROP TABLE IF EXISTS assistant_memory_compression_jobs; DROP TABLE IF EXISTS assistant_memories; DELETE FROM schema_migrations WHERE version=39; DELETE FROM schema_migrations WHERE version=38; DELETE FROM schema_migrations WHERE version=37; DELETE FROM schema_migrations WHERE version=36; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DELETE FROM personal_followup_runs; DROP TABLE personal_followup_runs; DELETE FROM schema_migrations WHERE version>=19')
+  s.db.exec('DROP VIEW IF EXISTS assistant_memory_index; DROP TABLE IF EXISTS assistant_memory_compression_jobs; DROP TABLE IF EXISTS assistant_memory_revisions; DROP TABLE IF EXISTS assistant_memories; DELETE FROM schema_migrations WHERE version>=37; DROP TABLE IF EXISTS assistant_feedback; DROP TABLE IF EXISTS group_dialogue_preferences; DELETE FROM schema_migrations WHERE version=36; DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DELETE FROM personal_followup_runs; DROP TABLE personal_followup_runs; DELETE FROM schema_migrations WHERE version>=19')
   const before=JSON.stringify(s.db.prepare('SELECT * FROM personal_followups ORDER BY id').all());migrate(s.db);migrate(s.db)
   expect(JSON.stringify(s.db.prepare('SELECT * FROM personal_followups ORDER BY id').all())).toBe(before);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
+ })
+ it('revises an assistant preference for the same owner and topic and keeps both versions',async()=>{
+  const s=await setup(false)
+  const save=(value:string)=>s.call('createAssistantMemory',{scope:'personal',subjectId:null,topic:'format',type:'preference',summary:value,payload:{type:'preference',value}})
+  const first=await save('paragraphs'),second=await save('bullet points')
+  expect(first.status,first.text).toBe(201)
+  expect(second.status,second.text).toBe(201)
+  expect(second.value.data).toMatchObject({id:first.value.data.id,version:2})
+  const history=await s.call('assistantMemoryHistory',null,{id:first.value.data.id})
+  expect(history.value.data.revisions.map((v:{summary:string})=>v.summary)).toEqual(['paragraphs','bullet points'])
  })
  it('compresses identical private-agent notes and reports conflicts',async()=>{
   const s=await setup(false),agent=(await s.call('createPersonalAgent',profile)).value.data

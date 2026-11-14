@@ -777,3 +777,58 @@
 .personal-agent-desktop .workspace-workbench .planning-step-details summary {
   cursor: pointer;
 }
+
+.personal-agent-desktop .planning-review-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 20px;
+  margin: 14px 0;
+  > div {
+    min-width: 0;
+  }
+  dt {
+    color: #657685;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  dd {
+    margin: 0;
+    color: #233c4d;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+  .review-deliverable {
+    grid-column: 1 / -1;
+  }
+}
+.planning-arrangement-form {
+  display: grid;
+  gap: 16px;
+  padding: 12px 0;
+  label {
+    display: grid;
+    gap: 6px;
+    color: #566875;
+  }
+  .ant-select {
+    width: 100%;
+  }
+}
+.personal-agent-desktop .workspace-quick-task {
+  display: grid;
+  gap: 12px;
+  width: min(560px, 100%);
+  margin-top: 20px;
+  text-align: left;
+  textarea.ant-input {
+    font-size: 15px;
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+  .ant-btn {
+    justify-self: end;
+    height: 38px;
+    border-radius: 10px;
+  }
+}

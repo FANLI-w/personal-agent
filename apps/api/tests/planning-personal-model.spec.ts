@@ -214,7 +214,7 @@ describe('owned personal planning with real HTTP and isolated synthetic credenti
     }).tick()
     expect(await s.detail(job.id)).toMatchObject({status:'cancelled',failure:'AGENT_CONTEXT_CHANGED',usage:{inputTokens:100,outputTokens:100}})
     expect(Number(s.db.prepare('SELECT count(*) n FROM plans').get()!.n)).toBe(before)
-    const memory=s.db.prepare("SELECT detail AS content FROM assistant_memories WHERE scope='agent' AND subject_id=? AND status='confirmed'").get(a.agent.id)
+    const memory=s.db.prepare("SELECT content FROM chat_memories WHERE scope='private_agent' AND scope_id=? AND status='active'").get(a.agent.id)
     expect(String(memory!.content)).toContain('先给自己的判断，别每次列清单')
   })
   it('continues the same draft from a copied full Plan without trusting model identity, dates or material access',async()=>{

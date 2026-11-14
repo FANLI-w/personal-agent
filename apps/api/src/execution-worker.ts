@@ -1,3 +1,4 @@
+import { currentHabit } from './feedback-queue.js'
 import {hasLabMembership} from './lab-access.js'
 import { ReuseService } from './reuse.js'
 import { validateChecklist } from '@research-agent-platform/research-core'
@@ -150,6 +151,8 @@ export class ExecutionWorker {
           // 规则只跟随本次请求的课题组，读取当前生效的课题组/项目规则；关闭开关即恢复旧行为。
           if(this.config.constitutionRules){const rules=planningRulesContext(this.db,service.c.labId,plan?.id,service.c.actor.id);if(rules.text){system=`${system}\n${rules.text}`;console.log(`PLANNING_RULES lab=${service.c.labId} bytes=${rules.bytes} rules=${rules.ruleIds.join(',')} layers=${layerCounts(rules.rules)} omitted=${rules.omitted.length}`)}}
         }
+        const habits = row.kind === 'planning' ? currentHabit(this.db, service.c.actor.id).content : ''
+        if (habits && prompt && typeof prompt === 'object') prompt = { ...prompt, authorWorkPreferences: habits }
         const spent=this.db.prepare('SELECT result_json FROM execution_attempts WHERE job_id=?').all(row.id!).map(r=>r.result_json?JSON.parse(String(r.result_json)) as ModelResult:null)
         if(spent.some(r=>!r||r.inputTokens===null||r.outputTokens===null))throw new Error('USAGE_UNCERTAIN')
         const used=spent.reduce((n,r)=>n+(r?.inputTokens??0)+(r?.outputTokens??0),0)

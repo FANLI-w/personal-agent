@@ -1,3 +1,4 @@
+import { enqueueFeedback } from './feedback-queue.js'
 import { GroupAgentStatus } from '@research-agent-platform/contracts'
 import type { Conversation, SendChatMessage } from '@research-agent-platform/contracts'
 import type { ChatService, TurnInput } from './chat.js'
@@ -30,6 +31,7 @@ export function sendGroupAgents(s: ChatService, group: Conversation, input: Send
     mentions:input.mentions ?? [], resources:input.context ?? [], actionIds:[], turnId:null,
   })
   linkMessageReply(s,message.id,input.replyToMessageId)
+  enqueueFeedback(s.db, s.c.actor.id, s.c.labId, group.id, 'chat', message.id)
   const turns = ids.map(id => {
     const request: TurnInput = {
       budget:{maxTokens:tokens,maxSeconds:seconds}, context:input.context ?? [],

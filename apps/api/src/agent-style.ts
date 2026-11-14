@@ -1,6 +1,6 @@
 import type { ChatMemory, Contact, Conversation, ChatMessage } from '@research-agent-platform/contracts'
 import type { ChatService, ChatRequest } from './chat.js'
-import { ownLocalMemoryScope } from './personal-memories.js'
+import { directlyStatedReplyStyle, ownLocalMemoryScope } from './personal-memories.js'
 import { agentStyleInstruction } from '@research-agent-platform/contracts'
 export { agentStyleInstruction } from '@research-agent-platform/contracts'
 
@@ -10,9 +10,10 @@ const source = '本人明确保存的本助手交流偏好'
 
 export function agentStyleCommand(s: ChatService, agent: Contact, group: Conversation, message: ChatMessage) {
   if (!ownLocalMemoryScope(s, agent, group) || message.origin !== 'human' || message.senderContactId !== s.human().id) return null
-  const instruction = agentStyleInstruction(message.text ?? '')
+  const text = message.text?.trim() ?? ''
+  const instruction = agentStyleInstruction(text) ?? (agent.profile.role === 'specialist' && directlyStatedReplyStyle(text) ? { kind: 'save' as const, content: text } : null)
   if (!instruction) return null
-  const row = s.db.prepare("SELECT id FROM assistant_memories WHERE scope='agent' AND subject_id=? AND owner_id=? AND source_label=? AND status='confirmed' ORDER BY created_at,id LIMIT 1").get(agent.id, s.c.actor.id, source)
+  const row = s.db.prepare("SELECT id FROM chat_memories WHERE scope='private_agent' AND scope_id=? AND created_by=? AND source=? AND status='active' ORDER BY created_at,id LIMIT 1").get(agent.id, s.c.actor.id, source)
   const current = row ? s.directory.memory(String(row.id), true) : null
   const request = (body: unknown, id?: string): ChatRequest => ({ params: id ? { id } : {}, query: {}, headers: { 'Idempotency-Key': `style_${message.id}` }, body })
   const manage = '可在这位助手的联系人资料 → 私人记忆里查看、修改或撤回。'
@@ -25,7 +26,7 @@ export function agentStyleCommand(s: ChatService, agent: Contact, group: Convers
   const line = `- ${instruction.content}`
   if (current?.content.split('\n').includes(line)) return { text: `这条交流偏好已经记下了。${manage}` }
   const content = current ? `${current.content}\n${line}` : `本助手与主人交流时的偏好；冲突时以较新的条目为准，不能扩大权限或改变科研事实。\n${line}`
-  if (content.length > 2000 || (current && current.version >= 99) || (!current && Number(s.db.prepare("SELECT count(*) n FROM assistant_memories WHERE scope='agent' AND subject_id=? AND status='confirmed'").get(agent.id)!.n) >= 10)) return { text: `这次还没保存，已有私人记忆需要先整理；原内容保留。${manage}` }
+  if (content.length > 2000 || (current && current.version >= 99) || (!current && Number(s.db.prepare("SELECT count(*) n FROM chat_memories WHERE scope='private_agent' AND scope_id=? AND status='active'").get(agent.id)!.n) >= 10)) return { text: `这次还没保存，已有私人记忆需要先整理；原内容保留。${manage}` }
   const saved = current
     ? s.run('reviseChatMemory', request({ content, source, expectedVersion: current.version }, current.id)) as { data: ChatMemory }
     : s.run('createChatMemory', request({ scope: 'private_agent', scopeId: agent.id, content, source })) as { data: ChatMemory }

@@ -21,6 +21,7 @@ import {
   PlusOutlined,
   ReloadOutlined,
   SettingOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +43,8 @@ import { useResearchStore } from "./store";
 import { nativeWorkbenchTaskPath } from "./workbench-links";
 import { LibraryIndexPage } from "./LibraryIndexPage";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
+import { TeamLibraryFileImport } from "./TeamLibraryFileImport";
+import { findTeamMaterials } from "./team-material-selection";
 import "./team-library.scss";
 
 const purposes = {
@@ -54,8 +57,10 @@ const purposes = {
   output: "归档成果",
   other: "其他",
 };
-const message = (e: unknown) =>
-  e instanceof Error ? e.message : "操作未完成，请重试。";
+const message = (e: unknown) => {
+  const value = e instanceof Error ? e.message : "操作未完成，请重试。";
+  return value.replace(/^Error invoking remote method '[^']+': (?:Error: )?/, "");
+};
 const fileType = (entry: TeamLibraryEntry) =>
   entry.name.split(".").pop()?.toUpperCase() || "文件";
 function FileIcon({ entry }: { entry: TeamLibraryEntry }) {
@@ -107,9 +112,48 @@ export function TeamLibraryWorkspace({
     [configure, setConfigure] = useState(false),
     [history, setHistory] =
       useState<{ revision: string; title: string; date: string }[]>();
+  const [historyError, setHistoryError] = useState("");
   const [editing, setEditing] = useState<TeamLibraryEntry | true>(),
     [proposal, setProposal] = useState<TeamLibraryProposal>();
   const [newProject, setNewProject] = useState(false);
+  const [importFile, setImportFile] = useState<File>(),
+    [importTarget, setImportTarget] = useState(""),
+    [taskSearch, setTaskSearch] = useState("");
+  const [candidates, setCandidates] = useState<TeamLibraryEntry[]>(),
+    [chosenIds, setChosenIds] = useState<string[]>([]);
+  const findMaterials = () => {
+    if (!snapshot) return;
+    const found = question.trim()
+      ? findTeamMaterials(snapshot.manifest, question)
+      : entry
+      ? [entry]
+      : [];
+    setCandidates(found);
+    const purposes = new Set<string>();
+    setChosenIds(
+      found
+        .filter((item) => {
+          if (purposes.has(item.purpose)) return false;
+          purposes.add(item.purpose);
+          return true;
+        })
+        .map((item) => item.id),
+    );
+  };
+  const fileInput = useRef<HTMLInputElement>(null);
+  const beginImport = (files: FileList | File[], target = "") => {
+    if (!files.length) return;
+    if (files.length > 1) {
+      setError("请一次导入一份资料，便于确认更新目标。");
+      return;
+    }
+    if (files[0].size > 20 * 1024 * 1024) {
+      setError("单份仓库文件最多20 MiB，更大文件请从共享原件导入。");
+      return;
+    }
+    setImportTarget(target);
+    setImportFile(files[0]);
+  };
   const [tasks, setTasks] = useState<WorkbenchCard[]>(),
     [taskCursor, setTaskCursor] = useState<string | null>(),
     [taskBusy, setTaskBusy] = useState(false),
@@ -147,6 +191,9 @@ export function TeamLibraryWorkspace({
     setPurpose("");
     setQuery("");
     setNewProject(false);
+    setImportFile(undefined);
+    setCandidates(undefined);
+    setChosenIds([]);
   }, [operation.generation, operation.actorId, binding?.version, binding?.labId]);
   const sync = async () => {
     if (!bridge) return;
@@ -231,17 +278,23 @@ export function TeamLibraryWorkspace({
     const ticket = operation.capture();
     setPanel("history");
     setError("");
+    setHistoryError("");
+    setHistory(undefined);
     try {
       const values = await bridge?.changes();
       if (ticket.isCurrent()) setHistory(values);
     } catch (e) {
-      if (ticket.isCurrent()) setError(message(e));
+      if (ticket.isCurrent()) {
+        setHistoryError(message(e));
+        setHistory([]);
+      }
     }
   };
   const chooseTask = async (cursor?: string) => {
     const ticket = operation.capture();
     setTaskBusy(true);
     setError("");
+    if (!cursor) setTaskSearch("");
     try {
       const response = await researchApi("workbench", {
         query: { category: "all", limit: 100, cursor },
@@ -259,13 +312,15 @@ export function TeamLibraryWorkspace({
     }
   };
   const useEntry = (card: WorkbenchCard) => {
-    if (!entry || !snapshot || !card.taskId || card.summaryOnly) return;
+    if (!snapshot || !card.taskId || card.summaryOnly) return;
+    const ids = chosenIds.length ? chosenIds : entry ? [entry.id] : [];
+    if (!ids.length) return;
     const target = nativeWorkbenchTaskPath(
       card.taskId,
       card.source === "research_task" ? "research" : "personal",
     );
     const params = new URLSearchParams(target.split("?")[1]);
-    params.set("teamEntry", entry.id);
+    for (const id of ids) params.append("teamEntry", id);
     params.set("teamRevision", snapshot.revision);
     params.set("teamRules", String(includeRules));
     if (question.trim())
@@ -309,16 +364,36 @@ export function TeamLibraryWorkspace({
                 更新记录
               </Button>
               <Button
+                type="primary"
+                icon={<UploadOutlined />}
+                disabled={!snapshot || !bridge}
+                onClick={() => {
+                  setImportTarget("");
+                  fileInput.current?.click();
+                }}
+              >
+                导入文件
+              </Button>
+              <Button
                 icon={<PlusOutlined />}
                 disabled={!snapshot || !bridge}
                 onClick={() => setEditing(true)}
               >
-                导入资料
+                更多来源
               </Button>
             </>
           )}
         </div>
       </div>
+      <input
+        ref={fileInput}
+        type="file"
+        hidden
+        onChange={(event) => {
+          if (event.target.files) beginImport(event.target.files, importTarget);
+          event.target.value = "";
+        }}
+      />
       <div className="team-library-status">
         {snapshot?.manifest.title || "课题组资料"}
         {snapshot && (
@@ -362,6 +437,15 @@ export function TeamLibraryWorkspace({
               type="info"
               message="请在新版 Windows 客户端中同步和取用团队仓库。"
             />
+          ) : repository.loading && !current ? (
+            <div className="team-library-empty">
+              <Spin tip="正在读取团队资料" />
+            </div>
+          ) : !binding && repository.error ? (
+            <div className="team-library-empty">
+              <h2>团队资料暂时无法读取</h2>
+              <Button onClick={repository.refresh}>重新连接</Button>
+            </div>
           ) : !binding ? (
             <div className="team-library-empty">
               <FolderOpenOutlined />
@@ -382,7 +466,7 @@ export function TeamLibraryWorkspace({
               ) : (
                 <>
                   <h2>还没有可读取的资料目录</h2>
-                  <p>仓库需包含 acceptcat-library.json，或检查本机 Git 的访问权限。</p>
+                  <p>同步尚未完成。请重新连接，或查看仓库设置中的地址。</p>
                   <Button onClick={sync}>重新同步</Button>
                   {current?.canConfigure && (
                     <Button onClick={() => setConfigure(true)}>仓库设置</Button>
@@ -474,10 +558,15 @@ export function TeamLibraryWorkspace({
                       {snapshot.manifest.projects.find((p) => p.id === project)?.name ||
                         "全部资料"}
                     </h2>
-                    <p>
-                      {snapshot.manifest.projects.find((p) => p.id === project)
-                        ?.description || "找到项目材料、参考样例和可复用的要求。"}
-                    </p>
+                    {snapshot.manifest.projects.find((p) => p.id === project)
+                      ?.description && (
+                      <p>
+                        {
+                          snapshot.manifest.projects.find((p) => p.id === project)
+                            ?.description
+                        }
+                      </p>
+                    )}
                   </div>
                   <Input.Search
                     aria-label="查找团队资料"
@@ -487,6 +576,43 @@ export function TeamLibraryWorkspace({
                     allowClear
                   />
                 </header>
+                <div className="team-library-quick-filters" aria-label="资料用途">
+                  {[
+                    { value: "", label: "全部" },
+                    { value: "template", label: "模板与案例" },
+                    { value: "figure", label: "图与素材" },
+                    { value: "reference", label: "参考资料" },
+                  ].map((filter) => (
+                    <Button
+                      key={filter.value}
+                      type={purpose === filter.value ? "primary" : "default"}
+                      onClick={() => setPurpose(filter.value)}
+                    >
+                      {filter.label}
+                    </Button>
+                  ))}
+                </div>
+                <div
+                  className="team-library-file-drop"
+                  onDragOver={(event) => {
+                    if (event.dataTransfer.types.includes("Files"))
+                      event.preventDefault();
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    beginImport(event.dataTransfer.files);
+                  }}
+                >
+                  <UploadOutlined /> 拖入资料，确认新增或更新版本
+                  <button
+                    onClick={() => {
+                      setImportTarget("");
+                      fileInput.current?.click();
+                    }}
+                  >
+                    选择文件
+                  </button>
+                </div>
                 <div className="team-library-table" role="table" aria-label="项目资料">
                   <div className="team-library-row table-heading" role="row">
                     <span role="columnheader">文件</span>
@@ -511,6 +637,11 @@ export function TeamLibraryWorkspace({
                           <small>
                             {fileType(e)}
                             {e.recommended ? " · 推荐使用" : ""}
+                            {e.source.kind === "shared"
+                              ? ` · v${e.source.version}`
+                              : e.source.sha256
+                              ? ` · ${e.source.sha256.slice(0, 8)}`
+                              : ""}
                           </small>
                         </span>
                       </span>
@@ -547,18 +678,24 @@ export function TeamLibraryWorkspace({
                     id="team-library-question"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="例如：用项目模板整理一份汇报提纲，并沿用项目要求…"
+                    placeholder="用上次组会的模板，把这次实验图放进去…"
                     maxLength={4000}
                     autoSize={{ minRows: 1, maxRows: 3 }}
+                    onPressEnter={(event) => {
+                      if (!event.shiftKey && !event.nativeEvent.isComposing) {
+                        event.preventDefault();
+                        findMaterials();
+                      }
+                    }}
                   />
                   <Button
                     type="primary"
                     shape="circle"
                     icon={<ArrowUpOutlined />}
-                    aria-label="选择任务并继续"
-                    disabled={!entry}
+                    aria-label="查找可用资料"
+                    disabled={!entry && !question.trim()}
                     loading={taskBusy}
-                    onClick={() => chooseTask()}
+                    onClick={findMaterials}
                   />
                 </div>
               </div>
@@ -640,9 +777,12 @@ export function TeamLibraryWorkspace({
                       type="primary"
                       block
                       loading={taskBusy}
-                      onClick={() => chooseTask()}
+                      onClick={() => {
+                        setChosenIds([entry.id]);
+                        void chooseTask();
+                      }}
                     >
-                      在工作台中使用
+                      用于任务
                     </Button>
                     <div className="team-library-detail-actions">
                       <Button
@@ -660,11 +800,18 @@ export function TeamLibraryWorkspace({
                       >
                         定位副本
                       </Button>
-                      <Button onClick={() => setEditing(entry)}>提交更新</Button>
+                      <Button
+                        onClick={() => {
+                          if (entry.source.kind === "git") {
+                            setImportTarget(entry.id);
+                            fileInput.current?.click();
+                          } else setEditing(entry);
+                        }}
+                      >
+                        更新文件
+                      </Button>
+                      <Button onClick={() => setEditing(entry)}>编辑说明</Button>
                     </div>
-                    <p className="team-library-note">
-                      更新先提交为待审分支，审核发布后团队成员同步。原件权限沿用资料服务。
-                    </p>
                   </>
                 ) : (
                   <Empty description="选择资料查看说明与版本" />
@@ -689,6 +836,16 @@ export function TeamLibraryWorkspace({
       >
         {panel === "history" ? (
           <div className="team-library-history">
+            {historyError && (
+              <Alert
+                type="error"
+                message={historyError}
+                action={<Button onClick={openHistory}>重试</Button>}
+              />
+            )}
+            {history?.length === 0 && !historyError && (
+              <Empty description="还没有更新记录" />
+            )}
             {history?.map((h) => (
               <article key={h.revision}>
                 <h3>{h.title}</h3>
@@ -723,6 +880,19 @@ export function TeamLibraryWorkspace({
           }}
         />
       )}
+      {importFile && snapshot && (
+        <TeamLibraryFileImport
+          file={importFile}
+          snapshot={snapshot}
+          projectId={project}
+          targetId={importTarget}
+          onClose={() => setImportFile(undefined)}
+          onSaved={(value) => {
+            setImportFile(undefined);
+            setProposal(value);
+          }}
+        />
+      )}
       {newProject && snapshot && (
         <ProjectEditor
           revision={snapshot.revision}
@@ -751,12 +921,67 @@ export function TeamLibraryWorkspace({
         )}
       </Modal>
       <Modal
+        open={!!candidates}
+        title="选好资料，一起带入任务"
+        onCancel={() => setCandidates(undefined)}
+        okText={
+          chosenIds.length ? `选择任务 · ${chosenIds.length} 份资料` : "请选择资料"
+        }
+        okButtonProps={{ disabled: !chosenIds.length }}
+        onOk={() => {
+          setCandidates(undefined);
+          void chooseTask();
+        }}
+      >
+        {candidates?.length === 0 && (
+          <Empty description="没有找到匹配资料，换个名称或用途试试" />
+        )}
+        {candidates?.map((item) => (
+          <Checkbox
+            className="team-library-candidate"
+            key={item.id}
+            checked={chosenIds.includes(item.id)}
+            onChange={(event) =>
+              setChosenIds((old) =>
+                event.target.checked
+                  ? [...old, item.id]
+                  : old.filter((id) => id !== item.id),
+              )
+            }
+          >
+            <FileIcon entry={item} />
+            <span>
+              <strong>{item.name}</strong>
+              <small>
+                {purposes[item.purpose]} ·{" "}
+                {item.source.kind === "shared"
+                  ? `v${item.source.version}`
+                  : item.source.sha256?.slice(0, 8) || "本地资料"}
+              </small>
+            </span>
+          </Checkbox>
+        ))}
+      </Modal>
+      <Modal
         open={!!tasks}
-        title="选择任务工作区"
+        title={
+          chosenIds.length > 1
+            ? `将 ${chosenIds.length} 份资料用于任务`
+            : entry
+            ? `将「${entry.name}」用于任务`
+            : "选择任务"
+        }
         onCancel={() => setTasks(undefined)}
         footer={null}
       >
-        <p>只复制所选资料和项目要求到该任务，保留来源版本；不会自动执行。</p>
+        <Input.Search
+          value={taskSearch}
+          onChange={(event) => setTaskSearch(event.target.value)}
+          placeholder="搜索任务"
+          allowClear
+          aria-label="搜索要取用资料的任务"
+          style={{ marginBottom: 16 }}
+        />
         {tasks
           ?.filter(
             (c) =>
@@ -765,6 +990,10 @@ export function TeamLibraryWorkspace({
               c.source !== "followup" &&
               c.category !== "completed" &&
               c.allowedActions.some((a) => ["run", "submit"].includes(a)),
+          )
+          .filter(
+            (c) =>
+              !taskSearch || c.title.toLowerCase().includes(taskSearch.toLowerCase()),
           )
           .map((c) => (
             <Button

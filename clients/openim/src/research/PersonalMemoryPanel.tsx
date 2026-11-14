@@ -10,7 +10,6 @@ import {
 } from "@ant-design/icons";
 import { useLayoutEffect, useRef, useState } from "react";
 import type {
-  AssistantMemory,
   PersonalMemory,
   PersonalMemorySettings,
 } from "@research-agent-platform/contracts";
@@ -28,56 +27,6 @@ const origins = {
   feedback: "来自你的纠正",
   inferred: "助理提出的候选",
 };
-function asPersonalMemory(memory: AssistantMemory): PersonalMemory {
-  const payload = memory.payload as {
-    topic?: string;
-    value?: string;
-    appliesTo?: "general" | "topic";
-  };
-  return {
-    id: memory.id,
-    topic: memory.topic,
-    content: memory.detail || payload.value || memory.summary,
-    scope: payload.appliesTo || "general",
-    status: memory.status,
-    origin: memory.origin,
-    sourceMessageId:
-      memory.source.kind === "message" ? memory.source.id : null,
-    version: memory.version,
-    createdAt: memory.createdAt,
-    updatedAt: memory.updatedAt,
-    allowedActions: memory.allowedActions,
-  };
-}
-const memoryFields = (
-  topic: string,
-  content: string,
-  scope: PersonalMemory["scope"],
-) => ({
-  topic,
-  type: "preference" as const,
-  summary: content.slice(0, 300),
-  detail: content,
-  payload: {
-    type: "preference" as const,
-    value: content,
-    appliesTo: scope,
-  },
-  source: { kind: "manual" as const, id: null, version: null },
-});
-async function readPersonalMemories(
-  query: { status: "confirmed" | "candidate" | "revoked" | "all"; limit: number; cursor?: string },
-  signal?: AbortSignal,
-) {
-  const response = await researchApi("assistantMemories", {
-    query: { scope: "personal", ...query },
-    signal,
-  });
-  return {
-    data: response.data.map(asPersonalMemory),
-    nextCursor: response.nextCursor,
-  };
-}
 const filters = { confirmed: "已记住", candidate: "待确认", revoked: "已移除" };
 type Filter = keyof typeof filters;
 type Category = "all" | PersonalMemory["scope"];
@@ -189,18 +138,24 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
   // counts and the overview; candidates never enter this summary.
   const confirmed = useResearchRead(
     (signal) =>
-      readPersonalMemories({ status: "confirmed", limit: 100 }, signal),
+      researchApi("personalMemories", {
+        query: { status: "confirmed", limit: 100 },
+        signal,
+      }),
     `memory-overview:${operation.scope}`,
     active,
   );
   const history = useResearchRead(
     (signal) =>
-      readPersonalMemories({ status: filter, limit: 30, cursor }, signal),
+      researchApi("personalMemories", {
+        query: { status: filter, limit: 30, cursor },
+        signal,
+      }),
     `memory-history:${operation.scope}:${filter}:${cursor || ""}`,
     active && filter !== "confirmed",
   );
   const settings = useResearchRead(
-    (signal) => researchApi("assistantMemorySettings", { signal }),
+    (signal) => researchApi("personalMemorySettings", { signal }),
     `memory-settings:${operation.scope}`,
     active,
   );
@@ -302,12 +257,10 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
     const submit = () =>
       current.isCurrent()
         ? run(() =>
-            researchApi("decideAssistantMemory", {
+            researchApi("decidePersonalMemory", {
               params: { id: memory.id },
               body: { expectedVersion: memory.version, decision: value },
-            }).then((response) => ({
-              data: asPersonalMemory(response.data),
-            })),
+            }),
           )
         : undefined;
     ownModal(
@@ -615,24 +568,18 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
           void run(
             () =>
               editing
-                ? researchApi("updateAssistantMemory", {
+                ? researchApi("updatePersonalMemory", {
                     params: { id: editing.id },
                     body: {
-                      ...memoryFields(topic, content, memoryScope),
                       expectedVersion: editing.version,
+                      topic,
+                      content,
+                      scope: memoryScope,
                     },
-                  }).then((response) => ({
-                    data: asPersonalMemory(response.data),
-                  }))
-                : researchApi("createAssistantMemory", {
-                    body: {
-                      scope: "personal",
-                      subjectId: null,
-                      ...memoryFields(topic, content, memoryScope),
-                    },
-                  }).then((response) => ({
-                    data: asPersonalMemory(response.data),
-                  })),
+                  })
+                : researchApi("createPersonalMemory", {
+                    body: { topic, content, scope: memoryScope },
+                  }),
             () => {
               setEditorOpen(false);
               setEditing(undefined);
@@ -654,7 +601,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
           const current = operation.capture();
           void run(
             async () => {
-              const response = await researchApi("assistantMemorySettings");
+              const response = await researchApi("personalMemorySettings");
               if (current.isCurrent()) setPolicy(response.data);
             },
             undefined,
@@ -680,7 +627,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
                   policy.quietHours.start === policy.quietHours.end)
               )
                 throw new Error("安静时段的开始和结束时间不能相同。");
-              const response = await researchApi("updateAssistantMemorySettings", {
+              const response = await researchApi("updatePersonalMemorySettings", {
                 body: {
                   expectedVersion: policy.version,
                   candidateLearning: policy.candidateLearning,

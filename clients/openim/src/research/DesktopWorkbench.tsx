@@ -1,5 +1,5 @@
 import { Alert, Button, Input, Modal, Segmented, Select } from "antd";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import type { WorkbenchCard } from "@research-agent-platform/contracts";
 import { useResearchRead } from "./useResearchRead";
@@ -15,7 +15,7 @@ import {
   WorkspaceTaskDetail,
 } from "./TaskWorkspace";
 import { transientReadFailure } from "./read-errors";
-import { collectTaskInbox } from "./task-inbox";
+import { collectTaskInbox , workbenchNextAction } from "./task-inbox";
 import { collectTeamWorkspace } from "./team-progress";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import "./workspace.scss";
@@ -137,6 +137,12 @@ export function DesktopWorkbench() {
     valid: requestedValid,
   } = workbenchTaskTarget(params);
   const [taskSearch, setTaskSearch] = useState("");
+  const [quickRequest, setQuickRequest] = useState("");
+  const [quickDraft, setQuickDraft] = useState<string>();
+  const expandedChanged = useCallback((value: boolean) => {
+    setPlanningExpanded(value);
+    if (value) setQuickDraft(undefined);
+  }, []);
   const generation = useResearchStore((s) => s.generation),
     actor = useResearchStore((s) => s.actor),
     contacts = useResearchStore((s) => s.contacts);
@@ -475,9 +481,7 @@ export function DesktopWorkbench() {
                             workspaceStatusLabel[card.status] ||
                             card.progress.label ||
                             "查看状态",
-                          step =
-                            workspaceStatusLabel[card.progress.label] ||
-                            card.progress.label;
+                          step = workbenchNextAction(card);
                         return (
                           <TaskListRow
                             key={`${card.source}:${card.id}`}
@@ -561,10 +565,45 @@ export function DesktopWorkbench() {
               />
             ) : (
               <div className="workspace-empty">
-                <h2>选择一项任务，继续推进</h2>
-                <p>
-                  左侧是你发起、参与或需要处理的事项。选择后查看目标、验收和成果；新事项可从上方新建，也可以和下面的任务助手讨论。
-                </p>
+                <h2>有什么事要安排？</h2>
+                <p>说一句，先看安排，再确认发出。</p>
+                <form
+                  className="workspace-quick-task"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (!quickRequest.trim() || !assistantReady) return;
+                    setQuickDraft(quickRequest.trim());
+                    setPlanningLaunch((value) => value + 1);
+                    setQuickRequest("");
+                  }}
+                >
+                  <Input.TextArea
+                    aria-label="一句话安排任务"
+                    placeholder="例如：下周五组会，请小陈汇报这周的实验进展，交一份报告"
+                    autoSize={{ minRows: 2, maxRows: 4 }}
+                    value={quickRequest}
+                    maxLength={4000}
+                    disabled={!assistantReady}
+                    onChange={(event) => setQuickRequest(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === "Enter" &&
+                        !event.shiftKey &&
+                        !event.nativeEvent.isComposing
+                      ) {
+                        event.preventDefault();
+                        event.currentTarget.form?.requestSubmit();
+                      }
+                    }}
+                  />
+                  <Button
+                    htmlType="submit"
+                    type="primary"
+                    disabled={!assistantReady || !quickRequest.trim()}
+                  >
+                    整理成任务
+                  </Button>
+                </form>
               </div>
             )}
           </TaskWorkspace>
@@ -577,10 +616,11 @@ export function DesktopWorkbench() {
           conversationAvailable={availability.supports(32)}
           focus={planningLaunch}
           fresh={taskLaunch}
-          onExpandedChange={setPlanningExpanded}
+          onExpandedChange={expandedChanged}
           planId={planId}
           requestId={requestId}
-          draft={draft}
+          draft={quickDraft || draft}
+          submitDraft={!!quickDraft}
           onCreated={() => {
             setWorkbenchRevision((value) => value + 1);
             void read.refresh();

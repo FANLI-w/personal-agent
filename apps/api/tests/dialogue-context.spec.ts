@@ -177,7 +177,7 @@ describe('layered dialogue context: actual HTTP/durable SQLite, synthetic provid
   const sent=await s.send('LX-71最新确认的预算是多少？')
   await s.tick(async input=>{const p=JSON.parse(input.prompt);expect(p.personalMemories).toContainEqual(expect.objectContaining({id:relevant.id,content:relevant.content}));expect(p.personalMemoriesOmitted).toBe(true);expect(chatInputTokenBound(input.system,input.prompt)+input.maxTokens).toBeLessThanOrEqual(16000);return model('你最新确认的预算是6500元。')})
   expect((await s.turn(sent.turn.id)).status).toBe('succeeded')
-  expect(s.db.prepare("SELECT count(*) n FROM assistant_memories WHERE scope='personal' AND status='confirmed'").get()!.n).toBe(17)
+  expect(s.db.prepare("SELECT count(*) n FROM personal_memories WHERE status='confirmed'").get()!.n).toBe(17)
  })
 
  it('provides history to coordination without promoting a quoted old instruction to current creation authority',async()=>{

@@ -205,6 +205,8 @@ describe('B1 A1–A5: two real HTTP processes, file SQLite, real passwords', () 
     expect((await detail(taskId)).task.status).toBe('completed')
     expect(db.prepare('SELECT count(*) n FROM deliverables WHERE task_id=?').get(taskId)!.n).toBe(2)
     expect(db.prepare('SELECT count(*) n FROM reviews r JOIN deliverables d ON d.id=r.deliverable_id WHERE d.task_id=?').get(taskId)!.n).toBe(2)
+    expect(db.prepare("SELECT member_id, source_id FROM assistant_feedback WHERE kind='review' ORDER BY seq").all()).toEqual(
+      [first,second].map(response => ({member_id:'member_A',source_id:response.value.data.id})))
     // Refresh from another process, restart both, and replay original committed commands.
     const before = await request('task', { client: clients.B, params: { id: taskId }, target: secondAddress })
     await stopServers(); address = (await startServer()).url; secondAddress = (await startServer()).url

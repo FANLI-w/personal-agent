@@ -37,19 +37,11 @@ CREATE TABLE assistant_memory_revisions (
  PRIMARY KEY(memory_id,version)
 ) STRICT;
 
-CREATE TABLE assistant_memory_settings (
- member_id TEXT PRIMARY KEY REFERENCES members(id),
- candidate_learning INTEGER NOT NULL DEFAULT 0 CHECK(candidate_learning IN (0,1)),
- time_zone TEXT NOT NULL DEFAULT 'Asia/Shanghai',
- quiet_hours_json TEXT CHECK(quiet_hours_json IS NULL OR json_valid(quiet_hours_json)),
- version INTEGER NOT NULL DEFAULT 1 CHECK(version>=1)
-) STRICT;
-
 CREATE VIEW assistant_memory_index AS
 SELECT id, scope, subject_id, type, summary, status, version,
  source_kind, source_id, source_version, updated_at
 FROM assistant_memories;
 
--- This schema-only step is intentional: the project is still in a test phase and
--- old assistant-memory rows are not worth a compatibility backfill. The service
--- switches to the new tables next; 037 drops the old tables after the switch.
+-- Existing personal_memories and chat_memories remain authoritative for deployed
+-- preference and conversation APIs. New assistant notes use this separate domain.
+-- No old settings, ownership, revocations or histories are copied or removed.

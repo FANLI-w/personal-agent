@@ -538,3 +538,48 @@ test('local material copies and shared originals larger than 10 MiB remain file 
   const selected=await f.store.importOriginal(context,source,input);assert.equal(selected.localName,saved.localMaterials[0].localName);
   assert.deepEqual(await fs.readFile(path.join(b.directory,selected.localName)),original);
 });
+
+test("picked Office outputs stage without DSH, archive task-readable versions, and retry the same delivery", async t => {
+  const f = await fixture(t);
+  const picked = path.join(f.root, "report.pptx");
+  await fs.writeFile(picked, "synthetic office original");
+  const names = await f.store.stageDelivery(context, [picked]);
+  assert.equal(names.length, 1);
+  assert.equal(f.calls.length, 0);
+  const state = await f.store.status(context);
+  assert.equal(state.binding.submissionOnly, true);
+  assert.equal(state.files.length, 1);
+  const posts = [];
+  const archived = await f.store.archive(context, { requestId: "archive_synthetic_12345", collectionId: "collection_synthetic", collectionName: "Synthetic delivery", scope: "task_scoped", expectedCollectionVersion: 1, names }, async () => {}, async (url, body) => {
+    posts.push({ url, body });
+    return { id: "file_synthetic", version: 1, sha256: createHash("sha256").update("synthetic office original").digest("hex"), extraction: "original_only" };
+  });
+  assert.equal(archived.status, "archived");
+  let lost = true;
+  const deliver = async (url, body, key) => {
+    posts.push({ url, body, key });
+    if (lost) { lost = false; throw Error("response lost"); }
+    return { id: "delivery_synthetic" };
+  };
+  await assert.rejects(f.store.deliver(context, "Synthetic report", names, deliver, true), /response lost/);
+  await f.restart().deliver(context, "Synthetic report", names, deliver, true);
+  const writes = posts.filter(item => item.url.includes("deliverables"));
+  assert.equal(writes.length, 2);
+  assert.equal(writes[0].key, writes[1].key);
+  assert.deepEqual(writes[0].body, writes[1].body);
+  assert.equal(writes[0].body.sources[0].locator, `research-library:file_synthetic:v1:${archived.files[0].sha256}`);
+  assert.equal(posts.some(item => item.url === "/api/v1/artifacts"), false);
+  await f.store.open(context);
+  assert.equal((await f.store.load(context)).submissionOnly, undefined);
+});
+
+test("personal text delivery prepares a local receipt without starting a session", async t => {
+  const f = await fixture(t), personal = { ...context, kind: "personal", taskId: "personal_synthetic" };
+  await f.store.prepareDelivery(personal);
+  assert.equal(f.calls.length, 0);
+  const posted = [];
+  await f.store.deliver(personal, "Synthetic completed result", [], async (url, body) => { posted.push({url, body}); return {id:"result_synthetic"}; }, true);
+  assert.equal(posted[0].url, "/api/v1/work/tasks/personal_synthetic/result");
+  assert.equal(posted[0].body.text, "Synthetic completed result");
+  assert.equal((await f.store.status(personal)).binding.delivery.status, "submitted");
+});
