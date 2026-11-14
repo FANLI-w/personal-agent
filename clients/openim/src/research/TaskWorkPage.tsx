@@ -23,6 +23,7 @@ import { TaskKnowledgePanel } from "./TaskKnowledgePanel";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchRead } from "./useResearchRead";
 import { nativeWorkbenchTaskPath } from "./workbench-links";
+import { NativeWorkbenchTaskButton } from "./NativeWorkbenchTaskButton";
 
 const phases = {
   ready: "可以开始",
@@ -796,12 +797,7 @@ export function TaskWorkPage({
               />
             )}
             <div className="task-work-handoff">
-              <Button
-                type="primary"
-                onClick={() => navigate(nativeWorkbenchTaskPath(taskId, kind))}
-              >
-                在工作台继续
-              </Button>
+              <NativeWorkbenchTaskButton target={target} primary />
               {state.phase === "running" && (
                 <Button
                   disabled={busy}

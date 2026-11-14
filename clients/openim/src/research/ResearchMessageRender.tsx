@@ -244,6 +244,7 @@ export default function ResearchMessageRender({
             <ResearchTaskCard
               resource={read.data.fact.resources[0]}
               text={read.data.fact.text || undefined}
+              source={{ conversationId: read.data.fact.conversationId, messageId: read.data.fact.id }}
             />
           ) : (
             <>
@@ -265,6 +266,7 @@ export default function ResearchMessageRender({
                     <ResearchTaskCard
                       key={`${resource.kind}:${resource.ref.id}`}
                       resource={resource}
+                      source={{ conversationId: read.data!.fact.conversationId, messageId: read.data!.fact.id }}
                     />
                   ))}
                 </div>

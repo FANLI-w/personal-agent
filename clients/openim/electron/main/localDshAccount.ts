@@ -50,7 +50,10 @@ export async function dshAccount(event: Electron.IpcMainInvokeEvent) {
   };
 }
 
-export async function createDshRelay(account: Awaited<ReturnType<typeof dshAccount>>) {
+export async function createDshRelay(account: Awaited<ReturnType<typeof dshAccount>>, hooks?: {
+  taskContext: (sessionId:string)=>Promise<{content:string}>;
+  taskFeedback: (value:{sessionId:string;seq:number;messageId:string;text:string})=>Promise<unknown>;
+}) {
   const secret = randomBytes(32).toString('hex'), pending = new Set<Electron.ClientRequest>();
   const sockets = new Set<Socket>();
   let closed = false;
@@ -63,6 +66,18 @@ export async function createDshRelay(account: Awaited<ReturnType<typeof dshAccou
     };
     const key = req.headers.authorization?.replace(/^Bearer /, '') || req.headers['x-api-key'];
     if (closed || req.headers.origin || typeof key !== 'string' || !/^[a-f0-9]{64}$/.test(key) || !timingSafeEqual(Buffer.from(key), Buffer.from(secret))) { failure(401, 'AcceptCat session required'); return; }
+    if(req.method==='POST'&&['/acceptcat/task-context','/acceptcat/task-feedback'].includes(req.url||'')){
+      try{
+        await account.valid();let length=0;const chunks:Buffer[]=[];
+        for await(const chunk of req){length+=chunk.length;if(length>16000)throw Error('Input too large');chunks.push(Buffer.from(chunk));}
+        const value=JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        if(!hooks||typeof value.sessionId!=='string'||!/^acceptcat-[A-Za-z0-9_-]{1,128}$/.test(value.sessionId)){
+          res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({content:''}));return;
+        }
+        const result=req.url==='/acceptcat/task-context'?await hooks.taskContext(value.sessionId):await hooks.taskFeedback(value);
+        await account.valid();res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(result));
+      }catch{failure(403,'AcceptCat task context unavailable');}return;
+    }
     const suffix = account.metadata.protocol === 'anthropic-messages' ? '/v1/messages' : '/v1/chat/completions';
     // The bundled Anthropic SDK uses beta.messages.create(), which adds this
     // fixed query. It is the same completion operation, not an arbitrary route.

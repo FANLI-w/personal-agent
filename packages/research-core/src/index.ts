@@ -5,3 +5,4 @@ export type { Artifact, ArtifactStatus, Project, ResearchHealth, SourceRef } fro
 export * from './paper-library.js'
 
 export { renderChecklist, validateChecklist } from './evidence-checklist.js'
+export { effectivePersonalPreferences, preferenceTopicKey } from './personal-preferences.js'

@@ -10,6 +10,7 @@ import { personalDueLabel } from "./personal-time";
 import { CreatedAgentChatButton } from "./CreatedAgentChatButton";
 import { AssistantWorkTaskButton } from "./AssistantWorkTaskButton";
 import { workbenchTaskPath } from "./workbench-links";
+import { NativeWorkbenchTaskButton } from "./NativeWorkbenchTaskButton";
 
 function DelegateCard({ receipt }: { receipt: Extract<PersonalAssistantReceipt, { kind: "delegate" }> }) {
   const read = useResearchRead(() => researchApi("chatTurn", { params: { id: receipt.turnId } }), `delegated:${receipt.conversationId}:${receipt.turnId}`);
@@ -22,6 +23,7 @@ function DelegateCard({ receipt }: { receipt: Extract<PersonalAssistantReceipt, 
     {read.error && <p className="text-xs text-amber-800">当前回复状态未能核对：{read.error}</p>}
     <CreatedAgentChatButton created={receipt} delegated />
     <AssistantWorkTaskButton conversationId={receipt.conversationId} turnId={receipt.turnId} />
+    <AssistantWorkTaskButton conversationId={receipt.conversationId} turnId={receipt.turnId} native />
     <details className="text-xs text-slate-500"><summary>安排详情</summary><p>当前需求已保存到该 Agent 的稳定私聊。此安排最多使用剩余 {receipt.budget.maxTokens} Token / {receipt.budget.maxSeconds} 秒，不另增本轮预算。</p></details>
   </div>;
 }
@@ -36,6 +38,7 @@ function WorkTaskReceipt({ receipt }: { receipt: Extract<PersonalAssistantReceip
     <p className="text-xs text-gray-500">{read.error || status || "正在读取任务安排…"}</p>
     {task?.status === "proposed" && <p className="text-xs text-gray-500">查看目标和成员，确认后建立协作群。受邀成员自行决定是否参与。</p>}
     <Button size="small" onClick={() => navigate(workbenchTaskPath(receipt.taskId))}>查看任务安排</Button>
+    {task && !task.summaryOnly && <NativeWorkbenchTaskButton target={{ taskId: receipt.taskId, kind: "personal" }} />}
   </div>;
 }
 

@@ -96,3 +96,20 @@ export async function ensureResearchPlugin(input: {
   }
   return { changed, version: await installedVersion(profile) };
 }
+
+/** App-owned connection extension uses DSH's package manager and launch
+ * overlay; no profile source or research plugin is overwritten. */
+export async function ensureTaskContextPlugin(input:{runtime:string;home:string}):Promise<EnsureResult>{
+  const profile=path.join(input.home,'profiles','web');
+  if(!existsSync(path.join(profile,'package.json')))return {changed:false,reason:'profile 尚未创建'};
+  const directory=path.join(input.home,'acceptcat-task-context');
+  const source=JSON.parse(await readFile(path.join(directory,'package.json'),'utf8'));
+  let installed;
+  try{installed=JSON.parse(await readFile(path.join(profile,'node_modules','acceptcat-task-context','package.json'),'utf8'));}
+  catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
+  if(installed?.version===source.version)return {changed:false,version:source.version};
+  await runPnpm(input.runtime,profile,['add',`acceptcat-task-context@file:${directory}`,'--offline','--ignore-scripts']);
+  const actual=JSON.parse(await readFile(path.join(profile,'node_modules','acceptcat-task-context','package.json'),'utf8'));
+  if(actual.version!==source.version)throw Error('工作台连接扩展版本未能核验，请重试连接。');
+  return {changed:true,version:actual.version};
+}

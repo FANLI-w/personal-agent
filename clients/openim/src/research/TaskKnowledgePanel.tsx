@@ -38,7 +38,7 @@ export function TaskKnowledgePanel({
   );
   const policy = knowledge.data?.policy,
     binding = state?.binding,
-    preferences = binding?.preferences || { personalMemory: false, skills: [] };
+    preferences = binding?.preferences || { personalMemory: !!policy?.privateMemoryAllowed, skills: [] };
   const active = [...(policy?.records || []),...(policy?.personalRules || [])].filter((r) => r.status === "active" && r.kind === "rule"),
     candidates = (policy?.records || []).filter((r) => r.status === "candidate"),
     lab = active.filter((r) => r.scope === "lab").length,
@@ -60,7 +60,7 @@ export function TaskKnowledgePanel({
             当前可用：平台规则 v{policy.platform.version} · 课题组 {lab} 条 · 项目约定{" "}
             {project} 条 · 个人规则 {active.filter(r=>r.scope==="personal").length} 条
             {candidates.length > 0 ? ` · ${candidates.length} 条待确认` : ""} · 个人记忆
-            {preferences.personalMemory ? "已启用" : "未启用"}
+            {policy.privateMemoryAllowed && preferences.personalMemory ? "自动带入" : "未启用"}
             {preferences.skills.length > 0
               ? ` · 方法 ${preferences.skills.length} 个`
               : ""}

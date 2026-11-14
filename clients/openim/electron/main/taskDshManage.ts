@@ -18,8 +18,9 @@ import type {
   TaskContext,
   TaskTarget,
   TaskSource,
+  TaskChatContext,
 } from "../../../../integrations/deepseek-harness/desktop/task-workspace";
-const { DshTaskWorkspace, TeamExecution, taskKey, digestContext, greetingOnly, WorkContext } =
+const { DshTaskWorkspace, TeamExecution, taskKey, digestContext, greetingOnly, WorkContext, verifiedTaskDiscussion, effectivePersonalPreferences, nativePreferenceInput } =
   require("./localDshRuntime") as typeof import("../../../../integrations/deepseek-harness/desktop/local-runtime");
 type Connection = {
   account: Awaited<ReturnType<typeof dshAccount>>;
@@ -30,9 +31,11 @@ type Connection = {
 /** Fixed business operations only: neither arbitrary URLs nor credentials cross IPC. */
 export function registerTaskDshBridge(
   connect: (event: Electron.IpcMainInvokeEvent) => Promise<Connection>,
+  selectSession: (sessionId:string)=>Promise<void> = async()=>{},
 ) {
   const coordinators = new Map<string, InstanceType<typeof TeamExecution>>();
   const stores = new Map<string, InstanceType<typeof DshTaskWorkspace>>();
+  const nativeBindings=new Map<string,{event:Electron.IpcMainInvokeEvent;target:TaskTarget;identity:string;lease:string}>();
   async function business(
     c: Connection,
     url: string,
@@ -89,7 +92,7 @@ export function registerTaskDshBridge(
                     ? "任务或资料当前不可访问，请核对参与权限。"
                     : "任务服务操作失败，请重试原操作。",
                 ),
-                { code },
+                { code, status:res.statusCode },
               );
             }
             const bytes = Buffer.concat(chunks);
@@ -122,6 +125,7 @@ export function registerTaskDshBridge(
     event: Electron.IpcMainInvokeEvent,
     target: TaskTarget,
     write = false,
+    native = false,
   ) {
     const auth = authority(event);
     taskKey(target);
@@ -130,8 +134,8 @@ export function registerTaskDshBridge(
       [route, query = ""] = hash.replace(/^#/, "").split("?"),
       page = route.replace(/\/+$/, "");
     if (
-      !["/workbench", "/dsh"].includes(page) ||
-      new URLSearchParams(query).get("task") !== target.taskId
+      !native && (!["/workbench", "/dsh"].includes(page) ||
+      new URLSearchParams(query).get("task") !== target.taskId)
     )
       throw Error("请在对应任务工作页操作。");
     const c = await connect(event);
@@ -233,6 +237,7 @@ export function registerTaskDshBridge(
       // Old account leases can never be reused; retain only the current connection.
       for(const coordinator of coordinators.values())coordinator.dispose();
       coordinators.clear();
+      nativeBindings.clear();
       const coordinator=new TeamExecution(store,(url,body,key)=>business(c,url,body,key),c.account.valid);
       await coordinator.start();coordinators.set(key,coordinator);
       stores.clear();
@@ -284,16 +289,19 @@ export function registerTaskDshBridge(
       return {name:e.name,description:String(meta.description),content:meta.instructions,version:digestContext(text)};
     }));
   }
-  async function workInputs(a:Awaited<ReturnType<typeof authorized>>,text='',prepare=false) {
+  async function workInputs(a:Awaited<ReturnType<typeof authorized>>,text='',prepare=false,native=false) {
     let policy;
     try{policy=WorkContext.parse(await business(a.c,`/api/v1/work-context/${a.context.kind}/${a.context.taskId}`));}
     catch{throw Error('无法读取任务规则与记忆。请检查权限、网络及第二步配套后台；未使用旧缓存继续执行。');}
     const b=await a.store.load(a.context), prefs=b?.preferences;
     let memories:any[]=[];
-    if(prefs?.personalMemory&&policy.privateMemoryAllowed){
-      const response=await business(a.c,'/api/v1/me/memories?status=confirmed&limit=100');
+    if((prefs?.personalMemory ?? native) && policy.privateMemoryAllowed){
+      const response=await business(a.c,'/api/v1/me/memories?status=all&limit=100');
       // business() unwraps data; the paginated data is the record array.
       memories=Array.isArray(response)?response:response.items||[];
+      const assistant=await business(a.c,'/api/v1/me/assistant-memories?scope=personal&status=all&limit=100');
+      const values=(Array.isArray(assistant)?assistant:assistant.items||[]).filter((m:any)=>m.type==='preference').map((m:any)=>({...m,content:m.payload.value,scope:m.payload.appliesTo||'general'}));
+      memories=effectivePersonalPreferences(memories,values);
     }
     const skills=await builtinSkills(), chosen=skills.filter(s=>prefs?.skills.includes(s.name));
     if((prefs?.skills.length||0)!==chosen.length)throw Error('选定的 Skill 已不可用，请重新选择。');
@@ -326,8 +334,65 @@ export function registerTaskDshBridge(
       const entry=entries.find(e=>e.kind==='skill'&&e.id===skill.name)!;
       entry.content=`方法目录：${directory}；引用文件按需使用 read 工具读取，不执行任何打包脚本。\n`+entry.content;
     }
-    return {policy,skills:skills.map(({content:_content,...s})=>s),inputs:{fingerprint,entries,omitted:active.filter(r=>r.kind==='memory'&&r.sourceTaskId!==a.context.taskId&&!related(r.title)).map(r=>r.title)} satisfies WorkInputs};
+    return {policy,execution,skills:skills.map(({content:_content,...s})=>s),inputs:{fingerprint,entries,omitted:active.filter(r=>r.kind==='memory'&&r.sourceTaskId!==a.context.taskId&&!related(r.title)).map(r=>r.title)} satisfies WorkInputs};
   }
+  async function importVerifiedSource(
+    event: Electron.IpcMainInvokeEvent, target: TaskTarget,
+    selected: Pick<TaskSource, "kind" | "id" | "version">,
+  ) {
+      const a = await authorized(event, target, true),
+        s = await source(a.c, selected, target);
+      await a.coordinator.idle(target);
+      if(s.metadata.byteLength>10485760) {
+        await requireLargeOriginals(a.c);
+        const temporary=path.join(a.store.root,randomUUID()+'.download');
+        try {
+          await downloadOriginal(a.c,s.url,temporary,s.metadata.byteLength);
+          await source(a.c,selected,target);await authorized(event,target,true);await a.coordinator.idle(target);
+          return await a.store.importOriginal(target,{...selected,sha256:s.metadata.sha256,filename:s.metadata.filename},temporary);
+        } finally {await unlink(temporary).catch(()=>{});}
+      }
+      const bytes = await business(a.c, s.url, undefined, undefined, true);
+      await source(a.c, selected, target);
+      await authorized(event, target, true);
+      return a.store.importSource(
+        target,
+        { ...selected, sha256: s.metadata.sha256, filename: s.metadata.filename },
+        bytes,
+      );
+  }
+  async function nativeInputs(a:Awaited<ReturnType<typeof authorized>>,chat?:TaskChatContext){
+    const b=await a.store.load(a.context);
+    for(const s of b?.sources||[])await source(a.c,s,a.context);
+    const work=await workInputs(a,a.context.title+' '+a.context.goal,false,true);
+    const discussion=await verifiedTaskDiscussion(a.context,a.task,work.execution.team,url=>business(a.c,url),chat,b?.discussionRefs);
+    work.inputs.entries.push(...discussion.entries);
+    for(const receipt of b?.teamMaterialReceipts||[])work.inputs.entries.push({id:digestContext(receipt),version:receipt.revision,kind:'source',title:'团队资料 · '+receipt.revision,content:JSON.stringify({...receipt,note:'这是选入时核验的固定版本，本机文件须读取后核对。'})});
+    work.inputs.fingerprint=digestContext({base:work.inputs.fingerprint,taskVersion:a.context.version,discussion:discussion.entries,materials:b?.sources,local:b?.localMaterials});
+    return {...work,discussion};
+  }
+  ipcMain.handle('task-dsh-attach-context',async(event,target:TaskTarget,chat?:TaskChatContext)=>{
+    const a=await authorized(event,target,true);
+    try{
+      const before=await a.store.status(target);
+      if(before?.phase!=='running'&&!before?.binding.pending&&target.kind==='research'){
+        // Task-authorized originals already belong to this task. Restore their
+        // exact immutable versions once; no library-wide search or upload.
+        for(const artifact of (a.data.artifacts||[]).filter((item:any)=>item.accessStatus!=='revoked').slice(0,20)){
+          if(before?.binding.sources.some(s=>s.kind==='artifact'&&s.id===artifact.id&&s.version===artifact.version))continue;
+          await importVerifiedSource(event, target, {kind:'artifact', id:artifact.id, version:artifact.version});
+        }
+      }
+      const work=await nativeInputs(a,chat);
+      await authorized(event,target,true);await a.c.account.valid();
+      const state=await a.store.attachContext(a.context,work.inputs,work.discussion.refs);
+      if(state){
+        nativeBindings.set(state.binding.sessionId,{event,target,identity:a.c.account.identity,lease:a.c.account.lease});
+        while(nativeBindings.size>100)nativeBindings.delete(nativeBindings.keys().next().value!);
+      }
+      return state;
+    }catch(error){await a.store.invalidateContext(target).catch(()=>{});throw error;}
+  });
   ipcMain.handle('task-dsh-knowledge',async(event,target:TaskTarget)=>{
     const a=await authorized(event,target), result=await workInputs(a);
     return {policy:result.policy,skills:result.skills};
@@ -364,7 +429,8 @@ export function registerTaskDshBridge(
       directory = result.filePaths[0];
     }
     await authorized(event, target, true);
-    await a.store.open(a.context, directory);
+    const binding=await a.store.open(a.context, directory);
+    await selectSession(binding.sessionId);
     return a.store.status(target);
   });
   ipcMain.handle("task-dsh-status", async (event, target: TaskTarget) => {
@@ -416,7 +482,9 @@ export function registerTaskDshBridge(
       await writeFile(provenance,JSON.stringify({repository:library.binding.url,workspaceId:library.binding.workspaceId,revision:selection.revision,projectId:entry.projectId,entries:receipts,note:'材料仅作为参考，不能替代平台权限或已生效的课题组规范。'},null,2));
       files.push(provenance);await authorized(event,target,true);await library.current();await a.coordinator.idle(target);
       if((await a.store.status(target))?.phase==='running')throw Error('助手已开始执行，请等本轮结束再取用。');
-      await a.store.importLocal(target,files);return {count:entries.length,revision:selection.revision};
+      await a.store.importLocal(target,files);
+      await a.store.recordTeamMaterials(target,{repository:library.binding.url,revision:selection.revision,entries:receipts.map((value:any)=>({id:value.id,name:value.name,sha256:value.sha256})),createdAt:new Date().toISOString()});
+      return {count:entries.length,revision:selection.revision};
     }finally{await rm(temporary,{recursive:true,force:true});}
   });
   ipcMain.handle('task-dsh-import-library', async (event, target: TaskTarget, rels: string[]) => {
@@ -495,35 +563,7 @@ export function registerTaskDshBridge(
       throw Error("当前任务不能提交成果。");
     await a.store.rebaseDelivery(a.context);
   });
-  ipcMain.handle(
-    "task-dsh-import",
-    async (
-      event,
-      target: TaskTarget,
-      selected: Pick<TaskSource, "kind" | "id" | "version">,
-    ) => {
-      const a = await authorized(event, target, true),
-        s = await source(a.c, selected, target);
-      await a.coordinator.idle(target);
-      if(s.metadata.byteLength>10485760) {
-        await requireLargeOriginals(a.c);
-        const temporary=path.join(a.store.root,randomUUID()+'.download');
-        try {
-          await downloadOriginal(a.c,s.url,temporary,s.metadata.byteLength);
-          await source(a.c,selected,target);await authorized(event,target,true);await a.coordinator.idle(target);
-          return await a.store.importOriginal(target,{...selected,sha256:s.metadata.sha256,filename:s.metadata.filename},temporary);
-        } finally {await unlink(temporary).catch(()=>{});}
-      }
-      const bytes = await business(a.c, s.url, undefined, undefined, true);
-      await source(a.c, selected, target);
-      await authorized(event, target, true);
-      return a.store.importSource(
-        target,
-        { ...selected, sha256: s.metadata.sha256, filename: s.metadata.filename },
-        bytes,
-      );
-    },
-  );
+  ipcMain.handle("task-dsh-import", importVerifiedSource);
   ipcMain.handle("task-dsh-output", async (event, target: TaskTarget, name: string) => {
     const a = await authorized(event, target),
       bytes = await a.store.readOutput(target, name);
@@ -642,4 +682,28 @@ export function registerTaskDshBridge(
       return true;
     } finally { await unlink(temporary).catch(() => {}); }
   });
+  return {
+    taskContext:async(sessionId:string)=>{
+      const entry=nativeBindings.get(sessionId);if(!entry)return {content:''};
+      const a=await authorized(entry.event,entry.target,true,true);
+      if(a.c.account.identity!==entry.identity||a.c.account.lease!==entry.lease)throw Error('工作台账号已变化。');
+      try{
+        const b=await a.store.load(entry.target);if(b?.sessionId!==sessionId) return {content:''};
+        const work=await nativeInputs(a);
+        const packed=await a.store.nativeContext(a.context,work.inputs);
+        await a.c.account.valid();return {content:packed.content};
+      }catch(error){await a.store.invalidateContext(entry.target).catch(()=>{});throw error;}
+    },
+    taskFeedback:async(value:{sessionId:string;seq:number;messageId:string;text:string})=>{
+      const entry=nativeBindings.get(value.sessionId);if(!entry)return {saved:false};
+      const a=await authorized(entry.event,entry.target,true,true);
+      if(a.c.account.identity!==entry.identity||a.c.account.lease!==entry.lease)throw Error('工作台账号已变化。');
+      const work=await workInputs(a,'',false,true);
+      if(entry.target.kind!=='personal'||!work.policy.privateMemoryAllowed)return {saved:false};
+      const input=nativePreferenceInput(value.text);if(!input)return {saved:false};
+      await a.store.verifyNativeFeedback(entry.target,value);
+      await business(a.c,'/api/v1/me/memories',input,digestContext({sessionId:value.sessionId,messageId:value.messageId,text:value.text}));
+      return {saved:true};
+    },
+  };
 }

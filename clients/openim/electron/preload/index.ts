@@ -201,6 +201,7 @@ const Api: IElectronAPI = {
       taskReveal: (target, name) => ipcRenderer.invoke('task-dsh-reveal', target, name),
       taskArchive: (target, selection, rebase) => ipcRenderer.invoke('task-dsh-archive', target, selection, rebase),
       taskOpen: (target, pick) => ipcRenderer.invoke('task-dsh-open', target, pick),
+      taskAttachContext: (target, chat) => ipcRenderer.invoke('task-dsh-attach-context', target, chat),
       taskStatus: (target) => ipcRenderer.invoke('task-dsh-status', target),
       taskAbandonPending: target => ipcRenderer.invoke('task-dsh-abandon-pending',target),
       taskKnowledge: target => ipcRenderer.invoke('task-dsh-knowledge',target),

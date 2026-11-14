@@ -11,6 +11,7 @@ export type LocalDshSnapshot = {
 };
 export type DshBounds = { x: number; y: number; width: number; height: number };
 export type LocalDshBridge = {
+  taskAttachContext: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget, chat?: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskChatContext) => Promise<import('../../../../integrations/deepseek-harness/desktop/task-workspace').DshTaskState | undefined>;
   taskAddLocal: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget) => Promise<boolean>;
   /** Copies files from the registered local library into the task's work folder. */
   taskImportLibrary: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget, rels: string[]) => Promise<boolean>;
