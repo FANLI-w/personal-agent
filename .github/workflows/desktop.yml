@@ -96,7 +96,12 @@ jobs:
         run: corepack pnpm@10.28.0 run build:win
       - name: Verify installer and updater metadata agree
         working-directory: clients/openim
-        run: node scripts/check-windows-update.mjs
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'pull_request') {
+            node scripts/check-windows-update.mjs --allow-preview
+          } else {
+            node scripts/check-windows-update.mjs
+          }
       - name: Start the packaged app with an isolated smoke profile
         working-directory: clients/openim
         run: |
