@@ -142,8 +142,8 @@ export function ResearchTaskCard({
   if (text)
     return (
       <div className="mt-2 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-        <p className="text-[11px] font-medium text-slate-500">任务邀请</p>
-        <SafeMessageMarkdown text={text} />
+        <p className="text-xs font-medium text-slate-500">{legacyTaskInvitation(text) ? `${text.split("邀请你承接任务")[0]}发来的任务` : "任务邀请"}</p>
+        {!legacyTaskInvitation(text) && <SafeMessageMarkdown text={text} />}
         <div className="border-t border-slate-200 pt-2">
           <TaskCardBody resource={resource} />
         </div>
@@ -220,8 +220,8 @@ export function LegacyTaskInviteCard({ text }: { text: string }) {
   };
   return (
     <div className="mt-2 space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-      <p className="text-xs text-slate-500">任务邀请</p>
-      <SafeMessageMarkdown text={text} />
+      <p className="text-xs text-slate-500">{text.split("邀请你承接任务")[0]}发来的任务</p>
+      <p className="text-base font-medium">{legacyTaskInvitation(text)}</p>
       <Button type="primary" loading={busy} onClick={() => void open()}>
         打开任务
       </Button>

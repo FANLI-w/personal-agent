@@ -45,7 +45,7 @@ export function TaskDeliveryDownload({
           navigate(workbenchTaskPath(target.taskId, target.kind));
           return;
         }
-        await window.electronAPI.localDsh.taskDownloadDelivery(target, locator);
+        await native(target, locator);
         return;
       }
       const result = await researchApi("researchFile", { params: { id: match[1] } });

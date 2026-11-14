@@ -572,3 +572,14 @@ test("picked Office outputs stage without DSH, archive task-readable versions, a
   await f.store.open(context);
   assert.equal((await f.store.load(context)).submissionOnly, undefined);
 });
+
+test("personal text delivery prepares a local receipt without starting a session", async t => {
+  const f = await fixture(t), personal = { ...context, kind: "personal", taskId: "personal_synthetic" };
+  await f.store.prepareDelivery(personal);
+  assert.equal(f.calls.length, 0);
+  const posted = [];
+  await f.store.deliver(personal, "Synthetic completed result", [], async (url, body) => { posted.push({url, body}); return {id:"result_synthetic"}; }, true);
+  assert.equal(posted[0].url, "/api/v1/work/tasks/personal_synthetic/result");
+  assert.equal(posted[0].body.text, "Synthetic completed result");
+  assert.equal((await f.store.status(personal)).binding.delivery.status, "submitted");
+});

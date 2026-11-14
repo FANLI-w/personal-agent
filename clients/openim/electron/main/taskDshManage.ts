@@ -619,6 +619,7 @@ export function registerTaskDshBridge(
     const selected = { kind: "library" as const, id: match[1], version: Number(match[2]) };
     const original = await source(a.c, selected, target);
     if (original.metadata.sha256 !== match[3]) throw Error("交付版本校验值不一致，请联系提交人。");
+    if (!Number.isSafeInteger(original.metadata.byteLength) || original.metadata.byteLength < 1 || original.metadata.byteLength > 512 * 1048576) throw Error("交付文件大小无效或超过 512 MiB。");
     const result = await dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender)!, {
       title: "保存交付文件", defaultPath: path.basename(original.metadata.filename),
     });
