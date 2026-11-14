@@ -19,7 +19,11 @@ const allowPreview = args.includes("--allow-preview");
 const stable = /^\d+\.\d+\.\d+$/.test(version);
 const preview = /^\d+\.\d+\.\d+-preview\.(?:0|[1-9]\d*)$/.test(version);
 if (!stable && !(allowPreview && preview))
-  throw Error(allowPreview ? "Stable or x.y.z-preview.N semver required" : "Stable semver required");
+  throw Error(
+    allowPreview
+      ? "Stable or x.y.z-preview.N semver required"
+      : "Stable semver required",
+  );
 const directory = path.join(root, "release", "Base", version);
 const name = `AcceptCat_${version}.exe`;
 const bytes = readFileSync(path.join(directory, name));
