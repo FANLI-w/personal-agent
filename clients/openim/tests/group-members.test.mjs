@@ -51,3 +51,12 @@ test('missing or conflicting profiles never fabricate an owner identity', () => 
   assert.equal(Boolean(canonicalGroupMembers(group, [human('x')])[0].isOwner), false);
   assert.equal(Boolean(canonicalGroupMembers(group, [agent('x', 'me')])[0].isOwner), false);
 });
+
+test('suggests the named human in an invitation draft and leaves questions or cancellations alone', () => {
+  const { inviteNameFromDraft } = module.exports;
+  assert.equal(inviteNameFromDraft('把小陈和我的助理拉进这个群，一起做这项任务'), '小陈');
+  assert.equal(inviteNameFromDraft('请邀请小陈加入本群'), '小陈');
+  for (const text of ['别把小陈拉进这个群', '把小陈拉进这个群？', '我们聊聊论文']) {
+    assert.equal(inviteNameFromDraft(text), '');
+  }
+});

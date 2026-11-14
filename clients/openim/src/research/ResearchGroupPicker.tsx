@@ -15,14 +15,16 @@ import {
 
 export function ResearchGroupPicker({
   groupID,
+  initialSearch,
   checkClick,
   isChecked,
 }: {
   groupID?: string;
+  initialSearch?: string;
   checkClick: (item: CheckListItem) => void;
   isChecked: (item: CheckListItem) => boolean;
 }) {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch || "");
   const actorId = useResearchStore((s) => s.actor?.member.id);
   const mapping = useResearchStore((s) =>
     s.mappings.find((m) => m.groupID === groupID),
@@ -111,7 +113,7 @@ export function ResearchGroupPicker({
         )}
       </div>
       <p className="px-3 py-2 text-xs text-[var(--sub-text)]">
-        选中的联系人直接入群。后台 0.46 起，每群固定一个群助理，不再邀请个人智能体。
+        选中的联系人将直接加入。群助理已在本群。
       </p>
     </div>
   );

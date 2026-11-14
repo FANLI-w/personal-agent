@@ -180,6 +180,11 @@ const ChatHeader = () => {
           </div>
         </div>
         <div className="mr-2 flex items-center">
+          {researchMode && isGroupSession && roster.conversation?.allowedActions.includes("invite") && (
+            <Button type="text" icon={<TeamOutlined />} onClick={() => menuClick(1)}>
+              邀请成员
+            </Button>
+          )}
           {researchMode && isGroupSession && <TeamWorkPanel imID={currentConversation?.conversationID} />}
           <button
             type="button"

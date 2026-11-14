@@ -1,4 +1,4 @@
-import type { ResponseFor } from "@research-agent-platform/contracts";
+import type { ResponseFor, WorkbenchCard } from "@research-agent-platform/contracts";
 
 type Cards = ResponseFor<"workbench">;
 type Mine = Pick<ResponseFor<"researchWorkspace">, "data"> & { truncated: boolean };
@@ -42,4 +42,22 @@ export async function collectTaskInbox(
     ),
     truncated: all.truncated || !!mine?.truncated,
   };
+}
+
+/** Next action follows the server's current grants, including summary-only invitations. */
+export function workbenchNextAction(card: WorkbenchCard): string {
+  const actions = card.allowedActions;
+  if (card.status === "completed") return "查看已验收成果";
+  if (card.status === "cancelled") return "查看历史记录";
+  if (actions.includes("accept") || actions.includes("decide")) return "确认是否承接";
+  if (["in_review", "awaiting_review"].includes(card.status))
+    return actions.includes("review") ? "查看成果并验收" : "等待验收意见";
+  if (card.status === "changes_requested")
+    return actions.includes("submit") ? "修改后重新提交" : "等待承接人修改";
+  if (actions.includes("activate")) return "确认并发出任务";
+  if (actions.includes("claim")) return "认领任务";
+  if (actions.includes("start")) return "开始任务";
+  if (actions.includes("submit")) return "提交文件或阶段成果";
+  if (card.source === "research_task" && !card.summaryOnly) return "查看进展，等待成员交付";
+  return card.progress.label || "查看任务";
 }

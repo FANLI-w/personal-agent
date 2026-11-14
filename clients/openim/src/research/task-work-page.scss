@@ -390,3 +390,25 @@
     }
   }
 }
+
+.task-delivery {
+  border: 1px solid #dce7f2;
+  border-radius: 16px;
+  padding: 20px;
+  background: white;
+  display: grid;
+  gap: 16px;
+  .task-delivery-header { display: flex; gap: 16px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+  h3 { font-size: 16px; margin: 0; color: #243849; }
+  p { margin: 5px 0; color: #5b6c7c; overflow-wrap: anywhere; }
+  .task-delivery-drop { display: flex; align-items: center; flex-direction: column; gap: 14px; border: 1.5px dashed #b2cce9; background: #f8fbff; border-radius: 12px; padding: 28px 16px; }
+  .task-delivery-drop > .anticon { font-size: 30px; color: #5c91c7; }
+  .task-delivery-drop.is-over { background: #e6f3ff; border-color: #3980c6; }
+  small { color: #687c8e; }
+  .task-delivery-assistant { display: flex; gap: 10px; flex-wrap: wrap; }
+  .task-delivery-assistant > .ant-input-group-wrapper { flex: 1 1 300px; }
+  .task-delivery-confirm { width: 100%; background: #f4f8fc; border-radius: 10px; padding: 16px; }
+  .task-delivery-confirm .ant-btn { margin: 8px 8px 0 0; }
+}
+
+.task-delivery-file { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border: 1px solid #e5ebf1; border-radius: 10px; margin: 8px 0; overflow-wrap: anywhere; }

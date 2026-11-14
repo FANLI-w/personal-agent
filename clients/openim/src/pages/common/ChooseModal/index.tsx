@@ -54,6 +54,7 @@ const isSelectUserExtraData = (value: unknown): value is SelectUserExtraData => 
 export interface ChooseModalState {
   type: ChooseModalType;
   extraData?: unknown;
+  initialSearch?: string;
 }
 
 interface IChooseModalProps {
@@ -80,7 +81,7 @@ const onlyOneTypes = ["TRANSFER_IN_GROUP"];
 const onlyMemberTypes = ["KICK_FORM_GROUP", "TRANSFER_IN_GROUP"];
 
 const ChooseModal: ForwardRefRenderFunction<OverlayVisibleHandle, IChooseModalProps> = (
-  { state: { type, extraData } },
+  { state: { type, extraData, initialSearch } },
   ref,
 ) => {
   const { isOverlayOpen, closeOverlay } = useOverlayVisible(ref);
@@ -107,6 +108,7 @@ const ChooseModal: ForwardRefRenderFunction<OverlayVisibleHandle, IChooseModalPr
       <ChooseContact
         isOverlayOpen={isOverlayOpen}
         type={type}
+        initialSearch={initialSearch}
         extraData={extraData}
         closeOverlay={closeOverlay}
       />
@@ -120,6 +122,7 @@ type ChooseContactProps = {
   isOverlayOpen: boolean;
   type: ChooseModalType;
   extraData?: unknown;
+  initialSearch?: string;
   closeOverlay: () => void;
 };
 
@@ -127,6 +130,7 @@ export const ChooseContact: FC<ChooseContactProps> = ({
   isOverlayOpen,
   type,
   extraData,
+  initialSearch,
   closeOverlay,
 }) => {
   const chooseBoxRef = useRef<ChooseBoxHandle>(null);
@@ -488,6 +492,7 @@ export const ChooseContact: FC<ChooseContactProps> = ({
           chooseOneOnly={onlyOneTypes.includes(type)}
           checkMemberRole={type === "KICK_FORM_GROUP"}
           researchGroupPick={researchMode && type === "INVITE_TO_GROUP"}
+          initialSearch={initialSearch}
           groupID={
             type === "INVITE_TO_GROUP" && typeof extraData === "string"
               ? extraData

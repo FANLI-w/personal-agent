@@ -8,7 +8,8 @@ import type {
   TeamRepositoryBinding,
   TeamLibraryPath,
 } from "@research-agent-platform/contracts";
-const schemas = require("../main/localDshRuntime") as typeof import("@research-agent-platform/contracts");
+const schemas =
+  require("../main/localDshRuntime") as typeof import("@research-agent-platform/contracts");
 import type {
   TeamLibrarySnapshot,
   TeamLibraryProposal,
@@ -273,17 +274,35 @@ export class TeamLibraryStore {
     revision: string,
     input: TeamLibraryEntry,
     text?: string,
+    fileBytes?: Uint8Array,
   ): Promise<TeamLibraryProposal> {
     return this.serial(async () => {
       if (text !== undefined && typeof text !== "string")
         throw Error("资料正文格式无效。");
+      if (
+        fileBytes !== undefined &&
+        (Object.prototype.toString.call(fileBytes) !== "[object Uint8Array]" ||
+          text !== undefined)
+      )
+        throw Error("资料文件格式无效。");
+      const fileContent = fileBytes === undefined ? undefined : Buffer.from(fileBytes);
+      if (fileContent && fileContent.length > gitLibraryLimit)
+        throw Error("单份团队仓库文件最多20 MiB，更大原件请使用共享原件服务。");
       const entry = schemas.TeamLibraryEntry.parse(input),
         snapshot = await this.cached();
       if (!snapshot || snapshot.revision !== revision)
         throw Error("资料版本已变化，请同步后再提交更新。");
       const proposalPath = path.join(
         this.directory,
-        "proposal-" + digest(JSON.stringify([revision, input, text])) + ".json",
+        "proposal-" +
+          digest(
+            JSON.stringify(
+              fileContent
+                ? [revision, input, null, digest(fileContent)]
+                : [revision, input, text],
+            ),
+          ) +
+          ".json",
       );
       const previous = await fs
         .readFile(proposalPath, "utf8")
@@ -313,11 +332,12 @@ export class TeamLibraryStore {
         branch = "acceptcat/library-" + randomUUID();
       await this.run(["read-tree", revision], { index });
       try {
-        if (text !== undefined) {
+        if (text !== undefined || fileContent !== undefined) {
           if (
             entry.source.kind !== "git" ||
-            !entry.source.path.endsWith(".md") ||
-            Buffer.byteLength(text) > 1024 * 1024
+            (text !== undefined &&
+              (!entry.source.path.endsWith(".md") ||
+                Buffer.byteLength(text) > 1024 * 1024))
           )
             throw Error("此编辑器只更新Markdown正文，其他原件请走导入文件。");
           if (old?.source.kind === "git" && old.source.path !== entry.source.path)
@@ -337,7 +357,7 @@ export class TeamLibraryStore {
               .length
           )
             throw Error("此路径已有文件，请登记已有原件或换一个名称。");
-          const bytes = Buffer.from(text);
+          const bytes = fileContent ?? Buffer.from(text!);
           entry.source.sha256 = digest(bytes);
           const blob = (
             await this.run(["hash-object", "-w", "--stdin"], { input: bytes })

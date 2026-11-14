@@ -335,6 +335,7 @@ export function plannerPlanInput(plan: ChatPlan, deadline?: DeadlineChoice) {
     goal: plan.goal,
     ...(plan.outcome ? { outcome: plan.outcome } : {}),
     proposedItems: plan.proposedItems,
+    ...(plan.supplements ? { supplements: plan.supplements } : {}),
     unresolvedQuestions: plan.unresolvedQuestions,
   });
   if (!deadline) return input;
@@ -519,6 +520,7 @@ export async function createPlannerTasks(
         goal: p.goal,
         ...("outcome" in p && p.outcome ? { outcome: p.outcome } : {}),
         proposedItems: p.proposedItems,
+        ...(p.supplements ? { supplements: p.supplements } : {}),
         unresolvedQuestions: p.unresolvedQuestions,
       }),
     );
