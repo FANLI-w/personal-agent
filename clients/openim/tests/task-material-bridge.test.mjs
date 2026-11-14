@@ -26,7 +26,7 @@ async function fixture(t, library) {
   let valid = true, owned = true, scope = 'lab_shared', running = false, sessionId;
   let duringPicker = () => {}, uploads = 0, original;
   const downloadSizes=[], submissions=[];
-  let deliveryMode=false, collectionVersion=1, canSubmit=true, loseSubmit=false;
+  let deliveryMode=false, collectionVersion=1, canSubmit=true, loseSubmit=false, conflictUpload=false, duringCollection=()=>{};
   const revealed = [];
   const respond = resolve => {
     const req = new EventEmitter();req.setHeader = () => {};req.abort = () => {};
@@ -58,7 +58,7 @@ async function fixture(t, library) {
   vm.runInNewContext(bundled.outputFiles[0].text,{module:mod,exports:mod.exports,teamLibraryFixture:()=>library,require:id=>id==='electron'?electron:id==='./localDshRuntime'?runtime.exports:require(id),process,Buffer,TextEncoder,URL,URLSearchParams,setTimeout,clearTimeout});
   const account={metadata:{memberId:'member_A'},identity:'synthetic',lease:'one',csrf:'synthetic',valid:async()=>{if(!valid)throw Error('expired');},request:url=>respond(raw=>{
     const body=raw ? JSON.parse(raw) : undefined;
-    if(url==='/api/v1/research-library/collections'&&body){deliveryMode=true;return{data:{id:'collection',name:body.name,scope:body.scope,taskIds:body.taskIds,owned:true,version:1}};}
+    if(url==='/api/v1/research-library/collections'&&body){duringCollection();deliveryMode=true;return{data:{id:'collection',name:body.name,scope:body.scope,taskIds:body.taskIds,owned:true,version:1}};}
     if(url.endsWith('/deliverables')){submissions.push(body);if(loseSubmit){loseSubmit=false;throw Error('response lost');}return{data:{id:'delivery'}};}
     if(url==='/api/v1/health/ready')return{data:{status:'ok',contractVersion:'0.38.0'}};
     if(url==='/api/v1/tasks/synthetic-task')return{data:{task:{title:'Synthetic task',goal:'Local work',version:1,allowedActions:canSubmit?['submit']:[]},deliverables:submissions.map(item=>({sources:item.sources}))}};
@@ -68,12 +68,12 @@ async function fixture(t, library) {
     if(url.startsWith('/api/v1/research-library/files/file/content')){const q=new URL('http://fixture'+url).searchParams,offset=Number(q.get('offset')),length=Number(q.get('length'));downloadSizes.push(length);return original.subarray(offset,offset+length);}
     if(url==='/api/v1/research-library/files/large-source')return{data:{file:{status:'available'},versions:[{version:1,filename:'large-source.pptx',byteLength:original.length,sha256:createHash('sha256').update(original).digest('hex')}]}};
     if(url.startsWith('/api/v1/research-library/files/large-source/content')){const q=new URL('http://fixture'+url).searchParams,offset=Number(q.get('offset')),length=Number(q.get('length'));downloadSizes.push(length);return original.subarray(offset,offset+length);}
-    if(url.endsWith('/collections/collection/files')){uploads++;collectionVersion++;return{data:{id:'file',version:1,sha256:body?.contentBase64?createHash('sha256').update(Buffer.from(body.contentBase64,'base64')).digest('hex'):'a'.repeat(64),extraction:'original_only'}};}
+    if(url.endsWith('/collections/collection/files')){if(conflictUpload){conflictUpload=false;collectionVersion++;throw Object.assign(Error('collection changed'),{code:'VERSION_CONFLICT'});}uploads++;collectionVersion++;return{data:{id:'file',version:1,sha256:body?.contentBase64?createHash('sha256').update(Buffer.from(body.contentBase64,'base64')).digest('hex'):'a'.repeat(64),extraction:'original_only'}};}
     return{data:{}};
   })};
   mod.exports.registerTaskDshBridge(async()=>({account,session:{},origin:'http://127.0.0.1:1'}));
   const call=(name,...args)=>handlers.get(name)({sender:{getURL:()=>`http://fixture/${hash}`}},target,...args);
-  return {root,call,submissions,uploads:()=>uploads,revealed,downloadSizes,set:values=>{if('canSubmit'in values)canSubmit=values.canSubmit;if('loseSubmit'in values)loseSubmit=values.loseSubmit;if('original'in values)original=values.original;if('hash'in values)hash=values.hash;if('picker'in values)picker=values.picker;if('valid'in values)valid=values.valid;if('owned'in values)owned=values.owned;if('scope'in values)scope=values.scope;if('running'in values)running=values.running;if('duringPicker'in values)duringPicker=values.duringPicker;}};
+  return {root,call,submissions,uploads:()=>uploads,revealed,downloadSizes,set:values=>{if('conflictUpload'in values)conflictUpload=values.conflictUpload;if('duringCollection'in values)duringCollection=values.duringCollection;if('canSubmit'in values)canSubmit=values.canSubmit;if('loseSubmit'in values)loseSubmit=values.loseSubmit;if('original'in values)original=values.original;if('hash'in values)hash=values.hash;if('picker'in values)picker=values.picker;if('valid'in values)valid=values.valid;if('owned'in values)owned=values.owned;if('scope'in values)scope=values.scope;if('running'in values)running=values.running;if('duringPicker'in values)duringPicker=values.duringPicker;}};
 }
 test('native material picker cancels without reading, rechecks navigation after selection, and reveals only workspace files',async t=>{
   const f=await fixture(t);await f.call('task-dsh-open',true);
@@ -203,5 +203,43 @@ test('lost delivery acknowledgement replays original intent after submit action 
   assert.equal(f.uploads(),1);
   assert.equal(f.submissions.length,2);
   assert.deepEqual(f.submissions[0],f.submissions[1]);
+  assert.equal((await f.call('task-dsh-status')).binding.delivery.status,'submitted');
+});
+
+test('review-returned same-path output and same summary create a new delivery with the changed file',async t=>{
+  const f=await fixture(t);await f.call('task-dsh-open',true);
+  const output=path.join(f.root,'work','report.pdf');await fs.writeFile(output,'synthetic report v1');
+  await f.call('task-dsh-submit','Report',['report.pdf']);
+  const first=(await f.call('task-dsh-status')).binding.delivery.id;
+  f.set({canSubmit:false});await f.call('task-dsh-submit','Report',['report.pdf']);
+  assert.equal(f.submissions.length,1);
+  await fs.writeFile(output,'synthetic report v2');f.set({canSubmit:true});
+  await f.call('task-dsh-submit','Report',['report.pdf']);
+  const second=(await f.call('task-dsh-status')).binding.delivery.id;
+  assert.notEqual(first,second);
+  assert.equal(f.submissions.length,2);assert.equal(f.uploads(),2);
+  assert.notEqual(f.submissions[0].sources[0].locator,f.submissions[1].sources[0].locator);
+  assert.equal(f.submissions[1].sources[0].locator,`research-library:file:v1:${createHash('sha256').update('synthetic report v2').digest('hex')}`);
+});
+test('file replacement after confirmation hash and before archive snapshot cannot upload changed bytes',async t=>{
+  for(const size of [37,11*1048576]){
+    const f=await fixture(t), input=path.join(f.root,'report.pptx');
+    await fs.writeFile(input,Buffer.alloc(size,51));
+    const names=await f.call('task-dsh-stage-delivery',[input]);
+    const state=await f.call('task-dsh-status');
+    f.set({duringCollection:()=>require('node:fs').writeFileSync(path.join(state.binding.directory,names[0]),Buffer.alloc(size,52))});
+    await assert.rejects(f.call('task-dsh-submit','Report',names),/文件已经变化/);
+    assert.equal(f.uploads(),0);assert.equal(f.submissions.length,0);
+    assert.equal((await fs.readdir(path.dirname(path.dirname(state.binding.directory)))).some(name=>name.endsWith('.snapshot')),false);
+  }
+});
+
+test('definite automatic collection conflict retries the frozen batch with the current collection version',async t=>{
+  const f=await fixture(t), input=path.join(f.root,'report.pdf');await fs.writeFile(input,'synthetic report');
+  const names=await f.call('task-dsh-stage-delivery',[input]);
+  f.set({conflictUpload:true});await assert.rejects(f.call('task-dsh-submit','Report',names),/collection changed/);
+  assert.equal((await f.call('task-dsh-status')).binding.archive.versionConflict,true);
+  await f.call('task-dsh-submit','Report',names);
+  assert.equal(f.uploads(),1);assert.equal(f.submissions.length,1);
   assert.equal((await f.call('task-dsh-status')).binding.delivery.status,'submitted');
 });

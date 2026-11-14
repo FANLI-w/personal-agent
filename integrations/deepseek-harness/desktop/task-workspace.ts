@@ -556,12 +556,12 @@ export class DshTaskWorkspace {
     }
   }
   async archive(target: TaskTarget, selection: ArchiveSelection,
-    checkCollection: () => Promise<void>, post: (url: string, body: unknown, key: string) => Promise<any>, rebase = false) {
+    checkCollection: () => Promise<void>, post: (url: string, body: unknown, key: string) => Promise<any>, rebase = false, expectedHashes?: Record<string, string>) {
     return this.exclusive(target, async () => {
       const b = await this.load(target);
       if (!b) throw Error('请先打开任务工作区。');
       return archiveTaskFiles({ root: this.root, taskKey: taskKey(target), taskId: target.taskId,
-        selection, current: b.archive, rebase, read: name => this.readOutput(target, name), valid: this.valid,
+        selection, current: b.archive, rebase, expectedHashes, read: name => this.readOutput(target, name), valid: this.valid,
         sourcePath:name=>this.filePath(b,name), checkCollection, post, save: async receipt => { b.archive = receipt; await this.save(b); } });
     });
   }
@@ -661,7 +661,8 @@ export class DshTaskWorkspace {
       if (
         b.delivery &&
         b.delivery.summary === summary &&
-        JSON.stringify(b.delivery.names) === JSON.stringify(names)
+        JSON.stringify(b.delivery.names) === JSON.stringify(names) &&
+        (b.delivery.status === "pending" || !maySubmit)
       ) {
         receipt = path.join(
           this.root,

@@ -14,6 +14,7 @@ import { researchScopeLabels } from "./research-library-api";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { taskEventRows } from "./task-dsh-events";
 import { TaskDeliveryPanel } from "./TaskDeliveryPanel";
+import { deliveryReceiptLabel } from "./task-delivery-command";
 import { TaskArchivePanel } from "./TaskArchivePanel";
 import { TaskExecutionStatus } from "./TaskExecutionStatus";
 import { TaskKnowledgePanel } from "./TaskKnowledgePanel";
@@ -219,6 +220,7 @@ export function TaskWorkPage({
   );
   const task = detail.data?.task,
     actions: string[] = task?.allowedActions || [];
+  const serviceStatus = task && "status" in task ? task.status : "";
   const canWork =
     kind === "research"
       ? actions.includes("submit")
@@ -384,7 +386,7 @@ export function TaskWorkPage({
         .join("\n\n");
       await bridge!.taskSubmit(target, summary, names);
       if (isCurrent()) {
-        setNotice("成果已提交，等待验收。");
+        setNotice("提交回执已确认。");
         setSection((value) => ({ ...value, plan: true, materials: false }));
       }
     }, true);
@@ -430,6 +432,7 @@ export function TaskWorkPage({
       {notice && <Alert type="success" message={notice} />}
       {(actions.includes("submit") || state?.binding.delivery) && bridge?.taskStageDelivery && (
         <TaskDeliveryPanel key={operation.scope} target={target} title={task?.title || "当前任务"} outputs={outputs}
+          currentStatus={serviceStatus} canSubmit={actions.includes("submit")}
           disabled={busy || !actions.includes("submit") || state?.binding.delivery?.status === "pending"} submitted={submitted} submit={submit}
           pending={state?.binding.delivery?.status === "pending"}
           retry={() => command(async () => { const delivery = state?.binding.delivery; if (delivery) await bridge.taskSubmit(target, delivery.summary, delivery.names); }, true)}
@@ -680,9 +683,9 @@ export function TaskWorkPage({
           </div>
         ))}
         {preview && <pre className="task-work-preview">{preview}</pre>}
-        {submitted ? (
+        {submitted && !actions.includes("submit") ? (
           <div className="task-work-submitted">
-            <strong>已提交，等待验收</strong>
+            <strong>{deliveryReceiptLabel(serviceStatus)}</strong>
             <p>{submitted.names.join("、") || "已提交文字说明"}</p>
             <small>{submitted.summary}</small>
           </div>
@@ -733,7 +736,7 @@ export function TaskWorkPage({
                           plan: true,
                           materials: false,
                         }));
-                        setNotice("成果已提交，等待验收。");
+                        setNotice("提交回执已确认。");
                       })
                     }
                   >

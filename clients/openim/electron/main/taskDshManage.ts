@@ -547,7 +547,8 @@ export function registerTaskDshBridge(
     const a = await authorized(event, target);
     const b = target.kind === "personal" && a.task.allowedActions.includes("submit")
       ? await a.store.prepareDelivery(a.context) : await a.store.load(target);
-    const replay = b?.delivery && b.delivery.summary === summary && JSON.stringify(b.delivery.names) === JSON.stringify(names);
+    const replay = b?.delivery && b.delivery.summary === summary && JSON.stringify(b.delivery.names) === JSON.stringify(names)
+      && (b.delivery.status === "pending" || !a.task.allowedActions.includes("submit"));
     if (!a.task.allowedActions.includes("submit") && !replay) throw Error("当前任务不能提交成果。");
     const flightKey = a.store.root + ":" + taskKey(target);
     if (deliveryFlights.has(flightKey)) throw Error("这项任务正在提交，请等回执后再操作。");
@@ -558,13 +559,13 @@ export function registerTaskDshBridge(
     if (!replay && target.kind === "research" && names.length) {
       if (!b || names.length > 5) throw Error("每次最多提交 5 个文件。");
       const collectionKey = createHash("sha256").update(a.c.account.identity + ":delivery:" + target.taskId).digest("hex");
+      const selectedHashes: Record<string, string> = {};
       for (const name of names) {
         const stagedHash = /^delivery-([a-f0-9]{64})[\\/]/.exec(name)?.[1];
-        if (stagedHash) {
-          const hash = createHash("sha256");
-          for await (const chunk of createReadStream(await a.store.filePath(b, name))) hash.update(chunk);
-          if (hash.digest("hex") !== stagedHash) throw Error("待交文件已经变化，请重新选择后确认提交。");
-        }
+        const hash = createHash("sha256");
+        for await (const chunk of createReadStream(await a.store.filePath(b, name))) hash.update(chunk);
+        selectedHashes[name] = hash.digest("hex");
+        if (stagedHash && selectedHashes[name] !== stagedHash) throw Error("待交文件已经变化，请重新选择后确认提交。");
       }
       const created = await business(a.c, "/api/v1/research-library/collections", {
         name: "任务交付 · " + target.taskId, description: "此任务明确提交的文件", scope: "task_scoped", taskIds: [target.taskId],
@@ -577,8 +578,11 @@ export function registerTaskDshBridge(
       };
       const collection = await readCollection();
       const current = b.archive;
-      const same = current && current.collectionId === collection.id && JSON.stringify(current.names) === JSON.stringify(names);
-      const selection: ArchiveSelection = same ? current : {
+      const same = current && current.collectionId === collection.id && JSON.stringify(current.names) === JSON.stringify(names)
+        && (current.status === "pending" || (current.files.length === names.length && current.files.every(file => file.sha256 === selectedHashes[file.name])));
+      const selection: ArchiveSelection = same ? {
+        ...current, expectedCollectionVersion: current.versionConflict ? collection.version : current.expectedCollectionVersion,
+      } : {
         requestId: randomUUID(), collectionId: collection.id, collectionName: collection.name,
         scope: "task_scoped", expectedCollectionVersion: collection.version, names,
       };
@@ -588,7 +592,7 @@ export function registerTaskDshBridge(
         if (!latest.owned || latest.scope !== "task_scoped" || (latest.taskIds.length !== 1 || latest.taskIds[0] !== target.taskId)) throw Error("交付文件的任务访问范围已变化，请核对后重试。");
       };
       await a.store.archive(target, selection, checkCollection,
-        async (url, body, key) => { if (url.endsWith("/uploads")) await requireLargeOriginals(a.c); return business(a.c, url, body, key); });
+        async (url, body, key) => { if (url.endsWith("/uploads")) await requireLargeOriginals(a.c); return business(a.c, url, body, key); }, Boolean(same && current?.versionConflict), selectedHashes);
     }
     const latest = await authorized(event, target);
     return await latest.store.deliver(latest.context, summary, names,

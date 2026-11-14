@@ -9,6 +9,7 @@ import type { TaskTarget } from "../../../../integrations/deepseek-harness/deskt
 
 import {
   deliveryFilename as filename,
+  deliveryReceiptLabel,
   prepareTaskDelivery,
 } from "./task-delivery-command";
 export function TaskDeliveryPanel({
@@ -21,6 +22,8 @@ export function TaskDeliveryPanel({
   submitted,
   pending,
   retry,
+  currentStatus = "",
+  canSubmit = true,
 }: {
   target: TaskTarget;
   title: string;
@@ -31,6 +34,8 @@ export function TaskDeliveryPanel({
   submitted?: { names: string[]; status: string; summary: string };
   pending?: boolean;
   retry: () => Promise<void>;
+  currentStatus?: string;
+  canSubmit?: boolean;
 }) {
   const [over, setOver] = useState(false),
     [assistant, setAssistant] = useState(false);
@@ -119,7 +124,7 @@ export function TaskDeliveryPanel({
           </Button>
         )}
       </div>
-      {target.kind === "personal" && !submitted && (
+      {target.kind === "personal" && (!submitted || canSubmit) && (
         <div className="task-delivery-text">
           <Input.TextArea
             aria-label="提交文字成果"
@@ -261,7 +266,7 @@ export function TaskDeliveryPanel({
       {error && <Alert type="error" message={error} />}
       {submitted?.status === "submitted" && (
         <div className="task-work-submitted" role="status">
-          <strong>已提交，等待验收</strong>
+          <strong>{deliveryReceiptLabel(currentStatus)}</strong>
           {!submitted.names.length && <p>{submitted.summary}</p>}
           {submitted.names.map((name) => (
             <p key={name}>{filename(name)}</p>

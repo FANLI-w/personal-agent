@@ -1,4 +1,11 @@
 export const deliveryFilename = (name: string) => name.split(/[\\/]/).at(-1) || name;
+export function deliveryReceiptLabel(status: string) {
+  if (["in_review", "awaiting_review"].includes(status)) return "已提交，等待验收";
+  if (status === "completed") return "成果已验收";
+  if (status === "changes_requested") return "上版已退回，请修改后再提交";
+  if (status === "cancelled") return "任务已结束 · 上次提交记录";
+  return "上次提交记录";
+}
 export function prepareTaskDelivery(
   text: string,
   title: string,

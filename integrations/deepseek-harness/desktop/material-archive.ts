@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readFile, writeFile, rename, stat, open, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { copyLocalMaterial, originalLimit } from './local-material-files';
@@ -29,6 +29,7 @@ export function materialMediaType(name: string) {
 export async function archiveTaskFiles(options: {
   root: string; taskKey: string; taskId: string; selection: ArchiveSelection;
   current?: ArchiveReceipt; rebase?: boolean;
+  expectedHashes?: Record<string, string>;
   read: (name: string) => Promise<Buffer>; valid: () => Promise<void>;
   sourcePath?: (name:string) => Promise<string>;
   checkCollection: () => Promise<void>;
@@ -83,11 +84,17 @@ export async function archiveTaskFiles(options: {
       if (source && info!.size > 10485760) {
         const snapshot = `${options.taskKey}.archive.${s.requestId}.${randomUUID()}.snapshot`;
         const copied = await copyLocalMaterial(source,path.join(options.root,snapshot),originalLimit);
+        if (options.expectedHashes?.[name] && copied.sha256 !== options.expectedHashes[name]) {
+          await unlink(path.join(options.root, snapshot)).catch(() => {});
+          throw Error('待交文件已经变化，请重新选择后确认提交。');
+        }
         const uploadId = randomUUID();
         items.push({key:randomUUID(),body:{uploadId,expectedCollectionVersion:s.expectedCollectionVersion+items.length},large:{snapshot,begin:{uploadId,filename,mediaType:materialMediaType(name),byteLength:copied.size,sha256:copied.sha256,scope:s.scope,metadata:{note:`由 AcceptCat 任务 ${options.taskId} 明确选择归档；归档不代表任务已验收。`}}}});
         continue;
       }
       const bytes = await options.read(name);
+      if (options.expectedHashes?.[name] && createHash('sha256').update(bytes).digest('hex') !== options.expectedHashes[name])
+        throw Error('待交文件已经变化，请重新选择后确认提交。');
       items.push({ key: randomUUID(), body: {
         filename, mediaType: materialMediaType(name), contentBase64: bytes.toString('base64'),
         expectedCollectionVersion: s.expectedCollectionVersion + items.length,
