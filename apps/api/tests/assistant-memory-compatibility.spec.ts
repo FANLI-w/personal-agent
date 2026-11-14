@@ -21,7 +21,7 @@ async function fixture() {
   const dir = mkdtempSync(join(tmpdir(), 'assistant-memory-compat-'))
   cleanup.push(() => rmSync(dir, { recursive: true, force: true }))
   const key = join(dir, 'synthetic.key')
-  writeFileSync(key, randomBytes(32).toString('hex'))
+  writeFileSync(key, randomBytes(32).toString('hex'), { mode: 0o600 })
   const config = readConfig({ NODE_ENV: 'test', DATABASE_PATH: join(dir, 'test.sqlite'), BLOB_ROOT: join(dir, 'blobs'), APP_ORIGIN: 'http://127.0.0.1:4317', B3_AI_ENABLED: '1', LAB_CREDENTIAL_KEY_FILE: key })
   mkdirSync(config.blobRoot)
   const db = openDatabase(config.databasePath, true)

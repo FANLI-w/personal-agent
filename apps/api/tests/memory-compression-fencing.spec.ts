@@ -19,7 +19,7 @@ const result = (groups: {topic:string;ids:string[]}[]): ModelResult => ({ text: 
 async function fixture(enabled = true) {
   const root = mkdtempSync(join(tmpdir(), 'acceptcat-compression-fence-'))
   cleanup.push(() => rmSync(root, { recursive: true, force: true }))
-  const master = join(root, 'synthetic.key'); writeFileSync(master, randomBytes(32).toString('hex'))
+  const master = join(root, 'synthetic.key'); writeFileSync(master, randomBytes(32).toString('hex'), { mode: 0o600 })
   const config = readConfig({NODE_ENV:'test', DATABASE_PATH:join(root,'db.sqlite'), BLOB_ROOT:join(root,'blobs'), APP_ORIGIN:'http://127.0.0.1:4173', B3_AI_ENABLED:'1', LAB_CREDENTIAL_KEY_FILE:master})
   mkdirSync(config.blobRoot)
   const db = openDatabase(config.databasePath, true); cleanup.push(() => db.close()); migrate(db); seed(db, 'test')
