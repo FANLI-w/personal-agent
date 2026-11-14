@@ -59,3 +59,20 @@ test('the standalone per-file CommonJS store loads without an ESM contracts depe
  assert.equal(await new Store(path.join(f.root,'standalone-cache'),f.binding).cached(),null);
  assert.throws(()=>new Store(path.join(f.root,'standalone-cache'),{...f.binding,url:'file:///secret'}));
 });
+
+test('a dropped binary original is versioned in a review branch and retries without duplicating it', async t => {
+ const f=await libraryFixture(t),snap=await f.store.sync();
+ const bytes=Buffer.from([0x50,0x4b,0,255,13,10,9,128]);
+ const entry={...f.entry,id:'template_demo',name:'组会模板.pptx',purpose:'template',source:{kind:'git',path:'模板/组会模板.pptx',sha256:'0'.repeat(64)}};
+ const result=await f.store.propose(snap.revision,entry,undefined,bytes);
+ const retry=await f.store.propose(snap.revision,entry,undefined,bytes);
+ assert.equal(result.commit,retry.commit);
+ assert.deepEqual(f.git(['--git-dir='+f.remote,'show',result.commit+':'+entry.source.path]),bytes);
+ assert.equal(result.entry.source.sha256,sha(bytes));
+ assert.equal(f.git(['--git-dir='+f.remote,'rev-parse','main']).toString().trim(),snap.revision);
+ const changed=Buffer.from([0x50,0x4b,1,254]);
+ const next=await f.store.propose(snap.revision,entry,undefined,changed);
+ assert.notEqual(next.commit,result.commit);
+ await assert.rejects(f.store.propose(snap.revision,{...entry,id:'other',source:f.entry.source},undefined,bytes),/路径已被|路径已有/);
+ await assert.rejects(f.store.propose(snap.revision,entry,undefined,Buffer.alloc(20*1024*1024+1)),/20 MiB/);
+});

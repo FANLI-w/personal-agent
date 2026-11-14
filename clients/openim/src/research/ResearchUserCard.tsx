@@ -1,3 +1,5 @@
+import { AssistantPreferences } from "./AssistantPreferences";
+
 import { Alert, Button, Dropdown, Input, Modal, Space, Tag } from "antd";
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { OverlayVisibleHandle, useOverlayVisible } from "@/hooks/useOverlayVisible";
@@ -235,7 +237,7 @@ export const ResearchUserCard = forwardRef<
               {assistant ? <>
                 {contact.profile.introduction && <p>{contact.profile.introduction}</p>}
                 {roleDetails && <AgentRoleDocuments contact={contact} />}
-                {ownAssistant && !contact.agentRuntime && contact.allowedActions.includes("manage_private_memory") && <AssistantPreferences contactId={contact.id} />}
+                {ownAssistant && !contact.agentRuntime && contact.allowedActions.includes("manage_private_memory") && <AssistantPreferences key={scope} contactId={contact.id} />}
               </> : <dl>
                 {(
                   [
@@ -313,27 +315,3 @@ export const ResearchUserCard = forwardRef<
     </Modal>
   );
 });
-
-function AssistantPreferences({ contactId }: { contactId: string }) {
-  const personal = useResearchRead(
-    (signal) => researchApi("personalMemories", { query: { status: "confirmed", limit: 100 }, signal }),
-    contactId, true, { poll: false },
-  );
-  const agent = useResearchRead(
-    (signal) => researchApi("chatMemories", { query: { scope: "private_agent", scopeId: contactId, limit: 100 }, signal }),
-    contactId, true, { poll: false },
-  );
-  const lines = [
-    ...(agent.data?.data ?? []).filter(m => m.source === "本人明确保存的本助手交流偏好" && m.status === "active")
-      .flatMap(m => m.content.split("\n").filter(line => line.startsWith("- ")).reverse().map(line => line.slice(2))),
-    ...(agent.data?.data ?? []).filter(m => m.status === "active" && m.source?.startsWith("聊天中形成的习惯：")).map(m => m.content),
-    ...(personal.data?.data ?? []).filter(m => ["交流与工作习惯", "回复方式", "称呼", "语言", "写作"].includes(m.topic)).map(m => m.content),
-  ];
-  return <section className="rounded-lg bg-slate-50 p-4">
-    <h3 className="mb-2 text-sm font-medium">我们的交流习惯</h3>
-    {lines.length > 0 && <ul className="space-y-2">{Array.from(new Set(lines)).map(line =>
-      <li key={line} className="whitespace-pre-wrap break-words">{line}</li>)}</ul>}
-    {(agent.error || personal.error) && <p role="status">部分交流习惯暂时无法读取。</p>}
-    <p className="mt-2 text-sm text-slate-600">想调整时，直接告诉我就好。比如「以后回答先给结论」。</p>
-  </section>;
-}

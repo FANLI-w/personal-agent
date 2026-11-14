@@ -1,4 +1,4 @@
-import { Alert, Button, Input, Popover, Spin } from "antd";
+import { Alert, Button, Input, Modal, Popover, Select, Spin } from "antd";
 import {
   ArrowUpOutlined,
   ArrowLeftOutlined,
@@ -69,6 +69,7 @@ type Props = {
   fresh?: number;
   /** A work template hands over a prepared message instead of retyping it. */
   draft?: string;
+  submitDraft?: boolean;
   planId?: string;
   requestId?: string;
   onExpandedChange: (expanded: boolean) => void;
@@ -115,6 +116,7 @@ function PlanningAgentSession({
   focus,
   fresh,
   draft,
+  submitDraft,
   planId: adoptPlan,
   requestId: adoptRequest,
   onExpandedChange,
@@ -139,6 +141,15 @@ function PlanningAgentSession({
   const [failure, setFailure] = useState("");
   const [storageFailure, setStorageFailure] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [editing, setEditing] = useState<{
+    plan: ChatPlan;
+    stepId: string;
+    title: string;
+    deliverable: string;
+    owner: string;
+    date: string;
+    dateChanged: boolean;
+  }>();
   const [busy, setBusy] = useState(false);
   const [omitted, setOmitted] = useState(0);
   const [colleague, setColleague] = useState<ColleagueAgent>();
@@ -149,6 +160,7 @@ function PlanningAgentSession({
     messages = useRef<HTMLDivElement>(null),
     locked = useRef(false);
   const appliedDraft = useRef<string>();
+  const draftToSend = useRef<string>();
   const latest = useRef(history);
   latest.current = history;
   const thread = history.threads.find((t) => t.id === history.active)!;
@@ -220,6 +232,7 @@ function PlanningAgentSession({
     setBusy(false);
     setFailure("");
     setOmitted(0);
+    setEditing(undefined);
   }, [operation.scope]);
   useEffect(() => {
     if (focus) {
@@ -229,8 +242,13 @@ function PlanningAgentSession({
   }, [focus]);
   useEffect(() => {
     const text = draft?.trim();
-    if (!text || appliedDraft.current === text) return;
+    if (!text) {
+      appliedDraft.current = undefined;
+      return;
+    }
+    if (appliedDraft.current === text) return;
     appliedDraft.current = text;
+    if (submitDraft) draftToSend.current = text;
     setExpanded(true);
     setHistory((h) => {
       const active = h.threads.find((t) => t.id === h.active);
@@ -676,6 +694,66 @@ function PlanningAgentSession({
       await submit(intent, isCurrent);
     });
   };
+  useEffect(() => {
+    const text = draftToSend.current;
+    if (!text || thread.draft !== text || busy || frozen || !available) return;
+    draftToSend.current = undefined;
+    send(false, text);
+  }, [thread.id, thread.draft, busy, frozen, available]);
+  const saveArrangement = () => {
+    if (!editing || !current || current.ownerId !== actor.member.id || !preview || frozen || discussion) return;
+    const reviewed = editing;
+    void run(async (isCurrent) => {
+      if (current.id !== reviewed.plan.id || current.version !== reviewed.plan.version)
+        throw new Error("方案已更新，请关闭后重新核对安排。");
+      const input = plannerPlanInput(reviewed.plan, thread.deadline);
+      input.proposedItems = input.proposedItems.map((step) => {
+        if (step.id !== reviewed.stepId) return step;
+        const allocation =
+          reviewed.owner === "keep"
+            ? step.allocation
+            : reviewed.owner === actor.member.id
+            ? { kind: "self" as const }
+            : { kind: "invitation" as const, memberId: reviewed.owner };
+        return {
+          ...step,
+          title: reviewed.title.trim(),
+          deliverable: reviewed.deliverable.trim(),
+          allocation,
+          schedule: {
+            ...step.schedule,
+            hardDeadline: reviewed.dateChanged
+              ? reviewed.date
+                ? {
+                    value: {
+                      kind: "date" as const,
+                      date: reviewed.date,
+                      timezone: "Asia/Shanghai",
+                    },
+                    source: "user" as const,
+                    confirmed: true,
+                  }
+                : null
+              : step.schedule.hardDeadline,
+          },
+        };
+      });
+      try {
+        await researchApi("editPlan", {
+          params: { id: reviewed.plan.id },
+          body: { ...input, expectedVersion: reviewed.plan.version },
+          idempotencyKey: crypto.randomUUID(),
+        });
+      } catch (error) {
+        if (isCurrent()) await plan.refresh();
+        throw error;
+      }
+      if (!isCurrent()) return;
+      update((t) => ({ ...t, deadline: undefined, deadlineQuestion: false }));
+      setEditing(undefined);
+      await plan.refresh();
+    });
+  };
   const reviewLatest = () => {
     update((t) => ({ ...t, creating: undefined }));
     void plan.refresh();
@@ -800,11 +878,11 @@ function PlanningAgentSession({
         {!thread.messages.length && !thread.planId && !thread.requestId && (
           <div className="planning-agent-welcome">
             <h2>说说你要安排的任务</h2>
-            <p>说一件要做的事，我会整理成一项任务，执行步骤放在任务里。</p>
+            <p>说清要做什么、交给谁、什么时候要。先给你看安排，确认后再发出。</p>
             <div>
               {[
                 "完善我现有的论文和实验，安排成一项任务",
-                "准备一份下次组会要讨论的研究报告",
+                "下周五组会，请同事汇报这周的实验进展，交一份报告",
               ].map((s) => (
                 <button
                   key={s}
@@ -926,21 +1004,61 @@ function PlanningAgentSession({
               {preview.proposedItems.map((step, index) => (
                 <li key={step.id}>
                   <div>
-                    <b>{index + 1}</b>
+                    {preview!.proposedItems.length > 1 && <b>{index + 1}</b>}
                     <strong>{step.title}</strong>
-                    <span>
-                      {step.allocation.kind === "self"
-                        ? "我来负责"
-                        : step.allocation.kind === "invitation"
-                        ? `邀请 ${
-                            people[step.allocation.memberId] || step.allocation.memberId
-                          }`
-                        : step.allocation.kind === "claim"
-                        ? "课题组成员认领"
-                        : "公共 Agent 安排"}
-                    </span>
                   </div>
-                  {preview!.proposedItems.length > 1 && <p>交付：{step.deliverable}</p>}
+                  <dl className="planning-review-fields">
+                    <div>
+                      <dt>负责人</dt>
+                      <dd>
+                        {step.allocation.kind === "self"
+                          ? actor.member.displayName
+                          : step.allocation.kind === "invitation"
+                          ? people[step.allocation.memberId] || "已选成员"
+                          : step.allocation.kind === "claim"
+                          ? "成员认领"
+                          : "公共 Agent"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>交付日期</dt>
+                      <dd>
+                        {step.schedule.hardDeadline
+                          ? planDate(step.schedule.hardDeadline)
+                          : "未设截止"}
+                      </dd>
+                    </div>
+                    <div className="review-deliverable">
+                      <dt>交什么</dt>
+                      <dd>{step.deliverable}</dd>
+                    </div>
+                  </dl>
+                  {current.status === "draft" && current.ownerId === actor.member.id && (
+                    <Button
+                      size="small"
+                      disabled={
+                        !available || busy || frozen || processing || plan.loading
+                      }
+                      onClick={() =>
+                        setEditing({
+                          plan: current,
+                          stepId: step.id,
+                          title: step.title,
+                          deliverable: step.deliverable,
+                          owner:
+                            step.allocation.kind === "self"
+                              ? actor.member.id
+                              : step.allocation.kind === "invitation"
+                              ? step.allocation.memberId
+                              : "keep",
+                          date: planDate(step.schedule.hardDeadline),
+                          dateChanged: false,
+                        })
+                      }
+                    >
+                      修改安排
+                    </Button>
+                  )}
                   <details className="planning-step-details">
                     <summary>查看任务说明与完成要求</summary>
                     <SafeMessageMarkdown text={step.goal} />
@@ -961,14 +1079,6 @@ function PlanningAgentSession({
                       </small>
                     )}
                   </details>
-                  {step.schedule.hardDeadline && (
-                    <small>
-                      截止：{planDate(step.schedule.hardDeadline)} ·{" "}
-                      {step.schedule.hardDeadline.value.kind === "date"
-                        ? step.schedule.hardDeadline.value.timezone
-                        : "北京时间"}
-                    </small>
-                  )}
                 </li>
               ))}
             </ol>
@@ -1125,6 +1235,85 @@ function PlanningAgentSession({
           本机对话记录未能保存，当前对话仍可继续；服务端计划可在研究计划中找回。
         </p>
       )}
+      <Modal
+        title="修改任务安排"
+        open={!!editing}
+        onCancel={() => !busy && setEditing(undefined)}
+        onOk={saveArrangement}
+        okText="保存安排"
+        cancelText="取消"
+        confirmLoading={busy}
+        okButtonProps={{
+          disabled: frozen || !editing?.title.trim() || !editing?.deliverable.trim(),
+        }}
+        cancelButtonProps={{ disabled: busy }}
+        destroyOnClose
+      >
+        {editing && (
+          <div className="planning-arrangement-form">
+            <label>
+              任务名称
+              <Input
+                aria-label="任务名称"
+                value={editing.title}
+                maxLength={200}
+                disabled={busy}
+                onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+              />
+            </label>
+            <label>
+              负责人
+              <Select
+                aria-label="负责人"
+                value={editing.owner}
+                disabled={busy || frozen}
+                options={[
+                  ...(editing.owner === "keep"
+                    ? [{ value: "keep", label: "保留当前安排" }]
+                    : []),
+                  {
+                    value: actor.member.id,
+                    label: `${actor.member.displayName}（我）`,
+                  },
+                  ...(members.data?.data || [])
+                    .filter((member) => member.id !== actor.member.id)
+                    .map((member) => ({ value: member.id, label: member.displayName })),
+                  ...(editing.owner !== "keep" && !people[editing.owner]
+                    ? [{ value: editing.owner, label: "原方案所选成员" }]
+                    : []),
+                ]}
+                onChange={(owner) => setEditing({ ...editing, owner })}
+              />
+            </label>
+            <label>
+              交付日期
+              <Input
+                aria-label="交付日期"
+                type="date"
+                value={editing.date}
+                disabled={busy}
+                onChange={(e) =>
+                  setEditing({ ...editing, date: e.target.value, dateChanged: true })
+                }
+              />
+            </label>
+            <label>
+              交付内容
+              <Input.TextArea
+                aria-label="交付内容"
+                value={editing.deliverable}
+                rows={3}
+                maxLength={8000}
+                disabled={busy}
+                onChange={(e) =>
+                  setEditing({ ...editing, deliverable: e.target.value })
+                }
+              />
+            </label>
+            {failure && <Alert type="warning" message={failure} />}
+          </div>
+        )}
+      </Modal>
       <div className="planning-agent-composer">
         <Input.TextArea
           ref={input}

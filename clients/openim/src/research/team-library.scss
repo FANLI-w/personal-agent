@@ -12,6 +12,98 @@
 .team-library-editor .ant-checkbox-wrapper {
   display: inline-flex;
 }
+.team-library-import-file {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 18px;
+  background: #f5f8fc;
+  border-radius: 12px;
+  margin-top: 16px;
+  > .anticon {
+    font-size: 32px;
+    color: #568d70;
+  }
+  strong,
+  small {
+    display: block;
+    overflow-wrap: anywhere;
+  }
+  small {
+    color: #65756c;
+  }
+}
+.team-library-version-change {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px;
+  background: #f5f8f6;
+  border-radius: 10px;
+  margin-top: 16px;
+  > span {
+    flex: 1;
+    min-width: 0;
+    color: #64776b;
+  }
+  strong,
+  small {
+    display: block;
+    overflow-wrap: anywhere;
+  }
+  strong {
+    color: #263b2d;
+    margin: 4px 0;
+  }
+}
+.team-library-quick-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.team-library-file-drop {
+  border: 1px dashed #9fbaa8;
+  background: #f6faf7;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  color: #526c5c;
+  button {
+    color: #346b4b;
+    cursor: pointer;
+    margin-left: 12px;
+    text-decoration: underline;
+  }
+}
+.team-library-candidate {
+  display: flex !important;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #e5ebe7;
+  border-radius: 10px;
+  cursor: pointer;
+  width: 100%;
+  > span:last-child {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .anticon {
+    font-size: 24px;
+    color: #568d70;
+  }
+  strong,
+  small {
+    display: block;
+    overflow-wrap: anywhere;
+  }
+  small {
+    color: #687b70;
+    margin-top: 3px;
+  }
+}
 .team-library-editor p {
   font-size: 13px;
   line-height: 1.7;
@@ -82,6 +174,9 @@
   small {
     font-size: 12px;
     color: #7f8d84;
+  }
+  .ant-btn-primary span {
+    color: white;
   }
 }
 .team-library-grid {

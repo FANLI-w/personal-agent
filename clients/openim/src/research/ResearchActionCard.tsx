@@ -118,7 +118,7 @@ export function ResearchActionCard({ action }: { action: ChatAction }) {
           ))}
         </>
       ) : p.kind === "invite_contact" ? (
-        <p>邀请 {name(p.contactId)}；同意之前不会加入群，Agent 主人不会因此加入。</p>
+        <p>确认后，{name(p.contactId)} 将直接加入当前群。</p>
       ) : p.kind === "invite_task" ? (
         <>
           <p>

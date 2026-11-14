@@ -53,18 +53,18 @@ export function teamDeadline(task: TeamTask, now = new Date()) {
 
 export function teamNextStep(task: TeamTask, viewerId?: string): string {
   const status = teamTaskStatus(task);
-  if (status === "completed") return "查看当前成果与实际审阅记录";
+  if (status === "completed") return "查看成果与实际审阅记录";
   if (status === "cancelled") return "已取消，可查看历史记录";
   const full = isFullTask(task) ? task : undefined;
   const isLead = !!viewerId && full?.leadId === viewerId;
   const isReviewer = !!viewerId && full?.reviewerId === viewerId;
   if (status === "in_review")
-    return !viewerId || isReviewer ? "审阅实际交付，指出已解决的问题和具体修改建议" : "成果已提交，等待审阅意见；可以先查看这一版内容";
+    return !viewerId || isReviewer ? "审阅实际交付，给出验收结论" : "等待审阅意见";
   if (status === "changes_requested")
-    return !viewerId || isLead ? "先看审阅意见，修订后再提交一版成果" : "已有修改意见，等待承接人修订；可查看具体反馈";
-  if (status === "awaiting_acceptance") return "等待受邀成员确认任务范围与时间";
-  if (status === "unassigned") return "还没有承接人，可以邀请成员或认领这一步";
+    return !viewerId || isLead ? "修订后再提交" : "等待承接人修订";
+  if (status === "awaiting_acceptance") return "等待受邀成员确认任务范围";
+  if (status === "unassigned") return "邀请成员或认领任务";
   if (status === "ready")
-    return !viewerId || isLead ? "材料和前置成果准备好后，就可以开始这一步" : "承接人尚未开始，可以先查看任务安排";
-  return !viewerId || isLead ? "继续推进这一步；有阶段结果可以提交，卡住时也可以请求帮助" : "正在推进，可以查看阶段成果和需要的支持";
+    return !viewerId || isLead ? "可以开始任务" : "承接人尚未开始";
+  return !viewerId || isLead ? "可以提交文件或阶段成果" : "查看阶段成果，等待成员交付";
 }

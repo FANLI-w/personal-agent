@@ -14,6 +14,7 @@ export type TeamLibrarySnapshot = {
 export type TeamLibrarySelection = {
   revision: string;
   entryId: string;
+  entryIds?: string[];
   includeRules?: boolean;
 };
 export type TeamLibraryPreview =
@@ -35,6 +36,7 @@ export type TeamLibraryBridge = {
     revision: string,
     entry: TeamLibraryEntry,
     text?: string,
+    fileBytes?: Uint8Array,
   ) => Promise<TeamLibraryProposal>;
   changes: () => Promise<{ revision: string; title: string; date: string }[]>;
   proposeProject: (

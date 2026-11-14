@@ -30,6 +30,7 @@ export type TaskSource = {
   localName: string;
 };
 export type TaskBinding = TaskTarget & {
+  submissionOnly?: boolean;
   sessionId: string;
   sessionTitle?: string;
   sessionHistory?: {sessionId:string;title:string;at:string}[];
@@ -193,6 +194,7 @@ export class DshTaskWorkspace {
           title: b.sessionTitle || context.title,
         });
       }
+      if (b.submissionOnly) { delete b.submissionOnly; await this.save(b); }
   }
   private async rotate(b:TaskBinding, context:TaskContext) {
     const state=await this.status(context);
@@ -244,6 +246,7 @@ export class DshTaskWorkspace {
   async status(target: TaskTarget): Promise<DshTaskState | undefined> {
     const b = await this.load(target);
     if (!b) return;
+    if (b.submissionOnly) return { binding: b, phase: "ready" as const, events: [], hasMore: false, needsApproval: false, files: await this.files(b) };
     const projection = await this.rpc("session/projections", {
       sessionId: b.sessionId,
     });
@@ -486,6 +489,63 @@ export class DshTaskWorkspace {
       return b.localMaterials;
     });
   }
+  /** Snapshot explicitly dropped or picked files as outputs, separate from input materials. */
+  async prepareDelivery(context: TaskContext) {
+    return this.exclusive(context, async () => {
+      const existing = await this.load(context);
+      if (existing) return existing;
+      const directory = path.join(this.root, "files", defaultFolder(context));
+      await mkdir(directory, { recursive: true });
+      const binding: TaskBinding = {
+        ...context, submissionOnly: true, sessionId: "acceptcat-" + randomUUID(),
+        deviceId: await localDeviceId(this.root), directory: await realpath(directory),
+        sources: [], note: "", updatedAt: new Date().toISOString(),
+      };
+      await this.save(binding);
+      return binding;
+    });
+  }
+  async stageDelivery(context: TaskContext, selectedFiles: string[]) {
+    if (context.kind !== "research") throw Error("个人协作任务当前支持文字提交；文件请在课题组任务中提交。");
+    if (!Array.isArray(selectedFiles) || !selectedFiles.length || selectedFiles.length > 5)
+      throw Error("每次请选择 1 至 5 个文件。");
+    return this.exclusive(context, async () => {
+      const selected: { file: string; sha256: string }[] = [];
+      for (const file of selectedFiles) {
+        if (typeof file !== "string" || !path.isAbsolute(file)) throw Error("请选择本机文件。");
+        const info = await lstat(file);
+        if (!info.isFile() || info.isSymbolicLink() || !info.size || info.size > 512 * 1048576) throw Error("请选择非空普通文件，单份最大 512 MiB。");
+        selected.push({ file, ...(await hashLocalFile(file)) });
+      }
+      let b = await this.load(context);
+      if (b?.delivery?.status === "pending") throw Error("请先重试并核对上次提交。");
+      if (b?.pending || (b && !b.submissionOnly && (await this.status(context))?.phase === "running")) throw Error("请等本轮结束后再提交文件。");
+      if (!b) {
+        const directory = path.join(this.root, "files", defaultFolder(context));
+        await mkdir(directory, { recursive: true });
+        b = { taskId: context.taskId, kind: context.kind, agentId: context.agentId,
+          submissionOnly: true, sessionId: "acceptcat-" + randomUUID(),
+          deviceId: await localDeviceId(this.root), directory: await realpath(directory),
+          sources: [], note: "", updatedAt: new Date().toISOString() };
+        await this.save(b);
+      }
+      const names: string[] = [];
+      for (const item of selected) {
+        const folder = "delivery-" + item.sha256;
+        await mkdir(await this.filePath(b, folder, true), { recursive: false }).catch(error => { if (error.code !== "EEXIST") throw error; });
+        const name = path.join(folder, path.basename(item.file));
+        const destination = await this.filePath(b, name, true);
+        try {
+          const copied = await copyLocalMaterial(item.file, destination);
+          if (copied.sha256 !== item.sha256) throw Error("文件正在变化，请保存后重新选择。");
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "EEXIST" || (await hashLocalFile(destination)).sha256 !== item.sha256) throw error;
+        }
+        names.push(name);
+      }
+      return [...new Set(names)];
+    });
+  }
   private async sameMaterial(b: TaskBinding, sha256: string) {
     // Only selected material receipts are deduplicated; unrelated working files are not scanned or uploaded.
     for (const s of [...b.sources, ...(b.localMaterials || [])].filter(s => s.sha256 === sha256)) {
@@ -622,7 +682,9 @@ export class DshTaskWorkspace {
         if (context.kind === "personal" && names.length)
           throw Error("个人协作任务暂支持文字成果。");
         const files = [];
+        const archived = b.archive?.status === "archived" && names.every(name => b.archive!.files.some(file => file.name === name)) ? b.archive.files : [];
         for (const name of names) {
+          if (archived.some(file => file.name === name)) continue;
           if (!/\.(txt|md|csv|tsv|json|pdf|png)$/i.test(name))
             throw Error("成果支持 TXT/Markdown/CSV/JSON/PDF/PNG。");
           const bytes = await this.readOutput(context, name),
@@ -645,14 +707,17 @@ export class DshTaskWorkspace {
           files,
           uploaded: [],
           version: context.version,
-          sources: b.sources.map((s) => ({
+          sources: [...b.sources.map((s) => ({
             kind: s.kind === "artifact" ? "artifact" : "note",
             locator:
               s.kind === "artifact"
                 ? s.id
                 : `research-library:${s.id}:v${s.version}:${s.sha256}`,
             label: `${s.filename} v${s.version}`.slice(0, 200),
-          })),
+          })), ...archived.filter(file => names.includes(file.name)).map(file => ({
+            kind: "note", locator: `research-library:${file.id}:v${file.version}:${file.sha256}`,
+            label: path.basename(file.name).slice(0, 200),
+          }))],
         };
         receipt = path.join(
           this.root,

@@ -5,6 +5,7 @@ import { workbenchTaskPath, workbenchTaskTarget } from "./workbench-links";
 import { researchApi } from "./api";
 import { useResearchStore } from "./store";
 import { usePersonalOperation } from "./usePersonalOperation";
+import { selectedTeamEntryIds } from "./team-material-selection";
 import type { LocalDshSnapshot } from "@/types/localDsh";
 import type {
   DshTaskState,
@@ -116,7 +117,8 @@ export function LocalDshPage() {
   const [brief, setBrief] = useState<TaskBrief>();
   const [workspace, setWorkspace] = useState<DshTaskState>();
   const [materialReceipt, setMaterialReceipt] = useState("");
-  const materialId = params.get("teamEntry"),
+  const materialIds = selectedTeamEntryIds(params);
+  const materialId = materialIds.join(","),
     materialRevision = params.get("teamRevision");
   useEffect(() => {
     setMaterialReceipt("");
@@ -352,7 +354,8 @@ export function LocalDshPage() {
                 setError("");
                 try {
                   const receipt = await bridge.taskImportTeamLibrary(target, {
-                    entryId: materialId,
+                    entryId: materialIds[0],
+                    entryIds: materialIds,
                     revision: materialRevision,
                     includeRules: params.get("teamRules") === "true",
                   });

@@ -73,3 +73,11 @@ export function canonicalGroupMembers(conversation: Conversation, contacts: Cont
       };
     });
 }
+
+/** Suggest a member search in the current group without sending the draft. */
+export function inviteNameFromDraft(text: string) {
+  const request = text.trim();
+  if (request.length > 140 || /不要|不用|别|取消|不想|不拉|不邀请|[？?]/u.test(request)) return "";
+  const match = /^(?:请|麻烦)?(?:帮我)?(?:把|将|邀请|拉)\s*[@＠]?([^\s，。；,、]{1,50}?)(?:和(?:我的|本群的?)助[理手])?\s*(?:拉进|加入|进|拉到)(?:这个群|当前群|本群|群里|群聊|群)(?:[，。！!\s].*)?$/u.exec(request);
+  return match?.[1] ?? "";
+}

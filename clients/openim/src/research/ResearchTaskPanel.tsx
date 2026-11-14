@@ -8,6 +8,7 @@ import { teamNextStep } from "./research-team";
 import { ResearchTeamAccountHint } from "./ResearchTeamAccountHint";
 import { useResearchStore } from "./store";
 import { planDate, taskStateLabels } from "./task-planning";
+import { TaskDeliveryDownload } from "./TaskDeliveryDownload";
 import { TaskArtifactDownload } from "./TaskArtifactDownload";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchRead } from "./useResearchRead";
@@ -42,12 +43,21 @@ export function ResearchTaskPanel({
     [transferScope, setTransferScope] = useState("");
   const [depTitles, setDepTitles] = useState<Record<string, string>>({});
   const members = useResearchRead(
-    (signal) =>
-      researchApi("members", {
-        params: { id: actor!.member.labId },
-        query: { limit: 100 },
-        signal,
-      }),
+    async (signal) => {
+      const list: ResponseFor<"members">["data"] = [];
+      const seen = new Set<string>();
+      let cursor: string | undefined;
+      do {
+        const page = await researchApi("members", {
+          params: { id: actor!.member.labId }, query: { limit: 100, cursor }, signal,
+        });
+        list.push(...page.data);
+        cursor = page.nextCursor || undefined;
+        if (cursor && seen.has(cursor)) throw new Error("成员列表未能完整读取，请重试。");
+        if (cursor) seen.add(cursor);
+      } while (cursor);
+      return { data: list };
+    },
     `task-members:${actor?.member.labId}`,
     Boolean(actor),
   );
@@ -338,6 +348,7 @@ export function ResearchTaskPanel({
           <ResearchTeamAccountHint />
           <Select
             aria-label="承接成员"
+            showSearch optionFilterProp="label"
             placeholder="选择本实验室成员"
             value={inviteId || undefined}
             options={(members.data?.data || [])
@@ -351,7 +362,7 @@ export function ResearchTaskPanel({
           />
           <Input.TextArea
             aria-label="承接范围"
-            placeholder="想请对方帮哪一步？可以在任务说明的基础上补充。"
+            placeholder="补充承接范围（可选，默认使用任务目标）"
             value={inviteScope}
             onChange={(e) => setInviteScope(e.target.value)}
             maxLength={8000}
@@ -364,16 +375,13 @@ export function ResearchTaskPanel({
               action={<Button onClick={members.refresh}>重试成员列表</Button>}
             />
           )}
-          {members.data?.nextCursor && (
-            <p>此处显示首批 100 位成员；可在任务规划中按成员标识安排。</p>
-          )}
           <Button
-            disabled={busy || !inviteId || !inviteScope.trim()}
+            disabled={busy || !inviteId}
             onClick={() =>
               confirm({
                 title: "发送任务邀请？",
                 okText: "发送承接邀请",
-                content: "邀请会发给这位成员，由对方决定是否接下任务。",
+                content: `邀请 ${name(inviteId)} 承接「${task.title}」？`,
                 onOk: () =>
                   command(() =>
                     researchApi("invite", {
@@ -381,7 +389,7 @@ export function ResearchTaskPanel({
                       body: {
                         expectedVersion: task.version,
                         memberId: inviteId,
-                        scope: inviteScope.trim(),
+                        scope: inviteScope.trim() || task.goal.slice(0, 8000) || task.title,
                         schedule: task.schedule,
                       },
                     }),
@@ -405,6 +413,7 @@ export function ResearchTaskPanel({
           <ResearchTeamAccountHint />
           <Select
             aria-label="承接成员"
+            showSearch optionFilterProp="label"
             placeholder="选择转交的成员"
             value={transferToMemberId || undefined}
             options={(members.data?.data || [])
@@ -576,9 +585,7 @@ export function ResearchTaskPanel({
             </p>
           )}
           {delivery.sources.map((source, i) => (
-            <p className="text-xs" key={i}>
-              {source.label}：{source.locator}
-            </p>
+            <TaskDeliveryDownload key={i} target={{kind: "research", taskId}} locator={source.locator} label={source.label} />
           ))}
         </article>
       ))}

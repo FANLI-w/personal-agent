@@ -10,6 +10,8 @@ import {
   clearChatReply,
   clearChatReplyAgent,
 } from "@/research/chat-reply";
+import { useGroupChatRoster } from "@/research/GroupChatRoster";
+import { inviteNameFromDraft } from "@/research/group-members";
 import { addressGroupReply } from "@/research/group-mentions";
 import { useResearchComposer } from "@/research/ResearchComposer";
 import { useResearchStore } from "@/research/store";
@@ -104,6 +106,10 @@ const ChatFooter = () => {
   currentScope.current = scope;
   const captureSend = useAgentChatOperation();
   const composer = useResearchComposer();
+  const roster = useGroupChatRoster();
+  const groupID = useConversationStore(s => s.currentConversation?.groupID);
+  const inviteName = groupID && roster.conversation?.allowedActions.includes("invite")
+    ? inviteNameFromDraft(getCleanText(html)) : "";
   useEffect(() => {
     setHtml(drafts.current.get(imID) || "");
   }, [imID, generation]);
@@ -537,6 +543,9 @@ const ChatFooter = () => {
       }}
     >
       <div className="desktop-composer-surface flex h-full flex-col border-t border-t-[var(--gap-text)]">
+        {inviteName && groupID && <Button className="self-start" onClick={() => emitter.emit("OPEN_CHOOSE_MODAL", {
+          type: "INVITE_TO_GROUP", extraData: groupID, initialSearch: inviteName,
+        })}>选择「{inviteName}」加入当前群</Button>}
         <div className="composer-attachments">
         <ImagePasteTray
           key={scope}

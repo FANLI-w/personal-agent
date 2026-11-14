@@ -58,6 +58,8 @@ export type LocalDshBridge = {
   taskRebase: (
     target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
   ) => Promise<void>;
+  taskStageDelivery: (target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget, paths?: string[]) => Promise<string[]>;
+  taskDownloadDelivery: (target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget, locator: string) => Promise<boolean>;
   taskSubmit: (
     target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
     summary: string,

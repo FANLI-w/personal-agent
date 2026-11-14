@@ -1,4 +1,4 @@
-import { Alert, App, Button, Input, Select, Space, Tag } from "antd";
+import { Alert, App, AutoComplete, Button, Input, Select, Space, Tag } from "antd";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type {
@@ -41,18 +41,60 @@ export function LabWorkspace() {
   const detail = useResearchRead(
     (signal) => researchApi("labMembership", { params: { id: current!.id }, signal }),
     "lab-members:" + current?.id,
-    !!current,
+    !!current
   );
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(username.trim()), 180);
+    return () => clearTimeout(timer);
+  }, [username]);
+  useEffect(() => {
+    setUsername("");
+    setPickerOpen(false);
+  }, [current?.id, actor?.member.id]);
+  const friends = useResearchRead(
+    (signal) =>
+      researchApi("chatContacts", {
+        query: { view: "mine", scope: "local", search, limit: 50 },
+        signal,
+      }),
+    JSON.stringify(["invite-friends", current?.id, search]),
+    pickerOpen && current?.role === "manager",
+    { poll: false }
+  );
+  const candidates = (friends.data?.data ?? []).flatMap((c) => {
+    if (
+      c.identity.kind !== "human" ||
+      !c.username ||
+      c.relationship.status !== "accepted"
+    )
+      return [];
+    const memberId = c.identity.memberId;
+    const joined = detail.data?.data.members.some((m) => m.id === memberId);
+    const pending = detail.data?.data.invitations.some(
+      (i) => i.memberId === memberId && i.status === "pending"
+    );
+    return [
+      {
+        value: c.username,
+        disabled: joined || pending,
+        label: [c.displayName, c.username, joined ? "已加入" : pending ? "已邀请" : ""]
+          .filter(Boolean)
+          .join(" · "),
+      },
+    ];
+  });
   const invites = useResearchRead(
     (signal) => researchApi("managerInvites", { params: { id: current!.id }, signal }),
     "lab-codes:" + current?.id,
-    current?.role === "manager",
+    current?.role === "manager"
   );
   async function run<K extends RouteName>(
     command: K,
     options: { body?: RequestFor<K>["body"]; params?: RequestFor<K>["params"] },
     message: string,
-    context = false,
+    context = false
   ): Promise<ResponseFor<K> | undefined> {
     if (lock.current) return;
     const { isCurrent } = operation.capture();
@@ -87,7 +129,7 @@ export function LabWorkspace() {
             ? "操作已保存，但当前空间刷新未完成。请点击下方刷新课题组。"
             : error instanceof Error
             ? error.message
-            : "操作未完成，请重试。",
+            : "操作未完成，请重试。"
         );
     } finally {
       lock.current = false;
@@ -97,7 +139,7 @@ export function LabWorkspace() {
   const confirm = (
     title: string,
     content: ReactNode,
-    action: () => Promise<unknown>,
+    action: () => Promise<unknown>
   ) => {
     const { isCurrent } = operation.capture();
     confirmation.current = modal.confirm({
@@ -114,14 +156,14 @@ export function LabWorkspace() {
     const result = await run(
       "previewLabCode",
       { body: { inviteCode: code.trim() } },
-      "",
+      ""
     );
     if (result)
       confirm(
         `加入「${result.data.name}」？`,
         "加入后可以使用该课题组明确共享的资料和任务。你的私人资料、模型 Key 和飞书授权不会自动共享。",
         () =>
-          run("joinLab", { body: { inviteCode: code.trim() } }, "已加入课题组。", true),
+          run("joinLab", { body: { inviteCode: code.trim() } }, "已加入课题组。", true)
       );
   };
   if (labs.error)
@@ -137,24 +179,24 @@ export function LabWorkspace() {
     <div className="lab-workspace">
       <header className="my-section-heading">
         <h2>课题组</h2>
-        <p>使用当前账号创建或加入课题组，和同事、学生协作。</p>
+
+        <Button
+          disabled={busy}
+          onClick={async () => {
+            const { isCurrent } = operation.capture();
+            try {
+              await useResearchStore.getState().refreshActor();
+            } catch (error) {
+              if (isCurrent())
+                setFailure(
+                  error instanceof Error ? error.message : "刷新未完成，请重试。"
+                );
+            }
+          }}
+        >
+          刷新课题组
+        </Button>
       </header>
-      <Button
-        disabled={busy}
-        onClick={async () => {
-          const { isCurrent } = operation.capture();
-          try {
-            await useResearchStore.getState().refreshActor();
-          } catch (error) {
-            if (isCurrent())
-              setFailure(
-                error instanceof Error ? error.message : "刷新未完成，请重试。",
-              );
-          }
-        }}
-      >
-        刷新课题组
-      </Button>
       {failure && <Alert type="error" message={failure} showIcon />}
       {feedback && <Alert type="success" message={feedback} showIcon />}
       {labs.data.data.invitations.length > 0 && (
@@ -185,8 +227,8 @@ export function LabWorkspace() {
                             body: { expectedVersion: i.version, decision: "accepted" },
                           },
                           "已接受邀请。",
-                          true,
-                        ),
+                          true
+                        )
                     )
                   }
                 >
@@ -201,7 +243,7 @@ export function LabWorkspace() {
                         params: { id: i.id },
                         body: { expectedVersion: i.version, decision: "declined" },
                       },
-                      "已谢绝邀请。",
+                      "已谢绝邀请。"
                     )
                   }
                 >
@@ -260,8 +302,8 @@ export function LabWorkspace() {
                     run(
                       "renameLab",
                       { params: { id: current.id }, body: { name: edited.trim() } },
-                      "课题组名称已更新。",
-                    ),
+                      "课题组名称已更新。"
+                    )
                 );
               }}
             >
@@ -271,44 +313,49 @@ export function LabWorkspace() {
           {current.role === "manager" ? (
             <>
               <Space.Compact style={{ width: "100%" }}>
-                <Input
-                  aria-label="邀请成员的 AcceptCat 号"
-                  placeholder="输入对方的 AcceptCat 号"
+                <AutoComplete
+                  aria-label="选择联系人或输入 AcceptCat 号"
+                  placeholder="搜索联系人姓名或输入 AcceptCat 号"
                   value={username}
-                  maxLength={100}
-                  onChange={(e) => setUsername(e.target.value)}
-                  onPressEnter={() =>
-                    !busy &&
-                    username.trim() &&
-                    run(
-                      "inviteLabMember",
-                      {
-                        params: { id: current.id },
-                        body: { username: username.trim() },
-                      },
-                      "已发出邀请，请对方在「我的 → 课题组」接受。",
-                    )
+                  style={{ flex: 1 }}
+                  options={candidates}
+                  onChange={setUsername}
+                  onFocus={() => setPickerOpen(true)}
+                  onBlur={() => setPickerOpen(false)}
+                  onDropdownVisibleChange={setPickerOpen}
+                  notFoundContent={
+                    friends.loading
+                      ? "正在查找联系人…"
+                      : "可以直接输入完整 AcceptCat 号邀请"
                   }
+                  disabled={busy}
                 />
                 <Button
                   type="primary"
-                  disabled={busy || !username.trim()}
-                  onClick={() =>
-                    run(
+                  disabled={
+                    busy ||
+                    !/^[A-Za-z0-9_-]{1,100}$/.test(username.trim()) ||
+                    candidates.some((c) => c.disabled && c.value === username.trim())
+                  }
+                  onClick={async () => {
+                    const result = await run(
                       "inviteLabMember",
                       {
                         params: { id: current.id },
                         body: { username: username.trim() },
                       },
-                      "已发出邀请，请对方在「我的 → 课题组」接受。",
-                    )
-                  }
+                      "已发出课题组邀请。"
+                    );
+                    if (result) setUsername("");
+                  }}
                 >
-                  邀请已有账号
+                  邀请加入
                 </Button>
               </Space.Compact>
               <p className="workspace-muted">
-                对方确认后才会成为成员；添加好友或拉入聊天群不会自动加入课题组。
+                {friends.error
+                  ? "联系人暂时无法读取，可以输入完整 AcceptCat 号邀请。"
+                  : "对方接受后加入课题组。"}
               </p>
             </>
           ) : (
@@ -324,8 +371,8 @@ export function LabWorkspace() {
                       "leaveLab",
                       { params: { id: current.id } },
                       "已退出课题组。",
-                      true,
-                    ),
+                      true
+                    )
                 )
               }
             >
@@ -364,8 +411,8 @@ export function LabWorkspace() {
                             params: { id: current.id, memberId: m.id },
                             body: { expectedVersion: m.version },
                           },
-                          "已移除成员。",
-                        ),
+                          "已移除成员。"
+                        )
                     )
                   }
                 >
@@ -386,7 +433,7 @@ export function LabWorkspace() {
                   run(
                     "revokeLabInvitation",
                     { params: { id: i.id }, body: { expectedVersion: i.version } },
-                    "已撤销邀请。",
+                    "已撤销邀请。"
                   )
                 }
               >
@@ -411,7 +458,7 @@ export function LabWorkspace() {
                       params: { id: current.id },
                       body: codeDraft.current,
                     },
-                    "邀请码已生成。",
+                    "邀请码已生成。"
                   );
                   if (r) {
                     setIssued(r.data);
@@ -469,7 +516,7 @@ export function LabWorkspace() {
                         run(
                           "revokeManagerInvite",
                           { params: { id: current.id, inviteId: i.id } },
-                          "邀请码已撤销。",
+                          "邀请码已撤销。"
                         )
                       }
                     >
@@ -520,7 +567,7 @@ export function LabWorkspace() {
                   "createLab",
                   { body: { name: name.trim() } },
                   "课题组已创建。",
-                  true,
+                  true
                 )
               }
             >
