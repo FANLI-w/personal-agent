@@ -3229,3 +3229,7 @@ Windows x64 正式版 0.10.113 已发布。[发布说明](https://github.com/luo
 基于 3eba869，在内置 DSH 的三个品牌插槽接入现有大肥鱼头像和工作台名称。通过独立临时配置启动 0.10.113 随附的 DSH，观察到侧栏名称、两张已加载的头像和新会话问候，旧标语与预览标签已隐藏。品牌、账户及文件桥接定向测试 6 项通过。pnpm run ci 通过，含 996 项 Vitest 测试。首次隐藏窗口截图捕获的是启动帧，再以离屏窗口核对完整页面。证据位于本机临时目录 deepchat-ui-1a882b2a-c92e-4781-8395-eccbc77c4d92/deepchat-workbench.png。本次未调用真实模型，未发布。
 
 工作台布局跟进：品牌移到宿主页头，移除原说明。展开的内置侧栏首行显示新会话，收起按钮在右侧。使用 0.10.113 随附运行时的独立 Electron 窗口验证两者顶边均为 14 CSS 像素，先收起、再展开、点击新会话均通过。截图在本机临时目录 deepchat-ui-1a882b2a-c92e-4781-8395-eccbc77c4d92/raised-session.png。页头首次定向测试缺少头像资源替身，补齐后 22 项定向测试和桌面前端 TypeScript 检查通过。
+
+## Windows 0.10.114 正式发布
+
+Windows x64 正式版 0.10.114 已发布。工作台页头显示大肥鱼头像和 deepchat，新会话按钮移至侧栏首行。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.114) · [PR #231](https://github.com/luoyan96/personal-agent/pull/231)。合并及构建提交 c96bc2a30087080b7c2efc603f1c883111155b15。初次 Windows 构建误将 DSH 页面 React 加载识别为主进程依赖，修复后四项 PR 检查通过。已从 NSIS 安装包解出并核对 137 个编译文件，核对头像、页头、问候和侧栏布局，验证包启动及自动更新元数据。四项公开附件均与本机 SHA-256 一致。安装包 SHA-256 为 f9da67dd846159b07353761a841ba601c74bff7218f44a3b816410bfc53383c0。本次只发布客户端。验证记录见 D:/deepseek-agent/.runtime/release-0.10.114/。
