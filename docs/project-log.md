@@ -3219,3 +3219,7 @@ Windows 正式版 0.10.112 已发布。[发布页](https://github.com/luoyan96/p
 ## 2026-11-15 团队资料目录 Windows 本地试用
 
 Windows 本地试用版 0.10.113-preview.1（713d8de）默认列出 Git 提交的真实目录，未登记文件随同步出现。实测 luoyan96/files 的 main（819c2794）根目录 4 项，进入 2026项目申报核对 6 份文件，返回上级打开了清单外的 README.md。新增文件在隔离 Git 仓库提交和同步验证。 55 项资料测试、两端类型检查和打包启动检查通过，启动日志有 electron-log 重复初始化提示。首轮构建为修正关闭预览交互主动中止，最终源码重新冻结，解包核对 137 个编译文件。安装包 SHA-256 为 984e3d045b6e85626a482934f566454d5d32045257c0c6d3859b51077022838d。本地证据在 D:/deepseek-agent/.runtime/team-library-tree-preview/。线上仍为 0.10.112。
+
+## 2026-11-15 Windows 0.10.113 正式发布
+
+Windows x64 正式版 0.10.113 已发布。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.113) · [PR #229](https://github.com/luoyan96/personal-agent/pull/229)。团队资料显示所连 Git 仓库的根目录与子目录；清单外的新文件在同步后可见。 正式构建 fc2cc2f。55 项资料测试和四项 PR 检查通过。Windows CI 曾在长缓存路径读取目录时失败，修正 Git 目录参数后使用相同场景通过。正式包全新缓存实读 luoyan96/files 的 main，并比对目录与读取 README；上一轮登录态界面验证包含目录导航及正文预览。已从安装包解出并核对 137 个编译文件，打包启动通过。公开 release 的四项附件均与本机 SHA-256 一致。安装包 SHA-256 为 2c699f1e1c7388bfe82e966d13089c7722467026bb8d970bd390099fefd314bc。本次仅更新客户端。构建、测试和初始失败记录见本机 D:/deepseek-agent/.runtime/release-0.10.113/。

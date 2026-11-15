@@ -4,6 +4,10 @@
 
 Windows 正式版 0.10.112 已发布。[发布页](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.112) · [PR #227](https://github.com/luoyan96/personal-agent/pull/227)。正式构建与标签对应 703a1bf，合并提交 8bb4a2b 的源码树相同。四项 PR 检查和本机打包启动测试通过。
 
+## 2026-11-15 · Windows 0.10.113 正式发布
+
+Windows x64 正式版 0.10.113 已发布。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.113) · [PR #229](https://github.com/luoyan96/personal-agent/pull/229)。团队资料显示所连 Git 仓库的根目录与子目录；清单外的新文件在同步后可见。
+
 ## 2026-11-15 · 团队资料按仓库目录浏览（本地试用）
 
 Windows 本地试用版 0.10.113-preview.1（713d8de）默认列出 Git 提交的真实目录，未登记文件随同步出现。实测 luoyan96/files 的 main（819c2794）根目录 4 项，进入 2026项目申报核对 6 份文件，返回上级打开了清单外的 README.md。新增文件在隔离 Git 仓库提交和同步验证。
