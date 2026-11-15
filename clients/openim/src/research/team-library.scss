@@ -911,3 +911,92 @@
     white-space: pre-wrap;
   }
 }
+
+.team-library-view-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.team-library-repository-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  > small {
+    color: #697176;
+    overflow-wrap: anywhere;
+  }
+}
+.team-library-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+  .ant-btn {
+    height: auto;
+    padding: 2px 6px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+  > span {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+  }
+  [aria-current="page"] {
+    color: #25332c;
+    font-weight: 600;
+  }
+}
+.team-library-tree-table {
+  border-block: 1px solid #e7ebe8;
+}
+.team-library-tree-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 10px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #edf0ee;
+  text-align: left;
+  color: #25332c;
+  font: inherit;
+  cursor: pointer;
+  > span:first-child {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  > span:last-child {
+    color: #697176;
+    font-size: 12px;
+  }
+  .anticon {
+    color: #568d70;
+    flex-shrink: 0;
+  }
+  &:hover {
+    background: #f1f7f3;
+  }
+  &.selected {
+    background: #e8f4ff;
+  }
+  &:focus-visible {
+    outline: 2px solid #568d70;
+    outline-offset: -2px;
+  }
+}
+.team-library-path {
+  overflow-wrap: anywhere;
+  color: #697176;
+  font-size: 12px;
+}

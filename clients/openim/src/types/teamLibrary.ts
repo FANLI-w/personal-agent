@@ -8,9 +8,15 @@ export type TeamLibrarySnapshot = {
   revision: string;
   syncedAt: string;
   manifest: TeamLibraryManifest;
+  tree?: TeamLibraryTreeEntry[];
   stale?: boolean;
   warning?: string;
 };
+export type TeamLibraryTreeEntry = {
+  path: string;
+  kind: "file" | "folder" | "symlink" | "submodule";
+};
+export type TeamLibraryPathSelection = { revision: string; path: string };
 export type TeamLibrarySelection = {
   revision: string;
   entryId: string;
@@ -34,6 +40,7 @@ export type TeamLibraryBridge = {
   sync: () => Promise<TeamLibrarySnapshot>;
   cached: () => Promise<TeamLibrarySnapshot | null>;
   preview: (selected: TeamLibrarySelection) => Promise<TeamLibraryPreview>;
+  previewPath: (selected: TeamLibraryPathSelection) => Promise<TeamLibraryPreview>;
   open: (selected: TeamLibrarySelection) => Promise<void>;
   propose: (
     revision: string,

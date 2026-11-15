@@ -107,21 +107,33 @@ export function TeamLibraryWorkspace({
     "team-library-binding",
     supported && !!actor,
   );
-  const [snapshot, setSnapshot] = useState<TeamLibrarySnapshot>(),
+  const [snapshotRecord, setSnapshotRecord] = useState<{
+      scope: string;
+      value: TeamLibrarySnapshot;
+    }>(),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [syncError, setSyncError] = useState("");
   const [project, setProject] = useState(""),
     [purpose, setPurpose] = useState(""),
-    [query, setQuery] = useState(""),
-    [selected, setSelected] = useState("");
+    [query, setQuery] = useState("");
+  const [navigation, setNavigation] = useState<{
+    scope: string;
+    revision: string;
+    mode: "tree" | "catalog";
+    directory: string;
+    path: string;
+    entryId: string;
+  }>();
   const [previewResult, setPreviewResult] = useState<{
       entryId: string;
+      scope: string;
       revision: string;
       value: TeamLibraryPreview;
     }>(),
-    [previewError, setPreviewError] = useState(""),
-    [previewBusy, setPreviewBusy] = useState(false);
+    [previewFailure, setPreviewError] = useState(""),
+    [previewPending, setPreviewBusy] = useState(false);
+  const [previewRequest, setPreviewRequest] = useState("");
   const [panel, setPanel] = useState(""),
     [configure, setConfigure] = useState(false),
     [history, setHistory] =
@@ -175,6 +187,57 @@ export function TeamLibraryWorkspace({
     [includeRules, setIncludeRules] = useState(true);
   const current = repository.data?.data,
     binding = current?.binding;
+  const snapshotScope = JSON.stringify([
+    operation.generation,
+    operation.actorId,
+    binding?.labId,
+    binding?.version,
+    binding?.url,
+    binding?.branch,
+    binding?.workspaceId,
+  ]);
+  const activeScope = useRef(snapshotScope);
+  activeScope.current = snapshotScope;
+  const snapshot =
+    snapshotRecord?.scope === snapshotScope ? snapshotRecord.value : undefined;
+  const setSnapshot = (value: TeamLibrarySnapshot | undefined) =>
+    setSnapshotRecord(value ? { scope: snapshotScope, value } : undefined);
+  const matchesBinding = (value: TeamLibrarySnapshot) =>
+    !!binding &&
+    (["labId", "version", "url", "branch", "workspaceId"] as const).every(
+      (key) => value.binding[key] === binding[key],
+    );
+  const nav =
+    navigation?.scope === snapshotScope && navigation.revision === snapshot?.revision
+      ? navigation
+      : {
+          scope: snapshotScope,
+          revision: snapshot?.revision || "",
+          mode: "tree" as const,
+          directory: "",
+          path: "",
+          entryId: "",
+        };
+  const setSelected = (entryId: string) =>
+    setNavigation({ ...nav, entryId, path: entryId ? nav.path : "" });
+  const tree = snapshot?.tree;
+  const treeRows = tree
+    ?.filter((item) => {
+      const prefix = nav.directory ? nav.directory + "/" : "";
+      return (
+        item.path.startsWith(prefix) &&
+        !item.path.slice(prefix.length).includes("/") &&
+        item.path !== nav.directory
+      );
+    })
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(b.kind === "folder") - Number(a.kind === "folder") ||
+        a.path.localeCompare(b.path, "zh-CN"),
+    );
+  const selectedFile =
+    nav.mode === "tree" ? tree?.find((item) => item.path === nav.path) : undefined;
   const entries = snapshot?.manifest.entries || [];
   const visible = entries.filter(
     (e) =>
@@ -185,9 +248,26 @@ export function TeamLibraryWorkspace({
           s.toLowerCase().includes(query.toLowerCase()),
         )),
   );
-  const entry = visible.find((e) => e.id === selected);
+  const entry =
+    nav.mode === "catalog"
+      ? visible.find((e) => e.id === nav.entryId)
+      : selectedFile?.kind === "file"
+      ? entries.find(
+          (e) => e.source.kind === "git" && e.source.path === selectedFile.path,
+        )
+      : undefined;
+  const selectedName = entry?.name || selectedFile?.path.split("/").pop() || "";
+  const previewKey = entry
+    ? `entry:${entry.id}`
+    : selectedFile
+    ? `path:${selectedFile.path}`
+    : "";
+  const requestKey = JSON.stringify([snapshotScope, snapshot?.revision, previewKey]);
+  const previewError = previewRequest === requestKey ? previewFailure : "";
+  const previewBusy = !!previewKey && (previewRequest !== requestKey || previewPending);
   const preview =
-    previewResult?.entryId === entry?.id &&
+    previewResult?.scope === snapshotScope &&
+    previewResult?.entryId === previewKey &&
     previewResult?.revision === snapshot?.revision
       ? previewResult?.value
       : undefined;
@@ -210,26 +290,37 @@ export function TeamLibraryWorkspace({
     setCandidates(undefined);
     setChosenIds([]);
     setConfigure(false);
-  }, [operation.generation, operation.actorId, binding?.version, binding?.labId]);
+    setPanel("");
+    setHistory(undefined);
+    setHistoryError("");
+    setImportTarget("");
+    setTaskSearch("");
+    setTaskBusy(false);
+    setNavigation(undefined);
+    setBusy(false);
+  }, [snapshotScope]);
+  const syncSequence = useRef(0);
   const sync = async () => {
     if (!bridge) return;
     const ticket = operation.capture();
+    const index = ++syncSequence.current;
+    const isCurrent = () =>
+      ticket.isCurrent() &&
+      activeScope.current === snapshotScope &&
+      index === syncSequence.current;
     setBusy(true);
     setSyncError("");
     try {
       const next = await bridge.sync();
-      if (ticket.isCurrent()) {
+      if (isCurrent()) {
+        if (!matchesBinding(next))
+          throw new Error("仓库配置已变化，请重新同步当前仓库。");
         setSnapshot(next);
-        setSelected((id) =>
-          next.manifest.entries.some((e) => e.id === id)
-            ? id
-            : next.manifest.entries[0]?.id || "",
-        );
       }
     } catch (e) {
-      if (ticket.isCurrent()) setSyncError(message(e));
+      if (isCurrent()) setSyncError(message(e));
     } finally {
-      if (ticket.isCurrent()) setBusy(false);
+      if (isCurrent()) setBusy(false);
     }
   };
   useEffect(() => {
@@ -239,33 +330,35 @@ export function TeamLibraryWorkspace({
     void (async () => {
       try {
         const cached = await bridge.cached();
-        if (!cancelled && ticket.isCurrent() && cached) {
+        if (
+          !cancelled &&
+          ticket.isCurrent() &&
+          activeScope.current === snapshotScope &&
+          cached &&
+          matchesBinding(cached)
+        ) {
           setSnapshot(cached);
-          setSelected(cached.manifest.entries[0]?.id || "");
         }
-        if (!cancelled && ticket.isCurrent()) await sync();
+        if (!cancelled && ticket.isCurrent() && activeScope.current === snapshotScope)
+          await sync();
       } catch (e) {
-        if (!cancelled && ticket.isCurrent()) setSyncError(message(e));
+        if (!cancelled && ticket.isCurrent() && activeScope.current === snapshotScope)
+          setSyncError(message(e));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [
-    binding?.version,
-    binding?.labId,
-    operation.generation,
-    operation.actorId,
-    bridge,
-  ]);
+  }, [snapshotScope, bridge]);
   useEffect(() => {
     const index = ++sequence.current,
       ticket = operation.capture();
+    setPreviewRequest(requestKey);
     setPreviewResult(undefined);
     setPreviewError("");
     setPreviewBusy(false);
-    if (!entry || !snapshot || !bridge) return;
-    if (entry.source.kind !== "git") {
+    if ((!entry && !selectedFile) || !snapshot || !bridge) return;
+    if (entry && entry.source.kind !== "git") {
       setPreviewError(
         entry.source.kind === "shared"
           ? "原件通过课题组共享服务取用，进入任务时再次核对权限。"
@@ -273,13 +366,36 @@ export function TeamLibraryWorkspace({
       );
       return;
     }
+    if (selectedFile && selectedFile.kind !== "file") {
+      setPreviewError(
+        selectedFile.kind === "symlink"
+          ? "符号链接仅显示路径，不读取链接目标。"
+          : "子模块需在对应仓库中查看。",
+      );
+      return;
+    }
+    if (!entry && !bridge.previewPath) {
+      setPreviewError("当前客户端暂不支持仓库文件预览，请更新客户端后重试。");
+      return;
+    }
     setPreviewBusy(true);
-    void bridge
-      .preview({ revision: snapshot.revision, entryId: entry.id })
+    const request = entry
+      ? bridge.preview({ revision: snapshot.revision, entryId: entry.id })
+      : bridge.previewPath({ revision: snapshot.revision, path: selectedFile!.path });
+    void request
       .then(
         (value) => {
-          if (index === sequence.current && ticket.isCurrent())
-            setPreviewResult({ entryId: entry.id, revision: snapshot.revision, value });
+          if (
+            index === sequence.current &&
+            ticket.isCurrent() &&
+            activeScope.current === snapshotScope
+          )
+            setPreviewResult({
+              entryId: previewKey,
+              scope: snapshotScope,
+              revision: snapshot.revision,
+              value,
+            });
         },
         (e) => {
           if (index === sequence.current && ticket.isCurrent())
@@ -289,7 +405,10 @@ export function TeamLibraryWorkspace({
       .finally(() => {
         if (index === sequence.current && ticket.isCurrent()) setPreviewBusy(false);
       });
-  }, [entry?.id, snapshot?.revision, operation.generation, operation.actorId, bridge]);
+    return () => {
+      ++sequence.current;
+    };
+  }, [previewKey, snapshot?.revision, snapshotScope, bridge]);
   const openHistory = async () => {
     const ticket = operation.capture();
     setPanel("history");
@@ -571,61 +690,87 @@ export function TeamLibraryWorkspace({
               )}
             </div>
           ) : (
-            <div className={`team-library-grid ${entry ? "has-selection" : ""}`}>
+            <div
+              className={`team-library-grid ${
+                entry || selectedFile ? "has-selection" : ""
+              }`}
+            >
               <div className="team-library-center">
-                <header>
-                  <Select
-                    aria-label="按项目查看资料"
-                    value={project}
-                    onChange={(value) => {
-                      setProject(value);
-                      setPurpose("");
-                    }}
-                    options={[
-                      { value: "", label: "全部项目" },
-                      ...snapshot.manifest.projects.map((p) => ({
-                        value: p.id,
-                        label: p.name,
-                      })),
-                    ]}
-                  />
+                <div className="team-library-view-switch" aria-label="团队资料视图">
                   <Button
-                    type="text"
-                    icon={<PlusOutlined />}
-                    onClick={() => setNewProject(true)}
+                    type={nav.mode === "tree" ? "primary" : "text"}
+                    onClick={() =>
+                      setNavigation({ ...nav, mode: "tree", path: "", entryId: "" })
+                    }
                   >
-                    新建项目
+                    仓库文件
                   </Button>
-                  <Input.Search
-                    aria-label="查找团队资料"
-                    placeholder="搜索文件名、说明或维护者"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    allowClear
-                  />
-                </header>
-                <div className="team-library-quick-filters" aria-label="资料用途">
-                  {[
-                    { value: "", label: "全部" },
-                    { value: "template", label: "模板与案例" },
-                    { value: "figure", label: "图与素材" },
-                    { value: "reference", label: "参考资料" },
-                  ]
-                    .filter(
-                      (filter) =>
-                        !filter.value ||
-                        entries.some((e) => e.purpose === filter.value),
-                    )
-                    .map((filter) => (
-                      <Button
-                        key={filter.value}
-                        type={purpose === filter.value ? "primary" : "default"}
-                        onClick={() => setPurpose(filter.value)}
-                      >
-                        {filter.label}
-                      </Button>
-                    ))}
+                  <Button
+                    type={nav.mode === "catalog" ? "primary" : "text"}
+                    onClick={() =>
+                      setNavigation({ ...nav, mode: "catalog", path: "", entryId: "" })
+                    }
+                  >
+                    资料目录
+                  </Button>
                 </div>
+                {nav.mode === "catalog" && (
+                  <>
+                    <header>
+                      <Select
+                        aria-label="按项目查看资料"
+                        value={project}
+                        onChange={(value) => {
+                          setProject(value);
+                          setPurpose("");
+                        }}
+                        options={[
+                          { value: "", label: "全部项目" },
+                          ...snapshot.manifest.projects.map((p) => ({
+                            value: p.id,
+                            label: p.name,
+                          })),
+                        ]}
+                      />
+                      <Button
+                        type="text"
+                        icon={<PlusOutlined />}
+                        onClick={() => setNewProject(true)}
+                      >
+                        新建项目
+                      </Button>
+                      <Input.Search
+                        aria-label="查找团队资料"
+                        placeholder="搜索文件名、说明或维护者"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        allowClear
+                      />
+                    </header>
+                    <div className="team-library-quick-filters" aria-label="资料用途">
+                      {[
+                        { value: "", label: "全部" },
+                        { value: "template", label: "模板与案例" },
+                        { value: "figure", label: "图与素材" },
+                        { value: "reference", label: "参考资料" },
+                      ]
+                        .filter(
+                          (filter) =>
+                            !filter.value ||
+                            entries.some((e) => e.purpose === filter.value),
+                        )
+                        .map((filter) => (
+                          <Button
+                            key={filter.value}
+                            type={purpose === filter.value ? "primary" : "default"}
+                            onClick={() => setPurpose(filter.value)}
+                          >
+                            {filter.label}
+                          </Button>
+                        ))}
+                    </div>
+                  </>
+                )}
                 <div
                   className="team-library-file-drop"
                   onDragOver={(event) => {
@@ -649,56 +794,199 @@ export function TeamLibraryWorkspace({
                     选择文件
                   </Button>
                 </div>
-                <div className="team-library-table" role="table" aria-label="项目资料">
-                  <div className="team-library-row table-heading" role="row">
-                    <span role="columnheader">文件</span>
-                    <span role="columnheader">用途</span>
-                    <span role="columnheader">维护者</span>
-                    <span role="columnheader">位置</span>
+                {nav.mode === "tree" ? (
+                  <div className="team-library-repository">
+                    <div className="team-library-repository-heading">
+                      <nav aria-label="仓库路径" className="team-library-breadcrumb">
+                        <Button
+                          type="link"
+                          onClick={() =>
+                            setNavigation({
+                              ...nav,
+                              directory: "",
+                              path: "",
+                              entryId: "",
+                            })
+                          }
+                          aria-current={!nav.directory ? "page" : undefined}
+                        >
+                          {snapshot.binding.url
+                            .replace(/\/$/, "")
+                            .replace(/\.git$/, "")
+                            .split("/")
+                            .pop() || "仓库根目录"}
+                        </Button>
+                        {nav.directory
+                          .split("/")
+                          .filter(Boolean)
+                          .map((part, index, parts) => (
+                            <span key={parts.slice(0, index + 1).join("/")}>
+                              <span aria-hidden="true">/</span>
+                              <Button
+                                type="link"
+                                aria-current={
+                                  index === parts.length - 1 ? "page" : undefined
+                                }
+                                onClick={() =>
+                                  setNavigation({
+                                    ...nav,
+                                    directory: parts.slice(0, index + 1).join("/"),
+                                    path: "",
+                                    entryId: "",
+                                  })
+                                }
+                              >
+                                {part}
+                              </Button>
+                            </span>
+                          ))}
+                      </nav>
+                      <small title={snapshot.revision}>
+                        {snapshot.binding.branch} · {snapshot.revision.slice(0, 8)}
+                      </small>
+                    </div>
+                    {!tree ? (
+                      <Alert
+                        type="info"
+                        showIcon
+                        message="当前缓存没有仓库文件树，请同步后重试。"
+                        action={
+                          <Button size="small" loading={busy} onClick={sync}>
+                            同步文件树
+                          </Button>
+                        }
+                      />
+                    ) : (
+                      <div
+                        role="table"
+                        aria-label="仓库文件"
+                        className="team-library-tree-table"
+                      >
+                        {nav.directory && (
+                          <button
+                            className="team-library-tree-row"
+                            role="row"
+                            onClick={() =>
+                              setNavigation({
+                                ...nav,
+                                directory: nav.directory
+                                  .split("/")
+                                  .slice(0, -1)
+                                  .join("/"),
+                                path: "",
+                                entryId: "",
+                              })
+                            }
+                          >
+                            <span role="cell">
+                              <FolderOpenOutlined /> ..
+                            </span>
+                            <span role="cell">返回上级</span>
+                          </button>
+                        )}
+                        {treeRows?.map((item) => (
+                          <button
+                            key={item.path}
+                            role="row"
+                            aria-selected={nav.path === item.path}
+                            className={`team-library-tree-row ${
+                              nav.path === item.path ? "selected" : ""
+                            }`}
+                            onClick={() =>
+                              setNavigation({
+                                ...nav,
+                                directory:
+                                  item.kind === "folder" ? item.path : nav.directory,
+                                path: item.kind === "folder" ? "" : item.path,
+                                entryId: "",
+                              })
+                            }
+                          >
+                            <span role="cell">
+                              {item.kind === "folder" ? (
+                                <FolderOpenOutlined />
+                              ) : (
+                                <FileTextOutlined />
+                              )}
+                              <span>{item.path.split("/").pop()}</span>
+                            </span>
+                            <span role="cell">
+                              {
+                                {
+                                  folder: "文件夹",
+                                  file: "文件",
+                                  symlink: "符号链接",
+                                  submodule: "子模块",
+                                }[item.kind]
+                              }
+                            </span>
+                          </button>
+                        ))}
+                        {!treeRows?.length && (
+                          <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description="此文件夹没有文件"
+                          />
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {visible.map((e) => (
-                    <button
-                      role="row"
-                      aria-selected={entry?.id === e.id}
-                      key={e.id}
-                      className={
-                        "team-library-row " + (entry?.id === e.id ? "selected" : "")
-                      }
-                      onClick={() => setSelected(e.id)}
-                    >
-                      <span role="cell" className="team-library-filename">
-                        <FileIcon entry={e} />
-                        <span>
-                          <strong>{e.name}</strong>
-                          <small>
-                            {fileType(e)}
-                            {e.recommended ? " · 推荐使用" : ""}
-                            {e.source.kind === "shared"
-                              ? ` · v${e.source.version}`
-                              : e.source.sha256
-                              ? ` · ${e.source.sha256.slice(0, 8)}`
-                              : ""}
-                          </small>
+                ) : (
+                  <div
+                    className="team-library-table"
+                    role="table"
+                    aria-label="项目资料"
+                  >
+                    <div className="team-library-row table-heading" role="row">
+                      <span role="columnheader">文件</span>
+                      <span role="columnheader">用途</span>
+                      <span role="columnheader">维护者</span>
+                      <span role="columnheader">位置</span>
+                    </div>
+                    {visible.map((e) => (
+                      <button
+                        role="row"
+                        aria-selected={entry?.id === e.id}
+                        key={e.id}
+                        className={
+                          "team-library-row " + (entry?.id === e.id ? "selected" : "")
+                        }
+                        onClick={() => setSelected(e.id)}
+                      >
+                        <span role="cell" className="team-library-filename">
+                          <FileIcon entry={e} />
+                          <span>
+                            <strong>{e.name}</strong>
+                            <small>
+                              {fileType(e)}
+                              {e.recommended ? " · 推荐使用" : ""}
+                              {e.source.kind === "shared"
+                                ? ` · v${e.source.version}`
+                                : e.source.sha256
+                                ? ` · ${e.source.sha256.slice(0, 8)}`
+                                : ""}
+                            </small>
+                          </span>
                         </span>
-                      </span>
-                      <span role="cell">{purposes[e.purpose]}</span>
-                      <span role="cell">{e.maintainer || "未登记"}</span>
-                      <span role="cell" className="team-library-location">
-                        {e.source.kind === "git"
-                          ? "仓库原件"
-                          : e.source.kind === "shared"
-                          ? "共享原件"
-                          : "本地文件"}
-                      </span>
-                    </button>
-                  ))}
-                  {!visible.length && (
-                    <Empty
-                      description="没有符合条件的资料"
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    />
-                  )}
-                </div>
+                        <span role="cell">{purposes[e.purpose]}</span>
+                        <span role="cell">{e.maintainer || "未登记"}</span>
+                        <span role="cell" className="team-library-location">
+                          {e.source.kind === "git"
+                            ? "仓库原件"
+                            : e.source.kind === "shared"
+                            ? "共享原件"
+                            : "本地文件"}
+                        </span>
+                      </button>
+                    ))}
+                    {!visible.length && (
+                      <Empty
+                        description="没有符合条件的资料"
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      />
+                    )}
+                  </div>
+                )}
                 <div className="team-library-agent">
                   <label htmlFor="team-library-question">查找资料并带入任务</label>
                   <Input.TextArea
@@ -726,7 +1014,7 @@ export function TeamLibraryWorkspace({
                   />
                 </div>
               </div>
-              {entry && (
+              {(entry || selectedFile) && (
                 <aside className="team-library-detail">
                   {entry ? (
                     <>
@@ -848,9 +1136,50 @@ export function TeamLibraryWorkspace({
                         <Button onClick={() => setEditing(entry)}>编辑说明</Button>
                       </div>
                     </>
-                  ) : (
-                    <Empty description="选择资料查看说明与版本" />
-                  )}
+                  ) : selectedFile ? (
+                    <>
+                      <div className="team-library-detail-title">
+                        <FileTextOutlined />
+                        <h2>{selectedName}</h2>
+                        <Button
+                          type="text"
+                          icon={<CloseOutlined />}
+                          aria-label="关闭资料详情"
+                          onClick={() => setNavigation({ ...nav, path: "" })}
+                        />
+                      </div>
+                      <p className="team-library-path">{selectedFile.path}</p>
+                      <div className="team-library-preview" aria-label="资料预览">
+                        {previewBusy ? (
+                          <Spin />
+                        ) : preview?.kind === "text" ? (
+                          <>
+                            {selectedName.toLowerCase().endsWith(".md") ? (
+                              <SafeMessageMarkdown text={preview.text} />
+                            ) : (
+                              <pre>{preview.text}</pre>
+                            )}
+                            {preview.truncated && (
+                              <small>预览已截断；正文请在原件中阅读。</small>
+                            )}
+                          </>
+                        ) : preview?.kind === "image" ? (
+                          <img src={preview.dataUrl} alt={selectedName} />
+                        ) : (
+                          <p>
+                            {preview?.kind === "file"
+                              ? `${preview.name} · ${(preview.size / 1024).toFixed(
+                                  1,
+                                )} KB，暂不支持此格式的内容预览。`
+                              : previewError}
+                          </p>
+                        )}
+                      </div>
+                      <small title={snapshot.revision}>
+                        版本 {snapshot.revision.slice(0, 8)}
+                      </small>
+                    </>
+                  ) : null}
                 </aside>
               )}
             </div>

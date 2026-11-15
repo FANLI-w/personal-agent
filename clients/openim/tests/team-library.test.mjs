@@ -124,13 +124,79 @@ test("a malformed manifest does not replace the last successful snapshot", async
 
 test('Windows Git reads and writes objects beyond MAX_PATH in account-scoped caches', { skip: process.platform !== 'win32' }, async t => {
   const fixture = await libraryFixture(t);
-  const folder = path.join(fixture.root, 'a'.repeat(206 - fixture.root.length - 13), 'objects.git');
+  const folder = path.join(fixture.root, 'a'.repeat(238 - fixture.root.length - 13), 'objects.git');
   await fs.mkdir(path.dirname(folder), { recursive: true });
   const run = gitRunner(folder);
   await run(['init', '--bare', folder]);
   const pack = fixture.git(['pack-objects', '--all', '--stdout']);
   await run(['index-pack', '--stdin', '--promisor'], { input: pack });
+  const revision = fixture.git(['rev-parse', 'HEAD']).toString().trim();
+  const tree = await run(['ls-tree', '-z', revision, '--', ':(literal)acceptcat-library.json']);
+  assert.match(tree.toString(), /acceptcat-library\.json\0$/);
   const sidecar = (await fs.readdir(path.join(folder, 'objects', 'pack'))).find(name => name.endsWith('.promisor'));
   assert.ok(sidecar);
   assert.ok(path.join(folder, 'objects', 'pack', sidecar).length > 260);
+});
+
+test('a true Git tree includes unregistered nested files after commit/push without changing the manifest', async t => {
+ const f=await libraryFixture(t),before=await f.store.sync();
+ await fs.mkdir(path.join(f.work,'nested/子目录'),{recursive:true});
+ await fs.mkdir(path.join(f.work,'.github'),{recursive:true});
+ await fs.writeFile(path.join(f.work,'nested/子目录/新文件.md'),'# 未登记的新文件\n公开示例。\n');
+ await fs.writeFile(path.join(f.work,'.github/notes.md'),'hidden directory text');
+ await fs.writeFile(path.join(f.work,'nested/[draft].txt'),'literal pathspec');
+ f.git(['add','.']);
+ const blob=f.git(['hash-object','-w','--stdin'],{input:Buffer.from('nested/子目录/新文件.md')}).toString().trim();
+ f.git(['update-index','--add','--cacheinfo',`120000,${blob},linked.md`]);
+ f.git(['update-index','--add','--cacheinfo',`160000,${before.revision},vendor`]);
+ f.git(['commit','-m','Synthetic unregistered files']);f.git(['push',f.remote,'main']);
+ const snapshot=await f.store.sync();
+ assert.deepEqual(snapshot.manifest,before.manifest);
+ for(const item of [
+  {path:'nested',kind:'folder'},{path:'nested/子目录',kind:'folder'},
+  {path:'nested/子目录/新文件.md',kind:'file'},{path:'.github/notes.md',kind:'file'},
+  {path:'linked.md',kind:'symlink'},{path:'vendor',kind:'submodule'},
+ ]) assert(snapshot.tree.some(value=>value.path===item.path&&value.kind===item.kind),JSON.stringify(item));
+ assert.equal((await f.store.readPath({revision:snapshot.revision,path:'nested/子目录/新文件.md'})).bytes.toString(),'# 未登记的新文件\n公开示例。\n');
+ assert.equal((await f.store.readPath({revision:snapshot.revision,path:'nested/[draft].txt'})).bytes.toString(),'literal pathspec');
+ assert.equal((await f.store.readPath({revision:snapshot.revision,path:'.github/notes.md'})).bytes.toString(),'hidden directory text');
+ for(const name of ['nested','linked.md','vendor','not-found.txt']) await assert.rejects(f.store.readPath({revision:snapshot.revision,path:name}),/不是普通文件/);
+ await assert.rejects(f.store.readPath({revision:before.revision,path:'nested/子目录/新文件.md'}),/版本已变化/);
+ for(const name of ['../secret','a/../secret','/absolute','C:/secret','a\\secret','.git/config','a/.GIT/config','NUL.txt','a/.','a/..','a//b','x\u0000.md'])
+  await assert.rejects(f.store.readPath({revision:snapshot.revision,path:name}),/路径无效/,name);
+ assert(!f.commands.some(args=>['checkout','submodule'].includes(args[0])));
+});
+
+test('tree survives an offline reopen and old cache snapshots upgrade from local Git objects', async t=>{
+ const f=await libraryFixture(t),snapshot=await f.store.sync(),file=path.join(f.store.directory,'snapshot.json');
+ f.offline(true);
+ assert.deepEqual((await f.store.cached()).tree,snapshot.tree);
+ f.offline(false);
+ const old=JSON.parse(await fs.readFile(file,'utf8'));delete old.tree;await fs.writeFile(file,JSON.stringify(old));
+ const count=f.commands.length,upgraded=await f.store.cached();
+ assert.deepEqual(upgraded.tree,snapshot.tree);
+ assert.equal(JSON.stringify(JSON.parse(await fs.readFile(file,'utf8')).tree),JSON.stringify(snapshot.tree));
+ assert(f.commands.slice(count).every(args=>args[0]==='ls-tree'));
+ f.offline(true);assert.deepEqual((await f.store.cached()).tree,snapshot.tree);
+});
+
+test('plain repositories sync without fabricating registered entries and preserve old binding identity',async t=>{
+ const f=await libraryFixture(t);await fs.rm(path.join(f.work,'acceptcat-library.json'));
+ f.git(['add','-A']);f.git(['commit','-m','Synthetic plain repository']);f.git(['push',f.remote,'main']);
+ const snapshot=await f.store.sync();
+ assert.equal(snapshot.manifest.workspaceId,f.binding.workspaceId);
+ assert.equal(snapshot.manifest.projects.length,0);assert.equal(snapshot.manifest.entries.length,0);
+ assert(snapshot.tree.some(item=>item.path===f.entry.source.path&&item.kind==='file'));
+ assert.equal((await f.store.readPath({revision:snapshot.revision,path:f.entry.source.path})).bytes.toString(),f.text);
+});
+
+test('path browsing rejects LFS pointers and files above the Git byte limit',async t=>{
+ const f=await libraryFixture(t);
+ await fs.writeFile(path.join(f.work,'pointer.txt'),'version https://git-lfs.github.com/spec/v1\noid sha256:'+ '0'.repeat(64)+'\nsize 1\n');
+ await fs.writeFile(path.join(f.work,'large.txt'),Buffer.alloc(20*1024*1024+1,65));
+ f.git(['add','.']);f.git(['commit','-m','Synthetic guarded files']);f.git(['push',f.remote,'main']);
+ const snapshot=await f.store.sync();
+ await assert.rejects(f.store.readPath({revision:snapshot.revision,path:'pointer.txt'}),/LFS/);
+ const native=new TeamLibraryStore(path.join(f.root,'cache'),f.binding);
+ await assert.rejects(native.readPath({revision:snapshot.revision,path:'large.txt'}),/共享原件服务/);
 });

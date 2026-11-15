@@ -183,6 +183,7 @@ const Api: IElectronAPI = {
     sync: () => ipcRenderer.invoke('team-library-sync'),
     cached: () => ipcRenderer.invoke('team-library-cached'),
     preview: selected => ipcRenderer.invoke('team-library-preview', selected),
+    previewPath: selected => ipcRenderer.invoke('team-library-preview-path', selected),
     open: selected => ipcRenderer.invoke('team-library-open', selected),
     propose: (revision, entry, text, fileBytes) => ipcRenderer.invoke('team-library-propose', revision, entry, text, fileBytes),
     changes: () => ipcRenderer.invoke('team-library-changes'),

@@ -8,7 +8,7 @@ import { desktopSessionCookie } from "../utils/desktopServer";
 import { getResearchServiceStatus } from "./windowManage";
 import { TeamLibraryStore, gitRunner, discoverRepository } from "../utils/teamLibrary";
 import type { TeamLibraryEntry } from "@research-agent-platform/contracts";
-import type { TeamLibrarySelection } from "../../src/types/teamLibrary";
+import type { TeamLibrarySelection, TeamLibraryPathSelection, TeamLibraryPreview } from "../../src/types/teamLibrary";
 
 const stores = new Map<string, TeamLibraryStore>();
 /** Account, team and repository are resolved from the current server session, never IPC ids. */
@@ -129,6 +129,20 @@ export async function teamLibraryContext(event: IpcMainInvokeEvent) {
   };
 }
 const operations = new Map<string, Promise<unknown>>();
+function previewBytes(bytes: Buffer, filename: string, name: string): TeamLibraryPreview {
+  const ext = path.extname(filename).toLowerCase();
+  if ([".md", ".txt", ".json", ".csv", ".bib", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".r", ".tex", ".yml", ".yaml", ".toml", ".xml", ".html", ".css", ".scss", ".sh", ".sql", ".gitignore"].includes(ext) ||
+    /^(readme|license|notice|\.gitignore|\.gitattributes)$/i.test(path.basename(filename))) {
+    const text = bytes.toString("utf8");
+    if (!text.includes("\0") && Buffer.from(text, "utf8").equals(bytes))
+      return { kind: "text", text: text.slice(0, 200000), truncated: text.length > 200000 };
+  }
+  const type: Record<string, string> = {
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
+  };
+  if (type[ext]) return { kind: "image", dataUrl: `data:${type[ext]};base64,${bytes.toString("base64")}` };
+  return { kind: "file", name, size: bytes.length };
+}
 async function inContext<T>(
   event: IpcMainInvokeEvent,
   action: (c: Awaited<ReturnType<typeof teamLibraryContext>>) => Promise<T>,
@@ -201,30 +215,14 @@ export function registerTeamLibraryBridge(discover = discoverRepository) {
   );
   ipcMain.handle("team-library-preview", (e, s: TeamLibrarySelection) =>
     inContext(e, async (c) => {
-      const { entry, bytes } = await c.store.read(s),
-        ext = path
-          .extname(entry.source.kind === "git" ? entry.source.path : "")
-          .toLowerCase();
-      if ([".md", ".txt", ".json", ".csv", ".bib"].includes(ext)) {
-        const text = bytes.toString("utf8");
-        return {
-          kind: "text",
-          text: text.slice(0, 200000),
-          truncated: text.length > 200000,
-        };
-      }
-      const type: Record<string, string> = {
-        ".png": "image/png",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".webp": "image/webp",
-      };
-      if (type[ext])
-        return {
-          kind: "image",
-          dataUrl: `data:${type[ext]};base64,${bytes.toString("base64")}`,
-        };
-      return { kind: "file", name: entry.name, size: bytes.length };
+      const { entry, bytes } = await c.store.read(s);
+      return previewBytes(bytes, entry.source.kind === "git" ? entry.source.path : "", entry.name);
+    }),
+  );
+  ipcMain.handle("team-library-preview-path", (e, s: TeamLibraryPathSelection) =>
+    inContext(e, async (c) => {
+      const { bytes, name } = await c.store.readPath(s);
+      return previewBytes(bytes, s.path, name);
     }),
   );
   ipcMain.handle("team-library-open", (e, s: TeamLibrarySelection) =>

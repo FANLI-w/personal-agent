@@ -13,6 +13,8 @@ const schemas =
 import type {
   TeamLibrarySnapshot,
   TeamLibraryProposal,
+  TeamLibraryTreeEntry,
+  TeamLibraryPathSelection,
 } from "../../src/types/teamLibrary";
 
 export type GitRun = (
@@ -23,6 +25,63 @@ const digest = (bytes: Buffer | string) =>
   createHash("sha256").update(bytes).digest("hex");
 const manifestPath = "acceptcat-library.json";
 export const gitLibraryLimit = 20 * 1024 * 1024;
+
+class MissingManifest extends Error {}
+
+// Browsing permits ordinary dotfiles, while still rejecting traversal, Git internals,
+// platform aliases and ambiguous pathspecs. Paths are never checked out on disk.
+function repositoryPath(value: unknown): asserts value is string {
+  if (
+    typeof value !== "string" || !value || value.length > 4096 ||
+    /[\\:\x00-\x1f\x7f<>"|?*]/.test(value) || value.startsWith("/") ||
+    !value.split("/").every(part => part && part !== "." && part !== ".." &&
+      part.toLowerCase() !== ".git" && !/[. ]$/.test(part) &&
+      !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(part))
+  ) throw Error("仓库文件路径无效。");
+}
+
+function fallbackManifest(url: string, workspaceId?: string): TeamLibraryManifest {
+  const normalized = repositoryUrl(url);
+  return schemas.TeamLibraryManifest.parse({
+    format: 1,
+    workspaceId: workspaceId ?? "repo_" + digest(normalized.toLowerCase()).slice(0, 32),
+    title: new URL(normalized).pathname.split("/").pop()!.replace(/\.git$/i, "").slice(0, 100),
+    projects: [],
+    entries: [],
+  });
+}
+
+async function repositoryTree(run: GitRun, revision: string): Promise<TeamLibraryTreeEntry[]> {
+  if (!/^[a-f0-9]{40}$/.test(revision)) throw Error("资料版本无效。");
+  const bytes = await run(["ls-tree", "-r", "-t", "-z", "--full-tree", revision]);
+  const raw = bytes.toString("utf8");
+  if (!Buffer.from(raw, "utf8").equals(bytes))
+    throw Error("仓库包含无法显示的文件名，请维护者使用 UTF-8 文件名。");
+  return raw.split("\0").filter(Boolean).map(record => {
+    const match = /^(040000|100644|100755|120000|160000) (tree|blob|commit) [a-f0-9]{40}\t([\s\S]+)$/.exec(record);
+    if (!match) throw Error("仓库文件树格式无效。");
+    const kinds: Record<string, TeamLibraryTreeEntry["kind"]> = {
+      "040000": "folder", "100644": "file", "100755": "file",
+      "120000": "symlink", "160000": "submodule",
+    };
+    return { path: match[3], kind: kinds[match[1]] };
+  });
+}
+
+async function repositoryManifest(run: GitRun, revision: string, url: string, workspaceId?: string) {
+  let bytes: Buffer;
+  try {
+    bytes = await readObject(run, revision, manifestPath, 1024 * 1024);
+  } catch (error) {
+    if (error instanceof MissingManifest) return fallbackManifest(url, workspaceId);
+    throw error;
+  }
+  try {
+    return schemas.TeamLibraryManifest.parse(JSON.parse(bytes.toString("utf8")));
+  } catch {
+    throw Error("仓库资料清单格式不正确，请由仓库维护者检查 acceptcat-library.json；原配置与上次成功同步的资料未更改。");
+  }
+}
 
 export function repositoryUrl(input: unknown): string {
   if (typeof input !== "string") throw Error("请粘贴 GitHub 仓库地址。");
@@ -39,11 +98,13 @@ async function readObject(
   maxBytes: number,
 ) {
   if (!/^[a-f0-9]{40}$/.test(revision)) throw Error("资料版本无效。");
-  schemas.TeamLibraryPath.parse(relative);
+  repositoryPath(relative);
   const mode = (
-    await run(["ls-tree", "-z", revision, "--", relative], { maxBytes: 2048 })
+    await run(["ls-tree", "-z", revision, "--", `:(literal)${relative}`], { maxBytes: 8192 })
   ).toString();
-  if (!mode.startsWith("100644 blob ") && !mode.startsWith("100755 blob "))
+  if (!mode && relative === manifestPath) throw new MissingManifest();
+  if (!new RegExp("^100(?:644|755) blob [a-f0-9]{40}\\t").test(mode) ||
+    mode.slice(mode.indexOf("\t") + 1) !== relative + "\0")
     throw Error(
       relative === manifestPath
         ? "仓库可以访问，但缺少有效的 acceptcat-library.json 资料清单；请由仓库维护者初始化后重试。"
@@ -95,15 +156,7 @@ export async function discoverRepository(
     const revision = (await run(["rev-parse", "FETCH_HEAD^{commit}"]))
       .toString()
       .trim();
-    let manifest: TeamLibraryManifest;
-    const bytes = await readObject(run, revision, manifestPath, 1024 * 1024);
-    try {
-      manifest = schemas.TeamLibraryManifest.parse(JSON.parse(bytes.toString("utf8")));
-    } catch {
-      throw Error(
-        "仓库资料清单格式不正确，请由仓库维护者检查 acceptcat-library.json；原配置未更改。",
-      );
-    }
+    const manifest = await repositoryManifest(run, revision, url, previous?.workspaceId);
     if (previous && previous.workspaceId !== manifest.workspaceId)
       throw Error(
         "新仓库的资料空间与当前团队不一致。迁移时请保留原资料清单中的 workspaceId；原配置未更改。",
@@ -186,7 +239,11 @@ export function gitRunner(directory: string): GitRun {
           "protocol.ext.allow=never",
           "-c",
           "gc.auto=0",
-          "--git-dir=" + directory,
+          // Git also limits the length of its explicit git-dir argument independently
+          // of core.longpaths. Resolve the owned bare repository from its parent.
+          "-C",
+          path.dirname(directory),
+          "--git-dir=" + path.basename(directory),
           ...args,
         ],
         { env, windowsHide: true, shell: false, stdio: ["pipe", "pipe", "pipe"] },
@@ -288,6 +345,11 @@ export class TeamLibraryStore {
       );
     return bytes;
   }
+  private async saveSnapshot(snapshot: TeamLibrarySnapshot) {
+    const temporary = path.join(this.directory, `snapshot-${randomUUID()}.tmp`);
+    await fs.writeFile(temporary, JSON.stringify(snapshot));
+    await fs.rename(temporary, path.join(this.directory, "snapshot.json"));
+  }
   async cached(): Promise<TeamLibrarySnapshot | null> {
     try {
       const value = JSON.parse(
@@ -300,12 +362,25 @@ export class TeamLibraryStore {
         typeof value.syncedAt !== "string"
       )
         return null;
-      return {
+      const snapshot: TeamLibrarySnapshot = {
         binding: this.binding,
         revision: value.revision,
         syncedAt: value.syncedAt,
         manifest,
       };
+      if (Array.isArray(value.tree) && value.tree.every((item: any) =>
+        item && typeof item.path === "string" &&
+        ["file", "folder", "symlink", "submodule"].includes(item.kind))) {
+        snapshot.tree = value.tree.map((item: TeamLibraryTreeEntry) => ({ path: item.path, kind: item.kind }));
+      } else {
+        // Older snapshots already contain this revision's Git objects. Upgrade in
+        // place without fetching or discarding a useful offline manifest cache.
+        try {
+          snapshot.tree = await repositoryTree(this.run, snapshot.revision);
+          await this.saveSnapshot(snapshot);
+        } catch { /* Keep the old snapshot available when its objects are unavailable. */ }
+      }
+      return snapshot;
     } catch {
       return null;
     }
@@ -327,30 +402,29 @@ export class TeamLibraryStore {
       )
         .toString()
         .trim();
-      const bytes = await this.object(revision, manifestPath, 1024 * 1024);
-      let manifest: TeamLibraryManifest;
-      try {
-        manifest = schemas.TeamLibraryManifest.parse(
-          JSON.parse(bytes.toString("utf8")),
-        );
-      } catch {
-        throw Error(
-          "仓库资料清单格式不正确。请让维护者检查 acceptcat-library.json 后重新同步；已保留上次成功同步的资料。",
-        );
-      }
+      const manifest = await repositoryManifest(this.run, revision, this.binding.url, this.binding.workspaceId);
       if (manifest.workspaceId !== this.binding.workspaceId)
         throw Error("仓库资料空间ID不匹配；保留旧版本，请核对绑定。");
+      const tree = await repositoryTree(this.run, revision);
       const snapshot = {
         binding: this.binding,
         revision,
         manifest,
+        tree,
         syncedAt: new Date().toISOString(),
       };
-      const temporary = path.join(this.directory, `snapshot-${randomUUID()}.tmp`);
-      await fs.writeFile(temporary, JSON.stringify(snapshot));
-      await fs.rename(temporary, path.join(this.directory, "snapshot.json"));
+      await this.saveSnapshot(snapshot);
       return snapshot;
     });
+  }
+  async readPath(selected: TeamLibraryPathSelection) {
+    if (!selected || typeof selected !== "object") throw Error("仓库文件选择无效。");
+    repositoryPath(selected.path);
+    const snapshot = await this.cached();
+    if (!snapshot || snapshot.revision !== selected.revision)
+      throw Error("资料版本已变化，请刷新后重新选择；原任务中的副本保持。");
+    const bytes = await this.object(selected.revision, selected.path);
+    return { bytes, name: path.posix.basename(selected.path) };
   }
   async entry(selected: {
     revision: string;
@@ -492,7 +566,7 @@ export class TeamLibraryStore {
             throw Error("此文件路径已被其他条目使用。");
           if (
             !old &&
-            (await this.run(["ls-tree", "-z", revision, "--", entry.source.path]))
+            (await this.run(["ls-tree", "-z", revision, "--", `:(literal)${entry.source.path}`]))
               .length
           )
             throw Error("此路径已有文件，请登记已有原件或换一个名称。");
