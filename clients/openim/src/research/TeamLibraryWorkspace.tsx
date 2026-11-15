@@ -218,7 +218,8 @@ export function TeamLibraryWorkspace({
           path: "",
           entryId: "",
         };
-  const setSelected = (entryId: string) => setNavigation({ ...nav, entryId });
+  const setSelected = (entryId: string) =>
+    setNavigation({ ...nav, entryId, path: entryId ? nav.path : "" });
   const tree = snapshot?.tree;
   const treeRows = tree
     ?.filter((item) => {

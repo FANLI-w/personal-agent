@@ -300,6 +300,9 @@ test("registered tree files keep task actions and secondary catalog keeps non-Gi
   await f.click("nested.md文件");
   assert.deepEqual(f.previews, [{ revision: "a".repeat(40), entryId: "registered" }]);
   assert(textOf(f.tree).includes("用于任务"));
+  await nodes(f.tree).find((n) => n.props?.["aria-label"] === "关闭资料详情").props.onClick();
+  await f.settle();
+  assert(!nodes(f.tree).some((n) => n.props?.className === "team-library-detail"));
   await f.click("资料目录");
   assert(f.rows().some((n) => textOf(n).includes("shared.md")));
   await f
