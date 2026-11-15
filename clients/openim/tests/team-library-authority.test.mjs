@@ -5,7 +5,6 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
-import {spawn} from 'node:child_process';
 import {EventEmitter} from 'node:events';
 import {fileURLToPath} from 'node:url';
 import {libraryRuntime,libraryFixture} from './helpers/team-library.mjs';
@@ -25,18 +24,7 @@ async function fixture(t){
      res.emit('data',Buffer.from(JSON.stringify({data})));res.emit('end');
    });return req;
  }}};
- const syntheticGit = (...args) => {
-   const proc = spawn(...args);
-   if (args[0] === 'git') {
-     let diagnostic = '';
-     proc.stderr.on('data', chunk => { diagnostic += chunk.toString(); });
-     proc.on('close', status => {
-       if (status) t.diagnostic('Fixture Git ' + args[1].slice(args[1].findIndex(s=>s.startsWith('--git-dir='))+1, -1).join(' ') + ' failed: ' + diagnostic.replace(/https?:\/\/\S+/g, '[url]').slice(0,500));
-     });
-   }
-   return proc;
- };
- const module={exports:{}};vm.runInNewContext(code,{module,exports:module.exports,require:n=>n==='node:child_process'?{...require(n),spawn:syntheticGit}:n==='electron'?electron:n.endsWith('/localDshRuntime')?libraryRuntime:require(n),process,Buffer,URL,setTimeout,clearTimeout});module.exports.registerTeamLibraryBridge((...args)=>discovery(...args));
+ const module={exports:{}};vm.runInNewContext(code,{module,exports:module.exports,require:n=>n==='electron'?electron:n.endsWith('/localDshRuntime')?libraryRuntime:require(n),process,Buffer,URL,setTimeout,clearTimeout});module.exports.registerTeamLibraryBridge((...args)=>discovery(...args));
  return {event,binding,context:()=>module.exports.teamLibraryContext(event),previewPath:s=>handlers.get('team-library-preview-path')(event,s),call:()=>handlers.get('team-library-cached')(event),discover:()=>handlers.get('team-library-discover')(event,'https://github.com/synthetic/files'),expire:()=>token='',during:fn=>during=fn,manager:()=>canConfigure=true,discoverWith:fn=>discovery=fn};
 }
 test('the native bridge refuses unverified/foreign sessions without opening another account cache',async t=>{

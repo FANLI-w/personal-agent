@@ -239,7 +239,11 @@ export function gitRunner(directory: string): GitRun {
           "protocol.ext.allow=never",
           "-c",
           "gc.auto=0",
-          "--git-dir=" + directory,
+          // Git also limits the length of its explicit git-dir argument independently
+          // of core.longpaths. Resolve the owned bare repository from its parent.
+          "-C",
+          path.dirname(directory),
+          "--git-dir=" + path.basename(directory),
           ...args,
         ],
         { env, windowsHide: true, shell: false, stdio: ["pipe", "pipe", "pipe"] },
