@@ -478,3 +478,18 @@
     }
   }
 }
+
+.habit-preferences {
+  margin: 5px 0;
+  padding-left: 20px;
+  list-style: disc;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  li + li {
+    margin-top: 5px;
+  }
+  li[hidden] {
+    display: none;
+  }
+}

@@ -70,7 +70,7 @@
 .chat-search-locate > div { display: flex; justify-content: space-between; gap: 10px; }
 .chat-search-preview { color: #2456a6; padding: 4px; font-size: 12px; }
 .chat-system-notice { color: #697176; font-size: 12px; }
-.chat-system-notice > summary { cursor: pointer; max-width: 480px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-system-notice > summary { cursor: pointer; max-width: 480px; overflow-wrap: anywhere; }
 .chat-system-notice[open] > summary { margin-bottom: 8px; }
 .desktop-chat-drawer .ant-drawer-content, .desktop-chat-drawer .ant-drawer-header, .desktop-chat-drawer button { -webkit-app-region: no-drag; }
 body:has(.personal-agent-desktop) .desktop-chat-drawer { top: 36px; }

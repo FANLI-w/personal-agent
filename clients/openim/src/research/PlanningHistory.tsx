@@ -88,7 +88,7 @@ export function PlanningHistory({
       <header className="record-page-heading">
         <div>
           <h2 className="sr-only">计划记录</h2>
-          <p>找到之前讨论的草案，继续完善；已建立的任务可直接查看。</p>
+          <p>接着之前的讨论完善计划，或查看已建立的任务。</p>
         </div>
         <div className="record-page-actions">
           <Button icon={<HistoryOutlined />} onClick={() => setShowRequests(true)}>
@@ -104,17 +104,6 @@ export function PlanningHistory({
       </header>
       <RecordWorkspace
         label="计划列表与详情"
-        footer={
-          plan && (
-            <Button
-              type="primary"
-              icon={<CommentOutlined />}
-              onClick={() => open({ plan: plan.id })}
-            >
-              {plan.status === "confirmed" ? "查看方案与对话" : "继续讨论"}
-            </Button>
-          )
-        }
         list={
           <>
             <div className="record-list-tools">
@@ -130,7 +119,7 @@ export function PlanningHistory({
                   aria-label="计划分类"
                   value={status}
                   options={[
-                    { label: "草案", value: "draft" },
+                    { label: "待完善", value: "draft" },
                     { label: "已建立任务", value: "confirmed" },
                   ]}
                   onChange={(value) => {
@@ -170,10 +159,7 @@ export function PlanningHistory({
                 onClick={() => setSelection(p.id)}
               >
                 <div>
-                  <strong>{p.goal}</strong>
-                  <span className={`record-status is-${p.status}`}>
-                    {p.status === "confirmed" ? "已建立任务" : "草案"}
-                  </span>
+                  <strong>{personalTaskTitle(p.goal)}</strong>
                 </div>
                 <small>
                   创建于 {new Date(p.createdAt).toLocaleDateString("zh-CN")} · v{p.version}
@@ -186,7 +172,7 @@ export function PlanningHistory({
                   {search
                     ? "没有符合条件的计划"
                     : status === "draft"
-                    ? "还没有保存的草案"
+                    ? "还没有待完善的计划"
                     : "还没有已建立任务的计划"}
                 </h3>
                 <p>
@@ -257,28 +243,23 @@ export function PlanningHistory({
                     ? "待补充"
                     : "草案"}
                 </span>
-                <h2>{personalTaskTitle(plan.goal)}</h2>
+                <h2 className="sr-only">计划内容</h2>
                 <p>
                   创建于 {new Date(plan.createdAt).toLocaleString("zh-CN")} · v
                   {plan.version}
                 </p>
               </div>
+              <Button
+                type="primary"
+                icon={<CommentOutlined />}
+                onClick={() => open({ plan: plan.id })}
+              >
+                {plan.status === "confirmed" ? "查看方案与对话" : "继续规划"}
+              </Button>
             </header>
-            {plan.goal !== personalTaskTitle(plan.goal) && (
-              <section className="record-detail-section">
-                <h3>目标</h3>
-                <p className="record-content">{plan.goal}</p>
-              </section>
-            )}
-            {plan.outcome && (
-              <section className="record-detail-section">
-                <h3>预期成果</h3>
-                <p className="record-content">{plan.outcome}</p>
-              </section>
-            )}
             {plan.unresolvedQuestions.length > 0 && (
               <div className="record-questions">
-                <h3>待明确</h3>
+                <h3>下一步：补充这些问题</h3>
                 {plan.unresolvedQuestions.map((q, i) => (
                   <p className="record-content" key={i}>
                     {typeof q === "string" ? q : q.question}
@@ -287,7 +268,17 @@ export function PlanningHistory({
               </div>
             )}
             <section className="record-detail-section">
-              <h3>{plan.status === "confirmed" ? "任务安排" : "计划步骤（草案）"}</h3>
+              <h3>目标</h3>
+              <p className="record-content">{plan.goal}</p>
+            </section>
+            {plan.outcome && (
+              <section className="record-detail-section">
+                <h3>预期成果</h3>
+                <p className="record-content">{plan.outcome}</p>
+              </section>
+            )}
+            <section className="record-detail-section">
+              <h3>{plan.status === "confirmed" ? "任务安排" : "计划步骤"}</h3>
               {plan.proposedItems.length ? (
                 <ol className="record-steps">
                   {plan.proposedItems.map((item) => (

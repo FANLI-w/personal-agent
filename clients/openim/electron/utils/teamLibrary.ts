@@ -178,6 +178,8 @@ export function gitRunner(directory: string): GitRun {
           "core.hooksPath=" + path.join(directory, "disabled-hooks"),
           "-c",
           "core.fsmonitor=false",
+          // Account and binding cache names can take pack sidecars beyond MAX_PATH.
+          ...(process.platform === "win32" ? ["-c", "core.longpaths=true"] : []),
           "-c",
           "protocol.file.allow=never",
           "-c",

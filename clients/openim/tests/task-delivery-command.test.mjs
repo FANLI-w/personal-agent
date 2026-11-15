@@ -96,8 +96,8 @@ test("personal tasks with local outputs expose only the exact text submission", 
   assert.equal(button(tree, "让助理帮我交"), undefined);
   nodes(tree).find(node => node.type === "TextArea").props.onChange({ target: { value: "  Exact personal result\nwith evidence.  " } });
   tree = host.render();
-  assert.equal(button(tree, "提交成果").props.disabled, false);
-  button(tree, "提交成果").props.onClick();
+  assert.equal(button(tree, "提交文字成果").props.disabled, false);
+  button(tree, "提交文字成果").props.onClick();
   await settle();
   assert.deepEqual(calls, [[[], "Exact personal result\nwith evidence."]]);
   assert.equal(nodes(host.render()).find(node => node.type === "TextArea").props.value, "");

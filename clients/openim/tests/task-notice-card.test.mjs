@@ -26,7 +26,7 @@ async function load(file) {
   return module.exports;
 }
 
-const { isTaskNotice, splitTaskResources, taskStatusLabel, legacyTaskInvitation } =
+const { isTaskNotice, splitTaskResources, taskStatusLabel, legacyTaskInvitation, serviceNoticePreview } =
   await load("../src/research/task-notice.ts");
 
 const task = (id, version = 1) => ({ kind: "task", ref: { id, version } });
@@ -98,6 +98,15 @@ test("an older text-only invitation is still recognised as one", () => {
   assert.equal(legacyTaskInvitation("吴繁理需要你帮忙：核对实验条件。"), undefined);
   assert.equal(legacyTaskInvitation(""), undefined);
   assert.equal(legacyTaskInvitation(null), undefined);
+});
+
+test("folded notices distinguish requests that share the same sender header", () => {
+  assert.equal(serviceNoticePreview("合成成员需要你帮忙：\n\n核对实验条件。"), "核对实验条件。");
+  assert.equal(serviceNoticePreview("合成成员需要你帮忙：\r\n整理评审问题。"), "整理评审问题。");
+  assert.equal(serviceNoticePreview("协作更新：\n任务「实验条件核对」有了新的说明。"), "实验条件核对");
+  assert.equal(serviceNoticePreview("同步已取消。\n详细原因保留在正文。"), "同步已取消。");
+  assert.equal(serviceNoticePreview("合成成员需要你帮忙："), "合成成员需要你帮忙：");
+  assert.equal(serviceNoticePreview("  \n  "), "系统通知");
 });
 
 test("the message renderer shows the card instead of a duplicated sentence", async () => {

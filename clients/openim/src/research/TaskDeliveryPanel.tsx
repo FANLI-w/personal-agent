@@ -6,6 +6,7 @@ import {
 import { Alert, Button, Input } from "antd";
 import { useRef, useState } from "react";
 import type { TaskTarget } from "../../../../integrations/deepseek-harness/desktop/task-workspace";
+import { taskDeliveryAction, taskDeliveryMode } from "./task-delivery-mode";
 
 import {
   deliveryFilename as filename,
@@ -37,6 +38,7 @@ export function TaskDeliveryPanel({
   currentStatus?: string;
   canSubmit?: boolean;
 }) {
+  const filesAllowed = taskDeliveryMode(target.kind) === "files";
   const [over, setOver] = useState(false),
     [assistant, setAssistant] = useState(false);
   const [text, setText] = useState(""),
@@ -62,7 +64,7 @@ export function TaskDeliveryPanel({
     }
   };
   const choose = async (paths?: string[]) => {
-    if (target.kind !== "research") return;
+    if (!filesAllowed) return;
     await run(async () => {
       setBusyLabel("正在准备文件…");
       const names = await stage(paths);
@@ -73,7 +75,7 @@ export function TaskDeliveryPanel({
     });
   };
   const prepare = () => {
-    if (target.kind !== "research" || disabled || busy || !canSubmit) return;
+    if (!filesAllowed || disabled || busy || !canSubmit) return;
     const result = prepareTaskDelivery(
       text,
       title,
@@ -84,7 +86,7 @@ export function TaskDeliveryPanel({
     setQuestion(result.question);
   };
   return (
-    <section className="task-delivery" aria-label="提交文件">
+    <section className="task-delivery" aria-label={taskDeliveryAction(target.kind)}>
       {pending && (
         <Alert
           type="warning"
@@ -119,12 +121,12 @@ export function TaskDeliveryPanel({
         <div>
           <h3>交付成果</h3>
           <p>
-            {target.kind === "personal"
+            {!filesAllowed
               ? "本任务支持文字成果"
               : "文件会提交到这项任务，负责人可直接下载"}
           </p>
         </div>
-        {target.kind === "research" && canSubmit && (
+        {filesAllowed && canSubmit && (
           <Button
             icon={<MessageOutlined />}
             disabled={disabled || busy}
@@ -135,7 +137,7 @@ export function TaskDeliveryPanel({
           </Button>
         )}
       </div>
-      {target.kind === "personal" && (!submitted || canSubmit) && (
+      {!filesAllowed && (!submitted || canSubmit) && (
         <div className="task-delivery-text">
           <Input.TextArea
             aria-label="提交文字成果"
@@ -157,11 +159,11 @@ export function TaskDeliveryPanel({
               })
             }
           >
-            提交成果
+            {taskDeliveryAction(target.kind)}
           </Button>
         </div>
       )}
-      {target.kind === "research" && canSubmit && (
+      {filesAllowed && canSubmit && (
         <div
           className={"task-delivery-drop" + (over ? " is-over" : "")}
           onDragOver={(event) => {
@@ -197,7 +199,7 @@ export function TaskDeliveryPanel({
           </Button>
         </div>
       )}
-      {target.kind === "research" && canSubmit && outputs.length > 0 && (
+      {filesAllowed && canSubmit && outputs.length > 0 && (
         <details className="task-delivery-output-options">
           <summary>从工作文件夹选择（{outputs.length}）</summary>
           {outputs.map((file) => (

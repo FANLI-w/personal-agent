@@ -1,4 +1,5 @@
 import type { ResponseFor, WorkbenchCard } from "@research-agent-platform/contracts";
+import { taskDeliveryAction } from "./task-delivery-mode";
 
 type Cards = ResponseFor<"workbench">;
 type Mine = Pick<ResponseFor<"researchWorkspace">, "data"> & { truncated: boolean };
@@ -57,7 +58,7 @@ export function workbenchNextAction(card: WorkbenchCard): string {
   if (actions.includes("activate")) return "确认并发出任务";
   if (actions.includes("claim")) return "认领任务";
   if (actions.includes("start")) return "开始任务";
-  if (actions.includes("submit")) return "提交文件或阶段成果";
+  if (actions.includes("submit")) return taskDeliveryAction(card.source === "research_task" ? "research" : "personal");
   if (card.source === "research_task" && !card.summaryOnly) return "查看进展，等待成员交付";
   return card.progress.label || "查看任务";
 }

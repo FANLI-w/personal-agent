@@ -456,7 +456,7 @@ export function DesktopWorkbench() {
                     partial = !!read.data?.truncated,
                     groups = [
                       { key: "awaiting_me", label: "需要你动手" },
-                      { key: "ongoing", label: "进行中" },
+                      { key: "ongoing", label: "未完成" },
                       { key: "scheduled", label: "定时安排" },
                       { key: "completed", label: "已完成" },
                     ]

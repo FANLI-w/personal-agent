@@ -10,10 +10,12 @@ const message = (error: unknown) =>
 
 export function RepositoryEditor({
   current,
+  readOnly = false,
   onClose,
   onSaved,
 }: {
   current?: RepositoryStatus;
+  readOnly?: boolean;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -24,7 +26,7 @@ export function RepositoryEditor({
     key = useRef(crypto.randomUUID()),
     submitting = useRef(false);
   const save = async () => {
-    if (submitting.current || !url.trim()) return;
+    if (readOnly || submitting.current || !url.trim()) return;
     submitting.current = true;
     const ticket = operation.capture();
     setBusy(true);
@@ -56,18 +58,26 @@ export function RepositoryEditor({
       cancelButtonProps={{ disabled: busy }}
       onCancel={onClose}
       onOk={save}
-      cancelText="取消"
+      cancelText={readOnly ? "关闭" : "取消"}
+      okButtonProps={{
+        disabled: readOnly || !url.trim(),
+        style: readOnly ? { display: "none" } : undefined,
+      }}
       confirmLoading={busy}
       okText={busy ? "正在连接" : "连接仓库"}
-      okButtonProps={{ disabled: !url.trim() }}
     >
-      <p>粘贴仓库地址即可。软件会自动识别分支和资料清单，连接后全组共用。</p>
+      <p>
+        {readOnly
+          ? "这是课题组当前使用的仓库地址。如需修改，请联系课题组管理员。"
+          : "粘贴仓库地址即可。软件会自动识别分支和资料清单，连接后全组共用。"}
+      </p>
       {error && <Alert type="error" message={error} />}
       <label>
         GitHub 仓库地址
         <Input
           autoFocus
           disabled={busy}
+          readOnly={readOnly}
           placeholder="https://github.com/团队/资料仓库"
           autoComplete="off"
           spellCheck={false}

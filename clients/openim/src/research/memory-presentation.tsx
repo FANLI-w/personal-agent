@@ -9,17 +9,37 @@ export const memoryOrigins = {
 
 export function generalHabits(memories: PersonalMemory[]) {
   return memories.filter(
-    (memory) => memory.status === "confirmed" && memory.scope === "general"
+    (memory) => memory.status === "confirmed" && memory.scope === "general",
   );
+}
+
+/** Display boundaries only; saving and searching continue to use the stored text. */
+export function memoryPreferenceLines(text: string) {
+  return text.split(/(?<=[。！？；;])(?=[^\r\n])|(?<=\n)(?=[^\r\n])/u).filter((line) => line.trim());
 }
 
 /** Presentation only: the full stored text remains intact and searchable. */
 export function MemoryText({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
-  const canExpand = text.length > 120 || text.split("\n").length > 2;
+  const lines = memoryPreferenceLines(text);
+  const canExpand = lines.length > 3 || (lines.length === 1 && text.length > 120);
   return (
-    <div className={`habit-content ${canExpand ? "can-collapse" : ""} ${expanded ? "expanded" : ""}`}>
-      <p>{text}</p>
+    <div
+      className={`habit-content ${canExpand ? "can-collapse" : ""} ${
+        expanded ? "expanded" : ""
+      }`}
+    >
+      {lines.length > 1 ? (
+        <ul className="habit-preferences">
+          {lines.map((line, index) => (
+            <li key={index} hidden={!expanded && index >= 3}>
+              {line}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>{text}</p>
+      )}
       {canExpand && (
         <button
           type="button"

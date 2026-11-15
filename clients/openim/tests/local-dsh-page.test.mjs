@@ -26,6 +26,8 @@ function loadHelper(name, dependencies = {}) {
     module,
     exports: module.exports,
     crypto: { randomUUID },
+    URLSearchParams,
+    Error,
     require: (name) => dependencies[name] || { Id: id },
   });
   return module.exports;
@@ -205,6 +207,8 @@ function host({
     "./store": { useResearchStore: (selector) => selector(store) },
     "./team-material-selection": selection,
     "./local-dsh-context": helper,
+    "./task-status-read": loadHelper("task-status-read.ts"),
+    "@ant-design/icons": { ExportOutlined: "ExportIcon" },
     "./native-workbench-handoff": {
       readWorkbenchServiceOrigin: async () => service.origin,
       readNativeWorkbenchHandoff: () => ({
@@ -238,7 +242,7 @@ function host({
     sessionStorage: localStorage,
     window: {
       electronAPI: { localDsh: bridge },
-      location: { origin: "https://synthetic.test" },
+      location: { origin: "https://synthetic.test", get hash() { return "#/dsh?" + values; } },
       setInterval: (callback) => {
         timers.push(callback);
         return timers.length;

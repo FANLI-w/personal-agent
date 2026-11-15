@@ -52,3 +52,15 @@ export function legacyTaskInvitation(text: string | null | undefined) {
   const match = legacyInvitation.exec(text);
   return match?.[1] || undefined;
 }
+
+/** Keep the actual subject visible when several notices share a sender header. */
+export function serviceNoticePreview(text: string) {
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const taskTitle = /(?:任务|事项)\s*[「“]([^」”]+)[」”]/.exec(text)?.[1];
+  if (taskTitle) return taskTitle;
+  const first = lines[0] || "系统通知";
+  // Legacy help notices put the sender on its own line and the request below.
+  // Only skip a header when there is actual content after it.
+  if (lines.length > 1 && /[：:]$/.test(first)) return lines[1];
+  return first;
+}

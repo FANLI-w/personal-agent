@@ -117,3 +117,105 @@ test("personal accepted text results stay visible in the single delivery area wi
   assert.doesNotMatch(text, /暂无可查看的交付记录/);
   assert.doesNotMatch(text, /开始任务后，这里会出现本机工作区/);
 });
+
+async function statusHost(readStatus) {
+  const ts = (await import("typescript")).default;
+  const vm = await import("node:vm");
+  const compile = source => ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+  const statusModule = { exports: {} };
+  vm.runInNewContext(compile(await read("../src/research/task-status-read.ts")), {
+    module: statusModule, exports: statusModule.exports, Error, URLSearchParams,
+  });
+  const slots = [], effects = [], timers = [];
+  let cursor = 0, reads = 0;
+  const location = { hash: "#/workbench?view=tasks&task=synthetic_task&taskKind=research" };
+  const jsx = (type, props) => typeof type === "function" ? type(props) : { type, props };
+  const dependencies = {
+    react: {
+      useState(initial) {
+        const index = cursor++;
+        if (!(index in slots)) slots[index] = initial;
+        return [slots[index], value => { slots[index] = typeof value === "function" ? value(slots[index]) : value; }];
+      },
+      useRef(initial) { const index = cursor++; return slots[index] ||= { current: initial }; },
+      useEffect(effect, deps) {
+        const index = cursor++, old = slots[index];
+        if (!old || deps.some((dep, i) => dep !== old.deps[i])) {
+          old?.cleanup?.();
+          slots[index] = { deps };
+          effects.push(() => { slots[index].cleanup = effect(); });
+        }
+      },
+    },
+    "react/jsx-runtime": { jsx, jsxs: jsx, Fragment: "fragment" },
+    "react-router-dom": { useNavigate: () => () => {}, Link: "Link" },
+    antd: { Alert: "Alert", Button: "Button", Checkbox: "Checkbox", Input: { TextArea: "TextArea" }, Select: "Select" },
+    "./usePersonalOperation": { usePersonalOperation: () => ({ scope: "synthetic", capture: () => ({ isCurrent: () => true }) }) },
+    "./useResearchRead": { useResearchRead: (_read, key) => ({ data: key.startsWith("work-page:") ? { task: { id: "synthetic_task", title: "Synthetic task", status: "completed", allowedActions: [] }, artifacts: [], deliverables: [] } : undefined, refresh: async () => {} }) },
+    "./task-dsh-events": { taskEventRows: () => [] },
+    "./task-planning": { taskStateLabels: {} },
+    "./workspace-labels": { workspaceStatusLabel: {} },
+    "./task-status-read": statusModule.exports,
+  };
+  const module = { exports: {} };
+  vm.runInNewContext(compile(await read("../src/research/TaskWorkPage.tsx")), {
+    module, exports: module.exports,
+    require: name => dependencies[name] || new Proxy({}, { get: (_, key) => String(key) }),
+    window: { location, electronAPI: { localDsh: { taskStatus: async () => { ++reads; return readStatus(); } } }, setInterval: callback => { timers.push(callback); return timers.length; } },
+    clearInterval() {},
+  });
+  const render = () => {
+    cursor = 0;
+    const tree = module.exports.TaskWorkPage({ taskId: "synthetic_task", kind: "research", onChanged: async () => {}, children: () => "Arrangement" });
+    while (effects.length) effects.shift()();
+    return tree;
+  };
+  return { render, location, timers, get reads() { return reads; }, helper: statusModule.exports };
+}
+function nodes(node) {
+  if (Array.isArray(node)) return node.flatMap(nodes);
+  if (!node || typeof node !== "object") return [];
+  return [node, ...nodes(node.props?.children)];
+}
+const settleStatus = () => new Promise(resolve => setImmediate(resolve));
+
+test("a pending IPC rejection cannot follow query-only navigation to the team page", async () => {
+  let reject;
+  const host = await statusHost(() => new Promise((_, no) => { reject = no; }));
+  host.render();
+  assert.equal(host.reads, 1);
+  host.location.hash = "#/workbench?view=team";
+  reject(Error("Error invoking remote method 'task-dsh-status': Error: 请在对应任务工作页操作。"));
+  await settleStatus();
+  for (const timer of host.timers) await timer();
+  assert.equal(host.reads, 1);
+  assert.equal(nodes(host.render()).some(node => node.type === "Alert" && node.props.type === "warning"), false);
+});
+test("current task IPC failures retain the actual cause and recover without a false connection claim", async () => {
+  let fail = true;
+  const host = await statusHost(async () => {
+    if (fail) throw Error("Error invoking remote method 'task-dsh-status': Error: 任务服务请求超时，请重试原操作。");
+    return undefined;
+  });
+  host.render();
+  await settleStatus();
+  let tree = host.render();
+  const alert = nodes(tree).find(node => node.type === "Alert" && node.props.type === "warning");
+  assert.equal(alert.props.message, "暂时无法读取这项任务的本机进度");
+  assert.equal(alert.props.description, "任务服务请求超时，请重试原操作。");
+  assert.doesNotMatch(renderText(tree), /连接中断/);
+  fail = false;
+  await host.timers[0]();
+  tree = host.render();
+  assert.equal(nodes(tree).some(node => node.type === "Alert" && node.props.type === "warning"), false);
+});
+test("status reads require the exact task and kind on either supported route", async () => {
+  const host = await statusHost(async () => undefined);
+  const match = host.helper.taskStatusRouteMatches;
+  const target = { taskId: "synthetic_task", kind: "research" };
+  assert.equal(match("#/dsh?task=synthetic_task&taskKind=research", target), true);
+  assert.equal(match("#/workbench?view=team&task=synthetic_task&taskKind=research", target), true);
+  assert.equal(match("#/workbench?task=synthetic_task&taskKind=personal", target), false);
+  assert.equal(match("#/workbench?task=another_task&taskKind=research", target), false);
+  assert.equal(match("#/workbench?view=team", target), false);
+});

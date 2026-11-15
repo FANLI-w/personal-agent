@@ -50,7 +50,7 @@ export function WorkbenchTaskInbox({
         onChange={(value) => setCategory(value as typeof category)}
         options={[
           { value: "awaiting_me", label: "待我处理" },
-          { value: "ongoing", label: "进行中" },
+          { value: "ongoing", label: "未完成" },
         ]}
       />
       {read.error ? (
@@ -66,7 +66,7 @@ export function WorkbenchTaskInbox({
           <div className="workbench-focus-empty">
             <ProfileOutlined aria-hidden="true" />
             <h3>
-              {category === "awaiting_me" ? "暂无待处理事项" : "暂无进行中的任务"}
+              {category === "awaiting_me" ? "暂无待处理事项" : "暂无未完成任务"}
             </h3>
             <p>
               {category === "awaiting_me"
@@ -78,7 +78,7 @@ export function WorkbenchTaskInbox({
           <p>
             {category === "awaiting_me"
               ? "当前没有待你确认、接受或验收的任务。"
-              : "当前没有进行中的任务。"}
+              : "当前没有未完成任务。"}
           </p>
         )
       ) : (

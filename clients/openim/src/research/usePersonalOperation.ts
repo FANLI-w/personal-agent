@@ -9,7 +9,7 @@ export function usePersonalOperation(active: boolean, panel: string) {
   const actorId = useResearchStore(s => s.actor?.member.id);
   const conversationId = useConversationStore(s => s.currentConversation?.conversationID);
   const location = useLocation();
-  const scope = `${generation}:${actorId}:${conversationId}:${location.pathname}:${panel}:${active}`;
+  const scope = `${generation}:${actorId}:${conversationId}:${location.pathname}:${location.search}:${panel}:${active}`;
   const visible = useRef({ scope, active });
   visible.current = { scope, active };
   const epoch = useRef(0);

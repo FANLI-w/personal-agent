@@ -317,6 +317,40 @@ export function LabStandards() {
         ["templates", "PPT 模板"],
         ["methods", "可复用方法"],
       ];
+  const sectionRecords =
+    section === "templates" ? templates : section === "methods" ? links : rules;
+  const canAdd =
+    data && section !== "platform" && (section === "methods" || data.canPublish);
+  const addAction = canAdd ? (
+    <Button
+      type="primary"
+      icon={<PlusOutlined />}
+      disabled={busy || (section === "methods" && !linksSupported)}
+      onClick={() => edit()}
+    >
+      {section === "methods"
+        ? "提交方法"
+        : section === "templates"
+        ? "新增模板"
+        : "新增规则"}
+    </Button>
+  ) : null;
+  const templateSources = (
+    <div className="record-page-actions">
+      <Button onClick={() => navigate("/library?panel=index")}>
+        设置本地资料文件夹
+      </Button>
+      <Button onClick={() => navigate("/library?panel=collections")}>
+        查看共享模板与范文
+      </Button>
+      {collections.error && <span role="alert">{collections.error}</span>}
+      {labCollections.length > 0 && (
+        <span className="workspace-muted">
+          {labCollections.length} 个课题组资料集合
+        </span>
+      )}
+    </div>
+  );
   if (!supported)
     return (
       <WorkspaceUnavailable
@@ -345,22 +379,7 @@ export function LabStandards() {
               返回资料
             </Button>
           )}
-          {data &&
-            section !== "platform" &&
-            (section === "methods" || data.canPublish) && (
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                disabled={busy || (section === "methods" && !linksSupported)}
-                onClick={() => edit()}
-              >
-                {section === "methods"
-                  ? "提交方法"
-                  : section === "templates"
-                  ? "新增模板"
-                  : "新增规则"}
-              </Button>
-            )}
+          {sectionRecords.length > 0 && addAction}
         </div>
       </header>
       <nav className="record-tabs" aria-label="规范分类">
@@ -431,13 +450,15 @@ export function LabStandards() {
             <h3>还没有{tabName}</h3>
             <p>
               {section === "methods"
-                ? "从右上方提交可复用的方法，并保留来源任务。"
+                ? "提交可复用的方法，并保留来源任务。"
                 : data.canPublish
-                ? `从右上方新增${
+                ? `新增${
                     section === "templates" ? "模板" : "规则"
                   }，填写要求与适用范围。`
                 : "课题组负责人发布后，可以在这里查阅。"}
             </p>
+            <div className="record-page-actions">{addAction}</div>
+            {section === "templates" && templateSources}
           </section>
         ) : (
           <RecordWorkspace
@@ -488,7 +509,9 @@ export function LabStandards() {
                           : statusLabels[record.status]}
                       </span>
                     </div>
-                    <p>{displayContent(record)}</p>
+                    {displayContent(record).trim() !== displayTitle(record).trim() && (
+                      <p>{displayContent(record)}</p>
+                    )}
                     <small>
                       v{record.version} ·{" "}
                       {new Date(record.updatedAt).toLocaleDateString("zh-CN")}
@@ -577,16 +600,18 @@ export function LabStandards() {
                       : "开始任务时带入模板要求，你只需补充本次变化。"}
                   </p>
                 </section>
-                <section className="record-detail-section">
-                  <h3>
-                    {section === "rules"
-                      ? "规则内容"
-                      : section === "methods"
-                      ? "方法内容"
-                      : "模板要求"}
-                  </h3>
-                  <p className="record-content">{displayContent(selected)}</p>
-                </section>
+                {displayContent(selected).trim() !== displayTitle(selected).trim() && (
+                  <section className="record-detail-section">
+                    <h3>
+                      {section === "rules"
+                        ? "规则内容"
+                        : section === "methods"
+                        ? "方法内容"
+                        : "模板要求"}
+                    </h3>
+                    <p className="record-content">{displayContent(selected)}</p>
+                  </section>
+                )}
                 {section === "templates" && (
                   <>
                     <section className="record-detail-section">
@@ -630,22 +655,7 @@ export function LabStandards() {
             )}
           </RecordWorkspace>
         ))}
-      {section === "templates" && data && (
-        <div className="record-page-actions">
-          <Button onClick={() => navigate("/library?panel=index")}>
-            设置本地资料文件夹
-          </Button>
-          <Button onClick={() => navigate("/library?panel=collections")}>
-            查看共享模板与范文
-          </Button>
-          {collections.error && <span role="alert">{collections.error}</span>}
-          {labCollections.length > 0 && (
-            <span className="workspace-muted">
-              {labCollections.length} 个课题组资料集合
-            </span>
-          )}
-        </div>
-      )}
+      {section === "templates" && data && templates.length > 0 && templateSources}
       <Modal
         open={!!editing}
         title={
