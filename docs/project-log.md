@@ -3223,3 +3223,7 @@ Windows 本地试用版 0.10.113-preview.1（713d8de）默认列出 Git 提交�
 ## 2026-11-15 Windows 0.10.113 正式发布
 
 Windows x64 正式版 0.10.113 已发布。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.113) · [PR #229](https://github.com/luoyan96/personal-agent/pull/229)。团队资料显示所连 Git 仓库的根目录与子目录；清单外的新文件在同步后可见。 正式构建 fc2cc2f。55 项资料测试和四项 PR 检查通过。Windows CI 曾在长缓存路径读取目录时失败，修正 Git 目录参数后使用相同场景通过。正式包全新缓存实读 luoyan96/files 的 main，并比对目录与读取 README；上一轮登录态界面验证包含目录导航及正文预览。已从安装包解出并核对 137 个编译文件，打包启动通过。公开 release 的四项附件均与本机 SHA-256 一致。安装包 SHA-256 为 2c699f1e1c7388bfe82e966d13089c7722467026bb8d970bd390099fefd314bc。本次仅更新客户端。构建、测试和初始失败记录见本机 D:/deepseek-agent/.runtime/release-0.10.113/。
+
+## 工作台 deepchat 品牌（本地，2026-11-15）
+
+基于 3eba869，在内置 DSH 的三个品牌插槽接入现有大肥鱼头像和工作台名称。通过独立临时配置启动 0.10.113 随附的 DSH，观察到侧栏名称、两张已加载的头像和新会话问候，旧标语与预览标签已隐藏。品牌、账户及文件桥接定向测试 6 项通过。pnpm run ci 通过，含 996 项 Vitest 测试。首次隐藏窗口截图捕获的是启动帧，再以离屏窗口核对完整页面。证据位于本机临时目录 deepchat-ui-1a882b2a-c92e-4781-8395-eccbc77c4d92/deepchat-workbench.png。本次未调用真实模型，未发布。

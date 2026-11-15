@@ -2,6 +2,10 @@
 
 更新日期：2026-11-15（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 工作台品牌（本地开发版）
+
+内置 DSH 的侧栏和新会话首页通过品牌插槽显示大肥鱼头像、deepchat 名称和中文问候。在 0.10.113 随附运行时的独立 Electron 测试窗口验证。此次仅调整工作台展示。
+
 Windows 正式版 0.10.112 已发布。[发布页](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.112) · [PR #227](https://github.com/luoyan96/personal-agent/pull/227)。正式构建与标签对应 703a1bf，合并提交 8bb4a2b 的源码树相同。四项 PR 检查和本机打包启动测试通过。
 
 ## 2026-11-15 · Windows 0.10.113 正式发布

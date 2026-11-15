@@ -1,4 +1,4 @@
-import { app, BrowserView, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
+import { app, BrowserView, BrowserWindow, dialog, ipcMain, nativeImage, session, shell } from "electron";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { authority } from "./localFolderManage";
@@ -13,6 +13,8 @@ export function registerLocalDshBridge() {
   let view: BrowserView | undefined, owner: BrowserWindow | undefined;
   let pageReady = false, pageError = "", starting: Promise<void> | undefined;
   let quitting = false, observed: Electron.WebContents | undefined;
+  const avatar = nativeImage.createFromPath(path.join(global.pathConfig.publicPath, 'icons', 'icon.png'))
+    .resize({ width: 96 }).toDataURL();
   const directory = app.isPackaged ? path.join(process.resourcesPath, 'dsh') : path.resolve(app.getAppPath(), '.dsh-runtime');
   let runtime = new LocalDshRuntime(directory, '');
   let relay: Awaited<ReturnType<typeof createDshRelay>> | undefined;
@@ -86,7 +88,7 @@ export function registerLocalDshBridge() {
         if (epoch !== generation) { await connection.close(); return; }
         relay = connection; account = next;
         const home = path.join(app.getPath('userData'), 'local-dsh', 'accounts', next.identity);
-        const patch = await prepareAccountProfile(home, { ...next.metadata, baseURL: connection.baseURL });
+        const patch = await prepareAccountProfile(home, { ...next.metadata, baseURL: connection.baseURL }, avatar);
         if (epoch !== generation) return;
         runtime = new LocalDshRuntime(directory, home,
           () => { if (runtime.state.phase !== 'running') disposeView(); }, { patch, token: connection.secret });
@@ -107,7 +109,7 @@ export function registerLocalDshBridge() {
       if (first.reason === "profile 尚未创建") {
         await runtime.stop();
         await ensure();
-        await prepareAccountProfile(runtime.state.home,{...next.metadata,baseURL:relay!.baseURL});
+        await prepareAccountProfile(runtime.state.home,{...next.metadata,baseURL:relay!.baseURL}, avatar);
         url = await runtime.start();
       }
       // Do not mount a late startup over another conversation or a replaced document.

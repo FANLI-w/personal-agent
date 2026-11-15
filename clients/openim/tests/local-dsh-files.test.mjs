@@ -46,8 +46,9 @@ test('native directory picker is restricted to the owned DSH main frame and rech
   }
   const account={identity:'synthetic',lease:'one',metadata:{enabled:true,fingerprint:'one'},valid:async()=>{if(!valid)throw Error('expired');}};
   const mod={exports:{}};
-  vm.runInNewContext(managed,{module:mod,exports:mod.exports,process,URL,__dirname:path.join(client,'dist-electron/main'),fixtureAccount:account,
+  vm.runInNewContext(managed,{module:mod,exports:mod.exports,global:{pathConfig:{publicPath:client}},process,URL,__dirname:path.join(client,'dist-electron/main'),fixtureAccount:account,
     setInterval:()=>({unref(){}}),require:id=>id==='electron'?{
+      nativeImage:{createFromPath:()=>({resize:()=>({toDataURL:()=>"data:image/png;base64,AA=="})})},
       app:{isPackaged:false,getAppPath:()=>client,getPath:()=>client,on:()=>{}},BrowserView:View,BrowserWindow:{fromWebContents:()=>owner},
       ipcMain:{handle:(k,v)=>handlers.set(k,v)},session:{fromPartition:()=>({setPermissionRequestHandler(){},setPermissionCheckHandler(){}})},
       dialog:{showOpenDialog:async()=>{picks++;afterPick();return selection;}},shell:{},
