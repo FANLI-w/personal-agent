@@ -121,3 +121,16 @@ test("a malformed manifest does not replace the last successful snapshot", async
   });
   assert.equal((await f.store.cached()).revision, previous.revision);
 });
+
+test('Windows Git reads and writes objects beyond MAX_PATH in account-scoped caches', { skip: process.platform !== 'win32' }, async t => {
+  const fixture = await libraryFixture(t);
+  const folder = path.join(fixture.root, 'a'.repeat(206 - fixture.root.length - 13), 'objects.git');
+  await fs.mkdir(path.dirname(folder), { recursive: true });
+  const run = gitRunner(folder);
+  await run(['init', '--bare', folder]);
+  const pack = fixture.git(['pack-objects', '--all', '--stdout']);
+  await run(['index-pack', '--stdin', '--promisor'], { input: pack });
+  const sidecar = (await fs.readdir(path.join(folder, 'objects', 'pack'))).find(name => name.endsWith('.promisor'));
+  assert.ok(sidecar);
+  assert.ok(path.join(folder, 'objects', 'pack', sidecar).length > 260);
+});
