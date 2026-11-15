@@ -51,6 +51,37 @@ test('loopback relay rejects browser-origin, wrong and non-ASCII tokens, restric
   await relay.close(); await assert.rejects(call());
 });
 
+test('embedded workbench overrides the official DSH brand slots and supplies a real welcome label', async t => {
+  const home = mkdtempSync(path.join(tmpdir(), 'dsh-brand-'));
+  t.after(() => rmSync(home, { recursive: true, force: true }));
+  const avatar = 'data:image/png;base64,fixture';
+  await runtime.exports.prepareAccountProfile(home, {
+    baseURL: 'http://127.0.0.1:1', model: 'fixture', protocol: 'openai-completions', maxTokens: 1000,
+  }, avatar);
+  const components = new Map();
+  const element = (type, props) => ({ type, ...props });
+  const window = { dispatchEvent() {}, __ModuleLoader__: {
+    load({ factory }) {
+      factory(() => ({ jsx: element, jsxs: element })).apply({
+        slots: {
+          inject(name, callback) { Array.from(callback()); },
+          register({ name, priority }, component) {
+            assert.ok(priority < 0, 'brand must precede the built-in slot at priority zero');
+            components.set(name, component);
+          },
+        },
+        effect() {},
+      });
+    },
+  } };
+  vm.runInNewContext(readFileSync(path.join(home, 'acceptcat-task-context/client.mjs'), 'utf8'), { window, CustomEvent });
+  assert.equal(components.get('sidebar.brand.mark')({ size: 24 }), null);
+  assert.equal(components.get('sidebar.brand.name')().className, 'deepchat-sidebar-layout');
+  const hero = components.get('conversation.hero.brand.mark')();
+  assert.equal(hero.children.find(node => node.type === 'img').src, avatar);
+  assert.ok(hero.children.some(node => node.type === 'span' && node.children.includes('？')));
+});
+
 test('managed account overlay preserves user plugins and contains only a credential reference', async t => {
   const home = mkdtempSync(path.join(tmpdir(), 'dsh-profile-')); t.after(() => rmSync(home, { recursive: true, force: true }));
   const client = path.resolve(new URL('../', import.meta.url).pathname.replace(/^\/(\w:)/, '$1'));

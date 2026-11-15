@@ -39,10 +39,12 @@ export function apply(ctx, config) {
 }
 `;
 
-export const nativeTaskContextClient = String.raw`
-window.__ModuleLoader__.load({id:'acceptcat-task-context',factory:()=>{
-const inject=['sessions','uiWorkspace'];
+export function buildNativeTaskContextClient(brand: string) {
+  return String.raw`
+window.__ModuleLoader__.load({id:'acceptcat-task-context',factory:(loadDshModule)=>{
+const inject=['sessions','uiWorkspace'${brand ? ",'slots'" : ''}];
 function apply(ctx){
+  ${brand}
   const pending=new Set();
   const open=async(event)=>{
     const {sessionId,nonce}=event.detail||{};
@@ -68,3 +70,4 @@ function apply(ctx){
 return {inject,apply};
 }});
 `;
+}

@@ -1,10 +1,12 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { nativeTaskContextPlugin, nativeTaskContextClient } from './native-task-context-plugin';
+import { nativeTaskContextPlugin, buildNativeTaskContextClient } from './native-task-context-plugin';
+
+import { workbenchBrandClient } from './workbench-brand';
 
 /** Official --patch overlay; the user's profile and installed plugin list remain owned by DSH. */
-export async function prepareAccountProfile(home: string, gateway: { baseURL: string; protocol: string; provider?: string; model: string; maxTokens: number }) {
+export async function prepareAccountProfile(home: string, gateway: { baseURL: string; protocol: string; provider?: string; model: string; maxTokens: number }, avatar?: string) {
   // Official model metadata checked 2026-10-28: https://api-docs.deepseek.com/api/list-models/
   // Keep unknown/custom providers conservative; a matching model name alone is not authority.
   const contextWindow = gateway.provider === 'deepseek' && ['deepseek-flash', 'deepseek-v4-pro'].includes(gateway.model) ? 1048576 : 65536;
@@ -47,6 +49,7 @@ export async function prepareAccountProfile(home: string, gateway: { baseURL: st
   await fs.mkdir(home, { recursive: true });
   await fs.mkdir(plugin,{recursive:true});
   await fs.writeFile(path.join(plugin,'index.mjs'), nativeTaskContextPlugin, { mode:0o600 });
+  const nativeTaskContextClient = buildNativeTaskContextClient(avatar ? workbenchBrandClient(avatar) : '');
   await fs.writeFile(path.join(plugin,'client.mjs'), nativeTaskContextClient, { mode:0o600 });
   const version='1.0.0-'+createHash('sha256').update(nativeTaskContextPlugin+nativeTaskContextClient).digest('hex').slice(0,16);
   await fs.writeFile(path.join(plugin,'package.json'),JSON.stringify({name:'acceptcat-task-context',version,type:'module',main:'./index.mjs',exports:{'.':'./index.mjs','./client':'./client.mjs','./package.json':'./package.json'},dsh:{client:{inject:['@deepseek-ai/dsh-client-ui-workspace'],platform:'web'}}}),{mode:0o600});
