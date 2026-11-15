@@ -41,7 +41,7 @@ export function apply(ctx, config) {
 
 export function buildNativeTaskContextClient(brand: string) {
   return String.raw`
-window.__ModuleLoader__.load({id:'acceptcat-task-context',factory:(require)=>{
+window.__ModuleLoader__.load({id:'acceptcat-task-context',factory:(loadDshModule)=>{
 const inject=['sessions','uiWorkspace'${brand ? ",'slots'" : ''}];
 function apply(ctx){
   ${brand}

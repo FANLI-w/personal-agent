@@ -2,7 +2,7 @@
  * their declaring surfaces through mount and disposal, including new sessions. */
 export function workbenchBrandClient(avatar: string) {
   return `
-  const { jsx, jsxs } = require('react/jsx-runtime');
+  const { jsx, jsxs } = loadDshModule('react/jsx-runtime');
   const mark = ({ size }) => jsx('img', {
     src: ${JSON.stringify(avatar)}, alt: '', width: size, height: size,
     style: { display: 'block', objectFit: 'contain' },
