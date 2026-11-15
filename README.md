@@ -84,11 +84,11 @@ DSH 随安装包提供，登录后自动连接当前 AcceptCat 账号的模型�
 
 | 版本入口 | 当前状态 |
 | --- | --- |
-| **最新公开桌面试用版：0.10.112** | Windows x64：[下载安装包](https://github.com/luoyan96/personal-agent/releases/download/v0.10.112/AcceptCat_0.10.112.exe)。团队资料支持粘贴 GitHub 地址同步，优化任务交付、通讯录与资料浏览。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.112) · [功能范围与检查](docs/deployment/acceptcat-0.10.112-release.md) |
+| **最新公开桌面试用版：0.10.113** | Windows x64：[下载安装包](https://github.com/luoyan96/personal-agent/releases/download/v0.10.113/AcceptCat_0.10.113.exe)。粘贴 GitHub 地址即可浏览仓库目录，新增文件同步后可见。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.113) · [功能范围与检查](docs/deployment/acceptcat-0.10.113-release.md) |
 | **飞书只读本人试点** | 文档快照与命名多维表格论文库代码已包含，配套后台及飞书 0.2.0 已部署；指定论文库的真实读取、私人绑定和 DSH 试读已完成。飞书应用仍仅罗岩本人可用，其他成员不会因安装客户端而自动获得权限。[试点记录与边界](docs/deployment/acceptcat-0.10.27.md) |
-| **产品源码与协作基线** | [v0.10.112标签](https://github.com/luoyan96/personal-agent/tree/v0.10.112)固定客户端实际构建源码；后续功能从主仓库最新[main](https://github.com/luoyan96/personal-agent/tree/main)另开分支，通过PR合并 |
+| **产品源码与协作基线** | [v0.10.113标签](https://github.com/luoyan96/personal-agent/tree/v0.10.113)固定客户端实际构建源码；后续功能从主仓库最新[main](https://github.com/luoyan96/personal-agent/tree/main)另开分支，通过PR合并 |
 
-当前客户端沿用已有科研后台，保留账号、已学习习惯和本地缓存。已读取的完整消息和引用可从本地恢复，旧版仅存指针的消息首次仍需联网补取。科研插件文件流程需要本机WPS/Office；聊天图片文字提取使用Windows本机OCR。实际科研任务与双机协作按[发布回执](docs/deployment/acceptcat-0.10.112-release.md)所列范围验收。[历史版本](https://github.com/luoyan96/personal-agent/releases)继续保留。
+当前客户端沿用已有科研后台，保留账号、已学习习惯和本地缓存。已读取的完整消息和引用可从本地恢复，旧版仅存指针的消息首次仍需联网补取。科研插件文件流程需要本机WPS/Office；聊天图片文字提取使用Windows本机OCR。实际科研任务与双机协作按[发布回执](docs/deployment/acceptcat-0.10.113-release.md)所列范围验收。[历史版本](https://github.com/luoyan96/personal-agent/releases)继续保留。
 
 已有试用版的团队：登录后在“我的 → 模型设置”配置自己的模型，从一个真实课题的小任务开始。新团队如希望参与试用，可以在 [Issues](https://github.com/luoyan96/personal-agent/issues) 留下使用场景和试用意向；请不要提交账号密钥、未公开论文或学生的私人材料。
 
