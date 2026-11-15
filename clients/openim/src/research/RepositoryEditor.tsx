@@ -69,7 +69,7 @@ export function RepositoryEditor({
       <p>
         {readOnly
           ? "这是课题组当前使用的仓库地址。如需修改，请联系课题组管理员。"
-          : "粘贴仓库地址即可。软件会自动识别分支和资料清单，连接后全组共用。"}
+          : "粘贴 GitHub 仓库地址，连接后即可按文件夹浏览团队资料。"}
       </p>
       {error && <Alert type="error" message={error} />}
       <label>

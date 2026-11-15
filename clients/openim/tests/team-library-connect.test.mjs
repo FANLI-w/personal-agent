@@ -46,12 +46,24 @@ test('reconnecting preserves an existing custom branch; moving repositories pres
   assert.deepEqual(await fs.readdir(f.root), []);
 });
 
-test('missing, invalid and symbolic-link manifests fail before saving and clean up discovery files', async t => {
+test('missing manifest connects using a stable fallback and preserves an existing workspace binding', async t => {
   const f = await discoveryFixture(t);
-  for (const kind of ['missing', 'invalid', 'symlink']) {
+  await fs.rm(path.join(f.work, 'acceptcat-library.json'));
+  f.git(['add', '-A']); f.git(['commit', '-m', 'Synthetic plain repository']); f.git(['push', f.remote, 'main']);
+  const first = await f.connect(f.binding.url);
+  const again = await f.connect('https://github.com/SYNTHETIC/files');
+  assert.match(first.workspaceId, /^repo_[a-f0-9]{32}$/);
+  assert.equal(first.workspaceId, again.workspaceId);
+  assert.equal((await f.connect(f.binding.url, f.binding)).workspaceId, f.binding.workspaceId);
+  assert(!f.commands.some(args => ['push', 'checkout', 'commit'].includes(args[0])));
+  assert.deepEqual(await fs.readdir(f.root), []);
+});
+
+test('invalid and symbolic-link manifests fail before saving and clean up discovery files', async t => {
+  const f = await discoveryFixture(t);
+  for (const kind of ['invalid', 'symlink']) {
     const file = path.join(f.work, 'acceptcat-library.json');
-    if (kind === 'missing') await fs.rm(file);
-    else if (kind === 'invalid') await fs.writeFile(file, '{broken');
+    if (kind === 'invalid') await fs.writeFile(file, '{broken');
     else {
       const blob = f.git(['hash-object', '-w', '--stdin'], {input:Buffer.from('README.md')}).toString().trim();
       f.git(['update-index','--add','--cacheinfo',`120000,${blob},acceptcat-library.json`]);
