@@ -50,10 +50,10 @@ export const Login = () => {
           <aside className="research-auth-brand">
             <div className="research-auth-scene">
               <img
-                src="./assets/acceptcat/research-desk.jpg"
-                alt="白猫陪伴的科研书桌，窗边有樱花、笔记本电脑和台灯"
-                width={1440}
-                height={900}
+                src="./assets/acceptcat/welcome-mascot.png"
+                alt="蓝发小鲸鱼捧着饭碗跑来"
+                width={1206}
+                height={1200}
                 decoding="async"
               />
             </div>

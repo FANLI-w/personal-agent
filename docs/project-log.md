@@ -3197,3 +3197,7 @@ Windows CI新增回执/习惯回归，任务组件回归放入既有CI测试文�
 ## 2026-11-15 · Windows 0.10.111 正式发布
 
 [PR #225](https://github.com/luoyan96/personal-agent/pull/225) 四项检查通过。正式构建与标签指向 f2f4dd7bd6bdbebb8f203cd621a6324698bf3086，合并提交 b3c3f5bbe5e8b3d7286e74a33f29339db8f20068 与构建提交的源码树一致。 工作台可从聊天、任务和团队资料入口接续对应任务会话，同时带入已核实的讨论、资料版本和允许使用的个人习惯。科研编辑与文件工作副本继续由内置 dsh-research-workbench 0.4.0 提供。 [发布记录](deployment/acceptcat-0.10.111-release.md)列出源码、成品及验证范围。
+
+## 2026-11-15 · 本地更换欢迎页插画
+
+从 main/c84d5f8 替换桌面启动页与账号入口场景图。构建通过，Edge 核对 1280×820、1024×700 登录页以及 440×330 启动页正确加载原图；截图位于 D:/deepseek-agent/.runtime/welcome-artwork-20261115。本批未发版。
