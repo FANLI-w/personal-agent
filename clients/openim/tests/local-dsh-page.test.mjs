@@ -224,6 +224,7 @@ function host({
       }),
       clearNativeWorkbenchHandoff: () => calls.push(["clear"]),
     },
+    "@/assets/avatar/dafeiyu.png": { default: "dafeiyu.png" },
     "./local-dsh.scss": {},
   };
   const module = { exports: {} };
@@ -280,6 +281,16 @@ function host({
   };
 }
 
+test("workbench header pairs deepchat with the assistant avatar and keeps the task and library navigation", () => {
+  const tree = host().render();
+  const [header] = find(tree, node => node.type === "header");
+  const [title] = find(header, node => node.type === "h1");
+  assert.ok(title.props.children.includes("deepchat"));
+  assert.equal(find(title, node => node.type === "img")[0].props.src, "dafeiyu.png");
+  assert.equal(find(header, node => node.type === "p").length, 0);
+  assert.ok(find(header, node => node.props.children === "任务与交付").length);
+  assert.ok(find(header, node => node.props.to === "/library").length);
+});
 test("arrival restores exact task, imports pinned materials and attaches context without a model prompt", async () => {
   const page = host({
     params:

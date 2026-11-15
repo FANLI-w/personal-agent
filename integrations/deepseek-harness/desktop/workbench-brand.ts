@@ -7,8 +7,16 @@ export function workbenchBrandClient(avatar: string) {
     src: ${JSON.stringify(avatar)}, alt: '', width: size, height: size,
     style: { display: 'block', objectFit: 'contain' },
   });
-  const wordmark = () => jsx('strong', {
-    children: 'deepchat', style: { fontSize: '16px', letterSpacing: '-0.025em' },
+  // The host header owns the wordmark. Keep DSH's native new-session and
+  // collapse controls on a single row when the sidebar is expanded.
+  const sidebarLayout = () => jsx('style', {
+    className: 'deepchat-sidebar-layout',
+    children: [
+      '[class$="_logoRow"]:has(.deepchat-sidebar-layout) { position: relative; height: 0; padding: 0; margin: 8px 0 0; overflow: visible; }',
+      '[class$="_logoRow"]:has(.deepchat-sidebar-layout) > :has(.deepchat-sidebar-layout) { display: none; }',
+      '[class$="_logoRow"]:has(.deepchat-sidebar-layout) [class*="_toggle"] { position: absolute; right: 0; top: 0; height: 38px; }',
+      '[class$="_logoRow"]:has(.deepchat-sidebar-layout) ~ button[class*="_newSession"] { margin-right: 40px; }',
+    ].join(' '),
   });
   const hero = () => jsxs('span', {
     className: 'deepchat-welcome',
@@ -19,7 +27,7 @@ export function workbenchBrandClient(avatar: string) {
     ],
   });
   for (const [name, component] of [
-    ['sidebar.brand.mark', mark], ['sidebar.brand.name', wordmark],
+    ['sidebar.brand.mark', () => null], ['sidebar.brand.name', sidebarLayout],
     ['conversation.hero.brand.mark', hero],
   ]) {
     ctx.slots.inject(name, function* () {

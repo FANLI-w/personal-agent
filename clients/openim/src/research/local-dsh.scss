@@ -22,21 +22,19 @@
     align-items: center;
     gap: 18px;
   }
-  h1 {
+  .deepchat-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
     margin: 0;
-    font-size: 22px;
-    font-weight: 600;
+    font-size: 21px;
+    font-weight: 650;
+    line-height: 1.2;
   }
-  h1 span {
-    font-size: 12px;
-    font-weight: 400;
-    color: #748392;
-    margin-left: 10px;
-  }
-  .local-dsh-header p {
-    margin: 5px 0 0;
-    color: #748392;
-    font-size: 12px;
+  .deepchat-brand img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
   }
   .ant-alert {
     margin: 10px 20px 0;

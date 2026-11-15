@@ -1,3 +1,4 @@
+import deepchatAvatar from "@/assets/avatar/dafeiyu.png";
 import { Alert, Button, Drawer, Input, Spin } from "antd";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -516,10 +517,7 @@ export function LocalDshPage() {
   return (
     <section className="local-dsh-page" aria-label="工作台">
       <header className="local-dsh-header">
-        <div>
-          <h1>工作台</h1>
-          <p>阅读材料、处理文件，和助手一起完成科研工作。</p>
-        </div>
+        <h1 className="deepchat-brand"><img src={deepchatAvatar} alt="" />deepchat</h1>
         <nav aria-label="科研工作入口">
           {target && (
             <Link to={workbenchTaskPath(target.taskId, target.kind)}>

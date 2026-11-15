@@ -4,7 +4,7 @@
 
 ## 工作台品牌（本地开发版）
 
-内置 DSH 的侧栏和新会话首页通过品牌插槽显示大肥鱼头像、deepchat 名称和中文问候。在 0.10.113 随附运行时的独立 Electron 测试窗口验证。此次仅调整工作台展示。
+工作台页头显示大肥鱼头像和 deepchat。展开的 DSH 侧栏首行并排显示新会话和收起按钮，新会话首页显示头像和中文问候。在 0.10.113 随附运行时的独立 Electron 测试窗口验证。此次仅调整工作台展示。
 
 Windows 正式版 0.10.112 已发布。[发布页](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.112) · [PR #227](https://github.com/luoyan96/personal-agent/pull/227)。正式构建与标签对应 703a1bf，合并提交 8bb4a2b 的源码树相同。四项 PR 检查和本机打包启动测试通过。
 

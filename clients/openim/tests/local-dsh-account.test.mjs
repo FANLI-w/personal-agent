@@ -75,8 +75,8 @@ test('embedded workbench overrides the official DSH brand slots and supplies a r
     },
   } };
   vm.runInNewContext(readFileSync(path.join(home, 'acceptcat-task-context/client.mjs'), 'utf8'), { window, CustomEvent });
-  assert.equal(components.get('sidebar.brand.mark')({ size: 24 }).src, avatar);
-  assert.equal(components.get('sidebar.brand.name')().children, 'deepchat');
+  assert.equal(components.get('sidebar.brand.mark')({ size: 24 }), null);
+  assert.equal(components.get('sidebar.brand.name')().className, 'deepchat-sidebar-layout');
   const hero = components.get('conversation.hero.brand.mark')();
   assert.equal(hero.children.find(node => node.type === 'img').src, avatar);
   assert.ok(hero.children.some(node => node.type === 'span' && node.children.includes('？')));
