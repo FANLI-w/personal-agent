@@ -3211,3 +3211,7 @@ Windows CI新增回执/习惯回归，任务组件回归放入既有CI测试文�
 ## 2026-11-15 团队资料 Git 实连复测
 
 本地试用版 0.10.112-preview.2（5f806bd）修复 Windows 团队资料同步。账号与仓库缓存目录下的 pack 文件名超过 MAX_PATH，旧 Git 调用写入 .promisor 失败。当前仅为客户端的 Windows Git 子进程启用 core.longpaths。 登录态桌面实测粘贴无 .git 的 luoyan96/files 地址，已同步并预览正文。全新缓存独立发现 main、提交 819c2794，读取并校验全部 6 份文件。25 项定向测试通过。安装包已解包比对 137 个构建文件并核实长路径修复，SHA-256 b89daf372b32021f8a784d1bed16325605eff30f2c0a1f46b6f7e57670ea7c37。仅本地交付；证据在 D:/deepseek-agent/.runtime/team-library-live-preview2/。
+
+## 2026-11-15 Windows 0.10.112 正式发布
+
+Windows 正式版 0.10.112 已发布。[发布页](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.112) · [PR #227](https://github.com/luoyan96/personal-agent/pull/227)。正式构建与标签对应 703a1bf，合并提交 8bb4a2b 的源码树相同。四项 PR 检查和本机打包启动测试通过。使用全新缓存读取 luoyan96/files 的 main（819c2794），6 份原件校验通过。安装包内核对 137 个编译文件；GitHub 四个附件的大小与 SHA-256 对应本地成品。Windows x64 安装包 SHA-256 为 ade41363f0e05ed6a89361b80103087b2a5ad8d0f6310b4f3d0f77543443a847。证据保存在本机 D:/deepseek-agent/.runtime/release-0.10.112/。本次仅发布桌面客户端。
