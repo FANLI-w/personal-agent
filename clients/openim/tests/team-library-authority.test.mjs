@@ -7,7 +7,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import {EventEmitter} from 'node:events';
 import {fileURLToPath} from 'node:url';
-import {libraryRuntime,libraryFixture,gitRunner} from './helpers/team-library.mjs';
+import {libraryRuntime,libraryFixture} from './helpers/team-library.mjs';
 const require=createRequire(import.meta.url),{build}=createRequire(require.resolve('vite'))('esbuild');
 const code=(await build({entryPoints:[fileURLToPath(new URL('../electron/main/teamLibraryManage.ts',import.meta.url))],bundle:true,platform:'node',format:'cjs',write:false,external:['electron','./localDshRuntime','../main/localDshRuntime'],plugins:[{name:'isolated-authority',setup(b){b.onLoad({filter:/localFolderManage\.ts$/},()=>({contents:`export const authority=e=>{if(e.foreign)throw Error('foreign window');return{owner:e.owner,contents:e.sender}};`,loader:'js'}));b.onLoad({filter:/windowManage\.ts$/},()=>({contents:`export const getResearchServiceStatus=()=>({address:'https://synthetic.example.invalid'});`,loader:'js'}));}}]})).outputFiles[0].text;
 async function fixture(t){
@@ -58,9 +58,8 @@ test('path preview returns bounded text, images and generic files from the accep
  g.git(['add','.']);g.git(['commit','-m','Synthetic preview files']);g.git(['push',g.remote,'main']);
  const snapshot=await g.store.sync(),f=await fixture(t),context=await f.context();
  await fs.mkdir(context.store.directory,{recursive:true});
- const directory=path.join(context.store.directory,'objects.git'),run=gitRunner(directory);
- await run(['init','--bare',directory]);
- await run(['index-pack','--stdin'],{input:g.git(['pack-objects','--all','--stdout'])});
+ // Exercise the IPC reader against the same fetched Git objects used by the store.
+ await fs.cp(path.join(g.store.directory,'objects.git'),path.join(context.store.directory,'objects.git'),{recursive:true});
  await fs.writeFile(path.join(context.store.directory,'snapshot.json'),JSON.stringify({...snapshot,manifest:{...snapshot.manifest,workspaceId:f.binding.workspaceId}}));
  const selected=name=>({revision:snapshot.revision,path:name});
  const text=await f.previewPath(selected('notes.md'));
