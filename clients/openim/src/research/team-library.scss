@@ -892,3 +892,22 @@
   .library-page-shell .team-library .team-library-grid.has-selection { grid-template-columns: minmax(0, 1fr); }
   .library-page-shell .team-library .team-library-detail { max-width: none; }
 }
+
+.team-library-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.team-library-sync-details {
+  max-width: 100%;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  summary {
+    cursor: pointer;
+    color: #526b60;
+  }
+  p {
+    margin: 8px 0 0;
+    white-space: pre-wrap;
+  }
+}

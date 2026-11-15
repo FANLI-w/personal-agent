@@ -139,6 +139,35 @@ export function LibraryIndexPage() {
       setBusy(false);
     }
   };
+  const firstAction = !local.status?.registered ? (
+    <Button
+      type="primary"
+      loading={local.busy}
+      disabled={!bridge}
+      onClick={() => void local.pick()}
+    >
+      选择资料文件夹
+    </Button>
+  ) : (
+    <Button
+      type="primary"
+      disabled={busy}
+      onClick={() =>
+        setDraft({
+          version: 0,
+          project: projects[0] || "",
+          name: "",
+          relPath: "",
+          purpose: "reference",
+          summary: "",
+          sha256: null,
+          recommended: false,
+        })
+      }
+    >
+      新增索引
+    </Button>
+  );
   if (!supported)
     return (
       <div className="library-workspace-content">
@@ -157,35 +186,7 @@ export function LibraryIndexPage() {
           <h2>我的资料</h2>
           <p>原件保留在本机，资料索引供课题组成员查阅。</p>
         </div>
-        {!local.status?.registered ? (
-          <Button
-            type="primary"
-            loading={local.busy}
-            disabled={!bridge}
-            onClick={() => void local.pick()}
-          >
-            选择资料文件夹
-          </Button>
-        ) : (
-          <Button
-            type="primary"
-            disabled={busy}
-            onClick={() =>
-              setDraft({
-                version: 0,
-                project: projects[0] || "",
-                name: "",
-                relPath: "",
-                purpose: "reference",
-                summary: "",
-                sha256: null,
-                recommended: false,
-              })
-            }
-          >
-            新增索引
-          </Button>
-        )}
+        {entries.length > 0 && firstAction}
       </div>
       {local.status?.registered && (
         <div className="library-index-folder">
@@ -227,12 +228,15 @@ export function LibraryIndexPage() {
         />
       )}
       {!read.data && !read.error && <p role="status">正在读取索引…</p>}
-      {read.data && !entries.length && (
-        <p className="library-index-empty">
-          {local.status?.registered
-            ? "还没有资料索引。新增一条，记录文件用途和位置。"
-            : "先选择存放资料的文件夹，再登记常用文件。原件不会上传。"}
-        </p>
+      {read.data && !entries.length && !draft && !read.error && (
+        <div className="library-index-empty">
+          <p>
+            {local.status?.registered
+              ? "还没有资料索引。新增一条，记录文件用途和位置。"
+              : "先选择存放资料的文件夹，再登记常用文件。原件不会上传。"}
+          </p>
+          {firstAction}
+        </div>
       )}
       {!!entries.length && !visible.length && (
         <p className="library-index-empty">没有符合条件的资料索引。</p>

@@ -1,6 +1,8 @@
 import { Alert, Button, Drawer, Input, Spin } from "antd";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ExportOutlined } from "@ant-design/icons";
+import { taskStatusFailure, taskStatusRouteMatches } from "./task-status-read";
 import {
   nativeWorkbenchTaskPath,
   workbenchTaskPath,
@@ -181,7 +183,8 @@ export function LocalDshPage() {
     if (!target || !bridge || !memberId || !labId || !serviceOrigin) return;
     const controller = new AbortController();
     const current = () =>
-      !controller.signal.aborted && visibleScope.current === routeScope;
+      !controller.signal.aborted && visibleScope.current === routeScope &&
+      taskStatusRouteMatches(window.location.hash, target);
     const verifyService = async () => {
       if (!current()) return false;
       if ((await readWorkbenchServiceOrigin()) !== serviceOrigin) {
@@ -212,7 +215,7 @@ export function LocalDshPage() {
         }
       } catch (failure) {
         if (current())
-          setError(failure instanceof Error ? failure.message : "任务状态暂不可用。");
+          setError("这项任务的本机进度暂不可用：" + taskStatusFailure(failure));
       } finally {
         polling = false;
       }
@@ -532,7 +535,7 @@ export function LocalDshPage() {
             </Button>
           )}
           <Button onClick={() => setTasksOpen(true)}>任务与交付</Button>
-          <Link to="/library">共享资料</Link>
+          <Link to="/library" aria-label="前往共享资料">共享资料 <ExportOutlined aria-hidden /></Link>
         </nav>
       </header>
       {!bridge && (
@@ -768,6 +771,8 @@ export function LocalDshPage() {
       </Drawer>
       <Drawer
         title="任务与交付"
+        rootClassName="local-dsh-task-drawer"
+        rootStyle={{ top: 40 }}
         open={tasksOpen}
         onClose={() => setTasksOpen(false)}
         width={460}

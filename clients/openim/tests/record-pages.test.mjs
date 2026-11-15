@@ -306,7 +306,7 @@ test("plan history shows records immediately and resumes the exact selected plan
       (n) => n.type === "button" && text(n).includes("Prepare a research report"),
     ),
   );
-  button(tree, "继续讨论").props.onClick();
+  button(tree, "继续规划").props.onClick();
   assert.equal(target.plan, "plan_demo");
   assert.equal(f.writes.length, 0);
   assert(text(tree).includes("Who is the audience?"));
@@ -319,7 +319,7 @@ test("search clears hidden plan details; confirmed plans cannot manufacture task
     .find((n) => n.props?.["aria-label"] === "搜索本页计划")
     .props.onChange({ target: { value: "not present" } });
   tree = f.render();
-  assert.equal(button(tree, "继续讨论"), undefined);
+  assert.equal(button(tree, "继续规划"), undefined);
   f.states = [];
   f.plan.status = "confirmed";
   tree = f.render();
@@ -355,4 +355,35 @@ test("library standards navigation keeps each section's heading and only related
   const details = nodes(f.render()).find((node) => node.type === "details");
   assert.match(text(details), /Read-only policy/);
   assert.equal(f.writes.length, 0);
+});
+
+
+test("identical rule titles and bodies do not repeat summaries or full body; distinct full bodies remain readable", async () => {
+  const f = await fixture("LabStandards.tsx");
+  f.records = [{ ...f.records[0], title: "回答先列关键依据", content: "回答先列关键依据" }];
+  let tree = f.render();
+  const row = nodes(tree).find(node => node.props?.className === "record-row");
+  assert.equal(nodes(row).some(node => node.type === "p"), false);
+  assert.equal(nodes(tree).some(node => node.type === "p" && text(node) === "回答先列关键依据"), false);
+  assert(nodes(tree).some(node => node.type === "h3" && text(node) === "适用范围"));
+  const complete = "回答先列关键依据。保留完整证据和无法确认的部分。";
+  f.records[0].content = complete;
+  tree = f.render();
+  assert(nodes(tree).some(node => node.props?.className === "record-content" && text(node) === complete));
+});
+
+test("empty template actions sit inside their explanation, preserving manager and member permissions", async () => {
+  const f = await fixture("LabStandards.tsx");
+  f.records = [];
+  f.params = new URLSearchParams("panel=standards&section=templates");
+  let tree = f.render();
+  const empty = nodes(tree).find(node => node.props?.className === "library-record-empty");
+  assert(button(empty, "新增模板"));
+  assert(button(empty, "设置本地资料文件夹"));
+  assert(button(empty, "查看共享模板与范文"));
+  assert.equal(nodes(tree).filter(node => node.type === "Button" && text(node) === "新增模板").length, 1);
+  f.canPublish = false;
+  tree = f.render();
+  assert.equal(button(tree, "新增模板"), undefined);
+  assert(button(tree, "设置本地资料文件夹"));
 });

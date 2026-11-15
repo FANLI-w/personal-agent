@@ -367,13 +367,17 @@ export function ResearchTeamWorkbench({
       }
     >
       <>
-        {displayTask ? (
+        {selectedTask ? (
           <WorkspaceTaskDetail
-            key={`${generation}:research:${displayTask}`}
-            taskId={displayTask}
+            key={`${generation}:research:${selectedTask}`}
+            taskId={selectedTask}
             kind="research"
             onChanged={read.refresh}
           />
+        ) : displayTask ? (
+          // First establish the canonical URL. Native IPC checks that exact
+          // task, and child effects run before this panel's selection effect.
+          <p className="workspace-task-list-note" role="status">正在打开任务…</p>
         ) : (
           <div className="workspace-empty">
             <h2>选择一项团队任务</h2>

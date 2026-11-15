@@ -160,18 +160,6 @@ export function ResearchContacts() {
         {!library && <aside className="workspace-list-pane">
           <div className="workspace-heading">
             <h1>通讯录</h1>
-            <div className="flex gap-2">
-            {kind === "agents" && <Button type="text" onClick={() => openSkills()}>技能库</Button>}
-            <Button
-              type="text"
-              onClick={() => {
-                setAddTab(kind === "agents" ? "agent" : "friend");
-                setAdding(true);
-              }}
-            >
-              添加
-            </Button>
-            </div>
           </div>
           <nav className="directory-page-tabs" aria-label="通讯录分类">
             <button type="button" aria-pressed={kind === "agents"} onClick={() => changeKind("agents")}>智能体</button>
@@ -187,14 +175,21 @@ export function ResearchContacts() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          <div className="directory-actions">
+            <Button onClick={() => {
+              setAddTab(kind === "agents" ? "agent" : "friend");
+              setAdding(true);
+            }}>{kind === "agents" ? "添加智能体" : "添加联系人"}</Button>
+            {kind === "agents" && <Button type="text" onClick={() => openSkills()}>技能库</Button>}
+          </div>
           <div className="workspace-list-scroll">
-            <div className="workspace-contact-shortcuts">
+            {kind === "people" && <div className="workspace-contact-shortcuts">
               <button onClick={() => navigate("/contact/newFriends")}>好友申请</button>
               <button onClick={() => navigate("/contact/groupNotifications")}>
                 群邀请
               </button>
               <button onClick={() => navigate("/contact/myGroups")}>我的群组</button>
-            </div>
+            </div>}
             {pageFailure && (
               <Alert
                 type="warning"
@@ -256,15 +251,8 @@ export function ResearchContacts() {
             />
           ) : (
             <div className="workspace-empty">
-              <h2>{kind === "agents" ? "智能体" : "联系人"}</h2>
-              <Button
-                onClick={() => {
-                  setAddTab(kind === "agents" ? "agent" : "friend");
-                  setAdding(true);
-                }}
-              >
-                {kind === "agents" ? "添加智能体" : "添加联系人"}
-              </Button>
+              <h2>{kind === "agents" ? "选择一位智能体" : "选择一位联系人"}</h2>
+              <p>从左侧列表选择，查看资料并开始聊天。</p>
             </div>
           )}
         </main>

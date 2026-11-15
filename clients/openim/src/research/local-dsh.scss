@@ -194,6 +194,19 @@
 .local-dsh-sources {
   color: #253746;
 }
+.local-dsh-task-drawer {
+  // Keep the native drag region from capturing the drawer's close button.
+  -webkit-app-region: no-drag;
+  .ant-drawer-header,
+  .ant-drawer-close { -webkit-app-region: no-drag; }
+  .ant-drawer-close {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+}
 .local-dsh-sources h4 {
   margin-top: 24px;
 }

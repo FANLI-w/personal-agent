@@ -24,6 +24,7 @@ import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchRead } from "./useResearchRead";
 import { nativeWorkbenchTaskPath } from "./workbench-links";
 import { NativeWorkbenchTaskButton } from "./NativeWorkbenchTaskButton";
+import { taskStatusFailure, taskStatusRouteMatches } from "./task-status-read";
 
 const phases = {
   ready: "可以开始",
@@ -290,30 +291,36 @@ export function TaskWorkPage({
   const refresh = async () => {
     if (!bridge?.taskStatus) return;
     const { isCurrent } = operation.capture();
-    const next = await bridge.taskStatus(target);
-    if (isCurrent()) {
-      setConnectionError("");
-      setState(next);
-      if (next && !noteLoaded.current) {
-        // A saved note wins; otherwise start from the phase so the box is never blank.
-        setNote(next.binding.note || progressNote(next));
-        noteLoaded.current = true;
+    const current = () => isCurrent() && taskStatusRouteMatches(window.location.hash, target);
+    if (!current()) return;
+    try {
+      const next = await bridge.taskStatus(target);
+      if (current()) {
+        setConnectionError("");
+        setState(next);
+        if (next && !noteLoaded.current) {
+          // A saved note wins; otherwise start from the phase so the box is never blank.
+          setNote(next.binding.note || progressNote(next));
+          noteLoaded.current = true;
+        }
+      }
+    } catch (failure) {
+      if (current()) {
+        setState(undefined);
+        setConnectionError(taskStatusFailure(failure));
       }
     }
   };
   useEffect(() => {
+    const { isCurrent } = operation.capture();
     let cancelled = false,
       reading = false;
     const poll = async () => {
-      if (reading || cancelled || !bridge?.taskStatus) return;
+      if (reading || cancelled || !isCurrent() || !bridge?.taskStatus ||
+        !taskStatusRouteMatches(window.location.hash, target)) return;
       reading = true;
       try {
         await refresh();
-      } catch (e) {
-        if (!cancelled) {
-          setState(undefined);
-          setConnectionError(e instanceof Error ? e.message : "本地进度暂不可用。");
-        }
       } finally {
         reading = false;
       }
@@ -462,7 +469,7 @@ export function TaskWorkPage({
         </div>
         {Boolean(connectionError || state) && (
           <span>
-            {connectionError ? "连接中断 · 进度待核对" : phases[state!.phase]}
+            {connectionError ? "本机进度待核对" : phases[state!.phase]}
           </span>
         )}
       </header>
@@ -484,13 +491,21 @@ export function TaskWorkPage({
           </span>
         </div>
       )}
-      {(error || detail.error || connectionError) && (
+      {(error || detail.error) && (
         <Alert
           type="error"
-          message={error || detail.error || connectionError}
+          message={error || detail.error}
           action={
             <Button onClick={() => void command(async () => {})}>刷新核对</Button>
           }
+        />
+      )}
+      {connectionError && (
+        <Alert
+          type="warning"
+          message="暂时无法读取这项任务的本机进度"
+          description={connectionError}
+          action={<Button onClick={() => void command(async () => {})}>重新读取进度</Button>}
         />
       )}
       {notice && <Alert type="success" message={notice} />}

@@ -36,6 +36,47 @@ const page = (data, nextCursor = null) => ({
   summary: { total: 201 },
 });
 
+test("team auto-selection establishes the controlled task route before mounting native task effects", async () => {
+  const source = await readFile(new URL("../src/research/ResearchTeamWorkbench.tsx", import.meta.url), "utf8");
+  const effects = [], states = [];
+  let cursor = 0;
+  const taskRow = row("selected_team_task", "plan_1", "in_progress");
+  Object.assign(taskRow.task, { allowedActions: ["submit"], goal: "Synthetic task", leadId: "member_1", schedule: { hardDeadline: null, committed: null } });
+  const jsx = (type, props) => ({ type, props });
+  const imports = {
+    react: {
+      useState(initial) { const at = cursor++; if (!(at in states)) states[at] = initial; return [states[at], next => { states[at] = typeof next === "function" ? next(states[at]) : next; }]; },
+      useEffect(effect) { effects.push(effect); }, useLayoutEffect() {}, useMemo: compute => compute(),
+    },
+    "react/jsx-runtime": { jsx, jsxs: jsx },
+    antd: { Alert: "Alert", Button: "Button", Drawer: "Drawer", Input: { Search: "Search" }, Segmented: "Segmented", Select: "Select" },
+    "./store": { useResearchStore: selector => selector({ generation: 1, actor: { spaceKind: "laboratory", member: { id: "member_1", labId: "lab_1" } } }) },
+    "./useResearchRead": { useResearchRead: (_read, key) => ({ data: key.startsWith("team-progress-members") ? { data: [] } : { data: [taskRow], summary: { total: 1, awaitingReview: 0, accepted: 0 } }, refresh: async () => {} }) },
+    "./research-team": team,
+    "./team-progress": mod.exports,
+    "./workspace-labels": { workspaceStatusLabel: { in_progress: "进行中" } },
+    "./TaskWorkspace": { TaskWorkspace: "TaskWorkspace", TaskListRow: "TaskListRow", TaskReadNotice: "TaskReadNotice", WorkspaceTaskDetail: "WorkspaceTaskDetail" },
+  };
+  const module = { exports: {} };
+  vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText, {
+    module, exports: module.exports, require: name => imports[name] || {},
+  });
+  const requests = [];
+  const props = { onPlan() {}, onSelectTask: id => requests.push(id) };
+  const render = () => { cursor = 0; return module.exports.ResearchTeamWorkbench(props); };
+  const find = node => Array.isArray(node) ? node.flatMap(find) : node && typeof node === "object" ? [node, ...find(node.props?.children)] : [];
+  const initial = render();
+  assert.equal(find(initial).some(node => node.type === "WorkspaceTaskDetail"), false);
+  while (effects.length) effects.shift()();
+  assert.deepEqual(requests, ["selected_team_task"]);
+  props.selectedTask = requests[0];
+  const detail = find(render()).find(node => node.type === "WorkspaceTaskDetail");
+  assert.equal(detail.props.taskId, "selected_team_task");
+  assert.equal(detail.props.kind, "research");
+  while (effects.length) effects.shift()();
+  assert.equal(requests.length, 1);
+});
+
 test("directions use persisted plan IDs and never merge summary projections or matching titles", () => {
   const groups = teamDirections([
     row("a", "p"),

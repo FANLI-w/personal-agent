@@ -9,7 +9,7 @@ const source = await readFile(new URL('../src/research/RepositoryEditor.tsx', im
 const code = ts.transpileModule(source, { compilerOptions: { module:ts.ModuleKind.CommonJS, target:ts.ScriptTarget.ES2022, jsx:ts.JsxEmit.ReactJSX } }).outputText;
 const nodes = node => !node || typeof node !== 'object' ? [] : Array.isArray(node)
   ? node.flatMap(nodes) : [node, ...nodes(node.props?.children)];
-function fixture(current) {
+function fixture(current, readOnly = false) {
   const state = [], refs = [], calls = [];
   let cursor = 0, refCursor = 0, generation = 1, saved = 0;
   const jsx = (type, props) => ({type, props});
@@ -25,7 +25,7 @@ function fixture(current) {
   const module={exports:{}};
   vm.runInNewContext(code, { module, exports:module.exports, require:name => { assert(Object.hasOwn(imports,name),name); return imports[name]; },
     Error, crypto:{randomUUID}, window:{electronAPI:{teamLibrary:{discover:url => f.discover(url)}}} });
-  f.render = () => {cursor=0;refCursor=0;return module.exports.RepositoryEditor({current,onSaved:async()=>saved++,onClose:()=>{}});};
+  f.render = () => {cursor=0;refCursor=0;return module.exports.RepositoryEditor({current,readOnly,onSaved:async()=>saved++,onClose:()=>{}});};
   f.paste = url => nodes(f.render()).find(n=>n.type==='Input').props.onChange({target:{value:url}});
   return f;
 }
@@ -66,4 +66,22 @@ test('an account/team change during discovery prevents saving the late result', 
   const busy=f.render();assert.equal(busy.props.closable,false);assert.equal(nodes(busy).find(n=>n.type==='Input').props.disabled,true);
   f.expire();resolve({url:'https://github.com/synthetic/files.git',branch:'main',workspaceId:'old'});
   await pending;assert.equal(f.calls.length,0);assert.equal(f.saved,0);
+});
+
+
+test('a member can inspect the configured address without gaining connection or write actions', async () => {
+  const f = fixture({ binding: { url: 'https://github.com/synthetic/files.git', version: 7 } }, true);
+  let discoveries = 0;
+  f.discover = async () => { discoveries++; throw Error('must not connect'); };
+  const tree = f.render();
+  const input = nodes(tree).find(node => node.type === 'Input');
+  assert.equal(input.props.value, 'https://github.com/synthetic/files.git');
+  assert.equal(input.props.readOnly, true);
+  assert.equal(tree.props.okButtonProps.disabled, true);
+  assert.equal(tree.props.cancelText, '关闭');
+  await tree.props.onOk();
+  input.props.onPressEnter();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(discoveries, 0);
+  assert.equal(f.calls.length, 0);
 });

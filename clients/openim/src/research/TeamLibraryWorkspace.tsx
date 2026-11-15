@@ -109,7 +109,8 @@ export function TeamLibraryWorkspace({
   );
   const [snapshot, setSnapshot] = useState<TeamLibrarySnapshot>(),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [syncError, setSyncError] = useState("");
   const [project, setProject] = useState(""),
     [purpose, setPurpose] = useState(""),
     [query, setQuery] = useState(""),
@@ -199,6 +200,7 @@ export function TeamLibraryWorkspace({
     setProposal(undefined);
     setTasks(undefined);
     setError("");
+    setSyncError("");
     setQuestion("");
     setProject("");
     setPurpose("");
@@ -213,7 +215,7 @@ export function TeamLibraryWorkspace({
     if (!bridge) return;
     const ticket = operation.capture();
     setBusy(true);
-    setError("");
+    setSyncError("");
     try {
       const next = await bridge.sync();
       if (ticket.isCurrent()) {
@@ -225,7 +227,7 @@ export function TeamLibraryWorkspace({
         );
       }
     } catch (e) {
-      if (ticket.isCurrent()) setError(message(e));
+      if (ticket.isCurrent()) setSyncError(message(e));
     } finally {
       if (ticket.isCurrent()) setBusy(false);
     }
@@ -243,7 +245,7 @@ export function TeamLibraryWorkspace({
         }
         if (!cancelled && ticket.isCurrent()) await sync();
       } catch (e) {
-        if (!cancelled && ticket.isCurrent()) setError(message(e));
+        if (!cancelled && ticket.isCurrent()) setSyncError(message(e));
       }
     })();
     return () => {
@@ -477,33 +479,30 @@ export function TeamLibraryWorkspace({
           )}
         </div>
       )}
-      {(error || repository.error) && (
-        <Alert
-          type="error"
-          showIcon
-          message={error || repository.error}
-          action={
-            snapshot ? (
-              <Button
-                size="small"
-                loading={busy || repository.loading}
-                onClick={() => (binding ? void sync() : void repository.refresh())}
-              >
-                重试
-              </Button>
-            ) : undefined
-          }
-        />
+      {tab === "team" && (error || (snapshot && repository.error)) && (
+        <Alert type="error" showIcon message={error || repository.error} />
       )}
-      {snapshot?.stale && (
+      {tab === "team" && snapshot && (syncError || snapshot.stale) && (
         <Alert
           type="warning"
           showIcon
-          message={snapshot.warning}
+          message="团队资料同步未完成，正在显示上次成功同步的资料"
+          description={
+            <details className="team-library-sync-details">
+              <summary>查看同步详情</summary>
+              <p>{syncError || snapshot.warning}</p>
+              {binding && <p>仓库地址：{binding.url}</p>}
+            </details>
+          }
           action={
-            <Button size="small" loading={busy} onClick={() => void sync()}>
-              重新同步
-            </Button>
+            <div className="team-library-recovery-actions">
+              <Button size="small" loading={busy} onClick={() => void sync()}>
+                重新同步
+              </Button>
+              <Button size="small" onClick={() => setConfigure(true)}>
+                检查仓库地址
+              </Button>
+            </div>
           }
         />
       )}
@@ -530,6 +529,7 @@ export function TeamLibraryWorkspace({
           ) : !binding && repository.error ? (
             <div className="team-library-empty">
               <h2>团队资料暂时无法读取</h2>
+              <p role="alert">{repository.error}</p>
               <Button onClick={repository.refresh}>重新连接</Button>
             </div>
           ) : !binding ? (
@@ -552,11 +552,21 @@ export function TeamLibraryWorkspace({
               ) : (
                 <>
                   <FolderOpenOutlined />
-                  <h2>{error ? "团队资料同步未完成" : "还没有可读取的资料目录"}</h2>
+                  <h2>{syncError ? "团队资料同步未完成" : "还没有可读取的资料目录"}</h2>
                   <p>同步成功后，资料会显示在这里。我的资料可独立使用。</p>
-                  <Button type="primary" onClick={sync}>
-                    重新同步
-                  </Button>
+                  <div className="team-library-recovery-actions">
+                    <Button type="primary" onClick={sync}>
+                      重新同步
+                    </Button>
+                    <Button onClick={() => setConfigure(true)}>检查仓库地址</Button>
+                  </div>
+                  {syncError && (
+                    <details className="team-library-sync-details">
+                      <summary>查看同步详情</summary>
+                      <p>{syncError}</p>
+                      <p>仓库地址：{binding.url}</p>
+                    </details>
+                  )}
                 </>
               )}
             </div>
@@ -878,6 +888,7 @@ export function TeamLibraryWorkspace({
       </Drawer>
       {configure && (
         <RepositoryEditor
+          readOnly={!current?.canConfigure}
           current={current}
           onClose={() => setConfigure(false)}
           onSaved={async () => {
