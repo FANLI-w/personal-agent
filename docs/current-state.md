@@ -4,6 +4,10 @@
 
 Windows 正式版 0.10.112 已发布。[发布页](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.112) · [PR #227](https://github.com/luoyan96/personal-agent/pull/227)。正式构建与标签对应 703a1bf，合并提交 8bb4a2b 的源码树相同。四项 PR 检查和本机打包启动测试通过。
 
+## 2026-11-15 · 团队资料按仓库目录浏览（本地试用）
+
+Windows 本地试用版 0.10.113-preview.1（713d8de）默认列出 Git 提交的真实目录，未登记文件随同步出现。实测 luoyan96/files 的 main（819c2794）根目录 4 项，进入 2026项目申报核对 6 份文件，返回上级打开了清单外的 README.md。新增文件在隔离 Git 仓库提交和同步验证。
+
 ## 2026-11-15 · Windows 0.10.111 正式发布
 
 工作台可从聊天、任务和团队资料入口接续对应任务会话，同时带入已核实的讨论、资料版本和允许使用的个人习惯。科研编辑与文件工作副本继续由内置 dsh-research-workbench 0.4.0 提供。 [发布记录](deployment/acceptcat-0.10.111-release.md)列出源码、成品及验证范围。
