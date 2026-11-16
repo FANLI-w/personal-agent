@@ -29,6 +29,7 @@ import { personalMemoryContext } from './personal-memories.js'
 import { personalAssistantSystem,PersonalAssistantOutput,assistantCandidates,assistantPeople,assistantTeamAgents,rankedAssistantCandidates,assistantComplexRequest,delegateWork,AssistantBudgetError,assistantProjectSystem,assistantProjectCompactSystem,assistantProjectDecisionSystem,assistantProjectEntrySources,minimalProjectEntrySources,admitProjectEntrySources } from './personal-assistant.js'
 import {createAssistantProject,resolveAssistantProjectDecision} from './assistant-projects.js'
 import {projectExecutionInput,projectExecutionSystem} from './assistant-project-actions.js'
+import {intakeRecoverySystem,queueIntakeOutputRecovery} from './intake-output-recovery.js'
 import {createWork,recordAssistantAnswerWork} from './workspace.js'
 import {recentDialogue,olderDialogue,dialogueTaskState,packDialogueLayers,saveDialogueSelection,dialogueSources,memoryContextSources,dialogueContextSystem,type DialogueLayers} from './dialogue-context.js'
 import { modelAgentProfile } from './agent-roles.js'
@@ -95,6 +96,28 @@ export class ChatWorker {
       } else if(input.projectExecution){
         system=projectExecutionSystem
         prompt=JSON.stringify(projectExecutionInput(s,input))
+      } else if(input.intakeOutputLimitRecovery){
+        // Retry only the typed interpretation, with current input lossless and
+        // no optional old transcript competing with the residual root budget.
+        const prior=JSON.parse(String(this.db.prepare('SELECT request_json FROM chat_turns WHERE id=?').get(input.intakeOutputLimitRecovery.previousTurnId)!.request_json)) as typeof input
+        const allowed=prior.projectEntryInventory!,current=currentTurnText(s,turn.id),agentContext=s.directory.modelContext(turn.agentContactId,group.id),personal=personalMemoryContext(s,agentContext.agent,group,current)
+        const full={...allProjectSources!,localSpecialists:rankedAssistantCandidates(s,current).filter(c=>allowed.specialistIds.includes(c.id)).map(c=>({id:c.id,displayName:c.displayName,introduction:c.profile.introduction,capabilityDescription:c.profile.capabilityDescription})),humans:assistantPeople(s).filter(c=>allowed.humanIds.includes(c.id)),messages:allProjectSources!.messages.filter(m=>allowed.messageIds.includes(m.id)),fileMessageIds:allProjectSources!.fileMessageIds.filter(id=>allowed.fileMessageIds.includes(id)),existingTasks:allProjectSources!.existingTasks.filter(t=>allowed.taskIds.includes(t.id)),projects:allProjectSources!.projects.filter(p=>allowed.projects.some(old=>old.id===p.id)).map(p=>({...p,commitments:p.commitments.filter(c=>allowed.projects.find(old=>old.id===p.id)!.commitmentIds.includes(c.id))}))}
+        projectSources=minimalProjectEntrySources(full,input)
+        system=intakeRecoverySystem+rulesSuffix
+        const context=input.context.map(ref=>{
+          s.checkResource(ref,group.id,true)
+          if(ref.kind==='task')return {...ref,data:s.c.task(ref.ref.id)}
+          if(ref.kind==='plan')return {...ref,data:s.c.plan(ref.ref.id)}
+          if(ref.kind==='artifact')return {...ref,data:s.ai.readTexts(s.ai.inputRefs([ref.ref.id]))[0]}
+          if(ref.kind==='run')return {...ref,data:s.ai.projectedRun(ref.ref.id)}
+          if(ref.kind==='deliverable')return {...ref,data:s.c.deliverable(ref.ref.id)}
+          return {...ref,data:s.c.assignment(ref.ref.id).model}
+        })
+        const serialize=()=>JSON.stringify({currentRequest:current,requestedAgent:{id:agentContext.agent.id,displayName:agentContext.agent.displayName,profile:Object.fromEntries(Object.entries(modelAgentProfile(agentContext.agent)).filter(([key,value])=>key!=='version'&&value!==''))},...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(context.length?{context}:{}),projectEntrySources:projectSources})
+        admitProjectEntrySources(full,projectSources,()=>input.budget.maxTokens-chatInputTokenBound(system,serialize())>=1024)
+        prompt=serialize();input.agentContextFingerprint=agentContext.fingerprint
+        input.memoryContextSources=memoryContextSources(s,personal.records,agentContext.memories)
+        saveDialogueSelection(s,turn.id,input,{messages:recentDialogue(s,group.id,input.inputSequence,input.continuous?.messageIds??[turn.inputMessageId]).filter(m=>(input.continuous?.messageIds??[turn.inputMessageId]).includes(m.id)),notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]},true)
       } else if(input.assistantMode==='coordinate'){
         const current=currentTurnText(s,turn.id),agentContext=s.directory.modelContext(turn.agentContactId,group.id),personal=personalMemoryContext(s,agentContext.agent,group,current),complex=assistantComplexRequest(current)
         input.memoryContextSources=memoryContextSources(s,personal.records,agentContext.memories)
@@ -228,7 +251,7 @@ export class ChatWorker {
       if(projectSources)input.projectEntryInventory={specialistIds:[...new Set([...shownProjectSpecialistIds,...(projectSources.localSpecialists??[]).map(c=>c.id)])],humanIds:[...new Set([...shownProjectHumanIds,...(projectSources.humans??[]).map(c=>c.id)])],messageIds:projectSources.messages.map(m=>m.id),fileMessageIds:projectSources.fileMessageIds,taskIds:projectSources.existingTasks.map(t=>t.id),projects:projectSources.projects.map(p=>({id:p.id,commitmentIds:p.commitments.map(c=>c.id)}))}
       if(projectSources)input.dialogueSources=dialogueSources(s,[...new Set([...(input.dialogueSources??[]).map(source=>source.id),...projectSources.messages.map(message=>message.id)])])
       const inputTokenBound=chatInputTokenBound(system,prompt),remainingOutput=input.budget.maxTokens-inputTokenBound
-      const admitted=prompt.length <= (input.skill?256000:100000) && remainingOutput>=64
+      const admitted=prompt.length <= (input.skill?256000:100000) && remainingOutput>=(input.intakeOutputLimitRecovery?1024:64)
       // Counts only, private to the requester-side runtime. Never copy prompt,
       // quoted text, model output, keys or other members' private receipts.
       input.modelInputDiagnostic={budgetMaxTokens:input.budget.maxTokens,inputTokenBound,maxOutputTokens:admitted?Math.min(4096,remainingOutput):0,admitted}
@@ -247,7 +270,7 @@ export class ChatWorker {
       const selected=personalModelRuntime(this.db,s.c.actor,this.config)
       // Bounded file/project text work needs visible output: provider-default
       // reasoning can otherwise consume the entire 4096-token output cap.
-      return { id: turn.id, ownerId: String(row.owner_id), fence, input,externalEndpoint:external?.endpoint, modelInput: { provider:selected.provider,...(selected.provider==='deepseek'&&input.dailyChat&&(input.fileSource||input.projectExecution)?{reasoningEffort:'off' as const}:{}),system, prompt, model:external?.model??selected.model, maxTokens: Math.min(4096,remainingOutput), timeoutMs: input.budget.maxSeconds * 1000 }, credential: { apiKey } }
+      return { id: turn.id, ownerId: String(row.owner_id), fence, input,externalEndpoint:external?.endpoint, modelInput: { provider:selected.provider,...(selected.provider==='deepseek'&&input.dailyChat&&(input.fileSource||input.projectExecution||input.intakeOutputLimitRecovery)?{reasoningEffort:'off' as const}:{}),system, prompt, model:external?.model??selected.model, maxTokens: Math.min(4096,remainingOutput), timeoutMs: input.budget.maxSeconds * 1000 }, credential: { apiKey } }
     }))
     if (!job) return false
     const controller = new AbortController(), started = Date.now(),unregister=registerChatCall(job.id,controller)
@@ -395,6 +418,7 @@ export class ChatWorker {
       }
       turn.version++; turn.updatedAt = instant(); s.saveTurn(turn)
       this.db.prepare('UPDATE chat_turns SET lease_owner=NULL,lease_until=NULL WHERE id=?').run(turn.id)
+      if(result.failure==='OUTPUT_LIMIT')queueIntakeOutputRecovery(s,turn.id)
     })) } finally { clearInterval(lease) }
     return true
   }
