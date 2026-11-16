@@ -25,7 +25,8 @@ import type { AgentTurn } from "@research-agent-platform/contracts";
 import styles from "@/pages/chat/queryChat/MessageItem/message-item.module.scss";
 import { CreatedAgentChatButton } from "./CreatedAgentChatButton";
 import { AgentFileReadSummary, agentFileReadCoverage } from "./AgentFileReadSummary";
-import { PersonalReceiptCard } from "./PersonalReceiptCard";
+import { PersonalReceiptCard, WorkTaskReceipt } from "./PersonalReceiptCard";
+import { createProjectNoticeReader, isProjectNoticeCandidate } from './project-message-notice';
 import { ContinueAgentFileReadingButton } from "./ContinueAgentFileReadingButton";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { ResearchReadSummary } from "./ResearchReadSummary";
@@ -34,6 +35,10 @@ import { readChatMessage, readChatTurn, activeChatTurn } from "./chat-message-re
 import { useChatRecordChanges } from './useChatRecordChanges';
 import { watchTranscriptMessage } from './chat-transcript-sync';
 import { locateMessage, timelineScope } from "./chat-timeline";
+
+const readProjectNotice=createProjectNoticeReader(async(conversationId,messageId)=>
+  (await researchApi('chatProjectNotice',{params:{id:conversationId,messageId}})).data,
+);
 
 export default function ResearchMessageRender({
   message,
@@ -104,6 +109,15 @@ export default function ResearchMessageRender({
     read.data?.fact.resources || [],
   );
   const taskNotice = isTaskNotice(read.data?.fact);
+  const coordinatorNotice=useResearchStore(state=>state.contacts.some(item=>
+    item.contact.id===read.data?.fact.senderContactId && item.contact.profile.role==='coordinator',
+  ));
+  const projectNotice=useResearchRead(
+    ()=>readProjectNotice(actorGeneration,pointer!.conversationId,pointer!.messageId),
+    `project-message:${pointer?.conversationId}:${pointer?.messageId}`,
+    !!pointer && isProjectNoticeCandidate(read.data?.fact,read.data?.details?.replyTo,coordinatorNotice),
+    {poll:false},
+  );
   // A server that predates task references still sends the invitation as text.
   const legacyInvite =
     !taskNotice && read.data?.fact.origin === "service"
@@ -124,7 +138,7 @@ export default function ResearchMessageRender({
   useEffect(() => {
     const fact = read.data?.fact;
     onReplyAgent?.(
-      fact?.origin === "model" && fact.senderContactId
+      (fact?.origin === "model" || !!projectNotice.data) && fact?.senderContactId
         ? {
             contactId: fact.senderContactId,
             displayName: message.senderNickname || "助手",
@@ -135,6 +149,7 @@ export default function ResearchMessageRender({
     isGroup,
     read.data?.fact.senderContactId,
     read.data?.fact.origin,
+    projectNotice.data,
     message.senderNickname,
     onReplyAgent,
   ]);
@@ -253,7 +268,7 @@ export default function ResearchMessageRender({
                 <LegacyTaskInviteCard text={read.data.fact.text} />
               ) : (
                 read.data.fact.text && (
-                  read.data.fact.origin === "service" && !read.data.fact.resources.length && !read.data.fact.actionIds.length && !read.data.fact.turnId ? (
+                  read.data.fact.origin === "service" && !read.data.fact.resources.length && !read.data.fact.actionIds.length && !read.data.fact.turnId && !projectNotice.data ? (
                     <details className="chat-system-notice">
                       <summary title={serviceNoticePreview(read.data.fact.text)}>{serviceNoticePreview(read.data.fact.text)}</summary>
                       <SafeMessageMarkdown text={read.data.fact.text} />
@@ -261,6 +276,7 @@ export default function ResearchMessageRender({
                   ) : <SafeMessageMarkdown text={read.data.fact.text} />
                 )
               )}
+              {projectNotice.data && <WorkTaskReceipt taskId={projectNotice.data.taskId} poll={false} />}
               {!!taskResources.length && (
                 <div className="space-y-2">
                   {taskResources.map((resource) => (

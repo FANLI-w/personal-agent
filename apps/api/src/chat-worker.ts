@@ -26,9 +26,11 @@ import { externalForChat } from './agent-connections.js'
 import { callExternalAgent, externalAgentSystem, type ExternalAgentCall } from './external-agent-client.js'
 import { currentTurnText,registerChatCall,saveChatDelta } from './continuous-chat.js'
 import { personalMemoryContext } from './personal-memories.js'
-import { personalAssistantSystem,PersonalAssistantOutput,assistantCandidates,assistantPeople,assistantTeamAgents,rankedAssistantCandidates,assistantComplexRequest,delegateWork,AssistantBudgetError } from './personal-assistant.js'
+import { personalAssistantSystem,PersonalAssistantOutput,assistantCandidates,assistantPeople,assistantTeamAgents,rankedAssistantCandidates,assistantComplexRequest,delegateWork,AssistantBudgetError,assistantProjectSystem,assistantProjectCompactSystem,assistantProjectDecisionSystem,assistantProjectEntrySources,minimalProjectEntrySources,admitProjectEntrySources } from './personal-assistant.js'
+import {createAssistantProject,resolveAssistantProjectDecision} from './assistant-projects.js'
+import {projectExecutionInput,projectExecutionSystem} from './assistant-project-actions.js'
 import {createWork,recordAssistantAnswerWork} from './workspace.js'
-import {recentDialogue,olderDialogue,dialogueTaskState,packDialogueLayers,saveDialogueSelection,memoryContextSources,dialogueContextSystem,type DialogueLayers} from './dialogue-context.js'
+import {recentDialogue,olderDialogue,dialogueTaskState,packDialogueLayers,saveDialogueSelection,dialogueSources,memoryContextSources,dialogueContextSystem,type DialogueLayers} from './dialogue-context.js'
 import { modelAgentProfile } from './agent-roles.js'
 import { isDatabaseBusy, waitForWorkerDatabase } from './worker-database.js'
 
@@ -74,6 +76,10 @@ export class ChatWorker {
       catch(error){if(!(error instanceof Error)||error.message!=='BUDGET_EXCEEDED')throw error;turn.status='failed';turn.failure='BUDGET_EXCEEDED';turn.version++;turn.updatedAt=instant();s.saveTurn(turn);return null}
       const rulesSuffix=conversationRules?.text?`\n${conversationRules.text}`:''
       if(conversationRules?.text)console.log(`CHAT_RULES conversation=${group.id} kind=${group.kind} scope=${conversationRules.ruleScope} bytes=${conversationRules.bytes} rules=${conversationRules.ruleIds.join(',')} layers=${layerCounts(conversationRules.rules)} omitted=${conversationRules.omitted.length}`)
+      const allProjectSources=input.assistantProjectEntry?assistantProjectEntrySources(s,turn,input):undefined
+      let shownProjectSpecialistIds:string[]=[],shownProjectHumanIds:string[]=[]
+      let projectSources=allProjectSources?minimalProjectEntrySources(allProjectSources,input):undefined
+      const projectDecisionSuffix=()=> (input.assistantMode==='coordinate'||input.fileSource)&&projectSources?.projects.some(p=>p.commitments.some(c=>['blocked','waiting'].includes(c.status)))?'\n'+assistantProjectDecisionSystem:''
       let system:string,prompt:string
       const external=input.externalAgent?externalForChat(s,turn.agentContactId):null
       if(input.externalAgent&&!external)throw new ApiError('FORBIDDEN')
@@ -86,6 +92,9 @@ export class ChatWorker {
         // not by any past message, profile, memory or proposed business action.
         system=agentCreationSystem
         prompt=JSON.stringify({request:currentTurnText(s,turn.id)})
+      } else if(input.projectExecution){
+        system=projectExecutionSystem
+        prompt=JSON.stringify(projectExecutionInput(s,input))
       } else if(input.assistantMode==='coordinate'){
         const current=currentTurnText(s,turn.id),agentContext=s.directory.modelContext(turn.agentContactId,group.id),personal=personalMemoryContext(s,agentContext.agent,group,current),complex=assistantComplexRequest(current)
         input.memoryContextSources=memoryContextSources(s,personal.records,agentContext.memories)
@@ -93,15 +102,21 @@ export class ChatWorker {
         const required=new Set(input.continuous?.messageIds??[turn.inputMessageId]),recent=recentDialogue(s,group.id,input.inputSequence,[...required]),notes=olderDialogue(s,group.id,input.inputSequence,recent,current),tasks=dialogueTaskState(s,group,current)
         let layers:DialogueLayers={messages:[],notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]}
         system=personalAssistantSystem+'\n'+dialogueStyle+(complex?'\nComplex work: JSON {kind:"team",title:string,contactIds:[listed_ID]}. Save only a proposal. Owner confirms group creation; humans and Agent owners accept independently. No automatic execution or material sharing.':'')
+        if(input.assistantProjectEntry)system+='\n'+assistantProjectCompactSystem
         system+=rulesSuffix
-        const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'\nAnswer currentRequest only; forwarded names may differ from the sender.')
+        const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+projectDecisionSuffix()+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'\nAnswer currentRequest only; forwarded names may differ from the sender.')
         system=contextSystem(layers)
         const candidates=rankedAssistantCandidates(s,current),shown:typeof candidates=[]
-        const serialize=(selection=layers)=>JSON.stringify({currentRequest:current,requestedAgent:{id:agentContext.agent.id,displayName:agentContext.agent.displayName,profile:Object.fromEntries(Object.entries(modelAgentProfile(agentContext.agent)).filter(([key,value])=>key!=='version'&&value!==''))},...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(agentContext.memories.length?{memories:agentContext.memories}:{}),localSpecialists:shown,...(shown.length<candidates.length?{specialistsOmitted:true}:{}),...(complex?{labId:s.c.actor.labId,collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(selection.messages.some(m=>!required.has(m.id))?{recentDialogue:selection.messages.filter(m=>!required.has(m.id))}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
+        const serialize=(selection=layers)=>JSON.stringify({currentRequest:current,...(input.assistantProjectEntry?{projectEntrySources:projectSources}:{}),requestedAgent:{id:agentContext.agent.id,displayName:agentContext.agent.displayName,profile:Object.fromEntries(Object.entries(modelAgentProfile(agentContext.agent)).filter(([key,value])=>key!=='version'&&value!==''))},...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(agentContext.memories.length?{memories:agentContext.memories}:{}),localSpecialists:shown,...(shown.length<candidates.length?{specialistsOmitted:true}:{}),...(complex?{labId:s.c.actor.labId,collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(selection.messages.some(m=>!required.has(m.id))?{recentDialogue:selection.messages.filter(m=>!required.has(m.id))}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
         prompt=serialize()
         const replyReserve=chatReplyTokenReserve(system,prompt,input.budget.maxTokens)
         for(const candidate of candidates){if(shown.length>=3)break;shown.push(candidate);const trial=serialize();if(input.budget.maxTokens-chatInputTokenBound(system,trial)>=replyReserve)prompt=trial;else shown.pop()}
-        layers=packDialogueLayers(recent,required,notes,tasks,trial=>input.budget.maxTokens-chatInputTokenBound(contextSystem(trial),serialize(trial))>=replyReserve)
+        // Persisted decisions need their IDs and protocol before optional old
+        // dialogue consumes the small coordinate allowance.
+        if(allProjectSources&&projectSources)admitProjectEntrySources({...allProjectSources,localSpecialists:[],humans:[],existingTasks:[],fileMessageIds:[],messages:[],projects:allProjectSources.projects.filter(p=>p.commitments.some(c=>['blocked','waiting'].includes(c.status)))},projectSources,()=>input.budget.maxTokens-chatInputTokenBound(contextSystem(layers),serialize())>=replyReserve)
+        layers=packDialogueLayers(recent,required,notes,tasks,trial=>input.budget.maxTokens-chatInputTokenBound(contextSystem(trial),serialize(trial))>=replyReserve,true)
+        if(allProjectSources&&projectSources)admitProjectEntrySources(allProjectSources,projectSources,()=>input.budget.maxTokens-chatInputTokenBound(contextSystem(layers),serialize())>=replyReserve)
+        shownProjectSpecialistIds=shown.map(c=>c.id);shownProjectHumanIds=complex?assistantPeople(s).map(c=>c.id):[]
         system=contextSystem(layers);prompt=serialize();input.agentContextFingerprint=agentContext.fingerprint
         saveDialogueSelection(s,turn.id,input,layers,layers.messages.length<input.inputSequence)
         this.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(input),turn.id)
@@ -144,6 +159,7 @@ export class ChatWorker {
       }
       if(input.scheduledFollowupId)system+='\nThe latest service message is an explicitly owner-authorized scheduled instruction. Execute that instruction within the provided conversation text only, and return the result conversationally. It does not grant web browsing, tools, filesystem access, business mutations, contact creation, or further scheduling. State any missing inputs/access plainly; never claim to have performed actions outside this scope.'
       if(input.assistantMode==='coordinate')system=personalAssistantSystem+'\n'+chatModelSystem({group:true,inviteContact:false,inviteTask:false,runTask:false}).split('\n').filter(line=>/^(Ref=|Group=|Item=|S=|s=string)/.test(line)).join('\n')
+      if(input.assistantProjectEntry)system+='\n'+(input.fileSource?assistantProjectCompactSystem:assistantProjectSystem)
       const selectedSkill=input.skill?skillContext(s,input.skill,turn.agentContactId):undefined
       if(selectedSkill)system+=skillSystem
       const library=retrieveResearchContext(s,input,currentTurnText(s,turn.id))
@@ -154,7 +170,7 @@ export class ChatWorker {
       const notes=input.dailyChat?olderDialogue(s,group.id,input.inputSequence,messages,currentTurnText(s,turn.id),input.fileSource?.messageId):undefined,tasks=input.dailyChat&&group.kind!=='group'?dialogueTaskState(s,group,currentTurnText(s,turn.id)):[]
       let layers:DialogueLayers={messages:[],notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]}
       system+=rulesSuffix
-      const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'')
+      const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+projectDecisionSuffix()+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'')
       system=contextSystem(layers)
       // Lossless rows: budget selection may omit an oldest DAILY message, never
       // trim a retained message/profile/memory. Collaboration keeps its window.
@@ -166,7 +182,7 @@ export class ChatWorker {
         // IDs locate the complete current batch; optional old rows need no
         // duplicate UUIDs. Source quotes carry their own durable provenance.
         const messageRows=selected.map(m=>messageColumns.map(key=>key==='id'?currentIds.includes(m.id)?m.id:null:key==='sender'?m.senderContactId===null?null:senderIds.indexOf(m.senderContactId):m[key as keyof typeof m]))
-        return JSON.stringify({...(habits ? { senderWorkPreferences: habits } : {}),...(group.kind==='group'?{groupContext:groupPublicContext(s,group)}:{}),...(input.dailyChat?{currentRequest:{messageIds:currentIds}}:{}),...(selectedSkill?{selectedSkill}:{}),...(library?{researchLibrary:{retrieval:library.retrieval,limitation:library.limitation,excerpts:libraryExcerpts.map((e,i)=>({label:`R${i+1}`,...e}))}}:{}),...(!input.dailyChat||selectedSkill?{ownerId:s.c.actor.id,labId:s.c.actor.labId}:{}),requestedAgent,conversation,contactColumns,contacts:contacts.map(c=>contactColumns.map(key=>c[key as keyof typeof c])),senderIds,messageColumns,messages:messageRows,...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(input.assistantMode==='coordinate'?{currentRequest:s.projectedMessage(turn.inputMessageId).text,localSpecialists:assistantCandidates(s),collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(context.length?{context}:{}),...(earlierMessagesOmitted?{earlierMessagesOmitted:true}:{}),...(read?{fileRead:read,fileExcerpts}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
+        return JSON.stringify({...(input.assistantProjectEntry?{projectEntrySources:projectSources}:{}),...(habits ? { senderWorkPreferences: habits } : {}),...(group.kind==='group'?{groupContext:groupPublicContext(s,group)}:{}),...(input.dailyChat?{currentRequest:{messageIds:currentIds}}:{}),...(selectedSkill?{selectedSkill}:{}),...(library?{researchLibrary:{retrieval:library.retrieval,limitation:library.limitation,excerpts:libraryExcerpts.map((e,i)=>({label:`R${i+1}`,...e}))}}:{}),...(!input.dailyChat||selectedSkill?{ownerId:s.c.actor.id,labId:s.c.actor.labId}:{}),requestedAgent,conversation,contactColumns,contacts:contacts.map(c=>contactColumns.map(key=>c[key as keyof typeof c])),senderIds,messageColumns,messages:messageRows,...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(input.assistantMode==='coordinate'?{currentRequest:s.projectedMessage(turn.inputMessageId).text,localSpecialists:assistantCandidates(s),collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(context.length?{context}:{}),...(earlierMessagesOmitted?{earlierMessagesOmitted:true}:{}),...(read?{fileRead:read,fileExcerpts}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
       }
       prompt=serialize(messages)
       if(input.dailyChat){
@@ -199,12 +215,15 @@ export class ChatWorker {
           input.libraryRead=researchReadReceipt(library,libraryExcerpts);turn.libraryRead=input.libraryRead
         }
         layers=packDialogueLayers(messages,required,notes!,tasks,trial=>input.budget.maxTokens-chatInputTokenBound(contextSystem(trial),serialize(trial.messages,trial.messages.length<input.inputSequence,read,excerpts,trial))>=desiredOutput)
+        if(allProjectSources&&projectSources)admitProjectEntrySources(allProjectSources,projectSources,()=>input.budget.maxTokens-chatInputTokenBound(contextSystem(layers),serialize(layers.messages,layers.messages.length<input.inputSequence,read,excerpts,layers))>=desiredOutput)
         system=contextSystem(layers)
         const omitted=layers.messages.length<input.inputSequence
         prompt=serialize(layers.messages,omitted,read,excerpts)
         saveDialogueSelection(s,turn.id,input,layers,omitted)
       }
       }
+      if(projectSources)input.projectEntryInventory={specialistIds:[...new Set([...shownProjectSpecialistIds,...(projectSources.localSpecialists??[]).map(c=>c.id)])],humanIds:[...new Set([...shownProjectHumanIds,...(projectSources.humans??[]).map(c=>c.id)])],messageIds:projectSources.messages.map(m=>m.id),fileMessageIds:projectSources.fileMessageIds,taskIds:projectSources.existingTasks.map(t=>t.id),projects:projectSources.projects.map(p=>({id:p.id,commitmentIds:p.commitments.map(c=>c.id)}))}
+      if(projectSources)input.dialogueSources=dialogueSources(s,[...new Set([...(input.dialogueSources??[]).map(source=>source.id),...projectSources.messages.map(message=>message.id)])])
       const inputTokenBound=chatInputTokenBound(system,prompt),remainingOutput=input.budget.maxTokens-inputTokenBound
       const admitted=prompt.length <= (input.skill?256000:100000) && remainingOutput>=64
       // Counts only, private to the requester-side runtime. Never copy prompt,
@@ -289,7 +308,31 @@ export class ChatWorker {
             const message=s.message(group.id,{senderContactId:turn.agentContactId,origin:'service',text,mentions:[],resources:[],actionIds:[],turnId:turn.id})
             turn.outputMessageId=message.id;turn.failure=null;s.saveTurn(turn)
           } else {
-          const coordinated=job.input.assistantMode==='coordinate'?PersonalAssistantOutput.parse(JSON.parse(result.text)):null
+          const projectOutput=job.input.assistantProjectEntry&&/^\s*\{/.test(result.text)?JSON.parse(result.text):null
+          const coordinated=['project','project_decision','reply'].includes(projectOutput?.kind)?PersonalAssistantOutput.parse(projectOutput):job.input.assistantMode==='coordinate'?PersonalAssistantOutput.parse(JSON.parse(result.text)):null
+          if(coordinated?.kind==='project_decision'){
+            const sources=job.input.projectEntryInventory!,p=sources.projects.find(p=>p.id===coordinated.projectId)
+            if(!job.input.assistantProjectEntry||!currentTurnText(s,turn.id).includes(coordinated.authorizationEvidence)||!p?.commitmentIds.includes(coordinated.commitmentId))throw new Error('INVALID_MODEL_OUTPUT')
+            outputStage='persistence'
+            const project=resolveAssistantProjectDecision(s,coordinated.projectId,{turnId:turn.id,messageId:turn.inputMessageId},coordinated)
+            turn.assistantReceipt={kind:'work_task',taskId:project.workTaskId,conversationId:group.id,status:'ready'}
+            const message=s.message(group.id,{senderContactId:turn.agentContactId,origin:'service',text:`已将这次决定记入“${project.title}”，按你的补充继续推进；后续实际结果会回到这段聊天。`,mentions:[],resources:[],actionIds:[],turnId:turn.id})
+            turn.status='succeeded';turn.outputMessageId=message.id;turn.failure=null
+          }else if(coordinated?.kind==='project'){
+            const p=coordinated.project,sources=job.input.projectEntryInventory!,current=currentTurnText(s,turn.id)
+            if(!job.input.assistantProjectEntry||!current.includes(p.authorizationEvidence)||p.sourceMessageIds.some(id=>!sources.messageIds.includes(id))||p.sourceFileMessageIds.some(id=>!sources.fileMessageIds.includes(id))||p.existingTaskIds.some(id=>!sources.taskIds.includes(id))||p.commitments.some(c=>c.existingTaskId&&!sources.taskIds.includes(c.existingTaskId)))throw new Error('INVALID_MODEL_OUTPUT')
+            // Choosing self while eligible options were shown needs a model
+            // explanation of the scope mismatch or the owner's explicit choice.
+            // The server never guesses specialty from names or keyword lists.
+            if(p.commitments.some(c=>c.kind==='agent'&&(!c.contactId||c.contactId===turn.agentContactId))&&sources.specialistIds.length&&!p.coordinatorFallbackReason)throw new Error('INVALID_MODEL_OUTPUT')
+            if(p.commitments.some(c=>c.contactId&&c.contactId!==turn.agentContactId&&!(c.kind==='agent'?sources.specialistIds:sources.humanIds).includes(c.contactId)))throw new Error('INVALID_MODEL_OUTPUT')
+            outputStage='persistence'
+            const project=createAssistantProject(s,p,{turnId:turn.id,conversationId:group.id,messageId:turn.inputMessageId})
+            turn.assistantReceipt={kind:'work_task',taskId:project.workTaskId,conversationId:group.id,status:'ready'}
+            const assignments=p.commitments.map(c=>`${s.contact(c.contactId??turn.agentContactId).displayName}：${c.title}${c.dueDate?`（${c.dueDate}）`:c.dueAt?`（${c.dueAt}）`:''}`).join('\n')
+            const message=s.message(group.id,{senderContactId:turn.agentContactId,origin:'service',text:`已记录“${p.title}”的目标和分工，并开始持续跟进。${p.dueDate?`日期为 ${p.dueDate}（${p.timeZone}），按当天结束检查进度，具体时刻未指定。`:p.dueAt?`约定时间为 ${p.dueAt}。`:'尚未指定日期。'}\n${assignments}\n实际结果与需要你决定的事项会回到这段聊天。${p.commitments.some(c=>c.kind==='human')?'真人分工尚未代表对方接受，未向他人发送消息。':''}`,mentions:[],resources:[],actionIds:[],turnId:turn.id})
+            turn.status='succeeded';turn.outputMessageId=message.id;turn.failure=null
+          }else{
           if(coordinated?.kind==='collaborate'&&!assistantComplexRequest(s.projectedMessage(turn.inputMessageId).text??''))throw new Error('INVALID_MODEL_OUTPUT')
           if(coordinated?.kind==='team'){
             if(!assistantComplexRequest(currentTurnText(s,turn.id)))throw new Error('INVALID_MODEL_OUTPUT')
@@ -337,8 +380,11 @@ export class ChatWorker {
           const actions = payloads.map(payload => s.addAction(turn, message.id, payload)); message.actionIds = actions.map(a => a.id)
           this.db.prepare('UPDATE chat_messages SET document=? WHERE id=?').run(JSON.stringify(message), message.id)
           turn.status = output.waitingInput ? 'waiting_input' : 'succeeded'; turn.outputMessageId = message.id; turn.failure = null
-          if(coordinated?.kind==='reply')turn.assistantReceipt=recordAssistantAnswerWork(s,turn.id,group.id,turn.agentContactId,currentTurnText(s,turn.id),message.id)
+          // New replies classify deliverables. Pre-classifier outputs preserve the
+          // original explicit-work route; ordinary chat is never in that route.
+          if(coordinated?.kind==='reply'&&job.input.assistantMode==='coordinate'&&(coordinated.recordWork??true))turn.assistantReceipt=recordAssistantAnswerWork(s,turn.id,group.id,turn.agentContactId,currentTurnText(s,turn.id),message.id)
           if(coordinated?.kind==='collaborate'){const payload=payloads.find(p=>p.kind==='create_group')!;if(payload.kind==='create_group')turn.assistantReceipt={kind:'collaborate',planId:payload.plan.id,actionIds:actions.map(a=>a.id)}}
+          }
           }
           }
           this.db.exec('RELEASE chat_model_output')
