@@ -53,7 +53,7 @@ export function workbenchNextAction(card: WorkbenchCard): string {
   if (actions.includes("accept") || actions.includes("decide")) return "确认是否承接";
   if (["in_review", "awaiting_review"].includes(card.status))
     return actions.includes("review") ? "查看成果并验收" : "等待验收意见";
-  if (card.status === "changes_requested")
+  if (card.status === "changes_requested" || card.result?.changesRequested)
     return actions.includes("submit") ? "修改后重新提交" : "等待承接人修改";
   if (actions.includes("activate")) return "确认并发出任务";
   if (actions.includes("claim")) return "认领任务";

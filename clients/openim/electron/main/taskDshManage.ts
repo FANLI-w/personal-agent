@@ -48,6 +48,7 @@ export function registerTaskDshBridge(
       const req = c.account.request(url, body === undefined ? "GET" : "POST");
       req.setHeader('X-AcceptCat-Originals','chunked-v1');
       req.setHeader('X-AcceptCat-Work-Rules','layers-v1');
+      req.setHeader('X-AcceptCat-Task-Files','files-v1');
       if (body !== undefined) {
         req.setHeader("Content-Type", "application/json");
         req.setHeader("X-CSRF-Token", c.account.csrf);
@@ -590,13 +591,14 @@ export function registerTaskDshBridge(
     const replay = b?.delivery && b.delivery.summary === summary && JSON.stringify(b.delivery.names) === JSON.stringify(names)
       && (b.delivery.status === "pending" || !a.task.allowedActions.includes("submit"));
     if (!a.task.allowedActions.includes("submit") && !replay) throw Error("当前任务不能提交成果。");
+    if (target.kind === "personal" && names.length && !a.task.fileDeliverySupported) throw Error("当前后台尚未支持个人任务文件交付，请升级配套后台；仍可提交文字成果。");
     const flightKey = a.store.root + ":" + taskKey(target);
     if (deliveryFlights.has(flightKey)) throw Error("这项任务正在提交，请等回执后再操作。");
     deliveryFlights.add(flightKey);
     try {
     await a.coordinator.idle(target);
     for (const item of b?.sources || []) await source(a.c, item, target);
-    if (!replay && target.kind === "research" && names.length) {
+    if (!replay && names.length) {
       if (!b || names.length > 5) throw Error("每次最多提交 5 个文件。");
       const collectionKey = createHash("sha256").update(a.c.account.identity + ":delivery:" + target.taskId).digest("hex");
       const selectedHashes: Record<string, string> = {};
@@ -642,6 +644,7 @@ export function registerTaskDshBridge(
   ipcMain.handle("task-dsh-stage-delivery", async (event, target: TaskTarget, paths?: string[]) => {
     const a = await authorized(event, target, true);
     if (!a.task.allowedActions.includes("submit")) throw Error("当前任务不能提交成果。");
+    if (target.kind === "personal" && !a.task.fileDeliverySupported) throw Error("当前后台尚未支持个人任务文件交付，请升级配套后台；仍可提交文字成果。");
     let selected = paths;
     if (selected === undefined) {
       const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
@@ -658,7 +661,7 @@ export function registerTaskDshBridge(
   ipcMain.handle("task-dsh-download-delivery", async (event, target: TaskTarget, locator: string) => {
     const a = await authorized(event, target);
     const match = typeof locator === "string" && /^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$/.exec(locator);
-    const permitted = target.kind === "research" && a.data.deliverables?.some((delivery: any) => delivery.sources?.some((item: any) => item.locator === locator));
+    const permitted = target.kind === "research" ? a.data.deliverables?.some((delivery: any) => delivery.sources?.some((item: any) => item.locator === locator)) : a.task.result?.sources?.some((item: any) => item.locator === locator);
     if (!match || !permitted) throw Error("这份文件不在当前任务的交付记录中。");
     const selected = { kind: "library" as const, id: match[1], version: Number(match[2]) };
     const original = await source(a.c, selected, target);

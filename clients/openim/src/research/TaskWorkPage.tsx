@@ -13,6 +13,8 @@ import { LocalLibraryPicker } from "./LocalLibraryPicker";
 import { researchScopeLabels } from "./research-library-api";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { taskEventRows } from "./task-dsh-events";
+import { TaskResultReview } from "./TaskResultReview";
+import { deliveryFilename, deliveryDisplaySummary } from "./task-delivery-command";
 import { TaskDeliveryPanel } from "./TaskDeliveryPanel";
 import { TaskDeliveryDownload } from "./TaskDeliveryDownload";
 import { taskStateLabels } from "./task-planning";
@@ -258,7 +260,9 @@ export function TaskWorkPage({
     latestDelivery?.review?.decision !== "accepted"
       ? "已结束 · 验收记录待核对"
       : kind === "personal"
-      ? personalResult?.accepted
+      ? personalResult?.changesRequested
+        ? "待修改"
+        : personalResult?.accepted
         ? "已验收"
         : workspaceStatusLabel[serviceStatus] || serviceStatus
       : taskStateLabels[serviceStatus] || serviceStatus;
@@ -291,7 +295,8 @@ export function TaskWorkPage({
   const refresh = async () => {
     if (!bridge?.taskStatus) return;
     const { isCurrent } = operation.capture();
-    const current = () => isCurrent() && taskStatusRouteMatches(window.location.hash, target);
+    const current = () =>
+      isCurrent() && taskStatusRouteMatches(window.location.hash, target);
     if (!current()) return;
     try {
       const next = await bridge.taskStatus(target);
@@ -316,8 +321,14 @@ export function TaskWorkPage({
     let cancelled = false,
       reading = false;
     const poll = async () => {
-      if (reading || cancelled || !isCurrent() || !bridge?.taskStatus ||
-        !taskStatusRouteMatches(window.location.hash, target)) return;
+      if (
+        reading ||
+        cancelled ||
+        !isCurrent() ||
+        !bridge?.taskStatus ||
+        !taskStatusRouteMatches(window.location.hash, target)
+      )
+        return;
       reading = true;
       try {
         await refresh();
@@ -425,18 +436,16 @@ export function TaskWorkPage({
     command(async () => {
       const { isCurrent } = operation.capture();
       const names =
-        kind === "personal"
-          ? []
-          : selectedNames ||
-            (state?.binding.delivery?.status === "pending"
-              ? state.binding.delivery.names
-              : outputs.map((file) => file.name));
+        selectedNames ||
+        (state?.binding.delivery?.status === "pending"
+          ? state.binding.delivery.names
+          : outputs.map((file) => file.name));
       // The reviewer needs the file list, not a second essay.
       const summary =
         summaryText ||
         [
           names.length
-            ? `提交 ${names.length} 个文件：${names.join("、")}`
+            ? `提交 ${names.length} 个文件：${names.map(deliveryFilename).join("、")}`
             : "提交本任务成果",
           noteText.trim(),
         ]
@@ -467,13 +476,11 @@ export function TaskWorkPage({
             </p>
           )}
         </div>
-        {Boolean(connectionError || state) && (
-          <span>
-            {connectionError ? "本机进度待核对" : phases[state!.phase]}
-          </span>
+        {!completed && Boolean(connectionError || state) && (
+          <span>{connectionError ? "本机进度待核对" : phases[state!.phase]}</span>
         )}
       </header>
-      <TaskExecutionStatus target={target} />
+      {!completed && <TaskExecutionStatus target={target} />}
       {!state && (canStart || canClaim || canActivate) && (
         <div className="task-work-start" role="status">
           <Button
@@ -505,7 +512,9 @@ export function TaskWorkPage({
           type="warning"
           message="暂时无法读取这项任务的本机进度"
           description={connectionError}
-          action={<Button onClick={() => void command(async () => {})}>重新读取进度</Button>}
+          action={
+            <Button onClick={() => void command(async () => {})}>重新读取进度</Button>
+          }
         />
       )}
       {notice && <Alert type="success" message={notice} />}
@@ -531,6 +540,12 @@ export function TaskWorkPage({
               outputs={outputs}
               currentStatus={serviceStatus}
               canSubmit={actions.includes("submit")}
+              filesSupported={
+                kind === "research" ||
+                Boolean(
+                  task && "fileDeliverySupported" in task && task.fileDeliverySupported,
+                )
+              }
               disabled={
                 busy ||
                 !actions.includes("submit") ||
@@ -551,8 +566,46 @@ export function TaskWorkPage({
           )}
         {personalResult && (
           <div className="task-work-submitted">
-            <strong>{personalResult.accepted ? "已验收结果" : "待核对结果"}</strong>
-            <SafeMessageMarkdown text={personalResult.summary} />
+            <strong>
+              {personalResult.changesRequested
+                ? "已退回，待修改"
+                : personalResult.accepted
+                ? "已验收结果"
+                : "待核对结果"}
+            </strong>
+            <SafeMessageMarkdown
+              text={deliveryDisplaySummary(personalResult.summary)}
+            />
+            {personalResult.reviewComment && (
+              <p>审阅意见：{personalResult.reviewComment}</p>
+            )}
+            {(personalResult.sources || []).map((source) => (
+              <TaskDeliveryDownload
+                key={source.locator}
+                target={target}
+                locator={source.locator}
+                label={source.label}
+              />
+            ))}
+            {actions.includes("review") &&
+              !personalResult.changesRequested &&
+              personalResult.messageId && (
+                <TaskResultReview
+                  key={`${taskId}:${version}:${personalResult.messageId}`}
+                  target={target}
+                  taskVersion={currentVersion()}
+                  messageId={personalResult.messageId}
+                  supportsComment={Boolean(
+                    task &&
+                      "fileDeliverySupported" in task &&
+                      task.fileDeliverySupported,
+                  )}
+                  onChanged={async () => {
+                    await detail.refresh();
+                    await onChanged();
+                  }}
+                />
+              )}
           </div>
         )}
         {deliveries.length > 0 && (
@@ -572,7 +625,9 @@ export function TaskWorkPage({
                       ? "要求修改"
                       : "等待验收"}
                   </summary>
-                  <p>{delivery.summary}</p>
+                  <SafeMessageMarkdown
+                    text={deliveryDisplaySummary(delivery.summary)}
+                  />
                   {delivery.review && (
                     <p className="research-task-feedback">
                       审阅意见：{delivery.review.comment}
@@ -580,6 +635,18 @@ export function TaskWorkPage({
                   )}
                   {delivery.artifactRefs.length > 0 && (
                     <p>关联材料：{delivery.artifactRefs.join("、")}</p>
+                  )}
+                  {delivery.id === latestDelivery?.id && actions.includes("review") && (
+                    <TaskResultReview
+                      key={`${taskId}:${version}:${delivery.id}`}
+                      target={target}
+                      taskVersion={currentVersion()}
+                      delivery={delivery}
+                      onChanged={async () => {
+                        await detail.refresh();
+                        await onChanged();
+                      }}
+                    />
                   )}
                   {delivery.sources.map((source, index) => (
                     <TaskDeliveryDownload
@@ -597,7 +664,7 @@ export function TaskWorkPage({
           outputs.map((file) => (
             <div className="task-work-file" key={file.name}>
               <span title={file.name}>
-                {file.name} · {file.size} 字节
+                {deliveryFilename(file.name)} · {file.size} 字节
               </span>
               <div className="task-material-actions">
                 <Button
@@ -761,7 +828,7 @@ export function TaskWorkPage({
                       <pre className="task-work-preview">{row.detail}</pre>
                     </details>
                   )}
-                  {row.role === "assistant" && (
+                  {row.role === "assistant" && actions.includes("submit") && (
                     <Button
                       size="small"
                       onClick={() => {
@@ -774,7 +841,7 @@ export function TaskWorkPage({
                   )}
                 </article>
               ))}
-              {state.needsApproval && (
+              {canWork && state.needsApproval && (
                 <Alert
                   type="warning"
                   message="工具正在等待你确认"
@@ -799,7 +866,7 @@ export function TaskWorkPage({
                 />
               )}
             </div>
-            {state.binding.pending && (
+            {canWork && state.binding.pending && (
               <Alert
                 type="warning"
                 message="上一条请求结果待核对"
@@ -811,22 +878,24 @@ export function TaskWorkPage({
                 }
               />
             )}
-            <div className="task-work-handoff">
-              <NativeWorkbenchTaskButton target={target} primary />
-              {state.phase === "running" && (
-                <Button
-                  disabled={busy}
-                  onClick={() => void command(() => bridge!.taskCancel(target))}
-                >
-                  停止本轮
-                </Button>
-              )}
-              <span className="task-work-muted">
-                {state.phase === "running"
-                  ? "助手正在工作台执行。工具确认、追问和完整轨迹都在工作台完成。"
-                  : "任务背景、目标、资料版本和工作目录会一起带过去，不需要再复述一遍。"}
-              </span>
-            </div>
+            {canWork && (
+              <div className="task-work-handoff">
+                <NativeWorkbenchTaskButton target={target} primary />
+                {state.phase === "running" && (
+                  <Button
+                    disabled={busy}
+                    onClick={() => void command(() => bridge!.taskCancel(target))}
+                  >
+                    停止本轮
+                  </Button>
+                )}
+                <span className="task-work-muted">
+                  {state.phase === "running"
+                    ? "助手正在工作台执行。工具确认、追问和完整轨迹都在工作台完成。"
+                    : "任务背景、目标、资料版本和工作目录会一起带过去，不需要再复述一遍。"}
+                </span>
+              </div>
+            )}
             <details>
               <summary>进度与下一步</summary>
               <p className="task-work-muted">

@@ -45,7 +45,7 @@ function WorkbenchOverview({ card }: { card: WorkbenchCard }) {
         </span>
         <h2>{card.title}</h2>
         <span className="workspace-status">
-          {workspaceStatusLabel[card.status] || card.progress.label || "查看状态"}
+          {(card.result?.changesRequested ? "待修改" : workspaceStatusLabel[card.status]) || card.progress.label || "查看状态"}
         </span>
       </header>
       <div className="workspace-task-goal">
@@ -479,7 +479,7 @@ export function DesktopWorkbench() {
                         // One status per row: the footer only adds the progress step
                         // when it says something the badge does not.
                         const badge =
-                            workspaceStatusLabel[card.status] ||
+                            (card.result?.changesRequested ? "待修改" : workspaceStatusLabel[card.status]) ||
                             card.progress.label ||
                             "查看状态",
                           step = workbenchNextAction(card);

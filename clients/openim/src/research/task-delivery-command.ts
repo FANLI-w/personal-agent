@@ -1,4 +1,8 @@
 export const deliveryFilename = (name: string) => name.split(/[\\/]/).at(-1) || name;
+/** Internal staging folders carry integrity hashes; show only the delivered filename. */
+export function deliveryDisplaySummary(summary: string) {
+  return summary.replace(/delivery-[a-f0-9]{64}[\\/]/g, "");
+}
 export function deliveryReceiptLabel(status: string) {
   if (["in_review", "awaiting_review"].includes(status)) return "已提交，等待验收";
   if (status === "completed") return "成果已验收";

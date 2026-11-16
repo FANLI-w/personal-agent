@@ -10,7 +10,7 @@ export function taskStatusRouteMatches(hash: string, target: TaskTarget) {
 }
 
 /** Electron adds an IPC envelope; keep the underlying failure for inspection. */
-export function taskStatusFailure(failure: unknown) {
-  const message = failure instanceof Error ? failure.message : "本地进度暂不可用。";
-  return message.replace(/^Error invoking remote method ['"]task-dsh-status['"]:\s*(?:Error:\s*)?/, "");
+export function taskStatusFailure(failure: unknown, fallback = "本地进度暂不可用。") {
+  const message = failure instanceof Error ? failure.message : fallback;
+  return message.replace(/^Error invoking remote method ['"][^'"]+['"]:\s*(?:Error:\s*)?/, "");
 }

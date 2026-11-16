@@ -41,6 +41,10 @@ import {
   sendSubmissionImages,
 } from "@/research/chat-image-submission";
 import { useScopedFileSender } from "@/research/useScopedFileSender";
+import {
+  assertAgentDocumentSelection,
+  sendSubmissionFile,
+} from "@/research/chat-file-submission";
 import { useAgentChatOperation } from "@/research/useAgentChatOperation";
 import type { AgentChatOperation } from "@/research/useAgentChatOperation";
 import { assertRequestActive, withRequestDeadline } from "@/research/request-deadline";
@@ -185,6 +189,10 @@ const ChatFooter = () => {
         updateSubmission(item.id, { state: "sending", error: undefined });
         try {
           let request = item.request;
+          if (item.files?.length && !item.fileAgentConversationId && directImageAgent())
+            throw new Error(
+              "这条旧附件记录的阅读结果尚未核对，请先检查聊天回执，再重新选择原文件发送。文字记录已保留。",
+            );
           if (item.images?.length) {
             if (
               item.imageAgentConversationId &&
@@ -242,7 +250,30 @@ const ChatFooter = () => {
                 ),
             });
           }
-          for (const entry of item.files || []) {
+          if (item.fileAgentConversationId) {
+            if (directImageAgent() !== item.fileAgentConversationId)
+              throw new Error("原文件助手或权限已变化，请核对原发送记录。");
+            request = await withRequestDeadline(
+              (signal) =>
+                sendSubmissionFile(item, {
+                  isCurrent: () => tracked.operation.isCurrent() && !signal.aborted,
+                  makeFile: getFileMessage,
+                  sendFile: (message) =>
+                    sendMessage({
+                      message,
+                      recvID: item.recvID,
+                      groupID: item.groupID,
+                      isCurrent: () => tracked.operation.isCurrent() && !signal.aborted,
+                    }),
+                  save: (patch) => {
+                    if (!signal.aborted && tracked.operation.isCurrent())
+                      updateSubmission(item.id, patch);
+                  },
+                }),
+              120000,
+              tracked.operation.signal,
+            );
+          } else for (const entry of item.files || []) {
             if (entry.processed) continue;
             if (!entry.file)
               throw new Error(
@@ -373,6 +404,8 @@ const ChatFooter = () => {
       assertImageQueueCapacity(images, pendingSubmissions(useChatOutbox.getState().items, generation));
       assertSubmissionCapacity(useChatOutbox.getState().items, generation, imID);
       const imageAgentId = images.length ? directImageAgent() : undefined;
+      const fileAgentId = stagedFiles.length ? directImageAgent() : undefined;
+      if (fileAgentId) assertAgentDocumentSelection(stagedFiles, images.length);
       const selected = readMentionComposer(original);
       let text =
         (selected.mentions.length ? selected.text : cleanText) ||
@@ -444,6 +477,7 @@ const ChatFooter = () => {
         images: images.length ? images : undefined,
         imageAgentConversationId:
           request?.route === "agentChatMessage" ? imageAgentId : undefined,
+        fileAgentConversationId: fileAgentId,
         quoteMessage:
           reply?.message &&
           !images.length &&

@@ -17,15 +17,16 @@ const bundled = await esbuild.build({ entryPoints: [path.join(client, 'electron/
   plugins: [{ name: 'isolated-window-authority', setup(build) { build.onLoad({filter:/teamLibraryManage\.ts$/},()=>({contents:'export const teamLibraryContext=e=>globalThis.teamLibraryFixture(e);',loader:'js'}));build.onLoad({ filter: /localFolderManage\.ts$/ }, () => ({ contents: 'export const authority=e=>({contents:e.sender});', loader: 'js' })); } }],
 });
 const runtimeCode = buildLocalDshRuntime(client).outputFiles[0].text;
-async function fixture(t, library) {
+async function fixture(t, library, kind = "research") {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'acceptcat-material-bridge-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.mkdir(path.join(root, 'work'));
-  const target = {kind:'research',taskId:'synthetic-task'}, handlers = new Map(), timers=[];
+  const target = {kind,taskId:'synthetic-task'}, handlers = new Map(), timers=[];
   let hash = '#/workbench?task=synthetic-task', picker = {canceled:false,filePaths:[path.join(root,'work')]};
   let valid = true, owned = true, scope = 'lab_shared', running = false, sessionId;
   let duringPicker = () => {}, uploads = 0, original;
   const downloadSizes=[], submissions=[];
+  let fileDeliverySupported=true;
   let deliveryMode=false, collectionVersion=1, canSubmit=true, loseSubmit=false, conflictUpload=false, duringCollection=()=>{};
   const revealed = [];
   const respond = resolve => {
@@ -59,9 +60,10 @@ async function fixture(t, library) {
   const account={metadata:{memberId:'member_A'},identity:'synthetic',lease:'one',csrf:'synthetic',valid:async()=>{if(!valid)throw Error('expired');},request:url=>respond(raw=>{
     const body=raw ? JSON.parse(raw) : undefined;
     if(url==='/api/v1/research-library/collections'&&body){duringCollection();deliveryMode=true;return{data:{id:'collection',name:body.name,scope:body.scope,taskIds:body.taskIds,owned:true,version:1}};}
-    if(url.endsWith('/deliverables')){submissions.push(body);if(loseSubmit){loseSubmit=false;throw Error('response lost');}return{data:{id:'delivery'}};}
+    if(url.endsWith('/deliverables') || url.endsWith('/result')){submissions.push(body);if(loseSubmit){loseSubmit=false;throw Error('response lost');}return{data:{id:'delivery'}};}
     if(url==='/api/v1/health/ready')return{data:{status:'ok',contractVersion:'0.38.0'}};
     if(url==='/api/v1/tasks/synthetic-task')return{data:{task:{title:'Synthetic task',goal:'Local work',version:1,allowedActions:canSubmit?['submit']:[]},deliverables:submissions.map(item=>({sources:item.sources}))}};
+    if(url==='/api/v1/work/tasks/synthetic-task')return{data:{title:'Synthetic task',goal:'Local work',version:1,fileDeliverySupported,allowedActions:canSubmit?['submit']:[],result:submissions.length?{sources:submissions.at(-1).sources||[]}:null}};
     if(url.startsWith('/api/v1/work-execution/'))return{data:{execution:null}};
     if(url.includes('/collections?'))return{data:[{id:'collection',name:'Synthetic',owned,scope:deliveryMode?'task_scoped':scope,taskIds:['synthetic-task'],version:collectionVersion,status:'available'}]};
     if(url==='/api/v1/research-library/files/file' && original)return{data:{file:{status:'available'},versions:[{version:1,filename:'saved.pptx',mediaType:'application/octet-stream',byteLength:original.length,sha256:createHash('sha256').update(original).digest('hex')}]}};
@@ -73,7 +75,7 @@ async function fixture(t, library) {
   })};
   mod.exports.registerTaskDshBridge(async()=>({account,session:{},origin:'http://127.0.0.1:1'}));
   const call=(name,...args)=>handlers.get(name)({sender:{getURL:()=>`http://fixture/${hash}`}},target,...args);
-  return {root,call,submissions,uploads:()=>uploads,revealed,downloadSizes,set:values=>{if('conflictUpload'in values)conflictUpload=values.conflictUpload;if('duringCollection'in values)duringCollection=values.duringCollection;if('canSubmit'in values)canSubmit=values.canSubmit;if('loseSubmit'in values)loseSubmit=values.loseSubmit;if('original'in values)original=values.original;if('hash'in values)hash=values.hash;if('picker'in values)picker=values.picker;if('valid'in values)valid=values.valid;if('owned'in values)owned=values.owned;if('scope'in values)scope=values.scope;if('running'in values)running=values.running;if('duringPicker'in values)duringPicker=values.duringPicker;}};
+  return {root,call,submissions,uploads:()=>uploads,revealed,downloadSizes,set:values=>{if('fileDeliverySupported'in values)fileDeliverySupported=values.fileDeliverySupported;if('conflictUpload'in values)conflictUpload=values.conflictUpload;if('duringCollection'in values)duringCollection=values.duringCollection;if('canSubmit'in values)canSubmit=values.canSubmit;if('loseSubmit'in values)loseSubmit=values.loseSubmit;if('original'in values)original=values.original;if('hash'in values)hash=values.hash;if('picker'in values)picker=values.picker;if('valid'in values)valid=values.valid;if('owned'in values)owned=values.owned;if('scope'in values)scope=values.scope;if('running'in values)running=values.running;if('duringPicker'in values)duringPicker=values.duringPicker;}};
 }
 test('native material picker cancels without reading, rechecks navigation after selection, and reveals only workspace files',async t=>{
   const f=await fixture(t);await f.call('task-dsh-open',true);
@@ -247,4 +249,27 @@ test('definite automatic collection conflict retries the frozen batch with the c
   await f.call('task-dsh-submit','Report',names);
   assert.equal(f.uploads(),1);assert.equal(f.submissions.length,1);
   assert.equal((await f.call('task-dsh-status')).binding.delivery.status,'submitted');
+});
+
+
+test('personal direct file delivery uses the same verified upload, receipt, and authorized download',async t=>{
+  const f=await fixture(t,undefined,'personal'),input=path.join(f.root,'report.pptx'),bytes=Buffer.from('synthetic personal original');
+  await fs.writeFile(input,bytes);f.set({original:bytes});
+  const names=await f.call('task-dsh-stage-delivery',[input]);
+  await f.call('task-dsh-submit','Personal report',names);
+  assert.equal(f.uploads(),1);
+  assert.equal(f.submissions.length,1);
+  assert.equal(f.submissions[0].text,'Personal report');
+  const locator=f.submissions[0].sources[0].locator;
+  assert.equal(await f.call('task-dsh-download-delivery',locator),true);
+  assert.deepEqual(await fs.readFile(path.join(f.root,'saved.pptx')),bytes);
+  await assert.rejects(f.call('task-dsh-download-delivery',locator.replace(/.$/,'a')),/交付记录/);
+});
+test('an old personal backend rejects file selection before uploading while exact text still submits',async t=>{
+  const f=await fixture(t,undefined,'personal');f.set({fileDeliverySupported:false});
+  await assert.rejects(f.call('task-dsh-stage-delivery',[path.join(f.root,'absent.pptx')]),/升级配套后台/);
+  assert.equal(f.uploads(),0);
+  await f.call('task-dsh-submit','Exact personal text',[]);
+  assert.equal(f.submissions[0].text,'Exact personal text');
+  assert.equal(f.submissions[0].sources,undefined);
 });

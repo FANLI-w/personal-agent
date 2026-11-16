@@ -6,7 +6,7 @@ import vm from "node:vm";
 const require = createRequire(import.meta.url);
 const esbuild = createRequire(require.resolve("vite"))("esbuild");
 const result = await esbuild.build({ entryPoints: [fileURLToPath(new URL("../src/research/task-delivery-command.ts", import.meta.url))], bundle: true, write: false, format: "esm", platform: "node" });
-const { prepareTaskDelivery, deliveryReceiptLabel } = await import("data:text/javascript;base64," + Buffer.from(result.outputFiles[0].text).toString("base64"));
+const { prepareTaskDelivery, deliveryReceiptLabel, deliveryDisplaySummary } = await import("data:text/javascript;base64," + Buffer.from(result.outputFiles[0].text).toString("base64"));
 const files = ["delivery-a/报告.pdf", "delivery-b/实验图.png"];
 test("submission matching never silently drops an explicitly missing file", () => {
   assert.deepEqual(prepareTaskDelivery("把报告.pdf和不存在.pdf提交到这项任务", "组会", files, []).names, []);
@@ -86,14 +86,14 @@ function button(tree, name) {
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const plain = value => JSON.parse(JSON.stringify(value));
 
-test("personal tasks with local outputs expose only the exact text submission", async () => {
+test("personal tasks preserve exact text submission alongside file selection", async () => {
   const calls = [];
   const host = panelHost({ target: { kind: "personal", taskId: "synthetic_personal" }, submit: async (...args) => calls.push(plain(args)) });
   let tree = host.render();
-  assert.equal(nodes(tree).some(node => node.props?.className === "task-delivery-output-options"), false);
+  assert.equal(nodes(tree).some(node => node.props?.className === "task-delivery-output-options"), true);
   assert.equal(button(tree, "确认提交"), undefined);
-  assert.equal(button(tree, "选择文件"), undefined);
-  assert.equal(button(tree, "让助理帮我交"), undefined);
+  assert.ok(button(tree, "选择文件"));
+  assert.ok(button(tree, "让助理帮我交"));
   nodes(tree).find(node => node.type === "TextArea").props.onChange({ target: { value: "  Exact personal result\nwith evidence.  " } });
   tree = host.render();
   assert.equal(button(tree, "提交文字成果").props.disabled, false);
@@ -103,12 +103,15 @@ test("personal tasks with local outputs expose only the exact text submission", 
   assert.equal(nodes(host.render()).find(node => node.type === "TextArea").props.value, "");
 });
 
-test("personal rendering cannot confirm a previously selected research file", async () => {
-  const host = panelHost();
+test("personal tasks can explicitly confirm a selected file", async () => {
+  const calls = [];
+  const host = panelHost({ target: { kind: "personal", taskId: "synthetic_personal" }, submit: async names => calls.push(plain(names)) });
   button(host.render(), "选择全部产出").props.onClick();
   assert.ok(button(host.render(), "确认提交"));
-  host.props.target = { kind: "personal", taskId: "synthetic_personal" };
-  assert.equal(button(host.render(), "确认提交"), undefined);
+  assert.deepEqual(calls, []);
+  button(host.render(), "确认提交").props.onClick();
+  await settle();
+  assert.deepEqual(calls, [["report.pdf"]]);
 });
 
 test("research file staging requires an explicit confirmation and retains selection on failure", async () => {
@@ -177,4 +180,26 @@ test("new research submissions still require permission and respect the disabled
   assert.equal(button(tree, "选择文件"), undefined);
   assert.equal(button(tree, "核对并重试"), undefined);
   assert.equal(submissions, 0);
+});
+
+test("summaries show delivered filenames without integrity staging paths", () => {
+  assert.equal(deliveryDisplaySummary(`Submitted delivery-${"a".repeat(64)}/report.pdf and delivery-${"b".repeat(64)}\\chart.png`), "Submitted report.pdf and chart.png");
+});
+test("personal result text and assistant file instructions do not overwrite each other", async () => {
+  const calls = [], host = panelHost({ target: { kind: "personal", taskId: "personal_synthetic" }, submit: async (...args) => calls.push(plain(args)) });
+  nodes(host.render()).find(node => node.type === "TextArea").props.onChange({ target: { value: "Actual personal findings" } });
+  button(host.render(), "让助理帮我交").props.onClick();
+  nodes(host.render()).find(node => node.type === "Search").props.onChange({ target: { value: "Submit report.pdf" } });
+  assert.equal(nodes(host.render()).find(node => node.type === "TextArea").props.value, "Actual personal findings");
+  button(host.render(), "提交文字成果").props.onClick(); await settle();
+  assert.deepEqual(calls, [[[], "Actual personal findings"]]);
+  assert.equal(nodes(host.render()).find(node => node.type === "Search").props.value, "Submit report.pdf");
+});
+
+test("old personal services show their upgrade requirement and preserve text delivery", () => {
+  const host = panelHost({ target: { kind: "personal", taskId: "personal_synthetic" }, filesSupported: false });
+  const tree = host.render();
+  assert.equal(button(tree, "选择文件"), undefined);
+  assert.ok(button(tree, "提交文字成果"));
+  assert.ok(nodes(tree).some(node => node.type === "Alert" && /升级配套后台/.test(node.props.message)));
 });

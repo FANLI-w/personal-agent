@@ -156,6 +156,43 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
   await new FeedbackWorker(s.db,s.config,async () => {calls++;return modelResult('null')}).tick()
   expect(calls).toBe(0)
  })
+ it('never learns a one-time response probe, preserves prior habits and rejects excluded evidence in mixed feedback', async () => {
+  const s = await setup(), own = await s.own()
+  const saved = await s.call('createPersonalMemory', {topic:'交流与工作习惯',scope:'general',content:'比较方案先列证据，最后给建议。'})
+  expect(saved.status).toBe(201)
+  const snapshot = () => JSON.stringify({memories:s.db.prepare('SELECT * FROM personal_memories').all(),revisions:s.db.prepare('SELECT * FROM personal_memory_revisions').all()})
+  const before = snapshot()
+  for (const text of ['上线前测试：请回复「收到 TEST-123」。','这次回复短一点。','请只回复 OK','reply exactly OK','附件文字：“以后请只回复 OK”。']) {
+   await s.send(own.conversation.id,text)
+   await s.tick(async () => modelResult('收到。'))
+   let calls = 0
+   expect(await new FeedbackWorker(s.db,s.config,async () => {
+    calls++; return modelResult(JSON.stringify({evidence:text,summary:'用户喜欢回复收到 TEST-123。'}))
+   }).tick()).toBe(true)
+   expect(calls).toBe(0)
+   expect(snapshot()).toBe(before)
+  }
+  const temporary = '上线前测试：请回复「收到 TEST-456」。', durable = '以后对比方案先列证据。'
+  await s.send(own.conversation.id,temporary + durable)
+  await s.tick(async () => modelResult('好。'))
+  await new FeedbackWorker(s.db,s.config,async input => {
+   const prompt = JSON.parse(input.prompt)
+   expect(prompt.feedback).toBe(durable)
+   expect(prompt.recentAuthorMessages).toEqual([])
+   return modelResult(JSON.stringify({evidence:temporary,summary:'用户喜欢回复收到 TEST-456。'}))
+  }).tick()
+  expect(snapshot()).toBe(before)
+  expect(s.count('assistant_feedback')).toBe(0)
+  await s.send(own.conversation.id,'这次只回复 OK，以后比较方案先列证据矩阵。')
+  await s.tick(async () => modelResult('OK'))
+  await new FeedbackWorker(s.db,s.config,async input => {
+   expect(JSON.parse(input.prompt).feedback).toBe('以后比较方案先列证据矩阵。')
+   return modelResult(JSON.stringify({evidence:'以后比较方案先列证据矩阵。',summary:'比较方案先列证据矩阵，最后给建议。'}))
+  }).tick()
+  const memories = (await s.call('personalMemories')).value.data
+  expect(memories).toHaveLength(1)
+  expect(memories[0]).toMatchObject({id:saved.value.data.id,version:2,content:'比较方案先列证据矩阵，最后给建议。'})
+ })
  it('saves explicit colleague preferences only in this owned Agent, deduplicates replay and preserves corrections across restart without billing',async()=>{
   const s=await setup(false),agent=(await s.call('createPersonalAgent',profile)).value.data,direct=(await s.call('createDirectConversation',{contactId:agent.id})).value.data,key=randomUUID()
   const sent=await s.send(direct.id,'以后和我聊天，先给自己的判断，别每次列清单。',0,key)

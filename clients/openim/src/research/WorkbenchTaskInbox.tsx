@@ -35,7 +35,9 @@ export function WorkbenchTaskInbox({
       <header>
         <div>
           <h2>{overview ? "我的待办" : "我的待办与助手安排"}</h2>
-          {!overview && <p>需要你决定的安排和待审阅成果都在这里，可以接着上次的进展继续。</p>}
+          {!overview && (
+            <p>需要你决定的安排和待审阅成果都在这里，可以接着上次的进展继续。</p>
+          )}
         </div>
         <Button
           type={overview ? "link" : "default"}
@@ -65,9 +67,7 @@ export function WorkbenchTaskInbox({
         overview ? (
           <div className="workbench-focus-empty">
             <ProfileOutlined aria-hidden="true" />
-            <h3>
-              {category === "awaiting_me" ? "暂无待处理事项" : "暂无未完成任务"}
-            </h3>
+            <h3>{category === "awaiting_me" ? "暂无待处理事项" : "暂无未完成任务"}</h3>
             <p>
               {category === "awaiting_me"
                 ? "收到的任务邀请、待审阅成果会出现在这里。"
@@ -105,7 +105,9 @@ export function WorkbenchTaskInbox({
                 <strong>{card.title}</strong>
                 <span>
                   {card.source === "research_task" ? "科研任务" : "助手与联系人协作"} ·{" "}
-                  {workspaceStatusLabel[card.status] || card.progress.label}
+                  {(card.result?.changesRequested
+                    ? "待修改"
+                    : workspaceStatusLabel[card.status]) || card.progress.label}
                 </span>
               </div>
               {overview && (

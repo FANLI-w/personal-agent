@@ -3233,3 +3233,15 @@ Windows x64 正式版 0.10.113 已发布。[发布说明](https://github.com/luo
 ## Windows 0.10.114 正式发布
 
 Windows x64 正式版 0.10.114 已发布。工作台页头显示大肥鱼头像和 deepchat，新会话按钮移至侧栏首行。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.114) · [PR #231](https://github.com/luoyan96/personal-agent/pull/231)。合并及构建提交 c96bc2a30087080b7c2efc603f1c883111155b15。初次 Windows 构建误将 DSH 页面 React 加载识别为主进程依赖，修复后四项 PR 检查通过。已从 NSIS 安装包解出并核对 137 个编译文件，核对头像、页头、问候和侧栏布局，验证包启动及自动更新元数据。四项公开附件均与本机 SHA-256 一致。安装包 SHA-256 为 f9da67dd846159b07353761a841ba601c74bff7218f44a3b816410bfc53383c0。本次只发布客户端。验证记录见 D:/deepseek-agent/.runtime/release-0.10.114/。
+
+## 2026-11-16 本地候选 0.10.115-preview.1
+
+基线为 ff4776c，分支 codex/preflight-client-repairs。私聊助理收文档时复用了同一个收件请求及幂等键。Windows 实机以现有账号向个人助理发送合成 Markdown 文件，提问未包含答案；真实回复正确返回“青瓷松针927”和“周五复核表2”。单条支持一个带文字的 PDF、TXT、Markdown 或 CSV，读取上限为 10 MiB。
+
+个人任务支持选择原件或让助理准备提交。实机走查发现退回后原件和意见消失，现以提交消息 ID 对应审阅版本。Computer Use 在本地真实 API 和两名合成成员的任务页面核实退回后仍能看到修改意见及原稿，并取回原来 94 字节的文件。个人和课题组任务各自完成原稿提交、下载、退回、同名修订、再下载和验收。浏览器测试夹具使用本机样本选择适配器，原生 IPC 由独立客户端测试覆盖。证据及旧链路失败记录在 D:/deepseek-agent/.runtime/preflight-client-repairs/task-ui/。
+
+习惯提取的修正位于反馈 worker。上线前测试、当轮指令和材料引用在进入反思前过滤，混合反馈中的独立长期要求可以保留。此次没有改写既有用户记忆。配套 API 和 worker 为本地测试构建，正式后台尚未部署此次改动。微信文件传输助手转发合成消息到现有 Windows 测试分享入口可选中 AcceptCat，原主线客户端没有出现导入草稿，相关集成在独立 PR #205。WPS 插件交接提示词另存于本机测试证据目录。
+
+最终复测在浏览器输入“这次只回复『收到 FISH-927』”，SQLite 的习惯与修订增量均为零；混合临时指令和长期偏好的下一条只更新了长期证据。模型回调为合成，队列和存储为实际实现。完整 CI 最终通过 86 个测试文件（1025 项）、3 项运维测试及 B0/生产检查；此前因生成协议未同步中止的一轮日志保留。桌面两组回归分别通过 557 和 151 项，退回显示调整后另跑任务视图 88 项通过。完整日志位于 D:/deepseek-agent/.runtime/preflight-client-repairs/。
+
+从最终 NSIS 安装包解出的 app.asar 已逐字节比对 137 个前端及 Electron 编译文件，包启动和更新元数据检查通过。安装包 SHA-256 为 77b2385de7a1102b70fcef48073fea95f90d2db418442d33973a92796b9ddf18。证据在 final-package/installer-audit.json。
