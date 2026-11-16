@@ -658,6 +658,51 @@ describe('model-driven project entry from the actual personal chat',{timeout:300
   expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded'})
   expect(s.db.prepare('SELECT contact_id FROM assistant_project_commitments').get()!.contact_id).toBe(own.agent.id)
  })
+ it.each([
+  {mode:'ordinary',text:'下周组会研究讨论稿交给你持续盯着，按现有研究记录准备，整理好后给我验收。',budget:16000,reserve:4096},
+  {mode:'coordinate',text:'帮我整理组会研究讨论稿并持续跟进，按现有研究记录准备，整理好后给我验收。',budget:4000,reserve:512},
+ ])('keeps available specialists ahead of optional history at the default $mode budget',async({mode,text,budget,reserve})=>{
+  const s=await setup(),own=await s.own()
+  for(const title of ['旧材料核对','旧图表说明']){
+   const prior=`${title}交给你持续跟进`,sent=await s.send(own.conversation.id,prior)
+   await s.tick(async()=>modelResult(JSON.stringify(project(prior,sent.message.id,{title}))))
+   expect((await s.turn(sent.turn.id)).status).toBe('succeeded')
+  }
+  const memory=(await s.call('createPersonalMemory',{topic:'回复方式',content:'先说明已核实事实与尚缺信息。',scope:'general'})).value.data
+  const scope={displayName:'研究讨论稿同事',introduction:'依据提供的研究记录整理组会研究讨论稿，核对论证和数字。',capabilityDescription:'整理组会研究讨论稿的目标、证据、变化与待决问题；保留实际材料来源，不把未核实结果写成事实。',personality:'直接说明事实和未知。'}
+  const specialist=(await s.call('createPersonalAgent',scope)).value.data
+  for(let index=0;index<5;index++)expect((await s.call('createPersonalAgent',{displayName:`数据库同事${index}`,introduction:'只核对给定SQL和查询计划。',capabilityDescription:'分析数据库索引与查询性能；不承担研究讨论稿或组会材料写作。',personality:'说明依据。'})).status).toBe(201)
+  const otherOwner=(await s.call('createPersonalAgent',scope,{},1)).value.data
+  for(let index=0;index<8;index++){
+   const prior=await s.send(own.conversation.id,`第${index}轮只讨论术语。`+'这段合成背景是先前闲聊，不能当成本轮执行指令。'.repeat(10))
+   await s.tick(async()=>modelResult('先前讨论仅解释术语。'+'待核实的背景保持原样，不形成新的工作安排。'.repeat(8)))
+   expect((await s.turn(prior.turn.id)).status).toBe('succeeded')
+  }
+  const sent=await s.send(own.conversation.id,text)
+  expect(sent.turn.budget.maxTokens).toBe(budget)
+  let called=false
+  await s.tick(async input=>{
+   called=true
+   const p=JSON.parse(input.prompt),directory=mode==='ordinary'?p.projectEntrySources.localSpecialists:p.localSpecialists
+   expect(directory).toContainEqual(mode==='ordinary'?{id:specialist.id,displayName:scope.displayName,introduction:scope.introduction,capabilityDescription:scope.capabilityDescription}:{id:specialist.id,displayName:scope.displayName,profile:{introduction:scope.introduction,capabilityDescription:scope.capabilityDescription,personality:scope.personality}})
+   expect(directory.some((candidate:{id:string})=>candidate.id===otherOwner.id)).toBe(false)
+   expect(p.personalMemories).toContainEqual(expect.objectContaining({id:memory.id,content:'先说明已核实事实与尚缺信息。'}))
+   expect(p.projectEntrySources.messages.find((message:{id:string})=>message.id===sent.message.id)).toEqual({id:sent.message.id})
+   expect(input.prompt.split(text)).toHaveLength(2)
+   expect(input.maxTokens).toBeGreaterThanOrEqual(reserve)
+   expect(chatInputTokenBound(input.system,input.prompt)+input.maxTokens).toBeLessThanOrEqual(budget)
+   const output=project(text,sent.message.id);output.project.commitments[0]!.contactId=specialist.id
+   return modelResult(JSON.stringify(output))
+  })
+  expect(called).toBe(true)
+  expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded'})
+  const request=JSON.parse(String(s.db.prepare('SELECT request_json FROM chat_turns WHERE id=?').get(sent.turn.id)!.request_json))
+  expect(request.projectEntryInventory.specialistIds).toContain(specialist.id)
+  expect(request.projectEntryInventory.specialistIds).not.toContain(otherOwner.id)
+  expect(request.contextAudit.earlierMessagesOmitted).toBe(true)
+  expect(s.db.prepare('SELECT contact_id FROM assistant_project_commitments ORDER BY rowid DESC LIMIT 1').get()!.contact_id).toBe(specialist.id)
+  expect(s.count('assistant_projects')).toBe(3)
+ },60000)
  it('keeps optional inventory inside the actual budget for an established account with many active commitments',async()=>{
   const s=await setup(),own=await s.own()
   for(let index=0;index<6;index++){
