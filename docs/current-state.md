@@ -2,6 +2,12 @@
 
 更新日期：2026-11-16（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## Windows 0.10.115 正式发布
+
+Windows x64 正式版 0.10.115 已发布。桌面私聊助理可以一起接收原件和问题。个人任务文件交付和退回需要配套 API，临时要求的记忆过滤需要配套反馈 worker。此次只发布客户端。
+
+[正式安装包](https://github.com/luoyan96/personal-agent/releases/download/v0.10.115/AcceptCat_0.10.115.exe) · [发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.115) · [PR #234](https://github.com/luoyan96/personal-agent/pull/234)
+
 ## 本地候选 · 聊天附件和任务交付
 
 0.10.115-preview.1 基于 `ff4776c`。桌面助理将文档与本条问题作为一次文件阅读请求提交。个人任务交文件使用任务可读的原件及版本引用。负责人可在当前成果旁验收或要求修改。个人任务文件需要配套 API，排除临时反馈的学习逻辑需要配套 worker。此次工作范围为本地验证与试用包。
