@@ -3233,3 +3233,7 @@ Windows x64 正式版 0.10.113 已发布。[发布说明](https://github.com/luo
 ## Windows 0.10.114 正式发布
 
 Windows x64 正式版 0.10.114 已发布。工作台页头显示大肥鱼头像和 deepchat，新会话按钮移至侧栏首行。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.114) · [PR #231](https://github.com/luoyan96/personal-agent/pull/231)。合并及构建提交 c96bc2a30087080b7c2efc603f1c883111155b15。初次 Windows 构建误将 DSH 页面 React 加载识别为主进程依赖，修复后四项 PR 检查通过。已从 NSIS 安装包解出并核对 137 个编译文件，核对头像、页头、问候和侧栏布局，验证包启动及自动更新元数据。四项公开附件均与本机 SHA-256 一致。安装包 SHA-256 为 f9da67dd846159b07353761a841ba601c74bff7218f44a3b816410bfc53383c0。本次只发布客户端。验证记录见 D:/deepseek-agent/.runtime/release-0.10.114/。
+
+## 2026-11-16 记忆框架文档对账
+
+只更新文档，不改代码、不部署。确认 main 为 ff4776c、契约 0.49、迁移 039、后台 0.49/039 已部署；`assistant_memories` 只承载助理笔记，本人偏好仍由 `personal_memories` 权威，会话/旧助理记忆仍由 `chat_memories` 权威。自动写入、候选确认、`assistant` 记忆权限和记忆进 `compose()` 未接线；`assistant_memories scope='personal'` 可写但注入不读，待确认无写入后收紧。旧表与旧会话按兼容期保留，删除条件另立。

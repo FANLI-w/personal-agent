@@ -2,7 +2,7 @@
 
 本文记录「三层宪法 + 权限边界 + 注入纪律」的当前实现与后续设计。目的是让同一份规则只存一处、只有一个人或模型有权改、并且进入上下文的路径可解释。
 
-状态：契约 **0.45.0** 与迁移 **034** 已随 0.10.99 上线，后台于 2026-11-09 18:43 部署到 0.45 / 034。本分支 `feat/constitution-iron-laws` 在其上改写 system 层条款，只改内容与回执、不动契约结构，**未提交、未部署**。聊天/规划/本机任务共用装配；审核修复和验证边界见 [整合说明](constitution-library-integration.md)。记忆写回侧沿现有实现。
+状态：契约 **0.49.0** 与迁移 **039** 已随 0.10.108 上线，后台于 2026-11-14 部署到 0.49 / 039。本文覆盖 0.10.100 的六条 system 条款与 0.10.108 的助理笔记/压缩整合；聊天/规划/本机任务共用装配。记忆仍是兼容期分域：本人偏好留在 `personal_memories`，会话/旧助理记忆留在 `chat_memories`，助理笔记在 `assistant_memories scope='agent'`；自动写入、候选确认、`assistant` 记忆权限和记忆进 `compose()` 尚未接线。审核修复和验证边界见 [整合说明](constitution-library-integration.md)。
 
 ## 1. 三层与内容类
 
@@ -112,7 +112,7 @@ S7 是唯一的规范条目。2026-11-13 决定不接机制，保留「说明冲
 | 资产 | 谁能读 | 谁能写 | 谁能申请（批准人） |
 |---|---|---|---|
 | 个人规则 | 本人、本人助理 | 本人 | — |
-| 个人助理记忆 | 本人、本人助理 | 本人、本人助理（含自动压缩） | — |
+| 个人助理记忆 | 本人；助理仅在私人会话按需注入 | 本人；助理笔记 owner-only，压缩由 owner 手动触发 | — |
 | 个人任务记录 | 本人、本人助理 | 本人、本人助理（自动写回） | — |
 | 本人会话记录 | 本人、本人助理 | 系统写入，人可删除 | — |
 
@@ -210,10 +210,10 @@ S7 是唯一的规范条目。2026-11-13 决定不接机制，保留「说明冲
 | 参考 | `source` | 36 KB | 否 |
 
 - **两种预算分开**：`memoryBudget = 3_500` 保留 `personalMemoryContext()` 原有个人偏好注入上限，条数仍由 `memoryRecordLimit = 12` 限制。工作台已有真实生产者：`work-memory.ts` 将任务记忆与本人确认的交接（输入可达4KB，另有来源/成果元数据）映射为事实段。2026-11-11 整合审核保留原 `factBudget = 32_000`，避免把有效交接整条省略；超过事实段预算仍记录 `omitted`。不扩大服务端个人偏好预算，也不改写入上限。
-- **记忆的四类生命周期**：`preference`（偏好，长期，跟随本人）、`conclusion`（结论，长期可追溯，绑定来源任务与交付物版本）、`handoff`（交接，临时，绑定任务版本）、`turn`（本次要求，只在单轮）。落点分别是 `personal_memories` 与 `chat_memories`、`conclusions` 与 `conclusion_versions`、`task_handoffs`、当前消息。这个标注只用于回执，不落库、不参与装配判定，定义在 `packages/constitution/src/memory.ts`。
-- **记忆回执**：`CHAT_MEMORY` 与 `PLANNING_MEMORY` 各打一行，格式 `preference:n/conclusion:n/handoff:n/turn:n`，缺席的类别也写 0，因为「这一轮没有结论进入」本身是需要看见的事实。目前 `CHAT_MEMORY` 统计偏好（本人记忆加助手自身的记忆），`PLANNING_MEMORY` 统计结论；`handoff` 尚未进入这两条回执，它目前在任务工作页的装配里。
+- **记忆的兼容期分域**：`personal_memories` 仍是本人偏好权威；`chat_memories` 仍是会话/旧助理记忆权威；`assistant_memories scope='agent'` 只承载助理笔记；`conclusions` 仍绑定任务与交付物；`task_handoffs` 是转交 offer，不是进度交接。`assistant_memories scope='personal'` 可写但注入不读，是待收口入口。
+- **记忆回执**：`CHAT_MEMORY` 与 `PLANNING_MEMORY` 各打一行，格式 `preference:n/conclusion:n/handoff:n/turn:n`，缺席的类别也写 0。`CHAT_MEMORY` 当前统计旧偏好加旧/新助理记忆；`PLANNING_MEMORY` 统计结论；`handoff` 尚未进入这两条回执。
 - **条数与字节分开管**：单次注入最多 12 条（`memoryRecordLimit`），与字节预算互为补充；条数上限防止大量短条目淹没上下文。
-- **记忆为什么还没走 `compose()`**：个人助理的记忆不是进 system，而是进 prompt JSON（`chat-worker.ts` 的 `serialize()` 里那个 `personalMemories` 字段）。搬进 `compose()` 要动三段逻辑：prompt 的组装位置、`personalMemoryFingerprint` 的失效判定、以及按 token 反复重试的 `shown` 与 `layers` 循环。这三处都有精确到 token 的断言，改动风险集中在这里，所以先只统一预算常量，等记忆模块落地时一起搬。
+- **记忆为什么还没走 `compose()`**：旧偏好进 `chat-worker.ts` 的 `personalMemories` 字段，助理笔记进 `agentContext.memories` 字段；两者都不是 system，也没有经过分层装配。搬进 `compose()` 要动三段逻辑：prompt 的组装位置、`personalMemoryFingerprint`/`agentContextFingerprint` 的失效判定、以及按 token 反复重试的 `shown` 与 `layers` 循环。自动记忆与权限边界定稿后再一起搬。
 - **写入侧拦截**：保存生效规则时校验总量，超过 12 KB 直接拒绝。规则是必进段，写进去就一定会挤占上下文。
 - **装配侧兜底**：生效约束超限会明确失败，不省略全部团队约束后继续调用模型；聊天将该轮保存为失败，队列可继续处理其他请求。
 - **开关**：`CONSTITUTION_RULES=0` 关闭服务端聊天和规划的新增规则注入，行为回到接入前；`=1` 强制开启。开发与生产默认开启，**测试环境默认关闭**——注入会改动既有用例里精确到 token 的预算断言，测试要覆盖注入路径时显式传 `CONSTITUTION_RULES=1`。
