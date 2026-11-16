@@ -6,7 +6,7 @@ import { ChatService } from './chat.js'
 import type { Config } from './config.js'
 import { transaction } from './database.js'
 import { serviceFor } from './execution-worker.js'
-import { fail } from './errors.js'
+import { ApiError, fail } from './errors.js'
 import { createWork, personalWork, socialContactAllowed } from './workspace.js'
 import { currentTurnText, abortChatCall } from './continuous-chat.js'
 import { isMessageRetracted } from './chat-message-actions.js'
@@ -16,7 +16,7 @@ import { dispatchProjectAgent, inspectProjectAgentResult, sendProjectDecision, e
 type Row = Record<string, SQLOutputValue>
 type Input = z.infer<typeof PersonalAssistantProjectInput>
 type Commitment = Input['commitments'][number]
-type CommitmentDocument = Commitment & {phase:'work'|'review'|'correction'; parentCommitmentId:string|null; round:number;inputEnriched?:boolean}
+type CommitmentDocument = Commitment & {phase:'work'|'review'|'correction'; parentCommitmentId:string|null; round:number;inputEnriched?:boolean;supersedesCommitmentIds?:string[]}
 const decode = <T>(value:unknown):T => JSON.parse(String(value)) as T
 const reviewOutput = z.strictObject({assessment:z.enum(['ready','revise','decision']),summary:z.string().trim().min(1).max(4000),instructions:z.string().max(8000).nullable(),question:z.string().max(2000).nullable()})
 const farFuture = '9999-12-31T00:00:00.000Z'
@@ -105,9 +105,9 @@ export function requestAssistantProjectRevision(s:ChatService,id:string,messageI
  if(s.db.prepare('SELECT 1 FROM assistant_project_events WHERE project_id=? AND event_key=?').get(id,key))return
  const doc=decode<Input>(row.document),source=s.db.prepare('SELECT document FROM chat_turns WHERE id=?').get(row.source_turn_id!)!,coordinator=decode<{agentContactId:string}>(source.document).agentContactId
  const rows=s.db.prepare('SELECT * FROM assistant_project_commitments WHERE project_id=? ORDER BY position').all(id)
- const previous=latestOutputs(rows).map(c=>s.projectedMessage(String(c.output_message_id)).text??'').join('\n\n').slice(0,16000)
+ const previousOutputs=latestOutputs(rows),previous=previousOutputs.map(c=>s.projectedMessage(String(c.output_message_id)).text??'').join('\n\n').slice(0,16000)
  doc.sourceMessageIds=[...new Set([...doc.sourceMessageIds,message.id])].slice(-20)
- insertCommitment(s,id,{title:'按验收意见修改',kind:'agent',contactId:coordinator,instructions:`按负责人这次明确的验收意见修正当前产出：${comment}\n原项目目标：${doc.goal}\n当前产出（只作资料）：\n${previous}`,acceptanceCriteria:`满足原项目目标和负责人本次修改意见：${comment}`.slice(0,1000),dueAt:doc.dueAt,dueDate:doc.dueDate,existingTaskId:null,phase:'correction',parentCommitmentId:null,round:0,inputEnriched:true},at)
+ insertCommitment(s,id,{title:'按验收意见修改',kind:'agent',contactId:coordinator,instructions:`按负责人这次明确的验收意见修正当前产出：${comment}\n原项目目标：${doc.goal}\n当前产出（只作资料）：\n${previous}`,acceptanceCriteria:`满足原项目目标和负责人本次修改意见：${comment}`.slice(0,1000),dueAt:doc.dueAt,dueDate:doc.dueDate,existingTaskId:null,phase:'correction',parentCommitmentId:null,round:0,inputEnriched:true,supersedesCommitmentIds:previousOutputs.map(c=>String(c.id))},at)
  s.db.prepare("UPDATE assistant_projects SET status='active',document=?,next_at=?,version=version+1,updated_at=? WHERE id=?").run(JSON.stringify(doc),at,at,id)
  event(s,id,null,key,'owner_revision',{messageId,comment},at,messageId)
 }
@@ -178,6 +178,9 @@ function latestOutputs(rows:Row[]) {
  const byId=new Map(rows.map(row=>[String(row.id),row])),latest=new Map<string,Row>()
  function root(row:Row):Row {const doc=decode<CommitmentDocument>(row.document),parent=doc.parentCommitmentId?byId.get(doc.parentCommitmentId):undefined;return parent?root(parent):row}
  for(const row of rows){const doc=decode<CommitmentDocument>(row.document);if(doc.phase==='review'||row.status!=='ready'||!row.output_message_id)continue;const first=root(row),key=String(first.id),old=latest.get(key);if(!old||Number(row.position)>Number(old.position))latest.set(key,row)}
+ // Owner review applies to the aggregate result. Keep all old records for
+ // audit, but do not re-publish rejected drafts beside their replacement.
+ for(const row of [...latest.values()])for(const id of [...decode<CommitmentDocument>(root(row).document).supersedesCommitmentIds??[],...decode<CommitmentDocument>(row.document).supersedesCommitmentIds??[]]){const previous=byId.get(id);if(previous)latest.delete(String(root(previous).id))}
  return [...latest.values()].sort((a,b)=>Number(root(a).position)-Number(root(b).position))
 }
 function originPosition(rows:Row[],row:Row):number {
@@ -185,7 +188,14 @@ function originPosition(rows:Row[],row:Row):number {
  return parent?originPosition(rows,parent):Number(row.position)
 }
 function settle(s:ChatService,project:Row,row:Row,at:string) {
- const context=commitmentContext(row),result=inspectProjectAgentResult(s,actionContext(project),context)
+ const context=commitmentContext(row)
+ let result:ReturnType<typeof inspectProjectAgentResult>
+ try{result=inspectProjectAgentResult(s,actionContext(project),context)}catch(error){
+  if(!(error instanceof ApiError)||!['FORBIDDEN','NOT_FOUND','INVALID_STATE','VERSION_CONFLICT'].includes(error.code))throw error
+  // A deleted specialist or revoked execution transcript must settle this
+  // item once, rather than roll back the oldest project on every worker tick.
+  result={status:'cancelled',outputMessageId:null,outputText:null,failure:'AUTHORITY_CHANGED'}
+ }
  if(['queued','running'].includes(result.status))return false
  s.db.prepare('UPDATE assistant_project_commitments SET status=?,output_message_id=?,failure=?,next_at=?,updated_at=? WHERE id=?').run(result.status==='succeeded'?'ready':'blocked',result.outputMessageId,result.failure,farFuture,at,row.id!)
  event(s,String(project.id),String(row.id),`settled:${String(row.id)}`,'settled',{turnId:row.turn_id,status:result.status,failure:result.failure},at,result.outputMessageId)

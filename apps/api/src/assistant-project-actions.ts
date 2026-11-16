@@ -163,7 +163,7 @@ export function projectMessageNotice(s:ChatService,conversationId:string,message
  const row=s.db.prepare("SELECT i.resource_id,i.key,i.request_hash,p.work_task_id,p.conversation_id FROM idempotency_results i JOIN assistant_projects p ON p.id=i.resource_id AND p.owner_id=i.actor_id WHERE i.actor_id=? AND i.command='assistantProjectDecision' AND json_extract(i.response_json,'$.messageId')=?").get(s.c.actor.id,messageId)
  if(!row||row.conversation_id!==conversationId||row.request_hash!==hash(message.text??''))return null
  personalWork(s,String(row.work_task_id))
- return {projectId:String(row.resource_id),taskId:String(row.work_task_id),kind:row.key==='ready'?'result' as const:row.key==='deadline'?'update' as const:'decision' as const}
+ return {projectId:String(row.resource_id),taskId:String(row.work_task_id),kind:row.key==='ready'||/^ready:\d+$/.test(String(row.key))?'result' as const:row.key==='deadline'?'update' as const:'decision' as const}
 }
 
 export function evaluateHumanCommitment(s:ChatService,project:ProjectActionContext,commitment:ProjectCommitmentContext,now:number):{status:'waiting'|'blocked'|'completed';messageId?:string;nextAt?:string}{

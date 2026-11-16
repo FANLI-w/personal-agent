@@ -26,7 +26,7 @@ import { externalForChat } from './agent-connections.js'
 import { callExternalAgent, externalAgentSystem, type ExternalAgentCall } from './external-agent-client.js'
 import { currentTurnText,registerChatCall,saveChatDelta } from './continuous-chat.js'
 import { personalMemoryContext } from './personal-memories.js'
-import { personalAssistantSystem,PersonalAssistantOutput,assistantCandidates,assistantPeople,assistantTeamAgents,rankedAssistantCandidates,assistantComplexRequest,delegateWork,AssistantBudgetError,assistantProjectSystem,assistantProjectCompactSystem,assistantProjectEntrySources,minimalProjectEntrySources,admitProjectEntrySources } from './personal-assistant.js'
+import { personalAssistantSystem,PersonalAssistantOutput,assistantCandidates,assistantPeople,assistantTeamAgents,rankedAssistantCandidates,assistantComplexRequest,delegateWork,AssistantBudgetError,assistantProjectSystem,assistantProjectCompactSystem,assistantProjectDecisionSystem,assistantProjectEntrySources,minimalProjectEntrySources,admitProjectEntrySources } from './personal-assistant.js'
 import {createAssistantProject,resolveAssistantProjectDecision} from './assistant-projects.js'
 import {projectExecutionInput,projectExecutionSystem} from './assistant-project-actions.js'
 import {createWork,recordAssistantAnswerWork} from './workspace.js'
@@ -79,6 +79,7 @@ export class ChatWorker {
       const allProjectSources=input.assistantProjectEntry?assistantProjectEntrySources(s,turn,input):undefined
       let shownProjectSpecialistIds:string[]=[],shownProjectHumanIds:string[]=[]
       let projectSources=allProjectSources?minimalProjectEntrySources(allProjectSources,input):undefined
+      const projectDecisionSuffix=()=> (input.assistantMode==='coordinate'||input.fileSource)&&projectSources?.projects.some(p=>p.commitments.some(c=>['blocked','waiting'].includes(c.status)))?'\n'+assistantProjectDecisionSystem:''
       let system:string,prompt:string
       const external=input.externalAgent?externalForChat(s,turn.agentContactId):null
       if(input.externalAgent&&!external)throw new ApiError('FORBIDDEN')
@@ -103,13 +104,16 @@ export class ChatWorker {
         system=personalAssistantSystem+'\n'+dialogueStyle+(complex?'\nComplex work: JSON {kind:"team",title:string,contactIds:[listed_ID]}. Save only a proposal. Owner confirms group creation; humans and Agent owners accept independently. No automatic execution or material sharing.':'')
         if(input.assistantProjectEntry)system+='\n'+assistantProjectCompactSystem
         system+=rulesSuffix
-        const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'\nAnswer currentRequest only; forwarded names may differ from the sender.')
+        const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+projectDecisionSuffix()+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'\nAnswer currentRequest only; forwarded names may differ from the sender.')
         system=contextSystem(layers)
         const candidates=rankedAssistantCandidates(s,current),shown:typeof candidates=[]
         const serialize=(selection=layers)=>JSON.stringify({currentRequest:current,...(input.assistantProjectEntry?{projectEntrySources:projectSources}:{}),requestedAgent:{id:agentContext.agent.id,displayName:agentContext.agent.displayName,profile:Object.fromEntries(Object.entries(modelAgentProfile(agentContext.agent)).filter(([key,value])=>key!=='version'&&value!==''))},...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(agentContext.memories.length?{memories:agentContext.memories}:{}),localSpecialists:shown,...(shown.length<candidates.length?{specialistsOmitted:true}:{}),...(complex?{labId:s.c.actor.labId,collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(selection.messages.some(m=>!required.has(m.id))?{recentDialogue:selection.messages.filter(m=>!required.has(m.id))}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
         prompt=serialize()
         const replyReserve=chatReplyTokenReserve(system,prompt,input.budget.maxTokens)
         for(const candidate of candidates){if(shown.length>=3)break;shown.push(candidate);const trial=serialize();if(input.budget.maxTokens-chatInputTokenBound(system,trial)>=replyReserve)prompt=trial;else shown.pop()}
+        // Persisted decisions need their IDs and protocol before optional old
+        // dialogue consumes the small coordinate allowance.
+        if(allProjectSources&&projectSources)admitProjectEntrySources({...allProjectSources,localSpecialists:[],humans:[],existingTasks:[],fileMessageIds:[],messages:[],projects:allProjectSources.projects.filter(p=>p.commitments.some(c=>['blocked','waiting'].includes(c.status)))},projectSources,()=>input.budget.maxTokens-chatInputTokenBound(contextSystem(layers),serialize())>=replyReserve)
         layers=packDialogueLayers(recent,required,notes,tasks,trial=>input.budget.maxTokens-chatInputTokenBound(contextSystem(trial),serialize(trial))>=replyReserve,true)
         if(allProjectSources&&projectSources)admitProjectEntrySources(allProjectSources,projectSources,()=>input.budget.maxTokens-chatInputTokenBound(contextSystem(layers),serialize())>=replyReserve)
         shownProjectSpecialistIds=shown.map(c=>c.id);shownProjectHumanIds=complex?assistantPeople(s).map(c=>c.id):[]
@@ -166,7 +170,7 @@ export class ChatWorker {
       const notes=input.dailyChat?olderDialogue(s,group.id,input.inputSequence,messages,currentTurnText(s,turn.id),input.fileSource?.messageId):undefined,tasks=input.dailyChat&&group.kind!=='group'?dialogueTaskState(s,group,currentTurnText(s,turn.id)):[]
       let layers:DialogueLayers={messages:[],notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]}
       system+=rulesSuffix
-      const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'')
+      const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+projectDecisionSuffix()+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'')
       system=contextSystem(layers)
       // Lossless rows: budget selection may omit an oldest DAILY message, never
       // trim a retained message/profile/memory. Collaboration keeps its window.

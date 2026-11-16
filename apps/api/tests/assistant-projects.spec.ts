@@ -125,26 +125,59 @@ describe('durable assistant project coordination; synthetic local inputs',()=>{
  })
 
  it('delivers a real reviewable result and automatically continues from the existing owner request-changes action',async()=>{
-  const t=await fixture(),project=t.create()
+  const t=await fixture()
+  t.input.commitments.push({...t.input.commitments[0]!,title:'整理第二份原稿'})
+  const project=t.create()
   const model=async(text:string)=>new ChatWorker(t.db,t.config,async()=>({text,failure:null,inputTokens:100,outputTokens:100,elapsedMs:10})).tick()
-  expect(await t.tick()).toBe(true);await model('实际整理的原稿：先核对材料，再起草。')
-  t.advance();await t.tick();await t.tick()
-  await model(JSON.stringify({assessment:'ready',summary:'已忠实核对原稿。',instructions:null,question:null}))
-  t.advance();await t.tick();await t.tick()
+  for(const text of ['实际整理的原稿：先核对材料，再起草。','第二份原稿：分别记录两项交付。']){
+   expect(await t.tick()).toBe(true);await model(text)
+   t.advance();await t.tick();await t.tick()
+   await model(JSON.stringify({assessment:'ready',summary:'已忠实核对原稿。',instructions:null,question:null}))
+   t.advance();await t.tick()
+  }
+  await t.tick()
   const first=(await t.call('personalWorkTask',null,{id:project.workTaskId})).value.data
   expect(first.status).toBe('awaiting_review');expect(first.result.summary).toContain('实际整理的原稿')
+  expect(first.result.summary).toContain('第二份原稿')
+  const firstNotice=await t.call('chatProjectNotice',null,{id:t.own.conversation.id,messageId:first.result.messageId})
+  expect(firstNotice.value.data).toEqual({projectId:project.id,taskId:project.workTaskId,kind:'result'})
+  expect(t.db.prepare('SELECT event_key FROM assistant_project_events WHERE message_id=?').get(first.result.messageId)!.event_key).toMatch(/^ready:\d+$/)
   const changed=await t.call('reviewPersonalWorkResult',{expectedVersion:first.version,messageId:first.result.messageId,decision:'request_changes',comment:'把两步改成一段简洁的安排。'},{id:project.workTaskId})
   expect(changed.status).toBe(200);expect(changed.value.data.status).toBe('running')
   expect(await t.tick()).toBe(true)
-  await model('先核对材料，再起草，统一整理成这份安排。')
+  await new ChatWorker(t.db,t.config,async input=>{
+   expect(JSON.parse(input.prompt).instruction).toContain('实际整理的原稿：先核对材料，再起草。')
+   expect(JSON.parse(input.prompt).instruction).toContain('第二份原稿：分别记录两项交付。')
+   return {text:'核对材料、起草并记录两项交付，统一整理成这份安排。',failure:null,inputTokens:100,outputTokens:100,elapsedMs:10}
+  }).tick()
   t.advance();await t.tick();await t.tick()
   await model(JSON.stringify({assessment:'ready',summary:'已按本人修改意见完成并核对。',instructions:null,question:null}))
   t.advance();await t.tick();await t.tick()
   const final=(await t.call('personalWorkTask',null,{id:project.workTaskId})).value.data
   expect(final.status).toBe('awaiting_review');expect(final.result.messageId).not.toBe(first.result.messageId)
   expect(final.result.summary).toContain('统一整理成这份安排')
+  expect(final.result.summary).not.toContain('实际整理的原稿：')
+  expect(final.result.summary).not.toContain('第二份原稿：')
+  expect(t.db.prepare("SELECT count(*) n FROM assistant_project_commitments WHERE project_id=? AND json_extract(document,'$.phase')='work' AND output_message_id IS NOT NULL").get(project.id)!.n).toBe(2)
+  expect(t.s.projectedMessage(first.result.messageId).text).toContain('第二份原稿：')
+  expect((await t.call('chatProjectNotice',null,{id:t.own.conversation.id,messageId:final.result.messageId})).value.data.kind).toBe('result')
   expect(final.result.accepted).toBe(false)
   expect(t.db.prepare("SELECT count(*) n FROM assistant_project_events WHERE project_id=? AND kind='owner_revision'").get(project.id)!.n).toBe(1)
+ })
+
+ it('settles a deleted running specialist once and keeps another project dispatchable',async()=>{
+  const t=await fixture(),first=t.create()
+  expect(await t.tick()).toBe(true)
+  expect((await t.call('deletePersonalAgent',{expectedVersion:t.specialist.profile.version},{id:t.specialist.id})).status).toBe(200)
+  const next=(await t.call('agentChatMessage',{text:'请持续跟进这次计划，另行整理下一份原稿。'},{id:t.own.conversation.id})).value.data
+  await new ChatWorker(t.db,t.config,async()=>({text:'收到。',failure:null,inputTokens:100,outputTokens:100,elapsedMs:10})).tick()
+  const second=transaction(t.db,()=>createAssistantProject(t.s,{...t.input,title:'独立后续项目',commitments:[{...t.input.commitments[0]!,contactId:t.own.agent.id}]},{turnId:next.turn.id,messageId:next.message.id,conversationId:t.own.conversation.id},t.now()))
+  t.advance()
+  expect(await t.tick()).toBe(true)
+  for(let i=0;i<5;i++)await t.tick()
+  expect(assistantProject(t.s,first.id).commitments[0]).toMatchObject({status:'blocked',failure:'AUTHORITY_CHANGED',outputMessageId:null})
+  expect(assistantProject(t.s,second.id).commitments[0]!.status).toBe('running')
+  expect(t.db.prepare("SELECT count(*) n FROM assistant_project_events WHERE project_id=? AND event_key LIKE 'blocked:%'").get(first.id)!.n).toBe(1)
  })
 
  it('passes the checked corrected output into the downstream writing commitment without another owner prompt',async()=>{

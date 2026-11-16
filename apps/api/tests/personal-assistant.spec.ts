@@ -677,8 +677,18 @@ describe('model-driven project entry from the actual personal chat',{timeout:300
   for(const title of ['较早项目','较新项目']){const text=`${title}交给你持续跟进`,sent=await s.send(own.conversation.id,text);await s.tick(async()=>modelResult(JSON.stringify(project(text,sent.message.id,{title}))))}
   const rows=s.db.prepare('SELECT id,document FROM assistant_projects ORDER BY rowid').all(),first=rows[0]!,second=rows[1]!,commitment=s.db.prepare('SELECT id FROM assistant_project_commitments WHERE project_id=?').get(first.id!)!
   s.db.prepare("UPDATE assistant_project_commitments SET status='blocked',failure='OWNER_DECISION' WHERE id=?").run(commitment.id!)
-  const text='较早项目采用已核实的24份数据，另外两份暂不纳入',sent=await s.send(own.conversation.id,text)
-  await s.tick(async input=>{expect(JSON.parse(input.prompt).projectEntrySources.projects.map((p:{id:string})=>p.id)).toContain(first.id);return modelResult(JSON.stringify({kind:'project_decision',projectId:first.id,commitmentId:commitment.id,instructions:'按24份已核实的数据继续修改，两份暂不纳入。',authorizationEvidence:text}))})
+  const text='帮我修改较早项目，采用已核实的24份数据，另外两份暂不纳入',sent=await s.send(own.conversation.id,text)
+  expect(sent.turn.budget.maxTokens).toBe(4000)
+  let seen:{system:string;prompt:string;maxTokens:number}|undefined
+  await s.tick(async input=>{
+   seen=input
+   return modelResult(JSON.stringify({kind:'project_decision',projectId:first.id,commitmentId:commitment.id,instructions:'按24份已核实的数据继续修改，两份暂不纳入。',authorizationEvidence:text}))
+  })
+  expect(seen).toBeDefined()
+  const sources=JSON.parse(seen!.prompt).projectEntrySources
+  expect(seen!.system).toContain('kind:"project_decision"')
+  expect(sources.projects.find((p:{id:string})=>p.id===first.id)?.commitments.map((c:{id:string})=>c.id)).toContain(commitment.id)
+  expect(chatInputTokenBound(seen!.system,seen!.prompt)+seen!.maxTokens).toBeLessThanOrEqual(4000)
   expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded',assistantReceipt:{kind:'work_task'}})
   expect(s.count('assistant_projects')).toBe(2)
   expect(s.db.prepare('SELECT count(*) n FROM assistant_project_commitments WHERE project_id=?').get(first.id!)!.n).toBe(2)
