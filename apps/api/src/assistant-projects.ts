@@ -11,7 +11,7 @@ import { createWork, personalWork, socialContactAllowed } from './workspace.js'
 import { currentTurnText, abortChatCall } from './continuous-chat.js'
 import { isMessageRetracted } from './chat-message-actions.js'
 import { localInstant, parts } from './personal-time.js'
-import { dispatchProjectAgent, inspectProjectAgentResult, sendProjectDecision, evaluateHumanCommitment } from './assistant-project-actions.js'
+import { dispatchProjectAgent, inspectProjectAgentResult, retryProjectOutputLimit, sendProjectDecision, evaluateHumanCommitment } from './assistant-project-actions.js'
 
 type Row = Record<string, SQLOutputValue>
 type Input = z.infer<typeof PersonalAssistantProjectInput>
@@ -187,6 +187,27 @@ function originPosition(rows:Row[],row:Row):number {
  const doc=decode<CommitmentDocument>(row.document),parent=doc.parentCommitmentId?rows.find(candidate=>candidate.id===doc.parentCommitmentId):undefined
  return parent?originPosition(rows,parent):Number(row.position)
 }
+function recoverOutputLimit(s:ChatService,project:Row,row:Row,at:string){
+ const key=`output-limit-recovery:${String(row.id)}`
+ if(s.db.prepare('SELECT 1 FROM assistant_project_events WHERE project_id=? AND event_key=?').get(project.id!,key))return false
+ // A retry shares the ordinary execution slots and waits for an in-flight
+ // sibling; temporary capacity pressure does not consume its one recovery.
+ if(Number(s.db.prepare("SELECT count(*) n FROM chat_turns WHERE owner_id=? AND status IN ('queued','running')").get(s.c.actor.id)!.n)>=5||s.db.prepare("SELECT 1 FROM assistant_project_commitments WHERE project_id=? AND id<>? AND status='running'").get(project.id!,row.id!))return false
+ s.db.exec('SAVEPOINT project_output_recovery')
+ try{
+  s.db.prepare("UPDATE assistant_projects SET status='active' WHERE id=?").run(project.id!)
+  const retried=retryProjectOutputLimit(s,actionContext(project),commitmentContext(row))
+  if(!retried){s.db.exec('ROLLBACK TO project_output_recovery; RELEASE project_output_recovery');event(s,String(project.id),String(row.id),key,'output_limit_recovery',{retried:false},at);return false}
+  s.db.prepare("UPDATE assistant_project_commitments SET status='running',turn_id=?,failure=NULL,next_at=?,updated_at=? WHERE id=?").run(retried.turnId,farFuture,at,row.id!)
+  s.db.prepare("UPDATE assistant_projects SET status='active',next_at=?,version=version+1,updated_at=? WHERE id=?").run(at,at,project.id!)
+  event(s,String(project.id),String(row.id),key,'output_limit_recovery',{retried:true,...retried},at)
+  s.db.exec('RELEASE project_output_recovery');return true
+ }catch(error){
+  s.db.exec('ROLLBACK TO project_output_recovery; RELEASE project_output_recovery')
+  if(!(error instanceof ApiError))throw error
+  event(s,String(project.id),String(row.id),key,'output_limit_recovery',{retried:false,reason:error.code},at);return false
+ }
+}
 function settle(s:ChatService,project:Row,row:Row,at:string) {
  const context=commitmentContext(row)
  let result:ReturnType<typeof inspectProjectAgentResult>
@@ -197,8 +218,9 @@ function settle(s:ChatService,project:Row,row:Row,at:string) {
   result={status:'cancelled',outputMessageId:null,outputText:null,failure:'AUTHORITY_CHANGED'}
  }
  if(['queued','running'].includes(result.status))return false
+ if(result.status==='failed'&&result.failure==='BUDGET_EXCEEDED'&&recoverOutputLimit(s,project,row,at))return true
  s.db.prepare('UPDATE assistant_project_commitments SET status=?,output_message_id=?,failure=?,next_at=?,updated_at=? WHERE id=?').run(result.status==='succeeded'?'ready':'blocked',result.outputMessageId,result.failure,farFuture,at,row.id!)
- event(s,String(project.id),String(row.id),`settled:${String(row.id)}`,'settled',{turnId:row.turn_id,status:result.status,failure:result.failure},at,result.outputMessageId)
+ event(s,String(project.id),String(row.id),`settled:${String(row.id)}:${String(row.turn_id)}`,'settled',{turnId:row.turn_id,status:result.status,failure:result.failure},at,result.outputMessageId)
  if(result.status!=='succeeded'){
   once(s,project,`blocked:${String(row.id)}`,`“${context.title}”需要处理：${result.failure??(result.status==='waiting_input'?'助理缺少必要信息，请查看本次回复。':'这次执行未完成，请查看具体运行记录。')}`,at,String(row.id));return true
  }
@@ -228,7 +250,7 @@ export class AssistantProjectWorker {
  constructor(readonly db:DatabaseSync,readonly config:Config,readonly clock:()=>number=Date.now){}
  async tick(){return transaction(this.db,()=>{
   const now=this.clock(),at=new Date(now).toISOString()
-  const row=this.db.prepare("SELECT p.* FROM assistant_projects p JOIN personal_work_tasks w ON w.id=p.work_task_id WHERE p.status IN ('active','awaiting_review','blocked') AND (p.next_at<=? OR w.status IN ('completed','cancelled')) ORDER BY p.next_at,p.id LIMIT 1").get(at)
+  const row=this.db.prepare("SELECT p.* FROM assistant_projects p JOIN personal_work_tasks w ON w.id=p.work_task_id WHERE p.status IN ('active','awaiting_review','blocked') AND (p.next_at<=? OR w.status IN ('completed','cancelled') OR EXISTS(SELECT 1 FROM assistant_project_commitments c JOIN chat_turns t ON t.id=c.turn_id WHERE c.project_id=p.id AND c.status='blocked' AND c.failure='BUDGET_EXCEEDED' AND json_extract(t.request_json,'$.modelOutputDiagnostic.stage')='output_limit' AND json_extract(t.request_json,'$.modelOutputDiagnostic.reasoningEffort')='default' AND (SELECT count(*) FROM chat_turns active WHERE active.owner_id=p.owner_id AND active.status IN ('queued','running'))<5 AND NOT EXISTS(SELECT 1 FROM assistant_project_commitments sibling WHERE sibling.project_id=p.id AND sibling.status='running') AND NOT EXISTS(SELECT 1 FROM assistant_project_events e WHERE e.project_id=p.id AND e.event_key='output-limit-recovery:'||c.id))) ORDER BY p.next_at,p.id LIMIT 1").get(at)
   if(!row)return false
   let s:ChatService
   try{s=new ChatService(serviceFor(this.db,String(row.owner_id),this.config).c,this.config);s.conversation(String(row.conversation_id),false);s.projectedMessage(String(row.source_message_id));if(isMessageRetracted(s,String(row.source_message_id)))fail('FORBIDDEN');validateSources(s,decode<Input>(row.document))}
@@ -236,6 +258,7 @@ export class AssistantProjectWorker {
   const work=this.db.prepare('SELECT status FROM personal_work_tasks WHERE id=?').get(row.work_task_id!)!
   if(['completed','cancelled'].includes(String(work.status))){fence(s,row,at);this.db.prepare('UPDATE assistant_projects SET status=?,next_at=?,version=version+1,updated_at=? WHERE id=?').run(work.status!,farFuture,at,row.id!);return true}
   const commitments=this.db.prepare('SELECT * FROM assistant_project_commitments WHERE project_id=? ORDER BY position').all(row.id!)
+  for(const c of commitments.filter(c=>c.status==='blocked'&&c.failure==='BUDGET_EXCEEDED'))if(recoverOutputLimit(s,row,c,at))return true
   // Running work is observed before dispatching another item; no duplicate call
   // after a crash, unavailable model, waiting input or uncertain completion.
   for(const c of commitments.filter(c=>c.status==='running'))if(settle(s,row,c,at)){this.db.prepare('UPDATE assistant_projects SET next_at=?,updated_at=? WHERE id=?').run(at,at,row.id!);return true}

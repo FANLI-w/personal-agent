@@ -214,6 +214,9 @@ export class ChatWorker {
           input.librarySnapshot={...library.snapshot,citations:libraryExcerpts.map(e=>e.citation)}
           input.libraryRead=researchReadReceipt(library,libraryExcerpts);turn.libraryRead=input.libraryRead
         }
+        // Reference-bearing candidate/project inventory takes precedence over
+        // optional old dialogue; current input and file excerpts remain intact.
+        if(allProjectSources&&projectSources)admitProjectEntrySources(allProjectSources,projectSources,()=>input.budget.maxTokens-chatInputTokenBound(contextSystem(layers),serialize(currentBatch,input.inputSequence>currentBatch.length,read,excerpts,layers))>=desiredOutput)
         layers=packDialogueLayers(messages,required,notes!,tasks,trial=>input.budget.maxTokens-chatInputTokenBound(contextSystem(trial),serialize(trial.messages,trial.messages.length<input.inputSequence,read,excerpts,trial))>=desiredOutput)
         if(allProjectSources&&projectSources)admitProjectEntrySources(allProjectSources,projectSources,()=>input.budget.maxTokens-chatInputTokenBound(contextSystem(layers),serialize(layers.messages,layers.messages.length<input.inputSequence,read,excerpts,layers))>=desiredOutput)
         system=contextSystem(layers)
@@ -242,9 +245,9 @@ export class ChatWorker {
       this.db.prepare('UPDATE chat_turns SET fence=?,lease_owner=?,lease_until=? WHERE id=?').run(fence, this.owner, Date.now() + 15000, turn.id)
       this.db.prepare('INSERT INTO chat_attempts VALUES (?,?,?,NULL)').run(turn.id, row.root_id!, instant())
       const selected=personalModelRuntime(this.db,s.c.actor,this.config)
-      // File reading needs a plain reply within the existing output allowance.
-      // Only this DeepSeek path changes the provider's documented default.
-      return { id: turn.id, ownerId: String(row.owner_id), fence, input,externalEndpoint:external?.endpoint, modelInput: { provider:selected.provider,...(selected.provider==='deepseek'&&input.dailyChat&&input.fileSource?{reasoningEffort:'off' as const}:{}),system, prompt, model:external?.model??selected.model, maxTokens: Math.min(4096,remainingOutput), timeoutMs: input.budget.maxSeconds * 1000 }, credential: { apiKey } }
+      // Bounded file/project text work needs visible output: provider-default
+      // reasoning can otherwise consume the entire 4096-token output cap.
+      return { id: turn.id, ownerId: String(row.owner_id), fence, input,externalEndpoint:external?.endpoint, modelInput: { provider:selected.provider,...(selected.provider==='deepseek'&&input.dailyChat&&(input.fileSource||input.projectExecution)?{reasoningEffort:'off' as const}:{}),system, prompt, model:external?.model??selected.model, maxTokens: Math.min(4096,remainingOutput), timeoutMs: input.budget.maxSeconds * 1000 }, credential: { apiKey } }
     }))
     if (!job) return false
     const controller = new AbortController(), started = Date.now(),unregister=registerChatCall(job.id,controller)
