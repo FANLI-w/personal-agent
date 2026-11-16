@@ -9,6 +9,7 @@ import {hash} from './auth.js'
 import {followup} from './personal-followups.js'
 import {ResearchLibraryService} from './research-library.js'
 import {abortChatCall} from './continuous-chat.js'
+import {requestAssistantProjectRevision} from './assistant-projects.js'
 
 type StoredWork={title:string;goal:string;contactIds:string[];agentContactId:string|null;sourceConversationId:string|null;sourceMessageId:string|null;messageId:string|null;turnId:string|null;resultMessageId:string|null;acceptedMessageId:string|null;resultSources?:{messageId:string;sources:NonNullable<PersonalWorkTask['result']>['sources']};resultReview?:{messageId:string;comment:string;decision?:'accept'|'request_changes'}}
 const decode=(value:unknown)=>JSON.parse(String(value))
@@ -77,14 +78,17 @@ export function personalWork(s:ChatService,id:string):PersonalWorkTask{
  const returnedId=!doc.resultMessageId&&!doc.messageId&&!doc.turnId&&!doc.acceptedMessageId&&doc.resultReview&&!doc.resultReview.decision?doc.resultReview.messageId:null
  const resultId=doc.resultMessageId??turn?.outputMessageId??returnedId
  if(full&&resultId){try{const message=s.projectedMessage(resultId);if(message.conversationId===row.conversation_id&&message.text)result={messageId:message.id,deliverableId:null,summary:message.text,accepted:doc.acceptedMessageId===message.id,changesRequested:doc.resultReview?.messageId===message.id&&(doc.resultReview.decision==='request_changes'||returnedId===message.id),sources:doc.resultSources?.messageId===message.id?doc.resultSources.sources:[],reviewComment:doc.resultReview?.messageId===message.id?doc.resultReview.comment:null}}catch{/* revoke never discloses a cached result */}}
- const status:PersonalWorkTask['status']=row.status==='completed'?'completed':row.status==='cancelled'?'cancelled':row.status==='proposed'?'proposed':result?.changesRequested?'ready':result?'awaiting_review':turn&&['queued','running'].includes(turn.status)?'running':turn&&['unavailable','failed','interrupted','cancelled'].includes(turn.status)?'blocked':'ready'
+ const project=s.db.prepare('SELECT id,status,updated_at FROM assistant_projects WHERE work_task_id=? AND owner_id=?').get(id,row.owner_id!)
+ const commitmentStates=project?s.db.prepare('SELECT status FROM assistant_project_commitments WHERE project_id=?').all(project.id!).map(c=>String(c.status)):[]
+ let status:PersonalWorkTask['status']=row.status==='completed'?'completed':row.status==='cancelled'?'cancelled':row.status==='proposed'?'proposed':result?.changesRequested?'ready':result?'awaiting_review':turn&&['queued','running'].includes(turn.status)?'running':turn&&['unavailable','failed','interrupted','cancelled'].includes(turn.status)?'blocked':'ready'
+ if(project&&row.status==='active')status=project.status==='cancelled'?'cancelled':commitmentStates.includes('blocked')?'blocked':commitmentStates.some(state=>['pending','running'].includes(state))?'running':commitmentStates.includes('waiting')?'ready':result?'awaiting_review':'ready'
  const actions:PersonalWorkTask['allowedActions']=[]
  if(row.status==='proposed'&&viewer==='owner')actions.push('activate','cancel')
  if(row.status==='active'){
   if(viewer==='invited')actions.push('accept','decline')
-  if(full){actions.push('submit');if(status!=='running')actions.push('run');if(viewer==='owner'){if(row.conversation_id&&isSocialGroup(s,String(row.conversation_id)))actions.push('invite');actions.push('cancel');if(result&&!result.changesRequested)actions.push('review')}}
+  if(full){actions.push('submit');if(status!=='running'&&!project)actions.push('run');if(viewer==='owner'){if(row.conversation_id&&isSocialGroup(s,String(row.conversation_id)))actions.push('invite');actions.push('cancel');if(result&&!result.changesRequested)actions.push('review')}}
  }
- return PersonalWorkTask.parse({id,title:doc.title,goal:full?doc.goal:null,owner:person(s,s.human(String(row.owner_id)).id),participants:members,status,summaryOnly:!full,fileDeliverySupported:true,conversationId:full?row.conversation_id:null,sourceConversationId:viewer==='owner'?doc.sourceConversationId:null,sourceMessageId:viewer==='owner'?doc.sourceMessageId:null,agentContactId:full?doc.agentContactId:null,turnId:full?turn?.id??null:null,result,version:row.version,createdAt:row.created_at,updatedAt:turn&&turn.updatedAt>String(row.updated_at)?turn.updatedAt:row.updated_at,allowedActions:actions})
+ return PersonalWorkTask.parse({id,title:doc.title,goal:full?doc.goal:null,owner:person(s,s.human(String(row.owner_id)).id),participants:members,status,summaryOnly:!full,fileDeliverySupported:true,conversationId:full?row.conversation_id:null,sourceConversationId:viewer==='owner'?doc.sourceConversationId:null,sourceMessageId:viewer==='owner'?doc.sourceMessageId:null,agentContactId:full?doc.agentContactId:null,turnId:full?turn?.id??null:null,result,version:row.version,createdAt:row.created_at,updatedAt:[String(row.updated_at),turn?.updatedAt??'',project?String(project.updated_at):''].sort().at(-1)!,allowedActions:actions})
 }
 function validateContacts(s:ChatService,ids:string[]){
  if(new Set(ids).size!==ids.length)fail('VALIDATION_ERROR')
@@ -186,6 +190,7 @@ export function workspaceHandle(s:ChatService,name:string,req:ChatRequest):unkno
   if(row.status!=='active'||!row.conversation_id)fail('INVALID_STATE');const contactId=String(body.contactId);validateContacts(s,[contactId]);if(s.db.prepare("SELECT 1 FROM personal_work_participants WHERE task_id=? AND contact_id=? AND status IN ('accepted','invited')").get(id,contactId))fail('INVALID_STATE')
   s.inviteContact(String(row.conversation_id),contactId);s.db.prepare("INSERT INTO personal_work_participants VALUES (?,?,'invited') ON CONFLICT(task_id,contact_id) DO UPDATE SET status='invited'").run(id,contactId);doc.contactIds=[...new Set([...doc.contactIds,contactId])];save(s,row,doc)
  }else if(name==='runPersonalWorkTask'){
+  if(s.db.prepare('SELECT 1 FROM assistant_projects WHERE work_task_id=?').get(id))fail('INVALID_STATE')
   if(!full||row.status!=='active'||!row.conversation_id)fail('FORBIDDEN');const group=s.conversation(String(row.conversation_id),false),contactId=String(body.agentContactId),contact=s.joinedAgent(group,contactId)
   if(contact.agentRuntime)fail('EXTERNAL_SCOPE_UNSUPPORTED')
   if(contact.identity.kind!=='personal_agent'||!s.db.prepare('SELECT 1 FROM personal_work_participants WHERE task_id=? AND contact_id=?').get(id,contactId))fail('FORBIDDEN')
@@ -202,8 +207,10 @@ export function workspaceHandle(s:ChatService,name:string,req:ChatRequest):unkno
  }else if(name==='reviewPersonalWorkResult'){
   if(row.status!=='active')fail('INVALID_STATE');const current=personalWork(s,id).result;if(!current||current.messageId!==body.messageId)fail('VERSION_CONFLICT');if(current.changesRequested)fail('INVALID_STATE')
   doc.resultReview={messageId:String(body.messageId),comment:typeof body.comment==='string'?body.comment.trim():'',decision:body.decision as 'accept'|'request_changes'}
-  if(typeof body.comment==='string'&&body.comment.trim()){s.message(String(row.conversation_id),{senderContactId:s.human().id,origin:'human',text:(body.decision==='accept'?'验收意见：':'修改意见：')+body.comment.trim(),mentions:[],resources:[],actionIds:[],turnId:null})}
+  let reviewMessageId:string|null=null
+  if(typeof body.comment==='string'&&body.comment.trim()){reviewMessageId=s.message(String(row.conversation_id),{senderContactId:s.human().id,origin:'human',text:(body.decision==='accept'?'验收意见：':'修改意见：')+body.comment.trim(),mentions:[],resources:[],actionIds:[],turnId:null}).id}
   if(body.decision==='accept'){row.status='completed';doc.acceptedMessageId=String(body.messageId)}else{doc.resultMessageId=String(body.messageId);doc.acceptedMessageId=null;doc.messageId=null;doc.turnId=null}save(s,row,doc)
+  if(body.decision==='request_changes'&&reviewMessageId){const project=s.db.prepare('SELECT id FROM assistant_projects WHERE work_task_id=? AND owner_id=?').get(id,s.c.actor.id);if(project)requestAssistantProjectRevision(s,String(project.id),reviewMessageId,String(body.comment).trim())}
  }else if(name==='cancelPersonalWorkTask'){
   if(['completed','cancelled'].includes(String(row.status)))fail('INVALID_STATE');row.status='cancelled';save(s,row,doc)
   for(const t of s.db.prepare("SELECT id FROM chat_turns WHERE json_extract(request_json,'$.workTaskId')=? AND status IN ('queued','running','waiting_input')").all(id)){abortChatCall(String(t.id));const turn=s.materializedTurn(s.db.prepare('SELECT * FROM chat_turns WHERE id=?').get(t.id!)!);turn.status='cancelled';turn.failure='AUTHORITY_CHANGED';turn.version++;turn.updatedAt=instant();s.saveTurn(turn);s.db.prepare('UPDATE chat_turns SET fence=fence+1,lease_owner=NULL,lease_until=NULL WHERE id=?').run(t.id!)}

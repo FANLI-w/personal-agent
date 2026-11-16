@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.49.0"
+    "version": "0.50.0"
   },
   "paths": {
     "/api/v1/library/repository": {
@@ -59711,6 +59711,225 @@
         }
       }
     },
+    "/api/v1/chat/conversations/{id}/messages/{messageId}/project-notice": {
+      "get": {
+        "operationId": "chatProjectNotice",
+        "description": "Owner-only exact host project notice metadata; ordinary messages return null. Message text never grants project/task authority. Legacy message payloads remain unchanged.",
+        "x-stage": "CHAT1",
+        "x-implemented": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CHAT1 contract; implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "projectId": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            "taskId": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9_-]{1,96}$"
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "decision",
+                                "result",
+                                "update"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "projectId",
+                            "taskId",
+                            "kind"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "See error.code mapping and retry rules in protocol.md.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/chat/conversations/{id}/messages/{messageId}/withdraw": {
       "post": {
         "operationId": "withdrawChatMessage",
@@ -81073,7 +81292,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.49.0"
+                          "const": "0.50.0"
                         },
                         "checks": {
                           "type": "object",
@@ -81132,7 +81351,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.49.0",
+                    "contractVersion": "0.50.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -81306,7 +81525,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.49.0"
+                          "const": "0.50.0"
                         },
                         "checks": {
                           "type": "object",
@@ -81365,7 +81584,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.49.0",
+                    "contractVersion": "0.50.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -81517,7 +81736,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.49.0"
+                          "const": "0.50.0"
                         },
                         "checks": {
                           "type": "object",
@@ -81576,7 +81795,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.49.0",
+                    "contractVersion": "0.50.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",

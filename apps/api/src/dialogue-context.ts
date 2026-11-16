@@ -128,7 +128,7 @@ export function taskSourcesCurrent(s:ChatService,sources:TaskSource[]){
 
 export type DialogueTask=ReturnType<typeof dialogueTaskState>[number]
 export type DialogueLayers={messages:DialogueMessage[];notes:DialogueNotes;tasks:DialogueTask[]}
-export function packDialogueLayers(recent:DialogueMessage[],required:Set<string>,notes:DialogueNotes,tasks:DialogueTask[],fits:(layers:DialogueLayers)=>boolean):DialogueLayers{
+export function packDialogueLayers(recent:DialogueMessage[],required:Set<string>,notes:DialogueNotes,tasks:DialogueTask[],fits:(layers:DialogueLayers)=>boolean,prioritizeRecall=false):DialogueLayers{
  let selected:DialogueLayers={messages:recent.filter(m=>required.has(m.id)),notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]}
  const attempt=(next:DialogueLayers)=>{if(fits(next)){selected=next;return true}return false}
  const addMessage=(m:DialogueMessage)=>{
@@ -138,10 +138,13 @@ export function packDialogueLayers(recent:DialogueMessage[],required:Set<string>
  // Current text/file content is already in the base. Task truth and recent
  // exchanges precede archive recall; older originals use only spare room.
  for(const t of tasks)attempt({...selected,tasks:[...selected.tasks,t]})
+ // Coordinating a small bounded request must preserve its relevant source
+ // quote before unrelated recent small talk consumes the extra protocol room.
+ if(prioritizeRecall)for(const q of notes.recalled){if(selected.messages.some(m=>m.id===q.messageId))continue;attempt({...selected,notes:{...selected.notes,recalled:[...selected.notes.recalled,q]}})}
  const optional=recent.filter(m=>!required.has(m.id)).reverse()
  for(const m of optional.slice(0,4))addMessage(m)
  for(const kind of ['recalled','summary'] as const)for(const q of notes[kind]){
-  if(selected.messages.some(m=>m.id===q.messageId))continue
+  if(selected.messages.some(m=>m.id===q.messageId)||selected.notes[kind].some(old=>old.messageId===q.messageId))continue
   attempt({...selected,notes:{...selected.notes,[kind]:[...selected.notes[kind],q]}})
  }
  for(const m of optional.slice(4))addMessage(m)

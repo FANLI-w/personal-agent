@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { Id,Title,Version,Instant,Timezone,ObjectRef,ErrorResponse,errorStatus,data,page } from './models.js'
+import { Id,Title,Text,Version,Instant,Timezone,ObjectRef,ErrorResponse,errorStatus,data,page } from './models.js'
 
 export const PersonalMemoryStatus=z.enum(['confirmed','candidate','revoked'])
 export const PersonalMemoryInput=z.strictObject({topic:z.string().trim().min(1).max(80),content:z.string().trim().min(1).max(1000),scope:z.enum(['general','topic']).default('general')})
@@ -17,6 +17,16 @@ export const PersonalFollowupInput=z.strictObject({title:Title,body:z.string().t
 export const PersonalFollowup=PersonalFollowupInput.extend({id:Id,status:z.enum(['active','paused','completed','cancelled']),nextDeliveryAt:Instant,messageId:Id.nullable(),delivery:FollowupDelivery,version:Version,createdAt:Instant,updatedAt:Instant,lastRun:PersonalFollowupRun.nullable().default(null),allowedActions:z.array(z.enum(['edit','pause','resume','complete','cancel'])).max(5)})
 export const PersonalMemoryReceipt=z.strictObject({operation:z.enum(['saved','corrected','forgotten','candidate','clarify']),memoryId:Id.nullable(),topic:z.string().nullable(),status:PersonalMemoryStatus.nullable(),version:z.number().int().nonnegative(),question:z.string().nullable()})
 export const PersonalFollowupReceipt=z.strictObject({operation:z.enum(['created','clarify']),followupId:Id.nullable(),dueAt:Instant.nullable(),timeZone:Timezone.nullable(),question:z.string().nullable()})
+// A model may interpret a current owner instruction; quoted materials never
+// provide authorization. IDs below are selected from the live entry inventory.
+export const PersonalAssistantProjectInput=z.strictObject({
+ title:Title,goal:Text,dueAt:Instant.nullable(),dueDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),timeZone:Timezone,
+ authorizationEvidence:z.string().trim().min(1).max(1000),
+ coordinatorFallbackReason:z.string().trim().min(1).max(1000).optional(),
+ sourceMessageIds:z.array(Id).max(20).default([]),sourceFileMessageIds:z.array(Id).max(10).default([]),existingTaskIds:z.array(Id).max(20).default([]),
+ commitments:z.array(z.strictObject({title:Title,contactId:Id.nullable(),kind:z.enum(['agent','human']),instructions:Text,acceptanceCriteria:z.string().trim().min(1).max(1000),dueAt:Instant.nullable(),dueDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),existingTaskId:Id.nullable().default(null)})).min(1).max(20),
+})
+export type PersonalAssistantProjectInput=z.infer<typeof PersonalAssistantProjectInput>
 export const PersonalAssistantReceipt=z.discriminatedUnion('kind',[
  z.strictObject({kind:z.literal('work_task'),taskId:Id,conversationId:Id.nullable(),status:z.enum(['proposed','ready'])}),
  z.strictObject({kind:z.literal('delegate'),contactId:Id,conversationId:Id,displayName:Title,reused:z.boolean(),messageId:Id,turnId:Id,status:z.enum(['queued','unavailable']),budget:z.strictObject({maxTokens:z.number().int().positive(),maxSeconds:z.number().int().positive()})}),

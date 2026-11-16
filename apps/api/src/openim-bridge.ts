@@ -26,6 +26,9 @@ export class OpenImBridge {
   }
   unavailableReason(){try{imConfiguration(this.config);return null}catch(error){return error instanceof ImUnavailable?error.reason:'not_configured' as const}}
   mapping(chat:ChatService,id:string):ImMapping{
+    // A coordinator's internal review shares its contact with the normal
+    // personal chat. Mapping it would collide with (or capture) that SDK pair.
+    if(this.db.prepare("SELECT 1 FROM chat_conversations WHERE id=? AND scope_key LIKE 'assistant-project-execution:%'").get(id))fail('NOT_FOUND')
     const group=chat.conversation(id,false),self=this.identity(chat,chat.human().id)
     let groupID:string|null=null,peerUserID:string|null=null,imConversationID:string
     if(group.kind==='group'){groupID=`g_${hash(`${group.labId}:${group.id}`).slice(0,32)}`;imConversationID=`sg_${groupID}`}

@@ -153,3 +153,7 @@ paper-framework-figure-studio-pro 固定修订仅在 Git 外测试完整包往�
 ### PR #210 助理笔记
 
 沿用 FANLI-w 的主题、摘要、详情、冲突标记和压缩任务设计。已部署的 036 校验和保持不变，新增 037（助理记忆与修订）、038（主题索引）、039（压缩队列）。原提案中删除个人记忆表和清空私人助理记录的迁移已移除。既有反馈继续写回原记录，压缩只在指定主人的指定助理笔记范围内运行。备份恢复后，中断的压缩任务需要重新发起。
+
+## 2026-11-16 · 个人助理项目跟进
+
+个人项目委派与跟进机制参考了 [DeepSeek dsh-superagent-prototype](https://github.com/deepseek-ai/dsh-superagent-prototype/tree/8c32a9dc5d72c033816c6a8110b37f40cf94fba4) 的持久任务、事件送达和执行者分工设计。AcceptCat 使用自己的个人任务、聊天权限和 SQLite worker 实现。 迁移 040 新增项目、分工与事件表，已有任务继续使用原 ID 和验收入口。
