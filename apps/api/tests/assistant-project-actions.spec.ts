@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { transaction } from '../src/database.js'
 import { ChatService } from '../src/chat.js'
 import { serviceFor, type ModelCall } from '../src/execution-worker.js'
-import { assistantProject } from '../src/assistant-projects.js'
+import { assistantProject, AssistantProjectWorker } from '../src/assistant-projects.js'
 import { dispatchProjectAgent, sendProjectDecision, projectExecutionInput } from '../src/assistant-project-actions.js'
 import { retractMessage } from '../src/chat-message-actions.js'
 import { chatInputTokenBound } from '../src/chat-model-input.js'
@@ -10,6 +10,70 @@ import { OpenImBridge } from '../src/openim-bridge.js'
 import { setupAssistantProject as setup, projectModelResult as result } from './helpers/assistant-project-fixture.js'
 
 describe('project actions: actual HTTP/SQLite and model turns, synthetic model callbacks',()=>{
+ it.each([false,true])('recovers one known empty reasoning-limit failure within its original ledger, historical blocked=%s',async historical=>{
+  const t=await setup(),{project}=await t.create()
+  await t.projectTick()
+  const original=t.commitment(project.id).turnId!
+  // The deployed failure profile: high reasoning exhausted4096 output tokens
+  // before visible text. No live service or credentials are used here.
+  await t.tick(async input=>{
+   expect(input.reasoningEffort).toBe('off')
+   return {text:'',failure:'OUTPUT_LIMIT',finishReason:'max-tokens',inputTokens:890,outputTokens:4096,elapsedMs:28876}
+  })
+  const prior=JSON.parse(String(t.db.prepare('SELECT request_json FROM chat_turns WHERE id=?').get(original)!.request_json))
+  prior.modelOutputDiagnostic.reasoningEffort='default'
+  t.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(prior),original)
+  if(historical){
+   t.db.prepare("UPDATE assistant_project_commitments SET status='blocked',failure='BUDGET_EXCEEDED' WHERE project_id=?").run(project.id)
+   t.db.prepare("UPDATE assistant_projects SET status='blocked',next_at='9999-12-31T00:00:00.000Z' WHERE id=?").run(project.id)
+  }
+  t.advance();expect(await t.projectTick()).toBe(true)
+  const next=t.commitment(project.id).turnId!
+  expect(next).not.toBe(original)
+  const retry=t.db.prepare('SELECT root_id,request_json FROM chat_turns WHERE id=?').get(next)!,input=JSON.parse(String(retry.request_json))
+  expect(retry.root_id).toBe(original)
+  expect(input.budget).toEqual({maxTokens:7014,maxSeconds:61})
+  expect(t.db.prepare('SELECT status FROM chat_turns WHERE id=?').get(original)!.status).toBe('failed')
+  await t.tick(async input=>{expect(input.reasoningEffort).toBe('off');expect(chatInputTokenBound(input.system,input.prompt)+input.maxTokens).toBeLessThanOrEqual(7014);return result('已按实际提供的资料整理完成。')})
+  t.advance();await t.projectTick();await t.projectTick()
+  await t.tick(async input=>{expect(input.reasoningEffort).toBe('off');return result(JSON.stringify({assessment:'ready',summary:'已核对实际资料。',instructions:null,question:null}))})
+  t.advance();await t.projectTick();await t.projectTick()
+  const work=(await t.call('personalWorkTask',null,{id:project.workTaskId})).value.data
+  expect(work.status).toBe('awaiting_review');expect(work.result.summary).toContain('已按实际提供的资料整理完成')
+  for(let i=0;i<3;i++){t.advance();await t.projectTick()}
+  expect(t.db.prepare('SELECT count(*) n FROM chat_turns WHERE root_id=?').get(original)!.n).toBe(2)
+  expect(t.db.prepare("SELECT count(*) n FROM assistant_project_events WHERE project_id=? AND kind='output_limit_recovery'").get(project.id)!.n).toBe(1)
+  expect(t.db.prepare("SELECT count(*) n FROM assistant_project_events WHERE project_id=? AND event_key LIKE 'ready:%'").get(project.id)!.n).toBe(1)
+  expect(t.db.prepare('SELECT count(*) n FROM chat_attempts WHERE root_id=?').get(original)!.n).toBe(2)
+  expect(t.db.prepare('SELECT count(*) n FROM im_message_outbox WHERE message_id=?').get(work.result.messageId)!.n).toBe(1)
+ })
+
+ it.each(['unknown_usage','exhausted_budget','already_off','cancelled'] as const)('does not replay unsafe or already corrected output-limit failure: %s',async boundary=>{
+  const t=await setup(),{project}=await t.create();await t.projectTick()
+  const original=t.commitment(project.id).turnId!
+  await t.tick(async()=>({text:'',failure:'OUTPUT_LIMIT',finishReason:'max-tokens',inputTokens:boundary==='unknown_usage'?null:boundary==='exhausted_budget'?7900:890,outputTokens:4096,elapsedMs:28876}))
+  const request=JSON.parse(String(t.db.prepare('SELECT request_json FROM chat_turns WHERE id=?').get(original)!.request_json))
+  request.modelOutputDiagnostic.reasoningEffort=boundary==='already_off'?'off':'default'
+  t.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(request),original)
+  if(boundary==='cancelled')t.db.prepare("UPDATE personal_work_tasks SET status='cancelled' WHERE id=?").run(project.workTaskId)
+  for(let i=0;i<4;i++){t.advance();await t.projectTick()}
+  expect(t.db.prepare('SELECT count(*) n FROM chat_turns WHERE root_id=?').get(original)!.n).toBe(1)
+  expect(t.db.prepare('SELECT output_message_id FROM assistant_project_commitments WHERE project_id=? ORDER BY position LIMIT 1').get(project.id)!.output_message_id).toBeNull()
+ })
+
+ it('never repeats a failed recovery after a worker recreation',async()=>{
+  const t=await setup(),{project}=await t.create();await t.projectTick()
+  const original=t.commitment(project.id).turnId!
+  await t.tick(async()=>({text:'',failure:'OUTPUT_LIMIT',finishReason:'max-tokens',inputTokens:890,outputTokens:4096,elapsedMs:28876}))
+  const request=JSON.parse(String(t.db.prepare('SELECT request_json FROM chat_turns WHERE id=?').get(original)!.request_json));request.modelOutputDiagnostic.reasoningEffort='default'
+  t.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(request),original)
+  t.advance();await t.projectTick()
+  await t.tick(async()=>({text:'',failure:'OUTPUT_LIMIT',finishReason:'max-tokens',inputTokens:890,outputTokens:2000,elapsedMs:1000}))
+  for(let i=0;i<4;i++)await new AssistantProjectWorker(t.db,t.config,()=>Date.now()+3600000).tick()
+  expect(t.db.prepare('SELECT count(*) n FROM chat_turns WHERE root_id=?').get(original)!.n).toBe(2)
+  expect(assistantProject(t.s,project.id).commitments[0]).toMatchObject({status:'blocked',failure:'BUDGET_EXCEEDED'})
+ })
+
  it('detects a content omission from two real supplied files, performs a scoped specialist correction, reviews it and preserves owner acceptance',async()=>{
   const t=await setup()
   const brief=await t.file('brief.txt','任务说明：研究由方法A改为方法B，因为方法A无法识别观察周期内的早期变化。实验数量由负责人另行给出。')

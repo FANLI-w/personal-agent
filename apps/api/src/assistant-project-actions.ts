@@ -9,6 +9,7 @@ import { chatInputTokenBound } from './chat-model-input.js'
 import { personalWork } from './workspace.js'
 import { modelAgentProfile } from './agent-roles.js'
 import { researchConversationPolicy } from './conversation-policy.js'
+import { personalModelRuntime } from './personal-models.js'
 
 export type ProjectActionContext = {
  id:string; title:string; goal:string; conversationId:string; sourceMessageId:string; dueAt:string|null
@@ -139,6 +140,37 @@ export function inspectProjectAgentResult(s:ChatService,project:ProjectActionCon
  if(input.projectExecution?.projectId!==project.id||input.projectExecution.commitmentId!==stored.id)fail('FORBIDDEN')
  const output=turn.outputMessageId?s.projectedMessage(turn.outputMessageId):null
  return {status:turn.status,outputMessageId:output?.id??null,outputText:output?.text??null,failure:turn.failure}
+}
+
+/** One host-controlled recovery; all prior usage stays charged to the same root. */
+export function retryProjectOutputLimit(s:ChatService,project:ProjectActionContext,commitment:ProjectCommitmentContext){
+ projectAuthority(s,project)
+ if(personalModelRuntime(s.db,s.c.actor,s.config).provider!=='deepseek')return null
+ const stored=storedCommitment(s,project.id,commitment.id)
+ if(!stored.value.turnId||stored.value.turnId!==commitment.turnId)return null
+ const {row,turn,input,group}=s.checkTurnInput(stored.value.turnId)
+ if(s.joinedAgent(group,turn.agentContactId).availability.status!=='available')return null
+ const diagnostic=input.modelOutputDiagnostic
+ if(turn.status!=='failed'||turn.failure!=='BUDGET_EXCEEDED'||turn.outputMessageId||!input.projectExecution||input.projectExecution.projectId!==project.id||input.projectExecution.commitmentId!==commitment.id||diagnostic?.stage!=='output_limit'||diagnostic.failure!=='OUTPUT_LIMIT'||diagnostic.returnedTextLength!==0||diagnostic.reasoningEffort!=='default')return null
+ // Unknown usage, an existing retry, or a new model/context is never replayed.
+ const attempts=s.db.prepare('SELECT usage_json FROM chat_attempts WHERE root_id=?').all(row.root_id!)
+ if(attempts.length!==1||!attempts[0]!.usage_json)return null
+ const used=JSON.parse(String(attempts[0]!.usage_json)) as {inputTokens:number|null;outputTokens:number|null;elapsedMs:number}
+ if(used.inputTokens===null||used.outputTokens===null)return null
+ const root=JSON.parse(String(s.db.prepare('SELECT request_json FROM chat_turns WHERE id=?').get(row.root_id!)!.request_json)) as TurnInput
+ const budget={maxTokens:root.budget.maxTokens-used.inputTokens-used.outputTokens,maxSeconds:Math.floor(root.budget.maxSeconds-used.elapsedMs/1000)}
+ if(budget.maxTokens<1024||budget.maxSeconds<5)return null
+ const nextInput={...input,budget,conversationVersion:group.version}
+ const prompt=JSON.stringify(projectExecutionInput(s,nextInput))
+ if(budget.maxTokens-chatInputTokenBound(projectExecutionSystem,prompt)<1024)return null
+ delete nextInput.modelOutputDiagnostic;delete nextInput.modelInputDiagnostic
+ const message=s.projectedMessage(turn.inputMessageId),retried=s.newTurn(group,message,turn.agentContactId,nextInput,String(row.root_id))
+ // Match original dispatch: no implicit memory/library authority is added.
+ const saved=JSON.parse(String(s.db.prepare('SELECT request_json FROM chat_turns WHERE id=?').get(retried.id)!.request_json)) as TurnInput
+ delete saved.librarySnapshot;delete saved.personalMemoryFingerprint
+ s.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(saved),retried.id)
+ message.turnId=retried.id;s.db.prepare('UPDATE chat_messages SET document=? WHERE id=?').run(JSON.stringify(legacyChatMessage(message)),message.id)
+ return {turnId:retried.id,messageId:message.id,conversationId:group.id,previousTurnId:turn.id,budget}
 }
 
 /** Records a real message in the original owner chat; IM delivery remains the canonical outbox's job. */
