@@ -2,7 +2,7 @@ import { randomUUID, randomBytes, createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { routes, type RouteName } from '@research-agent-platform/contracts'
 import { readConfig } from '../src/config.js'
 import { openDatabase, migrate, transaction, seed, checkDatabase } from '../src/database.js'
@@ -13,7 +13,7 @@ import { serviceFor } from '../src/execution-worker.js'
 import { AssistantProjectWorker, createAssistantProject, assistantProject, resolveAssistantProjectDecision } from '../src/assistant-projects.js'
 
 const cleanup:(()=>unknown|Promise<unknown>)[]=[]
-afterEach(async()=>{for(const fn of cleanup.splice(0).reverse())await fn()})
+afterEach(async()=>{vi.restoreAllMocks();for(const fn of cleanup.splice(0).reverse())await fn()})
 async function fixture(){
  const folder=mkdtempSync(join(tmpdir(),'assistant-project-core-'));cleanup.push(()=>rmSync(folder,{recursive:true,force:true}))
  const master=join(folder,'synthetic.key');writeFileSync(master,randomBytes(32).toString('hex'),{mode:0o600})
@@ -41,6 +41,28 @@ async function fixture(){
 }
 
 describe('durable assistant project coordination; synthetic local inputs',()=>{
+ it('corrects a model-proposed this-Friday date using the owner timestamp before future-date validation',async()=>{
+  const t=await fixture(),row=t.db.prepare('SELECT document FROM chat_messages WHERE id=?').get(t.source.message.id)!,source=JSON.parse(String(row.document))
+  source.text='请持续跟进这次计划，下周五组会还要汇报合成项目。';source.createdAt='2026-11-16T01:00:00.000Z'
+  t.db.prepare('UPDATE chat_messages SET document=? WHERE id=?').run(JSON.stringify(source),t.source.message.id)
+  const input={...t.input,dueDate:'2026-11-20',commitments:[{...t.input.commitments[0]!,dueDate:'2026-11-20'},{...t.input.commitments[0]!,dueDate:'2026-11-25'}]}
+  const project=transaction(t.db,()=>createAssistantProject(t.s,input,{turnId:t.source.turn.id,messageId:t.source.message.id,conversationId:t.own.conversation.id},Date.parse('2026-11-23T01:00:00Z')))
+  expect(project).toMatchObject({dueAt:null,dueDate:'2026-11-27',checkAt:'2026-11-27T15:59:00.000Z',checkpointKind:'date_end',timeZone:'Asia/Shanghai'})
+  expect(project.commitments.map(c=>c.dueDate)).toEqual(['2026-11-27','2026-11-25'])
+  expect(JSON.parse(String(t.db.prepare('SELECT document FROM assistant_projects WHERE id=?').get(project.id)!.document)).dueDate).toBe('2026-11-27')
+ })
+ it('acknowledges the corrected persisted date rather than the model-proposed date',async()=>{
+  const t=await fixture(),text='下周五组会还要汇报合成项目，稿件交给你持续跟进。'
+  const sent=(await t.call('agentChatMessage',{text},{id:t.own.conversation.id})).value.data
+  const source=JSON.parse(String(t.db.prepare('SELECT document FROM chat_messages WHERE id=?').get(sent.message.id)!.document));source.createdAt='2026-11-16T01:00:00.000Z'
+  t.db.prepare('UPDATE chat_messages SET document=? WHERE id=?').run(JSON.stringify(source),sent.message.id)
+  vi.spyOn(Date,'now').mockReturnValue(Date.parse('2026-11-16T01:05:00Z'))
+  await new ChatWorker(t.db,t.config,async()=>({text:JSON.stringify({kind:'project',project:{...t.input,authorizationEvidence:text,coordinatorFallbackReason:'本次由本人明确交给协调助理整理。',dueDate:'2026-11-20',commitments:[{...t.input.commitments[0]!,contactId:t.specialist.id,dueDate:'2026-11-20'}]}}),failure:null,inputTokens:100,outputTokens:100,elapsedMs:10})).tick()
+  const turn=t.s.turn(sent.turn.id)
+  expect(turn.status).toBe('succeeded')
+  const reply=t.s.projectedMessage(turn.outputMessageId!).text!
+  expect(reply).toContain('2026-11-27');expect(reply).not.toContain('2026-11-20');expect(reply).toContain('具体时刻未指定')
+ })
  it('deduplicates source-turn creation and rejects cross-owner access or fabricated current-request evidence',async()=>{
   const t=await fixture(),first=t.create(),second=t.create()
   expect(first.id).toBe(second.id)

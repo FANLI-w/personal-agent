@@ -3291,3 +3291,13 @@ API 与 worker 同时切到上述 main 源码，镜像摘要 `sha256:ac5993ac920
 当前输入、文件、记忆和回复额度保持优先；专业候选和项目引用先于可选旧对话准入。现有当前消息 ID 去重原本有效，未做无依据的 helper 改写。实际 HTTP / SQLite 的当前与历史失败恢复、取消、用量不确定、额度耗尽、恢复后再次失败、worker 重建及单份审阅后投递检查通过；固定 Harness 回环复现 4096 推理耗尽与关闭推理后的完整回复。两项项目测试文件和适配器测试合计 28 项通过，API 类型与 diff 检查通过；两种默认预算及既有专业边界定向检查 4 项通过。默认 CI 的固定适配器构建、类型与缺凭据检查不当作真实模型证据。完整根 `pnpm run ci` 已启动，本条不宣称其完成，日志位于 `D:/deepseek-agent/.runtime/project-output-recovery-20261116/ci-root-first-pass.log`。本批尚未部署，未更改生产配置、个人模型、凭据或数据库版本，正式客户端真实模型复测待负责人继续。
 
 同轮 IM 观察单独保留：入口消息指针已成功投递，后续阻塞通知写入原聊天应用库后，在 outbox 领取、operation ID 落库之前遇到 `DB_BUSY_IM`。记录只有 1 次尝试，operation ID / server message ID 均为空，租约到期后为 `UNCERTAIN`；缺少 SDK 实际发送证据，不能记为成功通知。当前模型与清单候选不证明此传输问题已修复。脱敏证据位于 `D:/deepseek-agent/.runtime/personal-project-040-deploy-20261116/official-client-meeting-scoped.json`、`official-client-meeting-eligibility.json`、`official-client-transport-window.json` 与 `official-client-transport-scoped.json`；清单回归日志为 `D:/deepseek-agent/.runtime/project-output-recovery-20261116/inventory-scope-tests.log`，较早的两种预算单独检查保留于 `inventory-budget-tests.log`。
+
+## 2026-11-16 · #238 后台前滚真实交付与相对星期日期修正候选
+
+PR #238 已合入 main `2ee257e` 并升级后台，正式客户端保持 0.10.116，数据库保持 040。原失败项目在同一根任务用量账本中恢复一次，原聊天仅一份成果、1736 字，SDK 仅发送一次。新的正式客户端真实请求准入 6 个本人专业助理并自动派工，协调助理提出修改，完成一次修正及再次复核后返回 214 字成果；只有一条初始委托，各条通知只有一次 SDK 尝试。结果准确区分已核实、待复核的材料，指出缺少质量依据，未代本人验收。该批本地完整 CI 1070 项通过、1 项真实模型场景默认跳过；三项 GitHub 检查通过。部署、恢复与新任务脱敏证据分别为 `D:/deepseek-agent/.runtime/personal-project-040-hotfix-20261116/production-receipt.json`、`original-recovery-receipt.json`、`formal-task-receipt.json`，原聊天和专业助理结果截图分别为 `original-chat-recovered.png`、`specialist-chat-result.png`。这些真实结果与早先模型回环、合成用量重放的范围分别保留。
+
+同轮发现独立日期错误：2026-11-16 周一北京时间 15:24 提交的“下周五组会”被模型保存为 2026-11-20，本人原意为 2026-11-27；更早的原请求曾给出正确日期，不能以单次成功推断日期解释稳定。当前项目创建边界原先只验证模型给出的时间在未来且不过远，没有核对该相对星期；回执也直接显示原模型日期。
+
+新分支 `codex/project-relative-weekday` 从部署基线 `2ee257e` 建立。候选仅针对已有截止提议中一个明确、直接的相对星期日程，在保存前用该词所在本人消息的创建时间与项目时区核算本周 / 下周 / 下下周的日期；连续消息跨午夜也不改用后续消息或 worker 时钟。日期型截止保留日期型，支持相邻的明确当地时刻；不凭空补会议时间。与原项目日期或时刻完全匹配的继承分工同步修正，故意不同的日期、时刻不覆盖。无截止提议、背景休息、截止否定或取消、引用、假设、材料日期、多日期计划及不支持的时刻均交回既有解释路径，不做数字抽取式改写。原聊天回执采用最终持久日期，避免数据库修正而用户仍看到错误日期。
+
+单元日历覆盖周一 / 周日、跨月 / 跨年、同一 UTC 时刻在上海与洛杉矶不同的当地周、连续消息跨午夜、明确时刻、无截止与否定、引用材料及多日期边界；实际 SQLite 创建验证先校正再检验未来日期，真实 ChatWorker 合成回调验证回执与保存日期一致。日历、项目及动作三份测试合计 52 项通过，API 类型检查通过。日期修正的完整根 CI 与上线后复测尚待本批执行结果；本批没有生产改写、迁移或客户端发布。

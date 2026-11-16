@@ -11,6 +11,7 @@ import { createWork, personalWork, socialContactAllowed } from './workspace.js'
 import { currentTurnText, abortChatCall } from './continuous-chat.js'
 import { isMessageRetracted } from './chat-message-actions.js'
 import { localInstant, parts } from './personal-time.js'
+import { normalizeProjectDeadline } from './assistant-project-deadline.js'
 import { dispatchProjectAgent, inspectProjectAgentResult, retryProjectOutputLimit, sendProjectDecision, evaluateHumanCommitment } from './assistant-project-actions.js'
 
 type Row = Record<string, SQLOutputValue>
@@ -47,7 +48,7 @@ function projectRow(s:ChatService,id:string) {
 }
 function commitmentContext(row:Row) {
  const doc=decode<CommitmentDocument>(row.document)
- return {id:String(row.id),title:doc.title,contactId:row.contact_id?String(row.contact_id):null,instructions:doc.instructions,acceptanceCriteria:doc.acceptanceCriteria,existingTaskId:doc.existingTaskId,dueAt:row.due_at?String(row.due_at):null,kind:doc.kind,phase:doc.phase,turnId:row.turn_id?String(row.turn_id):null,messageId:row.message_id?String(row.message_id):null}
+ return {id:String(row.id),title:doc.title,contactId:row.contact_id?String(row.contact_id):null,instructions:doc.instructions,acceptanceCriteria:doc.acceptanceCriteria,existingTaskId:doc.existingTaskId,dueAt:row.due_at?String(row.due_at):null,dueDate:doc.dueDate,kind:doc.kind,phase:doc.phase,turnId:row.turn_id?String(row.turn_id):null,messageId:row.message_id?String(row.message_id):null}
 }
 function actionContext(row:Row) {
  const doc=decode<Input>(row.document)
@@ -121,12 +122,14 @@ function insertCommitment(s:ChatService,projectId:string,input:CommitmentDocumen
 /** Called inside the successful owner-turn savepoint, never from recalled text. */
 export function createAssistantProject(s:ChatService,raw:unknown,source:{turnId:string;conversationId:string;messageId:string},now=Date.now()) {
  const input=PersonalAssistantProjectInput.parse(raw),at=new Date(now).toISOString()
- const turn=s.db.prepare('SELECT owner_id,conversation_id,document FROM chat_turns WHERE id=?').get(source.turnId)
+ const turn=s.db.prepare('SELECT owner_id,conversation_id,document,request_json FROM chat_turns WHERE id=?').get(source.turnId)
  if(!turn||turn.owner_id!==s.c.actor.id||decode<{inputMessageId:string}>(turn.document).inputMessageId!==source.messageId||turn.conversation_id!==source.conversationId)fail('FORBIDDEN')
  const message=s.projectedMessage(source.messageId),group=s.conversation(source.conversationId,false)
  if(message.origin!=='human'||message.senderContactId!==s.human().id||group.kind!=='personal'||group.ownerMemberId!==s.c.actor.id||!currentTurnText(s,source.turnId).includes(input.authorizationEvidence))fail('FORBIDDEN')
  const old=s.db.prepare('SELECT id FROM assistant_projects WHERE source_turn_id=? AND owner_id=?').get(source.turnId,s.c.actor.id)
  if(old)return assistantProject(s,String(old.id))
+ const batch=decode<{continuous?:{messageIds:string[]}}>(turn.request_json).continuous?.messageIds??[source.messageId]
+ normalizeProjectDeadline(input,batch.map(id=>s.projectedMessage(id)))
  if(Number(s.db.prepare("SELECT count(*) n FROM assistant_projects WHERE owner_id=? AND status IN ('active','blocked','awaiting_review')").get(s.c.actor.id)!.n)>=50)fail('RATE_LIMITED')
  const coordinator=decode<{agentContactId:string}>(turn.document).agentContactId
  for(const c of input.commitments){

@@ -332,8 +332,8 @@ export class ChatWorker {
             outputStage='persistence'
             const project=createAssistantProject(s,p,{turnId:turn.id,conversationId:group.id,messageId:turn.inputMessageId})
             turn.assistantReceipt={kind:'work_task',taskId:project.workTaskId,conversationId:group.id,status:'ready'}
-            const assignments=p.commitments.map(c=>`${s.contact(c.contactId??turn.agentContactId).displayName}：${c.title}${c.dueDate?`（${c.dueDate}）`:c.dueAt?`（${c.dueAt}）`:''}`).join('\n')
-            const message=s.message(group.id,{senderContactId:turn.agentContactId,origin:'service',text:`已记录“${p.title}”的目标和分工，并开始持续跟进。${p.dueDate?`日期为 ${p.dueDate}（${p.timeZone}），按当天结束检查进度，具体时刻未指定。`:p.dueAt?`约定时间为 ${p.dueAt}。`:'尚未指定日期。'}\n${assignments}\n实际结果与需要你决定的事项会回到这段聊天。${p.commitments.some(c=>c.kind==='human')?'真人分工尚未代表对方接受，未向他人发送消息。':''}`,mentions:[],resources:[],actionIds:[],turnId:turn.id})
+            const assignments=project.commitments.map(c=>`${s.contact(c.contactId??turn.agentContactId).displayName}：${c.title}${c.dueDate?`（${c.dueDate}）`:c.dueAt?`（${c.dueAt}）`:''}`).join('\n')
+            const message=s.message(group.id,{senderContactId:turn.agentContactId,origin:'service',text:`已记录“${p.title}”的目标和分工，并开始持续跟进。${project.dueDate?`日期为 ${project.dueDate}（${project.timeZone}），按当天结束检查进度，具体时刻未指定。`:project.dueAt?`约定时间为 ${project.dueAt}。`:'尚未指定日期。'}\n${assignments}\n实际结果与需要你决定的事项会回到这段聊天。${p.commitments.some(c=>c.kind==='human')?'真人分工尚未代表对方接受，未向他人发送消息。':''}`,mentions:[],resources:[],actionIds:[],turnId:turn.id})
             turn.status='succeeded';turn.outputMessageId=message.id;turn.failure=null
           }else{
           if(coordinated?.kind==='collaborate'&&!assistantComplexRequest(s.projectedMessage(turn.inputMessageId).text??''))throw new Error('INVALID_MODEL_OUTPUT')
