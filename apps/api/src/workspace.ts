@@ -7,9 +7,10 @@ import {instant} from './ai.js'
 import {fail} from './errors.js'
 import {hash} from './auth.js'
 import {followup} from './personal-followups.js'
+import {ResearchLibraryService} from './research-library.js'
 import {abortChatCall} from './continuous-chat.js'
 
-type StoredWork={title:string;goal:string;contactIds:string[];agentContactId:string|null;sourceConversationId:string|null;sourceMessageId:string|null;messageId:string|null;turnId:string|null;resultMessageId:string|null;acceptedMessageId:string|null}
+type StoredWork={title:string;goal:string;contactIds:string[];agentContactId:string|null;sourceConversationId:string|null;sourceMessageId:string|null;messageId:string|null;turnId:string|null;resultMessageId:string|null;acceptedMessageId:string|null;resultSources?:{messageId:string;sources:NonNullable<PersonalWorkTask['result']>['sources']};resultReview?:{messageId:string;comment:string;decision?:'accept'|'request_changes'}}
 const decode=(value:unknown)=>JSON.parse(String(value))
 export const workspaceCommands=Object.keys(workspaceRoutes)
 export function isSocialGroup(s:ChatService,id:string){return !!s.db.prepare('SELECT 1 FROM social_groups WHERE conversation_id=?').get(id)}
@@ -71,16 +72,19 @@ export function personalWork(s:ChatService,id:string):PersonalWorkTask{
  })
  const turn=full?latestTurn(s,doc):null
  let result:PersonalWorkTask['result']=null
- const resultId=doc.resultMessageId??turn?.outputMessageId
- if(full&&resultId){try{const message=s.projectedMessage(resultId);if(message.conversationId===row.conversation_id&&message.text)result={messageId:message.id,deliverableId:null,summary:message.text,accepted:doc.acceptedMessageId===message.id}}catch{/* revoke never discloses a cached result */}}
- const status:PersonalWorkTask['status']=row.status==='completed'?'completed':row.status==='cancelled'?'cancelled':row.status==='proposed'?'proposed':result?'awaiting_review':turn&&['queued','running'].includes(turn.status)?'running':turn&&['unavailable','failed','interrupted','cancelled'].includes(turn.status)?'blocked':'ready'
+ // Older feedback records cleared result/turn pointers after returning a result.
+ // Recover only that detached review; any new message, run or submission wins.
+ const returnedId=!doc.resultMessageId&&!doc.messageId&&!doc.turnId&&!doc.acceptedMessageId&&doc.resultReview&&!doc.resultReview.decision?doc.resultReview.messageId:null
+ const resultId=doc.resultMessageId??turn?.outputMessageId??returnedId
+ if(full&&resultId){try{const message=s.projectedMessage(resultId);if(message.conversationId===row.conversation_id&&message.text)result={messageId:message.id,deliverableId:null,summary:message.text,accepted:doc.acceptedMessageId===message.id,changesRequested:doc.resultReview?.messageId===message.id&&(doc.resultReview.decision==='request_changes'||returnedId===message.id),sources:doc.resultSources?.messageId===message.id?doc.resultSources.sources:[],reviewComment:doc.resultReview?.messageId===message.id?doc.resultReview.comment:null}}catch{/* revoke never discloses a cached result */}}
+ const status:PersonalWorkTask['status']=row.status==='completed'?'completed':row.status==='cancelled'?'cancelled':row.status==='proposed'?'proposed':result?.changesRequested?'ready':result?'awaiting_review':turn&&['queued','running'].includes(turn.status)?'running':turn&&['unavailable','failed','interrupted','cancelled'].includes(turn.status)?'blocked':'ready'
  const actions:PersonalWorkTask['allowedActions']=[]
  if(row.status==='proposed'&&viewer==='owner')actions.push('activate','cancel')
  if(row.status==='active'){
   if(viewer==='invited')actions.push('accept','decline')
-  if(full){actions.push('submit');if(status!=='running')actions.push('run');if(viewer==='owner'){if(row.conversation_id&&isSocialGroup(s,String(row.conversation_id)))actions.push('invite');actions.push('cancel');if(result)actions.push('review')}}
+  if(full){actions.push('submit');if(status!=='running')actions.push('run');if(viewer==='owner'){if(row.conversation_id&&isSocialGroup(s,String(row.conversation_id)))actions.push('invite');actions.push('cancel');if(result&&!result.changesRequested)actions.push('review')}}
  }
- return PersonalWorkTask.parse({id,title:doc.title,goal:full?doc.goal:null,owner:person(s,s.human(String(row.owner_id)).id),participants:members,status,summaryOnly:!full,conversationId:full?row.conversation_id:null,sourceConversationId:viewer==='owner'?doc.sourceConversationId:null,sourceMessageId:viewer==='owner'?doc.sourceMessageId:null,agentContactId:full?doc.agentContactId:null,turnId:full?turn?.id??null:null,result,version:row.version,createdAt:row.created_at,updatedAt:turn&&turn.updatedAt>String(row.updated_at)?turn.updatedAt:row.updated_at,allowedActions:actions})
+ return PersonalWorkTask.parse({id,title:doc.title,goal:full?doc.goal:null,owner:person(s,s.human(String(row.owner_id)).id),participants:members,status,summaryOnly:!full,fileDeliverySupported:true,conversationId:full?row.conversation_id:null,sourceConversationId:viewer==='owner'?doc.sourceConversationId:null,sourceMessageId:viewer==='owner'?doc.sourceMessageId:null,agentContactId:full?doc.agentContactId:null,turnId:full?turn?.id??null:null,result,version:row.version,createdAt:row.created_at,updatedAt:turn&&turn.updatedAt>String(row.updated_at)?turn.updatedAt:row.updated_at,allowedActions:actions})
 }
 function validateContacts(s:ChatService,ids:string[]){
  if(new Set(ids).size!==ids.length)fail('VALIDATION_ERROR')
@@ -192,10 +196,14 @@ export function workspaceHandle(s:ChatService,name:string,req:ChatRequest):unkno
   message.turnId=turn.id;s.db.prepare('UPDATE chat_messages SET document=? WHERE id=?').run(JSON.stringify(legacyChatMessage(message)),message.id);doc.messageId=message.id;doc.turnId=turn.id;save(s,{...row,version:Number(row.version)+1},doc,false)
  }else if(name==='submitPersonalWorkResult'){
   if(!full||row.status!=='active'||!row.conversation_id)fail('FORBIDDEN');const group=s.conversation(String(row.conversation_id),false)
-  const message=s.message(group.id,{senderContactId:s.human().id,origin:'human',text:String(body.text),mentions:[],resources:[],actionIds:[],turnId:null});doc.resultMessageId=message.id;doc.acceptedMessageId=null;save(s,row,doc)
+  const sources=(body.sources??[]) as NonNullable<PersonalWorkTask['result']>['sources'];const library=new ResearchLibraryService(s.db,s.c.actor)
+  for(const source of sources){const match=/^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$/.exec(source.locator);if(!match)fail('VALIDATION_ERROR');const file=library.file(match[1]!),collection=library.collection(String(file.collection_id));if(collection.scope!=='task_scoped'||JSON.stringify(decode(collection.task_ids))!==JSON.stringify([id]))fail('FORBIDDEN');const version=s.db.prepare('SELECT document FROM research_file_versions WHERE file_id=? AND version=?').get(match[1]!,Number(match[2]));if(!version||decode(version.document).sha256!==match[3])fail('VERSION_CONFLICT')}
+  const message=s.message(group.id,{senderContactId:s.human().id,origin:'human',text:String(body.text),mentions:[],resources:[],actionIds:[],turnId:null});doc.resultMessageId=message.id;doc.resultSources={messageId:message.id,sources};doc.acceptedMessageId=null;save(s,row,doc)
  }else if(name==='reviewPersonalWorkResult'){
-  if(row.status!=='active')fail('INVALID_STATE');const current=personalWork(s,id).result;if(!current||current.messageId!==body.messageId)fail('VERSION_CONFLICT')
-  if(body.decision==='accept'){row.status='completed';doc.acceptedMessageId=String(body.messageId)}else{doc.resultMessageId=null;doc.acceptedMessageId=null;doc.messageId=null;doc.turnId=null}save(s,row,doc)
+  if(row.status!=='active')fail('INVALID_STATE');const current=personalWork(s,id).result;if(!current||current.messageId!==body.messageId)fail('VERSION_CONFLICT');if(current.changesRequested)fail('INVALID_STATE')
+  doc.resultReview={messageId:String(body.messageId),comment:typeof body.comment==='string'?body.comment.trim():'',decision:body.decision as 'accept'|'request_changes'}
+  if(typeof body.comment==='string'&&body.comment.trim()){s.message(String(row.conversation_id),{senderContactId:s.human().id,origin:'human',text:(body.decision==='accept'?'验收意见：':'修改意见：')+body.comment.trim(),mentions:[],resources:[],actionIds:[],turnId:null})}
+  if(body.decision==='accept'){row.status='completed';doc.acceptedMessageId=String(body.messageId)}else{doc.resultMessageId=String(body.messageId);doc.acceptedMessageId=null;doc.messageId=null;doc.turnId=null}save(s,row,doc)
  }else if(name==='cancelPersonalWorkTask'){
   if(['completed','cancelled'].includes(String(row.status)))fail('INVALID_STATE');row.status='cancelled';save(s,row,doc)
   for(const t of s.db.prepare("SELECT id FROM chat_turns WHERE json_extract(request_json,'$.workTaskId')=? AND status IN ('queued','running','waiting_input')").all(id)){abortChatCall(String(t.id));const turn=s.materializedTurn(s.db.prepare('SELECT * FROM chat_turns WHERE id=?').get(t.id!)!);turn.status='cancelled';turn.failure='AUTHORITY_CHANGED';turn.version++;turn.updatedAt=instant();s.saveTurn(turn);s.db.prepare('UPDATE chat_turns SET fence=fence+1,lease_owner=NULL,lease_until=NULL WHERE id=?').run(t.id!)}
@@ -206,7 +214,7 @@ function card(s:ChatService,key:string):WorkbenchCard{
  const [source,id]=key.split(':') as [string,string]
  if(source==='work'){
   const w=personalWork(s,id),awaiting=w.allowedActions.includes('accept')||w.allowedActions.includes('activate')||w.allowedActions.includes('review')
-  return WorkbenchCard.parse({id:`workbench_${hash(key).slice(0,40)}`,source:'personal_task',taskId:id,title:w.title,goal:w.goal,category:w.status==='completed'?'completed':awaiting?'awaiting_me':'ongoing',status:w.status,owner:w.owner,participants:w.participants,summaryOnly:w.summaryOnly,progress:{completed:w.status==='completed'?1:0,total:1,label:w.status==='awaiting_review'?'结果待验收':w.status==='running'?'实际模型处理中':w.status==='completed'?'指定结果已验收':'尚未验收'},result:w.result,conversationId:w.conversationId,version:w.version,updatedAt:w.updatedAt,allowedActions:w.allowedActions})
+  return WorkbenchCard.parse({id:`workbench_${hash(key).slice(0,40)}`,source:'personal_task',taskId:id,title:w.title,goal:w.goal,category:w.status==='completed'?'completed':awaiting?'awaiting_me':'ongoing',status:w.status,owner:w.owner,participants:w.participants,summaryOnly:w.summaryOnly,progress:{completed:w.status==='completed'?1:0,total:1,label:w.result?.changesRequested?'待修改':w.status==='awaiting_review'?'结果待验收':w.status==='running'?'实际模型处理中':w.status==='completed'?'指定结果已验收':'尚未验收'},result:w.result,conversationId:w.conversationId,version:w.version,updatedAt:w.updatedAt,allowedActions:w.allowedActions})
  }
  if(source==='schedule'){
   const f=followup(s,id),result=f.lastRun?.outputMessageId?(()=>{try{const m=s.projectedMessage(f.lastRun!.outputMessageId!);return m.text?{messageId:m.id,deliverableId:null,summary:m.text,accepted:false}:null}catch{return null}})():null
@@ -216,7 +224,7 @@ function card(s:ChatService,key:string):WorkbenchCard{
  const t=s.c.projection(id,false) as {projection?:string;id:string;title:string;summary?:string;goal?:string;status?:string;visibleStatus?:string;initiatorId:string;leadId?:string|null;reviewerId:string;participantIds?:string[];version:number;updatedAt?:string;allowedActions:string[]}
  const summaryOnly=t.projection==='claim_summary',status=t.status??t.visibleStatus??'awaiting_acceptance',pending=t.allowedActions.some(a=>['decide','claim','review'].includes(a))
  let result:WorkbenchCard['result']=null
- if(!summaryOnly){const d=s.db.prepare('SELECT id FROM deliverables WHERE task_id=? ORDER BY revision DESC LIMIT 1').get(id);if(d){const value=s.c.deliverable(String(d.id));result={messageId:null,deliverableId:value.id,summary:value.summary,accepted:value.review?.decision==='accepted'}}}
+ if(!summaryOnly){const d=s.db.prepare('SELECT id FROM deliverables WHERE task_id=? ORDER BY revision DESC LIMIT 1').get(id);if(d){const value=s.c.deliverable(String(d.id));result={messageId:null,deliverableId:value.id,summary:value.summary,accepted:value.review?.decision==='accepted',changesRequested:value.review?.decision==='changes_requested',sources:[],reviewComment:value.review?.comment??null}}}
  const conversation=s.db.prepare('SELECT id FROM chat_conversations WHERE EXISTS(SELECT 1 FROM json_each(document,\'$.taskIds\') WHERE value=?) ORDER BY rowid DESC').all(id).find(r=>{try{s.conversation(String(r.id),false);return true}catch{return false}})
  return WorkbenchCard.parse({id:`workbench_${hash(key).slice(0,40)}`,source:'research_task',taskId:id,title:t.title,goal:summaryOnly?t.summary??null:t.goal??null,category:status==='completed'?'completed':pending?'awaiting_me':'ongoing',status,owner:person(s,s.human(t.initiatorId).id),participants:[...new Set([t.leadId,...t.participantIds??[]].filter((v):v is string=>!!v))].map(member=>person(s,s.human(member).id)),summaryOnly,progress:{completed:status==='completed'?1:0,total:1,label:status},result,conversationId:conversation?.id??null,version:t.version,updatedAt:t.updatedAt??String(s.c.taskRow(id).created_at),allowedActions:t.allowedActions})
 }

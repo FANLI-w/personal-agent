@@ -589,7 +589,7 @@ export function ResearchTaskPanel({
           ))}
         </article>
       ))}
-      {latest && allowed("review") && (
+      {!embedded && latest && allowed("review") && (
         <div>
           <Input.TextArea
             aria-label="验收意见"

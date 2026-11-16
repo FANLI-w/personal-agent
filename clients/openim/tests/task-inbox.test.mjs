@@ -59,7 +59,8 @@ test('next action uses current grants so observers wait while reviewers and cont
  assert.equal(workbenchNextAction({...task,allowedActions:['review']}),'查看成果并验收');
  assert.equal(workbenchNextAction({...task,status:'in_progress'}),'查看进展，等待成员交付');
  assert.equal(workbenchNextAction({...task,status:'in_progress',allowedActions:['submit']}),'提交文件成果');
- assert.equal(workbenchNextAction({...task,source:'personal_task',status:'in_progress',allowedActions:['submit']}),'提交文字成果');
+ assert.equal(workbenchNextAction({...task,source:'personal_task',status:'in_progress',allowedActions:['submit']}),'提交文件成果');
+ assert.equal(workbenchNextAction({...task,status:'ready',result:{changesRequested:true},allowedActions:['submit']}),'修改后重新提交');
  assert.equal(workbenchNextAction({...task,status:'changes_requested'}),'等待承接人修改');
  assert.equal(workbenchNextAction({...task,status:'changes_requested',allowedActions:['submit']}),'修改后重新提交');
  assert.equal(workbenchNextAction({...task,status:'awaiting_acceptance',summaryOnly:true,allowedActions:['decide']}),'确认是否承接');

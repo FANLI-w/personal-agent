@@ -35043,13 +35043,61 @@
                                   },
                                   "accepted": {
                                     "type": "boolean"
+                                  },
+                                  "changesRequested": {
+                                    "default": false,
+                                    "type": "boolean"
+                                  },
+                                  "sources": {
+                                    "default": [],
+                                    "maxItems": 5,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "note"
+                                        },
+                                        "locator": {
+                                          "type": "string",
+                                          "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                                        },
+                                        "label": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "locator",
+                                        "label"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "reviewComment": {
+                                    "default": null,
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "maxLength": 8000
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "messageId",
                                   "deliverableId",
                                   "summary",
-                                  "accepted"
+                                  "accepted",
+                                  "changesRequested",
+                                  "sources",
+                                  "reviewComment"
                                 ],
                                 "additionalProperties": false
                               },
@@ -35415,6 +35463,10 @@
                         "summaryOnly": {
                           "type": "boolean"
                         },
+                        "fileDeliverySupported": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "conversationId": {
                           "anyOf": [
                             {
@@ -35504,13 +35556,61 @@
                                 },
                                 "accepted": {
                                   "type": "boolean"
+                                },
+                                "changesRequested": {
+                                  "default": false,
+                                  "type": "boolean"
+                                },
+                                "sources": {
+                                  "default": [],
+                                  "maxItems": 5,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "note"
+                                      },
+                                      "locator": {
+                                        "type": "string",
+                                        "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "locator",
+                                      "label"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "reviewComment": {
+                                  "default": null,
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 8000
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "messageId",
                                 "deliverableId",
                                 "summary",
-                                "accepted"
+                                "accepted",
+                                "changesRequested",
+                                "sources",
+                                "reviewComment"
                               ],
                               "additionalProperties": false
                             },
@@ -35560,6 +35660,7 @@
                         "participants",
                         "status",
                         "summaryOnly",
+                        "fileDeliverySupported",
                         "conversationId",
                         "sourceConversationId",
                         "sourceMessageId",
@@ -35593,6 +35694,7 @@
                     "participants": [],
                     "status": "proposed",
                     "summaryOnly": false,
+                    "fileDeliverySupported": false,
                     "conversationId": null,
                     "sourceConversationId": null,
                     "sourceMessageId": null,
@@ -35954,6 +36056,10 @@
                         "summaryOnly": {
                           "type": "boolean"
                         },
+                        "fileDeliverySupported": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "conversationId": {
                           "anyOf": [
                             {
@@ -36043,13 +36149,61 @@
                                 },
                                 "accepted": {
                                   "type": "boolean"
+                                },
+                                "changesRequested": {
+                                  "default": false,
+                                  "type": "boolean"
+                                },
+                                "sources": {
+                                  "default": [],
+                                  "maxItems": 5,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "note"
+                                      },
+                                      "locator": {
+                                        "type": "string",
+                                        "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "locator",
+                                      "label"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "reviewComment": {
+                                  "default": null,
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 8000
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "messageId",
                                 "deliverableId",
                                 "summary",
-                                "accepted"
+                                "accepted",
+                                "changesRequested",
+                                "sources",
+                                "reviewComment"
                               ],
                               "additionalProperties": false
                             },
@@ -36099,6 +36253,7 @@
                         "participants",
                         "status",
                         "summaryOnly",
+                        "fileDeliverySupported",
                         "conversationId",
                         "sourceConversationId",
                         "sourceMessageId",
@@ -36132,6 +36287,7 @@
                     "participants": [],
                     "status": "proposed",
                     "summaryOnly": false,
+                    "fileDeliverySupported": false,
                     "conversationId": null,
                     "sourceConversationId": null,
                     "sourceMessageId": null,
@@ -36471,6 +36627,10 @@
                         "summaryOnly": {
                           "type": "boolean"
                         },
+                        "fileDeliverySupported": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "conversationId": {
                           "anyOf": [
                             {
@@ -36560,13 +36720,61 @@
                                 },
                                 "accepted": {
                                   "type": "boolean"
+                                },
+                                "changesRequested": {
+                                  "default": false,
+                                  "type": "boolean"
+                                },
+                                "sources": {
+                                  "default": [],
+                                  "maxItems": 5,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "note"
+                                      },
+                                      "locator": {
+                                        "type": "string",
+                                        "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "locator",
+                                      "label"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "reviewComment": {
+                                  "default": null,
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 8000
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "messageId",
                                 "deliverableId",
                                 "summary",
-                                "accepted"
+                                "accepted",
+                                "changesRequested",
+                                "sources",
+                                "reviewComment"
                               ],
                               "additionalProperties": false
                             },
@@ -36616,6 +36824,7 @@
                         "participants",
                         "status",
                         "summaryOnly",
+                        "fileDeliverySupported",
                         "conversationId",
                         "sourceConversationId",
                         "sourceMessageId",
@@ -36649,6 +36858,7 @@
                     "participants": [],
                     "status": "proposed",
                     "summaryOnly": false,
+                    "fileDeliverySupported": false,
                     "conversationId": null,
                     "sourceConversationId": null,
                     "sourceMessageId": null,
@@ -36997,6 +37207,10 @@
                         "summaryOnly": {
                           "type": "boolean"
                         },
+                        "fileDeliverySupported": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "conversationId": {
                           "anyOf": [
                             {
@@ -37086,13 +37300,61 @@
                                 },
                                 "accepted": {
                                   "type": "boolean"
+                                },
+                                "changesRequested": {
+                                  "default": false,
+                                  "type": "boolean"
+                                },
+                                "sources": {
+                                  "default": [],
+                                  "maxItems": 5,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "note"
+                                      },
+                                      "locator": {
+                                        "type": "string",
+                                        "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "locator",
+                                      "label"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "reviewComment": {
+                                  "default": null,
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 8000
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "messageId",
                                 "deliverableId",
                                 "summary",
-                                "accepted"
+                                "accepted",
+                                "changesRequested",
+                                "sources",
+                                "reviewComment"
                               ],
                               "additionalProperties": false
                             },
@@ -37142,6 +37404,7 @@
                         "participants",
                         "status",
                         "summaryOnly",
+                        "fileDeliverySupported",
                         "conversationId",
                         "sourceConversationId",
                         "sourceMessageId",
@@ -37175,6 +37438,7 @@
                     "participants": [],
                     "status": "proposed",
                     "summaryOnly": false,
+                    "fileDeliverySupported": false,
                     "conversationId": null,
                     "sourceConversationId": null,
                     "sourceMessageId": null,
@@ -37520,6 +37784,10 @@
                         "summaryOnly": {
                           "type": "boolean"
                         },
+                        "fileDeliverySupported": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "conversationId": {
                           "anyOf": [
                             {
@@ -37609,13 +37877,61 @@
                                 },
                                 "accepted": {
                                   "type": "boolean"
+                                },
+                                "changesRequested": {
+                                  "default": false,
+                                  "type": "boolean"
+                                },
+                                "sources": {
+                                  "default": [],
+                                  "maxItems": 5,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "note"
+                                      },
+                                      "locator": {
+                                        "type": "string",
+                                        "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "locator",
+                                      "label"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "reviewComment": {
+                                  "default": null,
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 8000
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "messageId",
                                 "deliverableId",
                                 "summary",
-                                "accepted"
+                                "accepted",
+                                "changesRequested",
+                                "sources",
+                                "reviewComment"
                               ],
                               "additionalProperties": false
                             },
@@ -37665,6 +37981,7 @@
                         "participants",
                         "status",
                         "summaryOnly",
+                        "fileDeliverySupported",
                         "conversationId",
                         "sourceConversationId",
                         "sourceMessageId",
@@ -37698,6 +38015,7 @@
                     "participants": [],
                     "status": "proposed",
                     "summaryOnly": false,
+                    "fileDeliverySupported": false,
                     "conversationId": null,
                     "sourceConversationId": null,
                     "sourceMessageId": null,
@@ -38043,6 +38361,10 @@
                         "summaryOnly": {
                           "type": "boolean"
                         },
+                        "fileDeliverySupported": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "conversationId": {
                           "anyOf": [
                             {
@@ -38132,13 +38454,61 @@
                                 },
                                 "accepted": {
                                   "type": "boolean"
+                                },
+                                "changesRequested": {
+                                  "default": false,
+                                  "type": "boolean"
+                                },
+                                "sources": {
+                                  "default": [],
+                                  "maxItems": 5,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "note"
+                                      },
+                                      "locator": {
+                                        "type": "string",
+                                        "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "locator",
+                                      "label"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "reviewComment": {
+                                  "default": null,
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 8000
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "messageId",
                                 "deliverableId",
                                 "summary",
-                                "accepted"
+                                "accepted",
+                                "changesRequested",
+                                "sources",
+                                "reviewComment"
                               ],
                               "additionalProperties": false
                             },
@@ -38188,6 +38558,7 @@
                         "participants",
                         "status",
                         "summaryOnly",
+                        "fileDeliverySupported",
                         "conversationId",
                         "sourceConversationId",
                         "sourceMessageId",
@@ -38221,6 +38592,7 @@
                     "participants": [],
                     "status": "proposed",
                     "summaryOnly": false,
+                    "fileDeliverySupported": false,
                     "conversationId": null,
                     "sourceConversationId": null,
                     "sourceMessageId": null,
@@ -38426,6 +38798,34 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 8000
+                  },
+                  "sources": {
+                    "maxItems": 5,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "note"
+                        },
+                        "locator": {
+                          "type": "string",
+                          "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                        },
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "locator",
+                        "label"
+                      ],
+                      "additionalProperties": false
+                    }
                   }
                 },
                 "required": [
@@ -38567,6 +38967,10 @@
                         "summaryOnly": {
                           "type": "boolean"
                         },
+                        "fileDeliverySupported": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "conversationId": {
                           "anyOf": [
                             {
@@ -38656,13 +39060,61 @@
                                 },
                                 "accepted": {
                                   "type": "boolean"
+                                },
+                                "changesRequested": {
+                                  "default": false,
+                                  "type": "boolean"
+                                },
+                                "sources": {
+                                  "default": [],
+                                  "maxItems": 5,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "note"
+                                      },
+                                      "locator": {
+                                        "type": "string",
+                                        "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "locator",
+                                      "label"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "reviewComment": {
+                                  "default": null,
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 8000
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "messageId",
                                 "deliverableId",
                                 "summary",
-                                "accepted"
+                                "accepted",
+                                "changesRequested",
+                                "sources",
+                                "reviewComment"
                               ],
                               "additionalProperties": false
                             },
@@ -38712,6 +39164,7 @@
                         "participants",
                         "status",
                         "summaryOnly",
+                        "fileDeliverySupported",
                         "conversationId",
                         "sourceConversationId",
                         "sourceMessageId",
@@ -38745,6 +39198,7 @@
                     "participants": [],
                     "status": "proposed",
                     "summaryOnly": false,
+                    "fileDeliverySupported": false,
                     "conversationId": null,
                     "sourceConversationId": null,
                     "sourceMessageId": null,
@@ -38956,6 +39410,10 @@
                       "accept",
                       "request_changes"
                     ]
+                  },
+                  "comment": {
+                    "type": "string",
+                    "maxLength": 8000
                   }
                 },
                 "required": [
@@ -39099,6 +39557,10 @@
                         "summaryOnly": {
                           "type": "boolean"
                         },
+                        "fileDeliverySupported": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "conversationId": {
                           "anyOf": [
                             {
@@ -39188,13 +39650,61 @@
                                 },
                                 "accepted": {
                                   "type": "boolean"
+                                },
+                                "changesRequested": {
+                                  "default": false,
+                                  "type": "boolean"
+                                },
+                                "sources": {
+                                  "default": [],
+                                  "maxItems": 5,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "note"
+                                      },
+                                      "locator": {
+                                        "type": "string",
+                                        "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "locator",
+                                      "label"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "reviewComment": {
+                                  "default": null,
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 8000
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "messageId",
                                 "deliverableId",
                                 "summary",
-                                "accepted"
+                                "accepted",
+                                "changesRequested",
+                                "sources",
+                                "reviewComment"
                               ],
                               "additionalProperties": false
                             },
@@ -39244,6 +39754,7 @@
                         "participants",
                         "status",
                         "summaryOnly",
+                        "fileDeliverySupported",
                         "conversationId",
                         "sourceConversationId",
                         "sourceMessageId",
@@ -39277,6 +39788,7 @@
                     "participants": [],
                     "status": "proposed",
                     "summaryOnly": false,
+                    "fileDeliverySupported": false,
                     "conversationId": null,
                     "sourceConversationId": null,
                     "sourceMessageId": null,
@@ -39616,6 +40128,10 @@
                         "summaryOnly": {
                           "type": "boolean"
                         },
+                        "fileDeliverySupported": {
+                          "default": false,
+                          "type": "boolean"
+                        },
                         "conversationId": {
                           "anyOf": [
                             {
@@ -39705,13 +40221,61 @@
                                 },
                                 "accepted": {
                                   "type": "boolean"
+                                },
+                                "changesRequested": {
+                                  "default": false,
+                                  "type": "boolean"
+                                },
+                                "sources": {
+                                  "default": [],
+                                  "maxItems": 5,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "note"
+                                      },
+                                      "locator": {
+                                        "type": "string",
+                                        "pattern": "^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "locator",
+                                      "label"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "reviewComment": {
+                                  "default": null,
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 8000
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "messageId",
                                 "deliverableId",
                                 "summary",
-                                "accepted"
+                                "accepted",
+                                "changesRequested",
+                                "sources",
+                                "reviewComment"
                               ],
                               "additionalProperties": false
                             },
@@ -39761,6 +40325,7 @@
                         "participants",
                         "status",
                         "summaryOnly",
+                        "fileDeliverySupported",
                         "conversationId",
                         "sourceConversationId",
                         "sourceMessageId",
@@ -39794,6 +40359,7 @@
                     "participants": [],
                     "status": "proposed",
                     "summaryOnly": false,
+                    "fileDeliverySupported": false,
                     "conversationId": null,
                     "sourceConversationId": null,
                     "sourceMessageId": null,

@@ -9,6 +9,7 @@ import { personalModelKey, personalModelRuntime } from './personal-models.js'
 import { saveMemory } from './personal-memories.js'
 import { currentHabit, preferenceTopic } from './feedback-queue.js'
 import { waitForWorkerDatabase } from './worker-database.js'
+import { reusablePreferenceFeedback } from './preference-feedback.js'
 
 const reflection = z.strictObject({
   evidence: z.string().trim().min(1).max(500),
@@ -41,7 +42,7 @@ function feedbackContext(s: ChatService, row: Row) {
   const messages = recent.map(r => s.projectedMessage(String(r.id))).filter(m => !isMessageRetracted(s,m.id))
   const preceding = messages[0]
   return {
-    recentAuthorMessages: messages.filter(m => m.origin === 'human' && m.senderContactId === current.senderContactId).reverse().map(m => m.text?.slice(0,400)),
+    recentAuthorMessages: messages.filter(m => m.origin === 'human' && m.senderContactId === current.senderContactId).reverse().map(m => reusablePreferenceFeedback(m.text?.slice(0,400) ?? '')).filter(Boolean),
     priorReply: preceding?.origin === 'model' && preceding.sequence === current.sequence-1 ? preceding.text?.slice(0,1200) : undefined,
   }
 }
@@ -68,9 +69,10 @@ export class FeedbackWorker {
       const prior = currentHabit(this.db, row.member_id, row.scope)
       const text = readSource(s, row)?.trim()
       if (!text || prior.revoked) { finish(); return true }
+      const feedback = reusablePreferenceFeedback(text.slice(0, 6000))
+      if (!feedback) { finish(); return true }
       const runtime = personalModelRuntime(this.db, s.c.actor, this.config)
       if (!runtime.enabled) { finish(); return true }
-      const feedback = text.slice(0, 6000)
       const context = feedbackContext(s, row)
       const result = await this.call({ provider: runtime.provider, model: runtime.model, system,
         prompt: JSON.stringify({ source: row.kind, previous: prior.content, ...context, feedback }), maxTokens: 700,

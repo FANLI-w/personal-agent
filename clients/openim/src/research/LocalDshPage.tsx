@@ -239,8 +239,7 @@ export function LocalDshPage() {
         if (value.id !== target.taskId || ("summaryOnly" in value && value.summaryOnly))
           throw Error("当前账号无法读取这项任务的工作背景。");
         setCanStage(
-          target.kind === "research" &&
-            value.allowedActions.some((action) => action === "submit"),
+          value.allowedActions.some((action) => action === "submit"),
         );
         setBrief({
           title: value.title,
@@ -314,7 +313,7 @@ export function LocalDshPage() {
       } catch (failure) {
         if (current())
           setError(
-            failure instanceof Error ? failure.message : "任务背景暂未接上，请重试。",
+            taskStatusFailure(failure, "任务背景暂未接上，请重试。"),
           );
       } finally {
         initializing = false;
