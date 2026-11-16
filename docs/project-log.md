@@ -3245,3 +3245,9 @@ Windows x64 正式版 0.10.114 已发布。工作台页头显示大肥鱼头像�
 最终复测在浏览器输入“这次只回复『收到 FISH-927』”，SQLite 的习惯与修订增量均为零；混合临时指令和长期偏好的下一条只更新了长期证据。模型回调为合成，队列和存储为实际实现。完整 CI 最终通过 86 个测试文件（1025 项）、3 项运维测试及 B0/生产检查；此前因生成协议未同步中止的一轮日志保留。桌面两组回归分别通过 557 和 151 项，退回显示调整后另跑任务视图 88 项通过。完整日志位于 D:/deepseek-agent/.runtime/preflight-client-repairs/。
 
 从最终 NSIS 安装包解出的 app.asar 已逐字节比对 137 个前端及 Electron 编译文件，包启动和更新元数据检查通过。安装包 SHA-256 为 77b2385de7a1102b70fcef48073fea95f90d2db418442d33973a92796b9ddf18。证据在 final-package/installer-audit.json。
+
+## Windows 0.10.115 正式发布
+
+Windows x64 正式版 0.10.115 已发布。桌面私聊助理可以一起接收原件和问题。个人任务文件交付和退回需要配套 API，临时要求的记忆过滤需要配套反馈 worker。此次只发布客户端。四项 PR 检查通过。构建自 9ca507ef8e434831be9cb5e492bdd9bfafcb833e，已从安装包解出并逐字节核对 137 个编译文件。安装包启动和更新元数据验证通过，四项公开附件的 SHA-256 与本地一致。安装包 SHA-256 为 c08e941067aa745b97d30221a97b508b529a68d175875e78edb4ed143254d4a2。
+
+[正式安装包](https://github.com/luoyan96/personal-agent/releases/download/v0.10.115/AcceptCat_0.10.115.exe) · [发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.115) · [PR #234](https://github.com/luoyan96/personal-agent/pull/234)
