@@ -3279,3 +3279,15 @@ API 与 worker 同时切到上述 main 源码，镜像摘要 `sha256:ac5993ac920
 服务器最终候选验证通过 75 项测试（另 1 项真实模型测试跳过），并核对 201 份已保存计划与 18 份规则可解析。切换后独立公网检查确认契约 0.50.0、数据库 / 存储 / 认证正常，匿名受保护接口继续 401。Harness 就绪项明确为 `not_verified`；健康结果不证明真实模型调用、模型效果或正式桌面流程。正式桌面真实账号 / 模型验收由负责人另行继续。部署过程的原始 TLS、隔离断言及交互 shell 中止记录均保留，没有据此宣称通过。脱敏回执及证据位于 `D:/deepseek-agent/.runtime/personal-project-040-deploy-20261116/`，其中 `production-receipt.json` 记录最终备份和实际切换，`online-rehearsal-receipt.json` 仅证明此前演练。
 
 [正式安装包](https://github.com/luoyan96/personal-agent/releases/download/v0.10.116/AcceptCat_0.10.116.exe) · [发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.116) · [PR #236](https://github.com/luoyan96/personal-agent/pull/236)
+
+## 2026-11-16 · 正式 0.10.116 首次真实项目失败与后台修正候选
+
+正式客户端与生产 API / worker `6776610`、数据库 040 的首次真实个人模型项目走查未完成整体验收闭环。入口请求成功，真实项目已创建。两项实质分工中的一项以默认 DeepSeek 高推理执行，输入 890 token、输出 4096 token、28.876 秒，输出结束原因为 `max-tokens`，Harness 返回 `OUTPUT_LIMIT` 且可见正文为空，后台保存 `BUDGET_EXCEEDED`。另一项模型输出及复核实际成功；前项阻塞使项目未形成整体待验收成果。此前隔离合成材料、加大额度的真实模型场景保留原验证范围，不覆盖本轮失败。
+
+生产脱敏清单核对确认有 6 个本人名下、未删除、未配置外部运行的内置专业 Agent，实际准入 specialist ID 清单却为空，未记录专业不匹配的自办理由。本轮走普通 16000 token 路径；23 条近期消息、2 项任务状态和 1 项记忆先进入上下文，保守输入边界为 11887，输出额度为 4096，剩余仅 17 token。代码中清单晚于可选旧对话准入；本地使用真实默认预算、旧对话、记忆和多个专业角色复现并修正该遗漏路径，没有按名字猜测专业，也没有放宽其他账号或外部 Agent 的权限。
+
+修正提交 `826058f`、清单回归 `cf481cc`，分支 `codex/project-output-recovery` 从已部署 main `6776610` 建立，随后普通整合已合入的发布文档 #237。DeepSeek 项目工作及复核显式关闭推理，输出 cap 和个人模型设置保持。已知默认推理、正文为空的输出截断允许一次持久恢复，须有完整实际用量、仍有效的来源 / 任务 / 模型 / 档案授权及足够的原根任务剩余额度；精确失败样本的恢复上限为 7014 token、61 秒，沿用原分工、输入消息与用量账本。失败运行保留；未知用量、额度不足、取消、权限或输入变化、已关闭推理后的失败不自动重放，恢复失败后不再重试。恢复遵循原 5 个运行槽和同项目串行限制，事件与成果 outbox 去重保持。历史已阻塞且下次检查在远期的符合条件项目也能被持久 worker 找回。
+
+当前输入、文件、记忆和回复额度保持优先；专业候选和项目引用先于可选旧对话准入。现有当前消息 ID 去重原本有效，未做无依据的 helper 改写。实际 HTTP / SQLite 的当前与历史失败恢复、取消、用量不确定、额度耗尽、恢复后再次失败、worker 重建及单份审阅后投递检查通过；固定 Harness 回环复现 4096 推理耗尽与关闭推理后的完整回复。两项项目测试文件和适配器测试合计 28 项通过，API 类型与 diff 检查通过；两种默认预算及既有专业边界定向检查 4 项通过。默认 CI 的固定适配器构建、类型与缺凭据检查不当作真实模型证据。完整根 `pnpm run ci` 已启动，本条不宣称其完成，日志位于 `D:/deepseek-agent/.runtime/project-output-recovery-20261116/ci-root-first-pass.log`。本批尚未部署，未更改生产配置、个人模型、凭据或数据库版本，正式客户端真实模型复测待负责人继续。
+
+同轮 IM 观察单独保留：入口消息指针已成功投递，后续阻塞通知写入原聊天应用库后，在 outbox 领取、operation ID 落库之前遇到 `DB_BUSY_IM`。记录只有 1 次尝试，operation ID / server message ID 均为空，租约到期后为 `UNCERTAIN`；缺少 SDK 实际发送证据，不能记为成功通知。当前模型与清单候选不证明此传输问题已修复。脱敏证据位于 `D:/deepseek-agent/.runtime/personal-project-040-deploy-20261116/official-client-meeting-scoped.json`、`official-client-meeting-eligibility.json`、`official-client-transport-window.json` 与 `official-client-transport-scoped.json`；清单回归日志为 `D:/deepseek-agent/.runtime/project-output-recovery-20261116/inventory-scope-tests.log`，较早的两种预算单独检查保留于 `inventory-budget-tests.log`。
