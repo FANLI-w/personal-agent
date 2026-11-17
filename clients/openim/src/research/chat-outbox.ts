@@ -17,6 +17,7 @@ export type ChatSubmission = {
   images?: ComposerImage[];
   files?: (ComposerImage & { processed?: boolean })[];
   imageAgentConversationId?: string;
+  fileAgentConversationId?: string;
   nativeMessage?: MessageItem;
   quoteMessage?: MessageItem;
   state: "queued" | "sending" | "failed" | "paused" | "acknowledged";
@@ -270,6 +271,13 @@ function restore(actor: ReturnType<typeof useResearchStore.getState>) {
           item.request?.conversationId !== item.imageAgentConversationId)
       )
         throw new Error("Invalid image target");
+      if (
+        item.fileAgentConversationId &&
+        (item.files?.length !== 1 || item.images?.length ||
+          !bounded(item.fileAgentConversationId, 512) ||
+          (item.request && item.request.conversationId !== item.fileAgentConversationId))
+      )
+        throw new Error("Invalid file target");
       if (
         item.quoteMessage &&
         (typeof item.quoteMessage.clientMsgID !== "string" ||

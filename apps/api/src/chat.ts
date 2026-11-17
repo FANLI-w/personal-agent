@@ -1,4 +1,6 @@
 import { enqueueFeedback } from './feedback-queue.js'
+import { checkIntakeOutputRecovery } from './intake-output-recovery.js'
+import { checkProjectExecution,projectMessageNotice,type ProjectExecution } from './assistant-project-actions.js'
 import {PeerLibraryService} from './peer-library.js'
 import {authorizeGroupCommand,handleGroupCommand,chooseGroupLab,ensureGroupAssistant,groupAssistantContact,isGroupAssistant} from './group-governance.js'
 import {chatMessageDetails,withdrawChatMessage,isMessageRetracted,linkMessageReply} from './chat-message-actions.js'
@@ -40,7 +42,7 @@ import {workspaceCommands,workspaceAuthorize,workspaceHandle,workspaceReplay,isS
 
 export type ChatCommand = keyof typeof chatRoutes | keyof typeof agentIntegrationRoutes | keyof typeof personalAssistantRoutes | keyof typeof assistantMemoryRoutes | keyof typeof workspaceRoutes | 'imCreateGroup' | 'imInviteContact'
 type Resource = z.infer<typeof ChatResource>
-export type TurnInput = DialogueSelection & { librarySnapshot?:ResearchContextSnapshot; libraryRead?:ResearchReadReceipt; skill?:SkillCall; workTaskId?:string; workTaskVersion?:number; scheduledFollowupId?:string; scheduledRunId?:string; continuous?:ContinuousInput; budget: { maxTokens: number; maxSeconds: number }; context: Resource[]; conversationVersion: number; inputSequence: number; agentContextFingerprint?: string; modelSelectionFingerprint?:string; dailyChat?:boolean; personalAssistant?:boolean; assistantMode?:'coordinate'; delegatedByTurnId?:string; personalMemoryFingerprint?:string; assistantDirectoryFingerprint?:string; assistantReceipt?:AgentTurn['assistantReceipt'];memoryReceipt?:AgentTurn['memoryReceipt'];followupReceipt?:AgentTurn['followupReceipt']; externalConsent?:boolean; externalAgent?:boolean; externalConnectionVersion?:number; purpose?:'create_agent'; createdAgent?:AgentTurn['createdAgent']; creationFailure?:'AGENT_LIMIT_REACHED'; assistantFailure?:'AGENT_LIMIT_REACHED'; fileDocument?:FileDocument; fileSource?:AgentFileSelection; fileRead?:AgentTurn['fileRead']; modelInputDiagnostic?:{budgetMaxTokens:number;inputTokenBound:number;maxOutputTokens:number;admitted:boolean}; modelOutputDiagnostic?:{stage:string;returnedTextLength:number;trimEmpty:boolean;maxOutputTokens:number;reasoningEffort:string;finishReason?:string;failure?:string;errorCategory?:string} }
+export type TurnInput = DialogueSelection & { projectExecution?:ProjectExecution; intakeOutputLimitRecovery?:{previousTurnId:string}; librarySnapshot?:ResearchContextSnapshot; libraryRead?:ResearchReadReceipt; skill?:SkillCall; workTaskId?:string; workTaskVersion?:number; scheduledFollowupId?:string; scheduledRunId?:string; continuous?:ContinuousInput; budget: { maxTokens: number; maxSeconds: number }; context: Resource[]; conversationVersion: number; inputSequence: number; agentContextFingerprint?: string; modelSelectionFingerprint?:string; dailyChat?:boolean; personalAssistant?:boolean; assistantMode?:'coordinate'; assistantProjectEntry?:boolean; projectEntryInventory?:{specialistIds:string[];humanIds:string[];messageIds:string[];fileMessageIds:string[];taskIds:string[];projects:{id:string;commitmentIds:string[]}[]}; delegatedByTurnId?:string; personalMemoryFingerprint?:string; assistantDirectoryFingerprint?:string; assistantReceipt?:AgentTurn['assistantReceipt'];memoryReceipt?:AgentTurn['memoryReceipt'];followupReceipt?:AgentTurn['followupReceipt']; externalConsent?:boolean; externalAgent?:boolean; externalConnectionVersion?:number; purpose?:'create_agent'; createdAgent?:AgentTurn['createdAgent']; creationFailure?:'AGENT_LIMIT_REACHED'; assistantFailure?:'AGENT_LIMIT_REACHED'; fileDocument?:FileDocument; fileSource?:AgentFileSelection; fileRead?:AgentTurn['fileRead']; modelInputDiagnostic?:{budgetMaxTokens:number;inputTokenBound:number;maxOutputTokens:number;admitted:boolean}; modelOutputDiagnostic?:{stage:string;returnedTextLength:number;trimEmpty:boolean;maxOutputTokens:number;reasoningEffort:string;finishReason?:string;failure?:string;errorCategory?:string} }
 export type ChatRequest = { params: { id?: string; contactId?: string; messageId?: string; noticeId?:string }; query: { known?: string; cursor?: string; limit?: number; search?: string; afterSequence?: number; category?: 'all'|'ongoing'|'awaiting_me'|'completed'|'scheduled'; kind?: 'all'|'human'|'agent'; view?: 'directory'|'mine'|'public'; direction?: 'all'|'incoming'|'outgoing'; status?: 'all'|'pending'|'confirmed'|'candidate'|'revoked'|'active'|'paused'|'completed'|'cancelled'; scope?: 'private_agent'|'conversation'|'local'|'global'|'personal'|'agent'; scopeId?: string; subjectId?: string }; headers: { 'Idempotency-Key'?: string }; body: unknown }
 type Request = ChatRequest
 const decode = (value: unknown) => JSON.parse(String(value))
@@ -233,6 +235,8 @@ export class ChatService {
     if(exact&&input.dialogueSources&&!dialogueSourcesCurrent(this,input.dialogueSources))fail('VERSION_CONFLICT')
     if(exact&&input.dialogueTaskSources&&!taskSourcesCurrent(this,input.dialogueTaskSources))fail('VERSION_CONFLICT')
     checkWorkTurn(this,input,exact)
+    checkProjectExecution(this,turnId,input,exact)
+    checkIntakeOutputRecovery(this,turnId,input)
     if(input.skill&&exact)skillContext(this,input.skill,turn.agentContactId)
     if(input.librarySnapshot&&exact){
       if(input.librarySnapshot.agentId!==turn.agentContactId||input.externalAgent||input.assistantMode||input.purpose||!input.dailyChat||!['personal','direct'].includes(group.kind)||group.ownerMemberId!==this.c.actor.id)fail('FORBIDDEN')
@@ -252,7 +256,8 @@ export class ChatService {
     }
     if(input.externalAgent){const connection=connectionRow(this,turn.agentContactId);if(!input.dailyChat||!input.externalConsent||group.kind!=='direct'||!connection?.configured||connection.version!==input.externalConnectionVersion)fail('FORBIDDEN')}
     if(input.personalMemoryFingerprint&&exact&&input.personalMemoryFingerprint!==personalMemoryContext(this,this.contact(turn.agentContactId),group,currentTurnText(this,turnId)).fingerprint)fail('VERSION_CONFLICT')
-    if(input.assistantMode==='coordinate'&&exact&&input.assistantDirectoryFingerprint!==assistantDirectoryFingerprint(this))fail('VERSION_CONFLICT')
+    if((input.assistantMode==='coordinate'||input.assistantProjectEntry)&&exact&&input.assistantDirectoryFingerprint!==assistantDirectoryFingerprint(this))fail('VERSION_CONFLICT')
+    if(input.assistantProjectEntry&&(group.kind!=='personal'||group.ownerMemberId!==this.c.actor.id||this.contact(turn.agentContactId).profile.role!=='coordinator'||input.skill||input.purpose||input.externalAgent))fail('FORBIDDEN')
     if(input.assistantMode==='coordinate'&&(group.kind!=='personal'||group.ownerMemberId!==this.c.actor.id||this.contact(turn.agentContactId).profile.role!=='coordinator'||!personalWorkRequest(currentTurnText(this,turnId))))fail('FORBIDDEN')
     if(input.delegatedByTurnId){const parent=this.db.prepare('SELECT owner_id,status,request_json,document FROM chat_turns WHERE id=?').get(input.delegatedByTurnId);if(!parent||parent.owner_id!==this.c.actor.id||parent.status!=='succeeded'||JSON.parse(String(parent.request_json)).assistantMode!=='coordinate'||this.projectedMessage(turn.inputMessageId).text!==currentTurnText(this,input.delegatedByTurnId))fail('FORBIDDEN')}
     if(input.fileSource)this.fileDocument(input.fileSource.messageId,group.id)
@@ -320,6 +325,10 @@ export class ChatService {
     const group = this.rawConversation(groupId)
     const message = ChatMessage.parse({ ...value, id: randomUUID(), conversationId: groupId, sequence: group.lastSequence + 1, createdAt: instant() })
     this.db.prepare('INSERT INTO chat_messages VALUES (?,?,?,?)').run(message.id, groupId, message.sequence, encode(legacyChatMessage(message)))
+    // Internal project checks are durable execution evidence, not SDK chat.
+    // The legacy insertion trigger queues every message, including service
+    // messages, so stop this private record before the transaction commits.
+    if(this.db.prepare("SELECT 1 FROM chat_conversations WHERE id=? AND scope_key LIKE 'assistant-project-execution:%'").get(groupId))this.db.prepare("UPDATE im_message_outbox SET status='denied' WHERE message_id=? AND status='pending'").run(message.id)
     group.lastSequence++; group.updatedAt = message.createdAt; this.saveConversation(group)
     return message
   }
@@ -471,7 +480,7 @@ export class ChatService {
   }
   newTurn(group: Conversation, message: ChatMessage, agentId: string, input: TurnInput, root?: string) {
     const agent = this.joinedAgent(group, agentId)
-    if(input.assistantMode==='coordinate')input.assistantDirectoryFingerprint=assistantDirectoryFingerprint(this)
+    if(input.assistantMode==='coordinate'||input.assistantProjectEntry)input.assistantDirectoryFingerprint=assistantDirectoryFingerprint(this)
     const userMemory=personalMemoryContext(this,agent,group,message.text??'');if(userMemory.fingerprint)input.personalMemoryFingerprint=userMemory.fingerprint
     if(connectionRow(this,agentId)?.configured!==1)input.agentContextFingerprint=this.directory.modelContext(agentId,group.id).fingerprint
     input.modelSelectionFingerprint=chatModelFingerprint(this,agentId,personalModelRuntime(this.db,this.c.actor,this.config).fingerprint)
@@ -553,6 +562,7 @@ export class ChatService {
     const id = req.params.id!, b = req.body
     if(name==='chatTranscriptSync')return syncTranscript(this,id,(req.query as RequestFor<'chatTranscriptSync'>['query']).known)
     if(name==='chatMessageDetails')return {data:chatMessageDetails(this,id,req.params.messageId!)}
+    if(name==='chatProjectNotice')return {data:projectMessageNotice(this,id,req.params.messageId!)}
     if(name==='withdrawChatMessage')return {data:withdrawChatMessage(this,id,req.params.messageId!,(b as RequestFor<'withdrawChatMessage'>['body']).expectedVersion)}
     if(workspaceCommands.includes(name))return workspaceHandle(this,name,req)
     if(personalCommands.includes(name))return handleMemory(this,name,req)??handleFollowup(this,name,req)
@@ -634,7 +644,7 @@ export class ChatService {
     if (name === 'chatConversations') {
       // ACL before personalized sorting and page snapshots. State joins are scoped
       // to this actor and never reveal another member's read/pin preferences.
-      const candidates = this.db.prepare("SELECT c.id,c.document,s.pinned FROM chat_conversations c JOIN chat_members mine ON mine.conversation_id=c.id AND mine.contact_id=? AND mine.status='joined' LEFT JOIN chat_viewer_states s ON s.conversation_id=c.id AND s.member_id=?").all(this.human().id, this.c.actor.id).flatMap(row => {
+      const candidates = this.db.prepare("SELECT c.id,c.document,s.pinned FROM chat_conversations c JOIN chat_members mine ON mine.conversation_id=c.id AND mine.contact_id=? AND mine.status='joined' LEFT JOIN chat_viewer_states s ON s.conversation_id=c.id AND s.member_id=? WHERE c.scope_key IS NULL OR c.scope_key NOT LIKE 'assistant-project-execution:%'").all(this.human().id, this.c.actor.id).flatMap(row => {
         try { return [{ value: this.conversation(String(row.id), false), pinned: row.pinned === 1 }] } catch { return [] }
       }).sort((a, b) => Number(b.value.kind === 'personal') - Number(a.value.kind === 'personal') || Number(b.pinned) - Number(a.pinned) || b.value.updatedAt.localeCompare(a.value.updatedAt) || b.value.id.localeCompare(a.value.id)).map(entry => entry.value.id)
       return this.page(name, req.query, candidates, id => this.conversation(id))
@@ -697,6 +707,9 @@ export class ChatService {
       if(fileSource)input.budget=fileReadingBudget(fileDocument??this.fileDocument(fileSource.messageId,group.id),fileSource)
       const workContext=input.intent==='ask_agent'&&isSocialGroup(this,group.id)&&!isGroupAssistant(this,input.agentContactId!,group.id)?socialWorkContext(this,group.id,input.agentContactId!):{}
       const nextInput:TurnInput={...(skill?{skill}:{}),...workContext,budget:input.budget!,context:input.context,conversationVersion:group.version,inputSequence:message.sequence,dailyChat:name!=='sendChatMessage'||isSocialGroup(this,group.id)||addressedGroupChat(group,input),...(external?{externalConsent:true}:{}),...(purpose?{purpose}:{}),...(name==='agentChatMessage'&&!skill&&!purpose&&!fileSource&&group.kind==='personal'&&agent?.profile.role==='coordinator'&&personalWorkRequest(input.text)?{personalAssistant:true,assistantMode:'coordinate' as const}:{}),...(fileDocument?{fileDocument}:{}),...(fileSource?{fileSource,fileRead:fileReadMetadata(fileDocument??this.fileDocument(fileSource.messageId,group.id))}:{})}
+      // Every current owner request reaches the model's project interpretation,
+      // including attachments and wording outside the legacy work shortcut.
+      nextInput.assistantProjectEntry=!skill&&!purpose&&!external&&['agentChatMessage','agentFileMessage'].includes(name)&&group.kind==='personal'&&group.ownerMemberId===this.c.actor.id&&agent?.profile.role==='coordinator'||undefined
       // A fresh ordinary local conversation gets more room for continuity.
       // Explicit collaboration/file/external/creation/schedule budgets and all
       // already queued or retried requests keep their original total limits.
@@ -715,16 +728,17 @@ export class ChatService {
         // New current submissions can retract a pending instruction. Explicit
         // negation/correction wins over a creation/work imperative in this batch.
         const retracted=/^(?:先)?(?:别|不要|不用|停止|取消|算了)|^(?:先给|只要|只需|改为|改成)/.test(input.text.trim())
-        if(retracted)nextInput.continuous.structuredSuppressed=true
+        if(retracted){nextInput.continuous.structuredSuppressed=true;nextInput.assistantProjectEntry=undefined}
         this.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(encode(nextInput),merge.id!)
         const combined=currentTurnText(this,String(merge.id))
         nextInput.purpose=!skill&&!nextInput.continuous.structuredSuppressed&&!fileSource&&group.kind==='personal'&&agent?.profile.role==='coordinator'&&isAgentCreationCommand(combined)?'create_agent':undefined
         nextInput.assistantMode=!skill&&!nextInput.continuous.structuredSuppressed&&!nextInput.purpose&&!fileSource&&group.kind==='personal'&&agent?.profile.role==='coordinator'&&personalWorkRequest(combined)?'coordinate':undefined
+        nextInput.assistantProjectEntry=nextInput.assistantProjectEntry&&!nextInput.purpose&&!nextInput.continuous.structuredSuppressed||undefined
         nextInput.personalAssistant=nextInput.assistantMode==='coordinate'||undefined
         nextInput.personalMemoryFingerprint=personalMemoryContext(this,agent!,group,combined).fingerprint||undefined
         nextInput.agentContextFingerprint=this.directory.modelContext(input.agentContactId!,group.id).fingerprint
         nextInput.modelSelectionFingerprint=chatModelFingerprint(this,input.agentContactId!,personalModelRuntime(this.db,this.c.actor,this.config).fingerprint)
-        if(nextInput.assistantMode)nextInput.assistantDirectoryFingerprint=assistantDirectoryFingerprint(this)
+        if(nextInput.assistantMode||nextInput.assistantProjectEntry)nextInput.assistantDirectoryFingerprint=assistantDirectoryFingerprint(this)
         nextInput.librarySnapshot=captureResearchSnapshot(this,agent!,group,nextInput)
         const value=this.materializedTurn(merge);delete value.purpose;delete value.createdAgent;value.inputMessageId=message.id;value.version++;value.updatedAt=instant()
         this.db.prepare('UPDATE chat_turns SET request_json=?,document=? WHERE id=?').run(encode(nextInput),encode(legacyTurnDocument(value)),merge.id!)

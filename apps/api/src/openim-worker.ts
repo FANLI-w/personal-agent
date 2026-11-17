@@ -7,6 +7,7 @@ import { imConfiguration } from './openim-client.js'
 import type { DatabaseSync } from 'node:sqlite'
 import type { Config } from './config.js'
 import { OpenImClient } from './openim-client.js'
+import { isDatabaseBusy } from './worker-database.js'
 
 export class OpenImWorker {
   readonly owner=randomUUID()
@@ -46,15 +47,19 @@ export class OpenImWorker {
     // A membership change blocks SDK group sends until this live reconciliation removes stale recipients.
     const changed=transaction(this.db,()=>this.db.prepare("SELECT i.conversation_id,m.owner_id FROM im_conversations i JOIN chat_conversations c ON c.id=i.conversation_id JOIN chat_members x ON x.conversation_id=c.id AND x.status='joined' JOIN chat_contacts m ON m.id=x.contact_id AND m.kind='human' JOIN auth_accounts a ON a.member_id=m.owner_id AND a.disabled=0 WHERE i.group_id IS NOT NULL AND (i.status='pending' OR i.synced_version!=json_extract(c.document,'$.version')) ORDER BY i.updated_at,(m.owner_id=c.owner_id) DESC LIMIT 1").get())
     if(changed){try{const actor=serviceFor(this.db,String(changed.owner_id),this.config).c.actor;const mapped=await this.bridge.syncConversation(actor,String(changed.conversation_id));if(mapped.transportStatus!=='ready'){this.retryAfter=Date.now()+10000;return false}}catch{this.retryAfter=Date.now()+10000;return false}}
-    const id=transaction(this.db,()=>{
-      this.db.prepare("UPDATE im_message_outbox SET status='uncertain',lease_until=NULL WHERE status='sending' AND lease_until<?").run(Date.now())
-      const row=this.db.prepare("SELECT message_id FROM im_message_outbox WHERE status='pending' ORDER BY rowid LIMIT 1").get();if(!row)return null
-      try{this.snapshot(String(row.message_id))}catch{this.db.prepare("UPDATE im_message_outbox SET status='denied' WHERE message_id=?").run(row.message_id!);return ''}
-      this.db.prepare("UPDATE im_message_outbox SET status='sending',lease_until=?,attempts=attempts+1,updated_at=? WHERE message_id=? AND status='pending'").run(Date.now()+120000,new Date().toISOString(),row.message_id!)
-      return String(row.message_id)
+    const claim=transaction(this.db,()=>{
+      // Only an expired claim with no persisted submission can be reclaimed.
+      // Historic/restored uncertain rows remain quarantined, even with no ID.
+      this.db.prepare("UPDATE im_message_outbox SET status=CASE WHEN operation_id IS NULL THEN 'pending' ELSE 'uncertain' END,lease_until=NULL WHERE status='sending' AND lease_until<=?").run(Date.now())
+      const row=this.db.prepare("SELECT message_id,attempts FROM im_message_outbox WHERE status='pending' AND operation_id IS NULL ORDER BY rowid LIMIT 1").get();if(!row)return null
+      try{this.snapshot(String(row.message_id))}catch(error){if(isDatabaseBusy(error))throw error;this.db.prepare("UPDATE im_message_outbox SET status='denied' WHERE message_id=?").run(row.message_id!);return ''}
+      const leaseUntil=Date.now()+120000,attempt=Number(row.attempts)+1
+      const changed=this.db.prepare("UPDATE im_message_outbox SET status='sending',lease_until=?,attempts=?,updated_at=? WHERE message_id=? AND status='pending' AND operation_id IS NULL AND attempts=?").run(leaseUntil,attempt,new Date().toISOString(),row.message_id!,row.attempts!)
+      return changed.changes===1?{id:String(row.message_id),attempt,leaseUntil}:null
     })
-    if(id===null)return false;if(!id)return true
-    let sending=false
+    if(claim===null)return false;if(!claim)return true
+    const {id,attempt,leaseUntil}=claim
+    let sending=false,operationID:string|null=null
     try{
       let value=transaction(this.db,()=>this.snapshot(id))
       const synced=await this.bridge.syncConversation(value.actor,value.mapping.researchConversationId)
@@ -62,14 +67,15 @@ export class OpenImWorker {
       value=transaction(this.db,()=>this.snapshot(id))
       const {mapping,sender,pointer}=value
       const self=transaction(this.db,()=>{const chat=this.bridge.chat(value.actor);return this.bridge.identity(chat,chat.human().id).userID})
-      const operationID=randomUUID()
-      transaction(this.db,()=>this.db.prepare('UPDATE im_message_outbox SET operation_id=? WHERE message_id=? AND status=\'sending\'').run(operationID,id))
+      operationID=randomUUID()
+      const changed=transaction(this.db,()=>this.db.prepare("UPDATE im_message_outbox SET operation_id=? WHERE message_id=? AND status='sending' AND attempts=? AND lease_until=? AND lease_until>? AND operation_id IS NULL").run(operationID,id,attempt,leaseUntil,Date.now()))
+      if(changed.changes!==1)throw new Error('IM claim no longer owned')
       sending=true
       const response=await this.bridge.client.request('/msg/send_msg',{sendID:sender.userID,recvID:mapping.groupID?'':sender.userID===self?mapping.peerUserID:self,groupID:mapping.groupID??'',senderNickname:sender.contact.displayName,senderFaceURL:'',senderPlatformID:10,sessionType:mapping.groupID?3:1,contentType:110,content:{data:JSON.stringify(pointer),description:'科研协作记录',extension:''},isOnlineOnly:false,notOfflinePush:true},operationID)
-      transaction(this.db,()=>this.db.prepare("UPDATE im_message_outbox SET status='sent',lease_until=NULL,server_message_id=?,updated_at=? WHERE message_id=? AND status IN ('sending','sent')").run(String(response.serverMsgID??''),new Date().toISOString(),id))
+      transaction(this.db,()=>this.db.prepare("UPDATE im_message_outbox SET status='sent',lease_until=NULL,server_message_id=coalesce(nullif(?,''),server_message_id),updated_at=? WHERE message_id=? AND attempts=? AND operation_id=? AND status IN ('sending','uncertain','sent')").run(String(response.serverMsgID??''),new Date().toISOString(),id,attempt,operationID))
     }catch{
       // A lost send response is not proof of failure: never blindly replay and duplicate an IM message.
-      transaction(this.db,()=>this.db.prepare("UPDATE im_message_outbox SET status=?,lease_until=NULL,updated_at=? WHERE message_id=? AND status='sending'").run(sending?'uncertain':'pending',new Date().toISOString(),id))
+      transaction(this.db,()=>this.db.prepare("UPDATE im_message_outbox SET status=?,lease_until=NULL,updated_at=? WHERE message_id=? AND status='sending' AND attempts=? AND lease_until=? AND operation_id IS ?").run(sending?'uncertain':'pending',new Date().toISOString(),id,attempt,leaseUntil,sending?operationID:null))
       if(!sending){this.retryAfter=Date.now()+10000;return false}
     }
     return true

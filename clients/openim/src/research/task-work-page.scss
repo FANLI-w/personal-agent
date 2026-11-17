@@ -562,3 +562,12 @@
     }
   }
 }
+
+.task-result-review {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+
+  h3, textarea, [role="alert"] { flex-basis: 100%; }
+}

@@ -1,3 +1,4 @@
+import {personalWorkProjection} from "./personal-work-compat.js"
 import {runTeamWork, notifyTeamDecision} from './team-work.js'
 import { taskWorkflowProjection } from './task-workflow-compat.js'
 import {runWorkContext} from './work-context.js'
@@ -271,7 +272,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
           return workContextProjection(result,modern)
         }
         if(route.stage==='SKILL1'){const result=runSkills(new ChatService(collaboration,config),name as SkillCommand,parsed.data as RequestFor<SkillCommand>);reconcileChat(connection,config);return result}
-        if(route.stage==='CHAT1'||route.stage==='IM1'){const result=new ChatService(collaboration,config).run(name as ChatCommand,parsed.data as RequestFor<ChatCommand>);reconcileChat(connection,config);return result}
+        if(route.stage==='CHAT1'||route.stage==='IM1'){const result=new ChatService(collaboration,config).run(name as ChatCommand,parsed.data as RequestFor<ChatCommand>);reconcileChat(connection,config);return personalWorkProjection(name,result,request.headers['x-acceptcat-task-files']==='files-v1')}
         if((reuseCommands as readonly string[]).includes(name)){const result=new ReuseService(collaboration).run(name as ReuseCommand,parsed.data as RequestFor<ReuseCommand>);reconcile(connection,config);return result}
         if((aiCommands as readonly string[]).includes(name))return new AiService(collaboration,labAi.enabled,labAi.model,name==='planRequest'?planningModelRuntime(connection,actor,config):undefined,planningColleagueReader(new ChatService(collaboration,config))).run(name as AiCommand,parsed.data as RequestFor<AiCommand>)
         if (!(collaborationCommands as readonly string[]).includes(name)) fail('NOT_IMPLEMENTED')

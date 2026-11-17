@@ -2,7 +2,7 @@ import { randomBytes, randomUUID, createHash } from 'node:crypto'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, it, expect } from 'vitest'
+import { afterEach, describe, it, expect, vi } from 'vitest'
 import { routes } from '@research-agent-platform/contracts'
 import type { Contact, Conversation, RouteName } from '@research-agent-platform/contracts'
 import { readConfig } from '../src/config.js'
@@ -14,6 +14,7 @@ import type { ImCall } from '../src/openim-client.js'
 import { OpenImBridge } from '../src/openim-bridge.js'
 import { OpenImWorker } from '../src/openim-worker.js'
 import { ChatWorker } from '../src/chat-worker.js'
+import { backup,restore } from '../src/recovery.js'
 
 const cleanup:(()=>unknown|Promise<unknown>)[]=[]
 afterEach(async()=>{for(const fn of cleanup.splice(0).reverse())await fn()})
@@ -295,6 +296,104 @@ describe('OpenIM bridge with explicit synthetic management adapter, not live ser
     const calls=s.calls.length;expect(await worker.tick()).toBe(false);expect(s.calls).toHaveLength(calls)
     expect(s.db.prepare("SELECT status FROM im_message_outbox").get()!.status).toBe('pending')
   })
+  it('does not submit when operation persistence fails and releases only its unsubmitted claim',async()=>{
+    const s=await setup();await s.request('imSession',{platformID:5})
+    const group=(await s.request('personalConversation',{})).value.data.conversation
+    await s.request('sendChatMessage',{text:'合成未提交消息'},{id:group.id})
+    s.db.exec("CREATE TEMP TRIGGER fail_im_operation BEFORE UPDATE OF operation_id ON im_message_outbox WHEN NEW.operation_id IS NOT NULL BEGIN SELECT RAISE(ABORT,'synthetic persistence fault'); END")
+    expect(await new OpenImWorker(s.db,s.config,s.client).tick()).toBe(false)
+    expect(s.sent).toHaveLength(0)
+    expect(s.db.prepare('SELECT status,attempts,operation_id,lease_until FROM im_message_outbox').get()).toMatchObject({status:'pending',attempts:1,operation_id:null,lease_until:null})
+    s.db.exec('DROP TRIGGER fail_im_operation')
+    expect(await new OpenImWorker(s.db,s.config,s.client).tick()).toBe(true)
+    expect(s.sent).toHaveLength(1)
+    expect(s.db.prepare('SELECT status,attempts FROM im_message_outbox').get()).toMatchObject({status:'sent',attempts:2})
+  })
+  it('propagates a transient snapshot database busy without permanently denying the pending message',async()=>{
+    const s=await setup();await s.request('imSession',{platformID:5})
+    const group=(await s.request('personalConversation',{})).value.data.conversation
+    await s.request('sendChatMessage',{text:'合成快照忙'},{id:group.id})
+    const worker=new OpenImWorker(s.db,s.config,s.client),busy=Object.assign(new Error('synthetic SQLite busy'),{code:'ERR_SQLITE_ERROR',errcode:5})
+    vi.spyOn(worker,'snapshot').mockImplementationOnce(()=>{throw busy})
+    await expect(worker.tick()).rejects.toBe(busy)
+    expect(s.db.prepare('SELECT status,attempts,operation_id FROM im_message_outbox').get()).toMatchObject({status:'pending',attempts:0,operation_id:null})
+    expect(s.sent).toHaveLength(0)
+  })
+  it('preserves the positive callback server ID when the send response omits it',async()=>{
+    const s=await setup();await s.request('imSession',{platformID:5})
+    const group=(await s.request('personalConversation',{})).value.data.conversation
+    await s.request('sendChatMessage',{text:'合成空响应编号'},{id:group.id})
+    const request=s.client.request.bind(s.client)
+    vi.spyOn(s.client,'request').mockImplementation(async(path,body,operationID)=>{const response=await request(path,body,operationID);return path==='/msg/send_msg'?{}:response})
+    expect(await new OpenImWorker(s.db,s.config,s.client).tick()).toBe(true)
+    expect(s.db.prepare('SELECT status,server_message_id FROM im_message_outbox').get()).toMatchObject({status:'sent',server_message_id:s.sent[0]!.serverMsgID})
+  })
+  it('recovers an expired no-operation claim after a real SQLite write lock prevented cleanup',async()=>{
+    const s=await setup();await s.request('imSession',{platformID:5})
+    const group=(await s.request('personalConversation',{})).value.data.conversation
+    await s.request('sendChatMessage',{text:'合成领取后写锁'},{id:group.id})
+    const lock=openDatabase(s.config.databasePath);cleanup.push(()=>lock.close());s.db.exec('PRAGMA busy_timeout=1')
+    const worker=new OpenImWorker(s.db,s.config,s.client),sync=worker.bridge.syncConversation.bind(worker.bridge)
+    vi.spyOn(worker.bridge,'syncConversation').mockImplementation(async(...args)=>{const mapped=await sync(...args);lock.exec('BEGIN IMMEDIATE');return mapped})
+    try{await expect(worker.tick()).rejects.toThrow(/locked|busy/i)}finally{lock.exec('ROLLBACK')}
+    expect(s.sent).toHaveLength(0)
+    expect(s.db.prepare('SELECT status,attempts,operation_id FROM im_message_outbox').get()).toMatchObject({status:'sending',attempts:1,operation_id:null})
+    s.db.prepare('UPDATE im_message_outbox SET lease_until=?').run(Date.now()-1)
+    expect(await new OpenImWorker(s.db,s.config,s.client).tick()).toBe(true)
+    expect(s.sent).toHaveLength(1)
+    expect(s.db.prepare('SELECT status,attempts FROM im_message_outbox').get()).toMatchObject({status:'sent',attempts:2})
+  })
+  it('fences a suspended worker before HTTP after another worker reclaims its expired unsubmitted lease',async()=>{
+    const s=await setup();await s.request('imSession',{platformID:5})
+    const group=(await s.request('personalConversation',{})).value.data.conversation
+    await s.request('sendChatMessage',{text:'合成并发领取'},{id:group.id})
+    const second=openDatabase(s.config.databasePath);cleanup.push(()=>second.close())
+    const slow=new OpenImWorker(s.db,s.config,s.client),sync=slow.bridge.syncConversation.bind(slow.bridge)
+    let entered!:()=>void,resume!:()=>void
+    const paused=new Promise<void>(resolve=>{entered=resolve}),released=new Promise<void>(resolve=>{resume=resolve})
+    vi.spyOn(slow.bridge,'syncConversation').mockImplementation(async(...args)=>{const mapped=await sync(...args);entered();await released;return mapped})
+    const first=slow.tick();await paused
+    s.db.prepare('UPDATE im_message_outbox SET lease_until=?').run(Date.now()-1)
+    try{expect(await new OpenImWorker(second,s.config,s.client).tick()).toBe(true)}finally{resume()}
+    expect(await first).toBe(false)
+    expect(s.sent).toHaveLength(1)
+    expect(s.db.prepare('SELECT status,attempts,operation_id,server_message_id FROM im_message_outbox').get()).toMatchObject({status:'sent',attempts:2,operation_id:s.sent[0]!.operationID,server_message_id:s.sent[0]!.serverMsgID})
+  })
+  it('keeps an expired submitted request uncertain and never replays an unknown HTTP outcome',async()=>{
+    const s=await setup();await s.request('imSession',{platformID:5});s.setAfterSend(false)
+    const group=(await s.request('personalConversation',{})).value.data.conversation
+    await s.request('sendChatMessage',{text:'合成响应丢失'},{id:group.id})
+    const request=s.client.request.bind(s.client)
+    let entered!:()=>void,resume!:()=>void
+    const submitted=new Promise<void>(resolve=>{entered=resolve}),released=new Promise<void>(resolve=>{resume=resolve})
+    vi.spyOn(s.client,'request').mockImplementation(async(path,body,operationID)=>{const response=await request(path,body,operationID);if(path==='/msg/send_msg'){entered();await released;throw new ImUnavailable('backend_unreachable')}return response})
+    const first=new OpenImWorker(s.db,s.config,s.client).tick();await submitted
+    expect(s.db.prepare('SELECT status,operation_id FROM im_message_outbox').get()).toMatchObject({status:'sending',operation_id:s.sent[0]!.operationID})
+    s.db.prepare('UPDATE im_message_outbox SET lease_until=?').run(Date.now()-1)
+    try{expect(await new OpenImWorker(s.db,s.config,s.client).tick()).toBe(false)}finally{resume()}
+    await first
+    expect(s.db.prepare('SELECT status,operation_id,attempts FROM im_message_outbox').get()).toMatchObject({status:'uncertain',operation_id:s.sent[0]!.operationID,attempts:1})
+    expect(await new OpenImWorker(s.db,s.config,s.client).tick()).toBe(false)
+    expect(s.sent).toHaveLength(1)
+    await s.callback('callbackAfterSendSingleMsgCommand',s.sent[0]!)
+    expect(s.db.prepare('SELECT status FROM im_message_outbox').get()!.status).toBe('sent')
+  })
+  it('never reactivates restored or historical uncertain rows with missing submission IDs',async()=>{
+    const s=await setup();await s.request('imSession',{platformID:5})
+    const group=(await s.request('personalConversation',{})).value.data.conversation
+    for(const status of ['pending','sending','uncertain']){
+      await s.request('sendChatMessage',{text:`合成恢复隔离${status}`},{id:group.id})
+      s.db.prepare('UPDATE im_message_outbox SET status=?,lease_until=?,attempts=1 WHERE message_id=(SELECT message_id FROM im_message_outbox ORDER BY rowid DESC LIMIT 1)').run(status,Date.now()-1)
+    }
+    await s.app.close()
+    const saved=join(s.dir,'saved'),restored=join(s.dir,'restored')
+    backup(s.config,saved,'synthetic-operator','a'.repeat(40),'synthetic-revision');restore(saved,restored,'synthetic-operator')
+    const config={...s.config,databasePath:join(restored,'platform.sqlite'),blobRoot:join(restored,'blobs')},db=openDatabase(config.databasePath);cleanup.push(()=>db.close())
+    const worker=new OpenImWorker(db,config,s.client)
+    for(let index=0;index<3;index++)await worker.tick()
+    expect(db.prepare('SELECT status,operation_id,attempts FROM im_message_outbox ORDER BY rowid').all()).toEqual(Array.from({length:3},()=>expect.objectContaining({status:'uncertain',operation_id:null,attempts:1})))
+    expect(s.sent).toHaveLength(0)
+  })
   it('requires actual trusted policy callback proof before declaring a cached mapping ready',async()=>{
     const s=await setup();expect((await s.request('imSession',{platformID:5})).value.data.status).toBe('available')
     s.setSkipProfileHook(true)
@@ -331,7 +430,7 @@ describe('OpenIM bridge with explicit synthetic management adapter, not live ser
     const names=['001-foundation.sql','002-collaboration.sql','003-invitation-decisions.sql','004-discovery.sql','005-coordination.sql','006-execution.sql','007-authorized-reuse.sql','008-pilot-operations.sql','009-invite-registration.sql','010-lab-invite-management.sql','011-lab-ai-settings.sql','012-research-chat.sql','013-chat-viewer-state.sql','014-agent-contacts.sql']
     for(const [index,name] of names.entries()){const sql=readFileSync(new URL(`../migrations/${name}`,import.meta.url),'utf8');db.exec(sql);db.prepare('INSERT INTO schema_migrations VALUES (?,?,?)').run(index+1,createHash('sha256').update(sql).digest('hex'),'2026-01-01T00:00:00Z')}
     seed(db,'test');db.prepare("INSERT INTO chat_conversations VALUES ('old','lab_synthetic','member_A','personal','old_scope','{}')").run();db.prepare("INSERT INTO chat_messages VALUES ('old_message','old',1,'{}')").run()
-    migrate(db);migrate(db);checkDatabase(db);expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(39)
+    migrate(db);migrate(db);checkDatabase(db);expect(db.prepare('SELECT count(*) n FROM schema_migrations').get()!.n).toBe(40)
     expect(db.prepare('SELECT count(*) n FROM chat_messages').get()!.n).toBe(1);expect(db.prepare('SELECT count(*) n FROM im_message_outbox').get()!.n).toBe(0)
   })
 })

@@ -3,7 +3,9 @@ import { agentRoles, roleDefaults } from '@research-agent-platform/research-skil
 import { randomBytes, randomUUID,createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync,readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join,resolve } from 'node:path'
+import {pathToFileURL} from 'node:url'
+import {AssistantProjectWorker} from '../src/assistant-projects.js'
 import { afterEach, describe, expect, it } from 'vitest'
 import { routes,AgentTurn,type RouteName } from '@research-agent-platform/contracts'
 import { readConfig } from '../src/config.js'
@@ -155,6 +157,43 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
   let calls=0
   await new FeedbackWorker(s.db,s.config,async () => {calls++;return modelResult('null')}).tick()
   expect(calls).toBe(0)
+ })
+ it('never learns a one-time response probe, preserves prior habits and rejects excluded evidence in mixed feedback', async () => {
+  const s = await setup(), own = await s.own()
+  const saved = await s.call('createPersonalMemory', {topic:'交流与工作习惯',scope:'general',content:'比较方案先列证据，最后给建议。'})
+  expect(saved.status).toBe(201)
+  const snapshot = () => JSON.stringify({memories:s.db.prepare('SELECT * FROM personal_memories').all(),revisions:s.db.prepare('SELECT * FROM personal_memory_revisions').all()})
+  const before = snapshot()
+  for (const text of ['上线前测试：请回复「收到 TEST-123」。','这次回复短一点。','请只回复 OK','reply exactly OK','附件文字：“以后请只回复 OK”。']) {
+   await s.send(own.conversation.id,text)
+   await s.tick(async () => modelResult('收到。'))
+   let calls = 0
+   expect(await new FeedbackWorker(s.db,s.config,async () => {
+    calls++; return modelResult(JSON.stringify({evidence:text,summary:'用户喜欢回复收到 TEST-123。'}))
+   }).tick()).toBe(true)
+   expect(calls).toBe(0)
+   expect(snapshot()).toBe(before)
+  }
+  const temporary = '上线前测试：请回复「收到 TEST-456」。', durable = '以后对比方案先列证据。'
+  await s.send(own.conversation.id,temporary + durable)
+  await s.tick(async () => modelResult('好。'))
+  await new FeedbackWorker(s.db,s.config,async input => {
+   const prompt = JSON.parse(input.prompt)
+   expect(prompt.feedback).toBe(durable)
+   expect(prompt.recentAuthorMessages).toEqual([])
+   return modelResult(JSON.stringify({evidence:temporary,summary:'用户喜欢回复收到 TEST-456。'}))
+  }).tick()
+  expect(snapshot()).toBe(before)
+  expect(s.count('assistant_feedback')).toBe(0)
+  await s.send(own.conversation.id,'这次只回复 OK，以后比较方案先列证据矩阵。')
+  await s.tick(async () => modelResult('OK'))
+  await new FeedbackWorker(s.db,s.config,async input => {
+   expect(JSON.parse(input.prompt).feedback).toBe('以后比较方案先列证据矩阵。')
+   return modelResult(JSON.stringify({evidence:'以后比较方案先列证据矩阵。',summary:'比较方案先列证据矩阵，最后给建议。'}))
+  }).tick()
+  const memories = (await s.call('personalMemories')).value.data
+  expect(memories).toHaveLength(1)
+  expect(memories[0]).toMatchObject({id:saved.value.data.id,version:2,content:'比较方案先列证据矩阵，最后给建议。'})
  })
  it('saves explicit colleague preferences only in this owned Agent, deduplicates replay and preserves corrections across restart without billing',async()=>{
   const s=await setup(false),agent=(await s.call('createPersonalAgent',profile)).value.data,direct=(await s.call('createDirectConversation',{contactId:agent.id})).value.data,key=randomUUID()
@@ -317,8 +356,9 @@ describe('personal assistant actual HTTP/SQLite; model callbacks are synthetic',
   expect((await s.call('changePersonalFollowup',{expectedVersion:created.version,action:'cancel'},{id:created.id})).status).toBe(200)
   expect(await new PersonalFollowupWorker(s.db,s.config,()=>Date.parse(created.nextDeliveryAt)+1).tick()).toBe(false);expect(s.count('chat_messages')).toBe(0)
  })
- it('dispatches default4000 with five complete existing profiles and preferences, and updates the parent receipt after child retry',async()=>{
+ it.each([0,1,2,3])('dispatches default4000 with five complete existing profiles and preferences, and updates the parent receipt after child retry %i',async variant=>{
   const s=await setup(),own=await s.own(),targets:{id:string}[]=[]
+  if(variant)expect((await s.call('updateContactProfile',{displayName:own.agent.displayName+'甲'.repeat(variant),introduction:own.agent.profile.introduction,capabilityDescription:own.agent.profile.capabilityDescription,personality:own.agent.profile.personality,expectedVersion:own.agent.profile.version},{id:own.agent.id})).status).toBe(200)
   for(const [index,name] of ['论文结构','阅读文献','项目分析','研究设计','代码讨论'].entries())targets.push((await s.call('createPersonalAgent',{...profile,displayName:`合成${name}助手`,introduction:`讨论用户提供的${name}文字。`,capabilityDescription:`仅讨论${name}。\n${agentCreationBoundary}`,personality:'先结论，说明未知。'})).value.data)
   for(const [topic,content] of [['回复方式','先给结论，再简要解释。'],['称呼','叫我小罗。'],['语言','使用中文。']])await s.call('createPersonalMemory',{topic,content,scope:'general'})
   const sent=await s.send(own.conversation.id,'帮我修改论文结构')
@@ -414,10 +454,10 @@ it('parses full local/relative dates, rejects DST gaps/overlaps, and keeps expli
 })
 it('migration017→020 changes no old table row and is repeatable',async()=>{
  const s=await setup(),own=await s.own();await s.send(own.conversation.id,'已有旧消息')
- s.db.exec('DROP VIEW IF EXISTS assistant_memory_index; DROP TABLE IF EXISTS assistant_memory_compression_jobs; DROP TABLE IF EXISTS assistant_memory_revisions; DROP TABLE IF EXISTS assistant_memories; DELETE FROM schema_migrations WHERE version>=37; DROP TABLE IF EXISTS assistant_feedback; DROP TABLE IF EXISTS group_dialogue_preferences; DELETE FROM schema_migrations WHERE version=36; DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DELETE FROM schema_migrations WHERE version>=18')
+ s.db.exec('DROP TABLE IF EXISTS assistant_project_events; DROP TABLE IF EXISTS assistant_project_commitments; DROP TABLE IF EXISTS assistant_projects; DROP VIEW IF EXISTS assistant_memory_index; DROP TABLE IF EXISTS assistant_memory_compression_jobs; DROP TABLE IF EXISTS assistant_memory_revisions; DROP TABLE IF EXISTS assistant_memories; DELETE FROM schema_migrations WHERE version>=37; DROP TABLE IF EXISTS assistant_feedback; DROP TABLE IF EXISTS group_dialogue_preferences; DELETE FROM schema_migrations WHERE version=36; DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DROP TABLE personal_followup_runs; DROP TABLE personal_followups; DROP TABLE personal_memory_revisions; DROP TABLE personal_memories; DROP TABLE personal_memory_settings; DELETE FROM schema_migrations WHERE version>=18')
  const tables=s.db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(r=>String(r.name))
  const digest=()=>Object.fromEntries(tables.filter(t=>t!=='schema_migrations').map(t=>[t,createHash('sha256').update(JSON.stringify(s.db.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all())).digest('hex')]))
- const before=digest();migrate(s.db);migrate(s.db);expect(digest()).toEqual(before);expect(s.db.prepare('SELECT max(version) v FROM schema_migrations').get()!.v).toBe(39);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
+ const before=digest();migrate(s.db);migrate(s.db);expect(digest()).toEqual(before);expect(s.db.prepare('SELECT max(version) v FROM schema_migrations').get()!.v).toBe(40);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
 })
 
 describe('recurring reminders and persistent local Agent jobs; synthetic model callbacks',{timeout:30000},()=>{
@@ -507,7 +547,7 @@ describe('recurring reminders and persistent local Agent jobs; synthetic model c
   const current=(await s.call('personalFollowup',null,{id:created.id})).value.data
   expect((await s.call('updatePersonalFollowup',{...fields(due+86400000),expectedVersion:current.version,recurrence:{frequency:'daily'},execution:{kind:'agent',contactId:own.agent.id}},{id:created.id})).status).toBe(200)
   expect((await s.call('personalFollowup',null,{id:created.id})).value.data.lastRun.status).toBe('cancelled');expect(await s.tick(async()=>result('旧指令不能执行'))).toBe(false)
-  s.db.exec('DROP VIEW IF EXISTS assistant_memory_index; DROP TABLE IF EXISTS assistant_memory_compression_jobs; DROP TABLE IF EXISTS assistant_memory_revisions; DROP TABLE IF EXISTS assistant_memories; DELETE FROM schema_migrations WHERE version>=37; DROP TABLE IF EXISTS assistant_feedback; DROP TABLE IF EXISTS group_dialogue_preferences; DELETE FROM schema_migrations WHERE version=36; DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DELETE FROM personal_followup_runs; DROP TABLE personal_followup_runs; DELETE FROM schema_migrations WHERE version>=19')
+  s.db.exec('DROP TABLE IF EXISTS assistant_project_events; DROP TABLE IF EXISTS assistant_project_commitments; DROP TABLE IF EXISTS assistant_projects; DROP VIEW IF EXISTS assistant_memory_index; DROP TABLE IF EXISTS assistant_memory_compression_jobs; DROP TABLE IF EXISTS assistant_memory_revisions; DROP TABLE IF EXISTS assistant_memories; DELETE FROM schema_migrations WHERE version>=37; DROP TABLE IF EXISTS assistant_feedback; DROP TABLE IF EXISTS group_dialogue_preferences; DELETE FROM schema_migrations WHERE version=36; DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DELETE FROM personal_followup_runs; DROP TABLE personal_followup_runs; DELETE FROM schema_migrations WHERE version>=19')
   const before=JSON.stringify(s.db.prepare('SELECT * FROM personal_followups ORDER BY id').all());migrate(s.db);migrate(s.db)
   expect(JSON.stringify(s.db.prepare('SELECT * FROM personal_followups ORDER BY id').all())).toBe(before);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
  })
@@ -556,3 +596,235 @@ describe('recurring reminders and persistent local Agent jobs; synthetic model c
  })
 })
 
+
+describe('model-driven project entry from the actual personal chat',{timeout:30000},()=>{
+ const project=(text:string,sourceMessageId:string,overrides:Record<string,unknown>={})=>({kind:'project',project:{title:'合成持续准备',goal:'周五前得到可核对的组会稿',dueAt:null,timeZone:'Asia/Shanghai',authorizationEvidence:text,sourceMessageIds:[sourceMessageId],sourceFileMessageIds:[],existingTaskIds:[],commitments:[{title:'整理现有材料',kind:'agent',contactId:null,instructions:'依据给出的合成材料整理一段组会稿；缺数字需明示。',acceptanceCriteria:'实际材料可追溯，未知数字不捏造。',dueAt:null,existingTaskId:null}],...overrides}})
+ it('lets the model interpret wording outside the legacy shortcut and persists explicit owners, sources and scheduling once',async()=>{
+  const s=await setup(),own=await s.own(),text='下周组会交给你持续推进，先整理现有材料，周五前准备好稿件。'
+  expect(personalWorkRequest(text)).toBe(false)
+  const sent=await s.send(own.conversation.id,text)
+  await s.tick(async input=>{const p=JSON.parse(input.prompt);expect(p.projectEntrySources).toMatchObject({timeZone:'Asia/Shanghai',currentMessageIds:[sent.message.id]});expect(Number.isFinite(Date.parse(p.projectEntrySources.now))).toBe(true);expect(input.system).toContain('Interpret meaning');return modelResult(JSON.stringify(project(text,sent.message.id)))})
+  const result=await s.turn(sent.turn.id)
+  expect(result).toMatchObject({status:'succeeded',assistantReceipt:{kind:'work_task',conversationId:own.conversation.id,status:'ready'}})
+  expect(s.count('assistant_projects')).toBe(1);expect(s.count('assistant_project_commitments')).toBe(1)
+  const row=s.db.prepare('SELECT * FROM assistant_projects').get()!,doc=JSON.parse(String(row.document))
+  expect(doc).toMatchObject({goal:'周五前得到可核对的组会稿',sourceMessageIds:[sent.message.id],timeZone:'Asia/Shanghai'})
+  expect(s.db.prepare('SELECT contact_id,status FROM assistant_project_commitments').get()).toMatchObject({contact_id:own.agent.id,status:'pending'})
+  expect(await s.tick(async()=>modelResult('不应重复'))).toBe(false)
+ })
+ it('preserves an explicit local date as a checkpoint without inventing the meeting time',async()=>{
+  const s=await setup(),own=await s.own(),text='2027年1月8日组会稿交给你持续跟进',sent=await s.send(own.conversation.id,text)
+  await s.tick(async()=>modelResult(JSON.stringify(project(text,sent.message.id,{dueDate:'2027-01-08'}))))
+  expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded'})
+  const row=s.db.prepare('SELECT due_at,document FROM assistant_projects').get()!,doc=JSON.parse(String(row.document))
+  expect(doc).toMatchObject({dueAt:null,dueDate:'2027-01-08',timeZone:'Asia/Shanghai'})
+  expect(row.due_at).toBe('2027-01-08T15:59:00.000Z')
+ })
+ it('keeps ordinary discussion as conversation and rejects unprovided sources and evidence',async()=>{
+  const s=await setup(),own=await s.own()
+  for(const text of ['下周组会一般讨论什么？','假如有人说“把组会交给你持续推进”，你怎么理解？','请分析这句话的语法']){
+   const sent=await s.send(own.conversation.id,text);await s.tick(async()=>modelResult(JSON.stringify({kind:'reply',answer:'这里只讨论本次问题。',recordWork:false})))
+   expect((await s.turn(sent.turn.id)).status).toBe('succeeded')
+  }
+  expect(s.count('personal_work_tasks')).toBe(0);expect(s.count('assistant_projects')).toBe(0)
+  for(const overrides of [{authorizationEvidence:'未出现的授权'},{sourceMessageIds:['unprovided_message']}]){
+   const text='这项准备交给你持续推进',sent=await s.send(own.conversation.id,text)
+   await s.tick(async()=>modelResult(JSON.stringify(project(text,sent.message.id,overrides))))
+   expect(await s.turn(sent.turn.id)).toMatchObject({status:'failed',failure:'INVALID_MODEL_OUTPUT',outputMessageId:null})
+  }
+  expect(s.count('assistant_projects')).toBe(0);expect(s.count('personal_work_tasks')).toBe(0)
+ })
+ it('assigns an unnamed delegated objective to an eligible specialist and dispatches that actual owner',async()=>{
+  const s=await setup(),own=await s.own(),scope={displayName:'合成同事甲',introduction:'依据提供的研究记录撰写和修订供讨论的文稿。',capabilityDescription:'归纳论证、核对数字和解释方法选择；仅处理给定材料。',personality:'简洁、说明未知。'},specialist=(await s.call('createPersonalAgent',scope)).value.data
+  const text='下周讨论时我要解释方案调整。记录和旧稿在这里，汇报稿交给你盯，准备好给我看。',sent=await s.send(own.conversation.id,text)
+  expect(text).not.toContain(specialist.displayName)
+  await s.tick(async input=>{const directory=JSON.parse(input.prompt).projectEntrySources.localSpecialists;expect(directory).toContainEqual({id:specialist.id,displayName:scope.displayName,introduction:scope.introduction,capabilityDescription:scope.capabilityDescription});expect(input.system).toContain('even when none is named');const output=project(text,sent.message.id);output.project.commitments[0]!.contactId=specialist.id;return modelResult(JSON.stringify(output))})
+  expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded'})
+  const work=s.db.prepare('SELECT * FROM assistant_project_commitments').get()!
+  expect(work.contact_id).toBe(specialist.id)
+  await new AssistantProjectWorker(s.db,s.config).tick()
+  expect(s.db.prepare('SELECT status,turn_id FROM assistant_project_commitments WHERE id=?').get(work.id!)).toMatchObject({status:'running',turn_id:expect.any(String)})
+  await s.tick(async input=>{const p=JSON.parse(input.prompt);expect(p.requestedAgent.id).toBe(specialist.id);return modelResult('实际由合成同事甲准备的稿件。')})
+  expect((await s.turn(String(s.db.prepare('SELECT turn_id FROM assistant_project_commitments WHERE id=?').get(work.id!)!.turn_id))).status).toBe('succeeded')
+ })
+ it('retains coordinator fallback for unrelated specialist scope but rejects silent bypass of shown specialists',async()=>{
+  const s=await setup(),own=await s.own(),specialist=(await s.call('createPersonalAgent',{displayName:'合成同事乙',introduction:'核对数据库索引设计。',capabilityDescription:'只讨论提供的SQL和查询计划，不撰写研究文稿。',personality:'直接。'})).value.data
+  const text='这份研究讨论稿交给你持续跟进',silent=await s.send(own.conversation.id,text)
+  await s.tick(async()=>modelResult(JSON.stringify(project(text,silent.message.id))))
+  expect(await s.turn(silent.turn.id)).toMatchObject({status:'failed',failure:'INVALID_MODEL_OUTPUT'})
+  expect(s.count('assistant_projects')).toBe(0)
+  const sent=await s.send(own.conversation.id,text)
+  await s.tick(async input=>{expect(JSON.parse(input.prompt).projectEntrySources.localSpecialists.map((c:{id:string})=>c.id)).toContain(specialist.id);return modelResult(JSON.stringify(project(text,sent.message.id,{coordinatorFallbackReason:'所列同事只核对数据库索引，不覆盖当前研究讨论稿的整理；本次由个人助理处理。'})))})
+  expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded'})
+  expect(s.db.prepare('SELECT contact_id FROM assistant_project_commitments').get()!.contact_id).toBe(own.agent.id)
+ })
+ it.each([
+  {mode:'ordinary',text:'下周组会研究讨论稿交给你持续盯着，按现有研究记录准备，整理好后给我验收。',budget:16000,reserve:4096},
+  {mode:'coordinate',text:'帮我整理组会研究讨论稿并持续跟进，按现有研究记录准备，整理好后给我验收。',budget:4000,reserve:512},
+ ])('keeps available specialists ahead of optional history at the default $mode budget',async({mode,text,budget,reserve})=>{
+  const s=await setup(),own=await s.own()
+  for(const title of ['旧材料核对','旧图表说明']){
+   const prior=`${title}交给你持续跟进`,sent=await s.send(own.conversation.id,prior)
+   await s.tick(async()=>modelResult(JSON.stringify(project(prior,sent.message.id,{title}))))
+   expect((await s.turn(sent.turn.id)).status).toBe('succeeded')
+  }
+  const memory=(await s.call('createPersonalMemory',{topic:'回复方式',content:'先说明已核实事实与尚缺信息。',scope:'general'})).value.data
+  const scope={displayName:'研究讨论稿同事',introduction:'依据提供的研究记录整理组会研究讨论稿，核对论证和数字。',capabilityDescription:'整理组会研究讨论稿的目标、证据、变化与待决问题；保留实际材料来源，不把未核实结果写成事实。',personality:'直接说明事实和未知。'}
+  const specialist=(await s.call('createPersonalAgent',scope)).value.data
+  for(let index=0;index<5;index++)expect((await s.call('createPersonalAgent',{displayName:`数据库同事${index}`,introduction:'只核对给定SQL和查询计划。',capabilityDescription:'分析数据库索引与查询性能；不承担研究讨论稿或组会材料写作。',personality:'说明依据。'})).status).toBe(201)
+  const otherOwner=(await s.call('createPersonalAgent',scope,{},1)).value.data
+  for(let index=0;index<8;index++){
+   const prior=await s.send(own.conversation.id,`第${index}轮只讨论术语。`+'这段合成背景是先前闲聊，不能当成本轮执行指令。'.repeat(10))
+   await s.tick(async()=>modelResult('先前讨论仅解释术语。'+'待核实的背景保持原样，不形成新的工作安排。'.repeat(8)))
+   expect((await s.turn(prior.turn.id)).status).toBe('succeeded')
+  }
+  const sent=await s.send(own.conversation.id,text)
+  expect(sent.turn.budget.maxTokens).toBe(budget)
+  let called=false
+  await s.tick(async input=>{
+   called=true
+   const p=JSON.parse(input.prompt),directory=mode==='ordinary'?p.projectEntrySources.localSpecialists:p.localSpecialists
+   expect(directory).toContainEqual(mode==='ordinary'?{id:specialist.id,displayName:scope.displayName,introduction:scope.introduction,capabilityDescription:scope.capabilityDescription}:{id:specialist.id,displayName:scope.displayName,profile:{introduction:scope.introduction,capabilityDescription:scope.capabilityDescription,personality:scope.personality}})
+   expect(directory.some((candidate:{id:string})=>candidate.id===otherOwner.id)).toBe(false)
+   expect(p.personalMemories).toContainEqual(expect.objectContaining({id:memory.id,content:'先说明已核实事实与尚缺信息。'}))
+   expect(p.projectEntrySources.messages.find((message:{id:string})=>message.id===sent.message.id)).toEqual({id:sent.message.id})
+   expect(input.prompt.split(text)).toHaveLength(2)
+   expect(input.maxTokens).toBeGreaterThanOrEqual(reserve)
+   expect(chatInputTokenBound(input.system,input.prompt)+input.maxTokens).toBeLessThanOrEqual(budget)
+   const output=project(text,sent.message.id);output.project.commitments[0]!.contactId=specialist.id
+   return modelResult(JSON.stringify(output))
+  })
+  expect(called).toBe(true)
+  expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded'})
+  const request=JSON.parse(String(s.db.prepare('SELECT request_json FROM chat_turns WHERE id=?').get(sent.turn.id)!.request_json))
+  expect(request.projectEntryInventory.specialistIds).toContain(specialist.id)
+  expect(request.projectEntryInventory.specialistIds).not.toContain(otherOwner.id)
+  expect(request.contextAudit.earlierMessagesOmitted).toBe(true)
+  expect(s.db.prepare('SELECT contact_id FROM assistant_project_commitments ORDER BY rowid DESC LIMIT 1').get()!.contact_id).toBe(specialist.id)
+  expect(s.count('assistant_projects')).toBe(3)
+ },60000)
+ it('keeps optional inventory inside the actual budget for an established account with many active commitments',async()=>{
+  const s=await setup(),own=await s.own()
+  for(let index=0;index<6;index++){
+   const text=`第${index}项长期准备交给你持续推进`,sent=await s.send(own.conversation.id,text),base=project(text,sent.message.id)
+   base.project.title=`项目${index}`+'合成资料'.repeat(30)
+   base.project.commitments=Array.from({length:10},(_,i)=>({...base.project.commitments[0]!,title:`第${i}项`+'可核对交付'.repeat(25)}))
+   await s.tick(async()=>modelResult(JSON.stringify(base)))
+   expect((await s.turn(sent.turn.id)).status).toBe('succeeded')
+  }
+  const sent=await s.send(own.conversation.id,'今天只聊一下这段文字的意思。')
+  await s.tick(async input=>{const p=JSON.parse(input.prompt);expect(p.projectEntrySources.projects.length).toBeLessThan(6);expect(chatInputTokenBound(input.system,input.prompt)+input.maxTokens).toBeLessThanOrEqual(sent.turn.budget.maxTokens);return modelResult('好，我们就看这段文字。')})
+  expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded'})
+  expect(s.count('assistant_projects')).toBe(6);expect(s.count('personal_work_tasks')).toBe(6)
+ },60000)
+ it('binds a fresh owner decision to the selected project and commitment instead of the newest project',async()=>{
+  const s=await setup(),own=await s.own()
+  for(const title of ['较早项目','较新项目']){const text=`${title}交给你持续跟进`,sent=await s.send(own.conversation.id,text);await s.tick(async()=>modelResult(JSON.stringify(project(text,sent.message.id,{title}))))}
+  const rows=s.db.prepare('SELECT id,document FROM assistant_projects ORDER BY rowid').all(),first=rows[0]!,second=rows[1]!,commitment=s.db.prepare('SELECT id FROM assistant_project_commitments WHERE project_id=?').get(first.id!)!
+  s.db.prepare("UPDATE assistant_project_commitments SET status='blocked',failure='OWNER_DECISION' WHERE id=?").run(commitment.id!)
+  const text='帮我修改较早项目，采用已核实的24份数据，另外两份暂不纳入',sent=await s.send(own.conversation.id,text)
+  expect(sent.turn.budget.maxTokens).toBe(4000)
+  let seen:{system:string;prompt:string;maxTokens:number}|undefined
+  await s.tick(async input=>{
+   seen=input
+   return modelResult(JSON.stringify({kind:'project_decision',projectId:first.id,commitmentId:commitment.id,instructions:'按24份已核实的数据继续修改，两份暂不纳入。',authorizationEvidence:text}))
+  })
+  expect(seen).toBeDefined()
+  const sources=JSON.parse(seen!.prompt).projectEntrySources
+  expect(seen!.system).toContain('kind:"project_decision"')
+  expect(sources.projects.find((p:{id:string})=>p.id===first.id)?.commitments.map((c:{id:string})=>c.id)).toContain(commitment.id)
+  expect(chatInputTokenBound(seen!.system,seen!.prompt)+seen!.maxTokens).toBeLessThanOrEqual(4000)
+  expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded',assistantReceipt:{kind:'work_task'}})
+  expect(s.count('assistant_projects')).toBe(2)
+  expect(s.db.prepare('SELECT count(*) n FROM assistant_project_commitments WHERE project_id=?').get(first.id!)!.n).toBe(2)
+  expect(s.db.prepare('SELECT count(*) n FROM assistant_project_commitments WHERE project_id=?').get(second.id!)!.n).toBe(1)
+  expect(JSON.parse(String(s.db.prepare('SELECT document FROM assistant_projects WHERE id=?').get(first.id!)!.document)).sourceMessageIds).toContain(sent.message.id)
+ })
+ it('uses the same model entry for uploaded text and preserves the actual source file reference',async()=>{
+  const s=await setup(),own=await s.own(),text='这份合成说明交给你持续整理成稿并跟进缺项'
+  const sent=await s.call('agentFileMessage',{text,filename:'synthetic-brief.txt',mediaType:'text/plain',contentBase64:Buffer.from('目标：比较两种方法。缺项：样本量尚未确认。').toString('base64')},{id:own.conversation.id})
+  expect(sent.status,sent.text).toBe(201);const data=sent.value.data
+  await s.tick(async input=>{const p=JSON.parse(input.prompt);expect(p.fileExcerpts[0].text).toContain('样本量');expect(p.projectEntrySources.fileMessageIds).toContain(data.message.id);return modelResult(JSON.stringify(project(text,data.message.id,{sourceFileMessageIds:[data.message.id]})))})
+  expect(await s.turn(data.turn.id)).toMatchObject({status:'succeeded',assistantReceipt:{kind:'work_task'}})
+  expect(JSON.parse(String(s.db.prepare('SELECT document FROM assistant_projects').get()!.document)).sourceFileMessageIds).toEqual([data.message.id])
+ })
+ it.skipIf(!process.env.TEST_PROJECT_MODEL_ADAPTER)('opt-in live project lifecycle from one owner message across worker restart',async()=>{
+  const adapter=await import(pathToFileURL(resolve(process.env.TEST_PROJECT_MODEL_ADAPTER!)).href),callModel:ModelCall=adapter.default??adapter.callModel
+  if(typeof callModel!=='function')throw new Error('Adapter must export default ModelCall with actual provider usage')
+  const s=await setup(),own=await s.own()
+  const specialist=(await s.call('createPersonalAgent',{displayName:'组会文稿助手',introduction:'根据给定的合成资料撰写和核对组会文字。',capabilityDescription:'梳理研究目标、结果与尚缺实验信息；不虚构数字。',personality:'直接说明证据与缺项。'})).value.data
+  const text='下周五组会我得解释为什么从乙方案换成甲方案。实验记录和旧稿都在这儿，汇报稿交给你盯，准备好给我看，有需要我定的再来找我。\n<合成实验记录>本轮24份数据已复核，另外2份尚待质量复核，不可列入已验证结果。甲方案波动范围2到4，乙方案3到5；改用甲的原因是乙在第二批出现批次漂移，甲在两批的趋势一致。</合成实验记录>\n<合成旧稿>本研究采用乙方案，因为乙更稳定；本轮共验证100份数据。</合成旧稿>'
+  const calls:{input:unknown;result:ModelResult}[]=[],traced:ModelCall=async(input,signal,credential,onDelta)=>{const result=await callModel(input,signal,credential,onDelta);calls.push({input,result});return result}
+  const sent=await s.send(own.conversation.id,text)
+  const evidence=process.env.PROJECT_LIVE_EVIDENCE_ROOT?resolve(process.env.PROJECT_LIVE_EVIDENCE_ROOT):join(s.dir,'live-evidence');mkdirSync(evidence,{recursive:true})
+  const prepareQueued=()=>{for(const row of s.db.prepare("SELECT id,request_json,document FROM chat_turns WHERE status='queued'").all()){const request=JSON.parse(String(row.request_json)),turn=JSON.parse(String(row.document));request.budget={maxTokens:64000,maxSeconds:300};turn.budget=request.budget;s.db.prepare('UPDATE chat_turns SET request_json=?,document=? WHERE id=?').run(JSON.stringify(request),JSON.stringify(turn),row.id!)}}
+  try{
+   prepareQueued();await new ChatWorker(s.db,s.config,traced).tick()
+   expect(await s.turn(sent.turn.id)).toMatchObject({status:'succeeded',assistantReceipt:{kind:'work_task'}})
+   expect(s.count('assistant_projects')).toBe(1)
+   const scheduled=s.db.prepare('SELECT due_at,document FROM assistant_projects').get()!,schedule=JSON.parse(String(scheduled.document))
+   expect(scheduled.due_at).not.toBeNull();expect(schedule.dueDate??schedule.dueAt).not.toBeNull()
+   // Use the exact trusted clock/zone supplied by the API to this model call,
+   // so the check stays valid across midnight and does not pin today's date.
+   const trusted=JSON.parse((calls[0]!.input as {prompt:string}).prompt).projectEntrySources
+   const localDate=(at:string,zone:string)=>{const fields=new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(at));return ['year','month','day'].map(key=>fields.find(part=>part.type===key)!.value).join('-')}
+   const calendar=new Date(localDate(trusted.now,trusted.timeZone)+'T00:00:00.000Z'),daysSinceMonday=(calendar.getUTCDay()+6)%7
+   calendar.setUTCDate(calendar.getUTCDate()+11-daysSinceMonday)
+   const nextFriday=calendar.toISOString().slice(0,10)
+   expect(schedule.timeZone).toBe(trusted.timeZone)
+   expect(schedule.dueDate??localDate(schedule.dueAt,schedule.timeZone)).toBe(nextFriday)
+   await s.restart()
+   let now=Date.now()
+   for(let step=0;step<48;step++){
+    now+=31000
+    await new AssistantProjectWorker(s.db,s.config,()=>now).tick()
+    prepareQueued();await new ChatWorker(s.db,s.config,traced).tick()
+    const pending=Number(s.db.prepare("SELECT count(*) n FROM assistant_project_commitments WHERE status IN ('pending','running','waiting')").get()!.n)
+    if(!pending&&['blocked','awaiting_review'].includes(String(s.db.prepare('SELECT status FROM assistant_projects').get()?.status)))break
+   }
+   const projectRow=s.db.prepare('SELECT * FROM assistant_projects').get()!,commitments=s.db.prepare('SELECT * FROM assistant_project_commitments ORDER BY position').all(),messages=(await s.call('chatMessages',null,{id:own.conversation.id})).value.data
+   expect(messages.filter((m:{origin:string})=>m.origin==='human')).toHaveLength(1)
+   expect(commitments.some(c=>c.output_message_id)).toBe(true)
+   const actualOutputs=commitments.filter(c=>c.output_message_id&&JSON.parse(String(c.document)).phase!=='review').map(c=>JSON.parse(String(s.db.prepare('SELECT document FROM chat_messages WHERE id=?').get(c.output_message_id!)!.document)).text).join('\n')
+   expect(actualOutputs).toMatch(/24/);expect(actualOutputs).toMatch(/(?<!\d)2(?!\d)/);expect(actualOutputs).toContain('批次漂移')
+   expect(commitments.some(c=>JSON.parse(String(c.document)).phase==='review')).toBe(true)
+   expect(['blocked','awaiting_review']).toContain(projectRow.status)
+   const events=s.db.prepare('SELECT * FROM assistant_project_events WHERE project_id=? ORDER BY rowid').all(projectRow.id!),work=(await s.call('personalWorkTask',null,{id:String(projectRow.work_task_id)})).value.data
+   expect(Number(projectRow.version)).toBeGreaterThan(1);expect(work.version).toBeGreaterThan(1)
+   const published=events.filter(e=>e.kind==='decision'&&e.message_id),messageFor=(id:unknown)=>messages.find((m:{id:string})=>m.id===id)
+   for(const event of published){const message=messageFor(event.message_id);expect(message).toMatchObject({id:event.message_id,conversationId:own.conversation.id,origin:'service'});expect(message.text).toBe(JSON.parse(String(event.document)).text)}
+   if(projectRow.status==='awaiting_review'){
+    const ready=published.filter(e=>String(e.event_key).startsWith('ready:')).at(-1)
+    expect(ready).toBeDefined();const final=messageFor(ready!.message_id)
+    expect(work).toMatchObject({status:'awaiting_review',result:{messageId:final.id,summary:final.text,accepted:false}})
+    expect(final.text).toMatch(/24/);expect(final.text).toMatch(/(?<!\d)2(?!\d)/);expect(final.text).toContain('批次漂移')
+    expect(commitments.every(c=>c.status==='ready')).toBe(true)
+    const checked=events.filter(e=>e.kind==='assessment'&&JSON.parse(String(e.document)).assessment==='ready')
+    expect(checked.length).toBeGreaterThan(0)
+    for(const assessment of checked){
+     const review=commitments.find(c=>c.id===assessment.commitment_id)!,parentId=JSON.parse(String(review.document)).parentCommitmentId,parent=commitments.find(c=>c.id===parentId)!
+     expect(parent.output_message_id).not.toBeNull()
+     const original=JSON.parse(String(s.db.prepare('SELECT document FROM chat_messages WHERE id=?').get(parent.output_message_id!)!.document))
+     expect(original.origin).toBe('model');expect((await s.turn(original.turnId)).outputMessageId).toBe(original.id)
+     expect(calls.map(call=>call.result.text)).toContain(original.text)
+     expect(final.text).toContain(original.text)
+    }
+   }else{
+    // Only a grounded review question counts as reaching the owner. Transport,
+    // provider, malformed review, deadline or correction-limit failures do not.
+    const decision=published.find(e=>String(e.event_key).startsWith('review-decision:'))
+    expect(decision).toBeDefined();const item=commitments.find(c=>c.id===decision!.commitment_id)!
+    expect(item).toMatchObject({status:'blocked',failure:'OWNER_DECISION'})
+    const assessment=events.find(e=>e.kind==='assessment'&&e.commitment_id===item.id)!,review=JSON.parse(String(assessment.document))
+    expect(review.assessment).toBe('decision');expect(typeof review.question).toBe('string');expect(review.question.trim().length).toBeGreaterThan(10)
+    expect(messageFor(decision!.message_id).text).toContain(review.question.trim())
+    expect(commitments.filter(c=>c.status==='blocked').every(c=>c.failure==='OWNER_DECISION')).toBe(true)
+   }
+   expect(calls.length).toBeGreaterThanOrEqual(3)
+   expect(commitments.some(c=>c.contact_id===specialist.id)).toBe(true)
+  }finally{
+   writeFileSync(join(evidence,'project-live-evidence.json'),JSON.stringify({kind:'isolated-synthetic-materials-live-model',fixtureBudget:{maxTokens:64000,maxSeconds:300,productionBudgetChanged:false},sourceMessageId:sent.message.id,calls,workTasks:s.db.prepare('SELECT * FROM personal_work_tasks').all(),projects:s.db.prepare('SELECT * FROM assistant_projects').all(),commitments:s.db.prepare('SELECT * FROM assistant_project_commitments ORDER BY position').all(),events:s.db.prepare('SELECT * FROM assistant_project_events ORDER BY created_at,rowid').all(),messages:s.db.prepare('SELECT document FROM chat_messages ORDER BY rowid').all().map(r=>JSON.parse(String(r.document)))},null,2))
+   console.log('PROJECT_LIVE_EVIDENCE',join(evidence,'project-live-evidence.json'))
+  }
+ },900000)
+})

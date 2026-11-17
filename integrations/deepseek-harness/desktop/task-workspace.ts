@@ -555,7 +555,6 @@ export class DshTaskWorkspace {
     });
   }
   async stageDelivery(context: TaskContext, selectedFiles: string[]) {
-    if (context.kind !== "research") throw Error("个人协作任务当前支持文字提交；文件请在课题组任务中提交。");
     if (!Array.isArray(selectedFiles) || !selectedFiles.length || selectedFiles.length > 5)
       throw Error("每次请选择 1 至 5 个文件。");
     return this.exclusive(context, async () => {
@@ -729,8 +728,8 @@ export class DshTaskWorkspace {
         if (b.delivery?.status === "pending")
           throw Error("有一版成果尚未确认，请先重试该版本，避免重复交付。");
         if (!maySubmit) throw Error("当前任务不能提交成果。");
-        if (context.kind === "personal" && names.length)
-          throw Error("个人协作任务暂支持文字成果。");
+        if (context.kind === "personal" && names.length && (b.archive?.status !== "archived" || names.some(name => !b.archive!.files.some(file => file.name === name))))
+          throw Error("请先完成文件上传，再确认提交。");
         const files = [];
         const archived = b.archive?.status === "archived" && names.every(name => b.archive!.files.some(file => file.name === name)) ? b.archive.files : [];
         for (const name of names) {
@@ -757,6 +756,7 @@ export class DshTaskWorkspace {
           files,
           uploaded: [],
           version: context.version,
+          personalSources: archived.filter(file => names.includes(file.name)).map(file => ({ kind: "note", locator: `research-library:${file.id}:v${file.version}:${file.sha256}`, label: path.basename(file.name).slice(0, 200) })),
           sources: [...b.sources.map((s) => ({
             kind: s.kind === "artifact" ? "artifact" : "note",
             locator:
@@ -802,7 +802,7 @@ export class DshTaskWorkspace {
           context.kind === "personal"
             ? await post(
                 `/api/v1/work/tasks/${context.taskId}/result`,
-                { expectedVersion: delivery.version, text: delivery.summary },
+                { expectedVersion: delivery.version, text: delivery.summary, ...(delivery.names.length ? { sources: (delivery.personalSources || []) } : {}) },
                 delivery.id
               )
             : await post(

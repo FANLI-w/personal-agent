@@ -108,3 +108,30 @@ test('malformed file metadata cannot restore an image or arbitrary payload as a 
   const {outbox}=restoreFixture({...submission,files:[{id:'file_1',name:'bad.pdf',size:3,mediaType:'application/pdf',message:{clientMsgID:'invalid_type',contentType:102}}]});
   assert.equal(outbox.useChatOutbox.getState().items.length,0);
 });
+
+test('prepared direct-Agent file requests restore their original bytes, question, target and key as paused',()=>{
+  const request={route:'agentFileMessage',conversationId:'agent_chat',body:{filename:'groups.md',mediaType:'text/markdown',contentBase64:Buffer.from('Control group\nTreatment group').toString('base64'),text:'How many groups?'}};
+  const queued={...submission,text:'How many groups?',html:'How many groups?',request,fileAgentConversationId:'agent_chat',files:[{id:'file_1',name:'groups.md',size:29,mediaType:'',sent:true,message:{clientMsgID:'original-sdk-file',contentType:105}}]};
+  const {outbox}=restoreFixture(queued);
+  const restored=outbox.useChatOutbox.getState().items[0];
+  assert.equal(restored.state,'paused');assert.equal(restored.id,submission.id);
+  assert.equal(restored.fileAgentConversationId,'agent_chat');assert.deepEqual(restored.request,request);
+  assert.equal(restored.files[0].message.clientMsgID,'original-sdk-file');
+  assert.equal(restored.files[0].file,undefined);
+});
+
+test('a direct-Agent file-only submission retains its target when refreshed before request preparation',()=>{
+  const queued={...submission,text:'',html:'',request:undefined,fileAgentConversationId:'agent_chat',files:[{id:'file_1',name:'groups.md',size:29,mediaType:'',sent:false}]};
+  const {outbox}=restoreFixture(queued);
+  const restored=outbox.useChatOutbox.getState().items[0];
+  assert.equal(restored.state,'paused');assert.equal(restored.fileAgentConversationId,'agent_chat');
+  assert.equal(restored.request,undefined);
+});
+
+test('stored document targets cannot change the prepared destination or smuggle a multi-file model batch',()=>{
+  const file={id:'file_1',name:'groups.md',size:29,mediaType:'',sent:false};
+  for(const patch of [{fileAgentConversationId:'other_chat',files:[file]}, {fileAgentConversationId:'group_chat',files:[file,{...file,id:'file_2'}]}]){
+    const {outbox}=restoreFixture({...submission,...patch});
+    assert.equal(outbox.useChatOutbox.getState().items.length,0);
+  }
+});

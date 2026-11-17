@@ -17,7 +17,8 @@ export type LibraryRequest = {params:Record<string,string>;query:Record<string,u
 type Extraction = {pages:{pageNumber:number;text:string}[]; extraction:'text_extracted'|'original_only'|'extraction_failed'; reason:string|null}
 const decode = (v:unknown) => JSON.parse(String(v)), now = () => new Date().toISOString()
 const digest = (v:Buffer) => createHash('sha256').update(v).digest('hex')
-const collectionAcl = `(c.owner_id=? OR c.scope='public' OR (c.scope='lab_shared' AND ${sharedCollectionAccess}) OR (c.scope='task_scoped' AND EXISTS(SELECT 1 FROM json_each(c.task_ids) ref JOIN tasks t ON t.id=ref.value JOIN task_access a ON a.task_id=t.id WHERE a.member_id=? AND a.access='full' AND t.status!='cancelled')))`
+const personalTaskReader = `(pwt.owner_id=? OR EXISTS(SELECT 1 FROM personal_work_participants pwp JOIN chat_contacts pc ON pc.id=pwp.contact_id JOIN auth_accounts pa ON pa.member_id=pc.owner_id WHERE pwp.task_id=pwt.id AND pwp.status='accepted' AND pc.kind='human' AND pc.owner_id=? AND pa.disabled=0 AND EXISTS(SELECT 1 FROM chat_contact_requests pr JOIN chat_contacts pt ON pt.id=pr.target_contact_id WHERE pr.status='accepted' AND ((pr.requester_id=pwt.owner_id AND pr.target_contact_id=pc.id) OR (pt.kind='human' AND pr.decider_id=pwt.owner_id AND pr.requester_id=pc.owner_id))) AND (pwt.conversation_id IS NULL OR EXISTS(SELECT 1 FROM chat_members pm WHERE pm.conversation_id=pwt.conversation_id AND pm.contact_id=pc.id AND pm.status NOT IN ('revoked','declined')))))`
+const collectionAcl = `(c.owner_id=? OR c.scope='public' OR (c.scope='lab_shared' AND ${sharedCollectionAccess}) OR (c.scope='task_scoped' AND EXISTS(SELECT 1 FROM json_each(c.task_ids) ref JOIN tasks t ON t.id=ref.value JOIN task_access a ON a.task_id=t.id WHERE a.member_id=? AND a.access='full' AND t.status!='cancelled')) OR (c.scope='task_scoped' AND EXISTS(SELECT 1 FROM json_each(c.task_ids) pref JOIN personal_work_tasks pwt ON pwt.id=pref.value WHERE pwt.status NOT IN ('proposed','cancelled') AND ${personalTaskReader})))`
 const searchStopTerms=new Set(('a an the and or but of in on at to for from with without by as is are was were be been being do does did can could would should will shall may might have has had it its this that these those what which who whom whose how when where why please tell explain about give me my our your you we they their there here also just not into over under than then some any each such only find show read summarize summarise overview sources source materials material documents document papers paper files file collection collections 请 帮我 帮忙 请问 这个 那个 这些 那些 一下 什么 哪个 哪些 如何 怎么 怎么样 告诉 解释 说明 介绍 关于 有关 需要 查看 阅读 浏览 总结 概括 资料 材料 文献 论文 文档 文件 里面 一个 我们 你们 他们 的 是 了 在').split(' '))
 function queryTerms(query:string){
   const identifiers:string[]=[],plain=query.toLowerCase().replace(/[a-z0-9]+(?:[-_][a-z0-9]+)+/g,id=>{identifiers.push(id);return ' '.repeat(id.length)})
@@ -44,7 +45,7 @@ export async function parseResearchImport(raw:z.input<typeof ResearchFileImport>
 export class ResearchLibraryService {
   readonly createdBlobs:string[]=[]
   constructor(readonly db:DatabaseSync,readonly actor:Actor,readonly blobRoot?:string,readonly largeOriginals=true){}
-  private aclArgs(){return [this.actor.id,this.actor.id,this.actor.id]}
+  private aclArgs(){return [this.actor.id,this.actor.id,this.actor.id,this.actor.id,this.actor.id]}
   collection(id:string,includeWithdrawn=false):Row {
     const r=this.db.prepare(`SELECT c.* FROM research_collections c WHERE c.id=? AND ${collectionAcl} AND (c.status='available' OR (c.owner_id=? AND ?=1))`).get(id,...this.aclArgs(),this.actor.id,includeWithdrawn?1:0)
     if(!r)fail('NOT_FOUND');return r
@@ -54,7 +55,7 @@ export class ResearchLibraryService {
     return ResearchCollection.parse({id:r.id,ownerId:r.owner_id,labId:r.scope==='lab_shared'?this.db.prepare('SELECT lab_id FROM research_collection_labs WHERE collection_id=?').get(r.id!)?.lab_id??r.lab_id:r.lab_id,name:r.name,description:r.description,scope:r.scope,taskIds:decode(r.task_ids),version:r.version,status:r.status,owned:r.owner_id===this.actor.id,...(this.db.prepare('SELECT 1 FROM feishu_library_sources WHERE collection_id=?').get(r.id!)?{externalSource:'feishu_bitable'}:{}),fileCount:this.db.prepare("SELECT count(*) n FROM research_files WHERE collection_id=? AND status='available'").get(r.id!)!.n,createdAt:r.created_at,updatedAt:r.updated_at})
   }
   private validateSettings(settings:z.infer<typeof ResearchCollectionSettings>){
-    for(const taskId of settings.taskIds)if(!this.db.prepare("SELECT t.id FROM tasks t JOIN task_access a ON a.task_id=t.id WHERE t.id=? AND t.lab_id=? AND a.member_id=? AND a.access='full' AND t.status!='cancelled'").get(taskId,teamLabId(this.actor),this.actor.id))fail('NOT_FOUND')
+    for(const taskId of settings.taskIds)if(!this.db.prepare("SELECT t.id FROM tasks t JOIN task_access a ON a.task_id=t.id WHERE t.id=? AND t.lab_id=? AND a.member_id=? AND a.access='full' AND t.status!='cancelled'").get(taskId,teamLabId(this.actor),this.actor.id)&&!this.db.prepare(`SELECT 1 FROM personal_work_tasks pwt WHERE pwt.id=? AND pwt.status NOT IN ('proposed','cancelled') AND ${personalTaskReader}`).get(taskId,this.actor.id,this.actor.id))fail('NOT_FOUND')
     if(settings.scope==='lab_shared'&&(!hasLabMembership(this.db,this.actor.id,teamLabId(this.actor))||this.db.prepare('SELECT 1 FROM personal_spaces WHERE lab_id=?').get(teamLabId(this.actor))))fail('FORBIDDEN')
     if(new Set(settings.taskIds).size!==settings.taskIds.length)fail('VALIDATION_ERROR')
   }

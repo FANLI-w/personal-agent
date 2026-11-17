@@ -583,3 +583,24 @@ test("personal text delivery prepares a local receipt without starting a session
   assert.equal(posted[0].body.text, "Synthetic completed result");
   assert.equal((await f.store.status(personal)).binding.delivery.status, "submitted");
 });
+
+
+test("personal picked files reuse verified originals and the exact persisted submission receipt", async t => {
+  const f = await fixture(t), personal = { ...context, kind: "personal", taskId: "personal_file_synthetic" };
+  const picked = path.join(f.root, "report.pptx"), bytes = Buffer.from("synthetic personal Office original");
+  await fs.writeFile(picked, bytes);
+  const names = await f.store.stageDelivery(personal, [picked]);
+  assert.equal(f.calls.length, 0);
+  await assert.rejects(f.store.deliver(personal, "Report", names, async () => { throw Error("must not post"); }, true), /先完成文件上传/);
+  const hash = createHash("sha256").update(bytes).digest("hex");
+  await f.store.archive(personal, { requestId: "personal_archive_12345", collectionId: "collection_personal", collectionName: "Personal delivery", scope: "task_scoped", expectedCollectionVersion: 1, names }, async () => {}, async () => ({ id: "file_personal", version: 1, sha256: hash, extraction: "original_only" }));
+  const calls = []; let lost = true;
+  const post = async (url, body, key) => { calls.push({ url, body, key }); if (lost) { lost = false; throw Error("response lost"); } return { id: "personal_receipt" }; };
+  await assert.rejects(f.store.deliver(personal, "Report", names, post, true), /response lost/);
+  await f.restart().deliver(personal, "Report", names, post, true);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].url, "/api/v1/work/tasks/personal_file_synthetic/result");
+  assert.equal(calls[0].key, calls[1].key);
+  assert.deepEqual(calls[0].body, calls[1].body);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0].body.sources)), [{ kind: "note", locator: `research-library:file_personal:v1:${hash}`, label: "report.pptx" }]);
+});

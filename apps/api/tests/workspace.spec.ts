@@ -3,7 +3,7 @@ import {mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {afterEach,describe,it,expect} from 'vitest'
-import {routes,type RouteName,AgentTurn} from '@research-agent-platform/contracts'
+import {routes,type RouteName,AgentTurn,PersonalWorkTask,WorkResult,WorkbenchCard} from '@research-agent-platform/contracts'
 import {readConfig} from '../src/config.js'
 import {migrate,openDatabase} from '../src/database.js'
 import {createServer} from '../src/server.js'
@@ -20,7 +20,7 @@ async function setup(){
  const root=process.env.WORKSPACE_EVIDENCE_ROOT??tmpdir();mkdirSync(root,{recursive:true});const dir=mkdtempSync(join(root,'workspace-'));clean.push(()=>rmSync(dir,{recursive:true,force:true}))
  const key=join(dir,'key');writeFileSync(key,randomBytes(32).toString('hex'),{mode:0o600});const config=readConfig({NODE_ENV:'test',DATABASE_PATH:join(dir,'db.sqlite'),BLOB_ROOT:join(dir,'blobs'),APP_ORIGIN:'http://127.0.0.1:4493',B3_AI_ENABLED:'1',LAB_CREDENTIAL_KEY_FILE:key});mkdirSync(config.blobRoot);const db=openDatabase(config.databasePath,true);clean.push(()=>db.close());migrate(db)
  let app=createServer(config),url=await app.listen({host:'127.0.0.1',port:0});clean.push(()=>app.close());const people:{id:string;cookie:string;csrf:string;username:string}[]=[]
- const call=async(name:RouteName,body:unknown=null,params:Record<string,string>={},actor=0,query='',key=randomUUID())=>{const route=routes[name],res=await fetch(url+route.path.replace(/\{(\w+)\}/g,(_,k:string)=>params[k]!)+query,{method:route.method,headers:{origin:config.origin,'content-type':'application/json','idempotency-key':key,...(people[actor]?{cookie:people[actor].cookie,'x-csrf-token':people[actor].csrf}:{})},...(route.method==='GET'?{}:{body:JSON.stringify(body)})}),text=await res.text();return {status:res.status,text,value:JSON.parse(text),cookie:res.headers.get('set-cookie')?.split(';')[0]??''}}
+ const call=async(name:RouteName,body:unknown=null,params:Record<string,string>={},actor=0,query='',key=randomUUID(),modern=true)=>{const route=routes[name],res=await fetch(url+route.path.replace(/\{(\w+)\}/g,(_,k:string)=>params[k]!)+query,{method:route.method,headers:{origin:config.origin,'content-type':'application/json','idempotency-key':key,...(modern?{'x-acceptcat-task-files':'files-v1'}:{}),...(people[actor]?{cookie:people[actor].cookie,'x-csrf-token':people[actor].csrf}:{})},...(route.method==='GET'?{}:{body:JSON.stringify(body)})}),text=await res.text();return {status:res.status,text,value:name==='researchFileContent'?text:JSON.parse(text),cookie:res.headers.get('set-cookie')?.split(';')[0]??''}}
  const ok=async(name:RouteName,body:unknown=null,params:Record<string,string>={},actor=0,query='',key=randomUUID())=>{const res=await call(name,body,params,actor,query,key);expect(res.status,res.text).toBeLessThan(300);return res.value.data}
  for(const actor of [0,1,2]){const username=`workspace_${actor}_${randomUUID().slice(0,8)}`,password='12345678';await ok('register',{username,password,displayName:`真实HTTP测试者${actor}`},{},actor);const login=await call('login',{username,password},{},actor);people[actor]={id:login.value.data.id,cookie:login.cookie,csrf:'',username};people[actor]!.csrf=(await ok('session',null,{},actor)).csrfToken;await ok('createPersonalModel',{name:'合成模型',provider:'deepseek',model:'deepseek-flash',enabled:true,apiKey:`synthetic-person-${actor}`},{},actor)}
  const own=async(actor=0)=>ok('personalConversation',{}, {},actor)
@@ -135,9 +135,75 @@ describe('social workspace actual HTTP/SQLite; model and IM transport deliberate
   const turn=await s.ok('chatTurn',null,{id:run.turnId});expect(turn).toMatchObject({status:'cancelled',outputMessageId:null,usage:{inputTokens:80,outputTokens:90}});expect((await s.ok('personalWorkTask',null,{id:task.id})).result).toBeNull();expect(Number(s.db.prepare("SELECT count(*) n FROM chat_messages WHERE json_extract(document,'$.origin')='model'").get()!.n)).toBe(0)
   expect(active.conversationId).toBeTruthy()
  })
+
+ it('submits downloadable personal files through existing originals, checks exact versions, and preserves released strict readers',async()=>{
+  const s=await setup(),colleague=await s.human(1);await s.accept(colleague.id)
+  const legacyResult=WorkResult.omit({sources:true,reviewComment:true,changesRequested:true}),legacyTask=PersonalWorkTask.omit({fileDeliverySupported:true}).extend({result:legacyResult.nullable()}),legacyCard=WorkbenchCard.extend({result:legacyResult.nullable()})
+  const old=async(name:RouteName,body:unknown=null,params:Record<string,string>={},key=randomUUID())=>{const response=await s.call(name,body,params,0,'',key,false);expect(response.status,response.text).toBeLessThan(300);return response.value.data}
+  // This durable task was created with the released response shape before opting in.
+  let task=legacyTask.parse(await old('createPersonalWorkTask',{title:'Existing personal files',goal:'Deliver a synthetic Office original',contactIds:[colleague.id]}))
+  task=legacyTask.parse(await old('activatePersonalWorkTask',{expectedVersion:task.version},{id:task.id}))
+  expect((await s.ok('personalWorkTask',null,{id:task.id})).fileDeliverySupported).toBe(true)
+  const collection=await s.ok('createResearchCollection',{name:'Personal task delivery',scope:'task_scoped',taskIds:[task.id]})
+  const original=Buffer.from('synthetic Office original bytes'),sha256=createHash('sha256').update(original).digest('hex')
+  const file=await s.ok('importResearchFile',{expectedCollectionVersion:collection.version,filename:'report.pptx',mediaType:'application/vnd.openxmlformats-officedocument.presentationml.presentation',contentBase64:original.toString('base64')},{id:collection.id})
+  expect((await s.call('researchFile',null,{id:file.id},1)).status).toBe(404)
+  task=await s.ok('decidePersonalWorkTask',{expectedVersion:task.version,decision:'accept'},{id:task.id},1)
+  expect((await s.ok('researchFile',null,{id:file.id},1)).file.sha256).toBe(sha256)
+  expect((await s.call('researchFileContent',null,{id:file.id},1,'?version=1')).text).toBe(original.toString())
+  const source={kind:'note',locator:`research-library:${file.id}:v1:${sha256}`,label:'report.pptx'},submit={expectedVersion:task.version,text:'Submitted report.pptx',sources:[source]},key=randomUUID()
+  expect((await s.call('submitPersonalWorkResult',{...submit,sources:[{...source,locator:`research-library:${file.id}:v1:${'0'.repeat(64)}`}]},{id:task.id})).status).toBe(409)
+  let result=await s.ok('submitPersonalWorkResult',submit,{id:task.id},0,'',key)
+  expect(result.result.sources).toEqual([source])
+  expect((await s.call('submitPersonalWorkResult',{...submit,text:'Stale replacement'},{id:task.id})).status).toBe(409)
+  legacyTask.parse(await old('submitPersonalWorkResult',submit,{id:task.id},key))
+  legacyTask.parse(await old('personalWorkTask',null,{id:task.id}))
+  for(const card of await old('workbench'))legacyCard.parse(card)
+  expect((await s.call('reviewPersonalWorkResult',{expectedVersion:result.version,messageId:'wrong_result',decision:'accept'},{id:task.id})).status).toBe(409)
+  expect((await s.call('reviewPersonalWorkResult',{expectedVersion:result.version,messageId:result.result.messageId,decision:'accept'},{id:task.id},1)).status).toBe(403)
+  const returnedMessageId=result.result.messageId
+  result=await s.ok('reviewPersonalWorkResult',{expectedVersion:result.version,messageId:returnedMessageId,decision:'request_changes',comment:'Revise slide four and show the sample size'},{id:task.id})
+  expect(result).toMatchObject({status:'ready',result:{messageId:returnedMessageId,changesRequested:true,reviewComment:'Revise slide four and show the sample size',sources:[source]}})
+  expect(result.allowedActions).toContain('submit');expect(result.allowedActions).not.toContain('review')
+  expect((await s.call('reviewPersonalWorkResult',{expectedVersion:result.version,messageId:returnedMessageId,decision:'accept'},{id:task.id})).value.error.code).toBe('INVALID_STATE')
+  legacyTask.parse(await old('personalWorkTask',null,{id:task.id}));for(const card of await old('workbench'))legacyCard.parse(card)
+  // Recover the previously shipped JSON shape only while no new work exists.
+  const legacyDocument=JSON.parse(String(s.db.prepare('SELECT document FROM personal_work_tasks WHERE id=?').get(task.id)!.document));legacyDocument.resultMessageId=null;delete legacyDocument.resultReview.decision
+  s.db.prepare('UPDATE personal_work_tasks SET document=? WHERE id=?').run(JSON.stringify(legacyDocument),task.id)
+  await s.restart();expect((await s.ok('personalWorkTask',null,{id:task.id},1)).result).toMatchObject({changesRequested:true,sources:[source],reviewComment:'Revise slide four and show the sample size'})
+  const card=(await s.ok('workbench')).find((item:{taskId:string})=>item.taskId===task.id);expect(card.progress.label).toBe('待修改');expect(card.allowedActions).not.toContain('review')
+  result=await s.ok('submitPersonalWorkResult',{expectedVersion:result.version,text:'Revised report.pptx',sources:[source]},{id:task.id})
+  expect(result.result).toMatchObject({changesRequested:false,reviewComment:null,sources:[source]});expect(result.result.messageId).not.toBe(returnedMessageId)
+  expect(result.allowedActions).toContain('review')
+  expect((await s.call('reviewPersonalWorkResult',{expectedVersion:result.version,messageId:returnedMessageId,decision:'accept'},{id:task.id})).value.error.code).toBe('VERSION_CONFLICT')
+  result=await s.ok('reviewPersonalWorkResult',{expectedVersion:result.version,messageId:result.result.messageId,decision:'accept',comment:'Verified the original file'},{id:task.id})
+  expect(result.result.reviewComment).toBe('Verified the original file')
+  legacyTask.parse(await old('personalWorkTask',null,{id:task.id}));for(const card of await old('workbench'))legacyCard.parse(card)
+  await s.restart();expect((await s.ok('personalWorkTask',null,{id:task.id},1)).result.sources).toEqual([source])
+  const relationship=(await s.ok('chatContact',null,{id:colleague.id})).relationship;await s.ok('revokeContact',{expectedVersion:relationship.version},{id:colleague.id})
+  expect((await s.call('researchFile',null,{id:file.id},1)).status).toBe(404)
+  expect((await s.call('researchFileContent',null,{id:file.id},1,'?version=1')).status).toBe(404)
+ })
+
+ it('a new personal run cannot inherit a returned result or its feedback',async()=>{
+  const s=await setup(),agent=await s.ok('createPersonalAgent',profile)
+  let task=await s.ok('createPersonalWorkTask',{title:'Restart after feedback',goal:'Produce a revised result',contactIds:[agent.id],agentContactId:agent.id})
+  task=await s.ok('activatePersonalWorkTask',{expectedVersion:task.version},{id:task.id})
+  task=await s.ok('submitPersonalWorkResult',{expectedVersion:task.version,text:'Original manual result'},{id:task.id})
+  const oldMessage=task.result.messageId
+  task=await s.ok('reviewPersonalWorkResult',{expectedVersion:task.version,messageId:oldMessage,decision:'request_changes',comment:'Old feedback must stay with the original'},{id:task.id})
+  expect(task.result.changesRequested).toBe(true)
+  task=await s.ok('runPersonalWorkTask',{expectedVersion:task.version,agentContactId:agent.id},{id:task.id})
+  expect(task.result).toBeNull();expect(task.status).toBe('running')
+  await s.tick(async()=>model('New synthetic model result'))
+  task=await s.ok('personalWorkTask',null,{id:task.id})
+  expect(task.result).toMatchObject({summary:'New synthetic model result',changesRequested:false,reviewComment:null,sources:[]})
+  expect(task.result.messageId).not.toBe(oldMessage)
+  expect((await s.call('reviewPersonalWorkResult',{expectedVersion:task.version,messageId:oldMessage,decision:'accept'},{id:task.id})).status).toBe(409)
+ })
  it('020 adds only new tables/indexes and preserves all019 rows/checksums on repeated migration',async()=>{
-  const s=await setup();await s.own();s.db.exec('DROP VIEW IF EXISTS assistant_memory_index; DROP TABLE IF EXISTS assistant_memory_compression_jobs; DROP TABLE IF EXISTS assistant_memory_revisions; DROP TABLE IF EXISTS assistant_memories; DELETE FROM schema_migrations WHERE version>=37; DROP TABLE IF EXISTS assistant_feedback; DROP TABLE IF EXISTS group_dialogue_preferences; DELETE FROM schema_migrations WHERE version=36; DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DELETE FROM schema_migrations WHERE version>=20')
+  const s=await setup();await s.own();s.db.exec('DROP TABLE IF EXISTS assistant_project_events; DROP TABLE IF EXISTS assistant_project_commitments; DROP TABLE IF EXISTS assistant_projects; DELETE FROM schema_migrations WHERE version=40; DROP VIEW IF EXISTS assistant_memory_index; DROP TABLE IF EXISTS assistant_memory_compression_jobs; DROP TABLE IF EXISTS assistant_memory_revisions; DROP TABLE IF EXISTS assistant_memories; DELETE FROM schema_migrations WHERE version>=37; DROP TABLE IF EXISTS assistant_feedback; DROP TABLE IF EXISTS group_dialogue_preferences; DELETE FROM schema_migrations WHERE version=36; DROP TABLE IF EXISTS group_notices; DROP TABLE IF EXISTS group_governance_events; DROP TABLE IF EXISTS group_retired_agents; DELETE FROM schema_migrations WHERE version=35; DROP TABLE IF EXISTS personal_work_rule_revisions; DROP TABLE IF EXISTS personal_work_rules; DELETE FROM schema_migrations WHERE version=34; DROP TABLE IF EXISTS team_library_repositories; DELETE FROM schema_migrations WHERE version=33; DROP TABLE IF EXISTS library_index_entries; DELETE FROM schema_migrations WHERE version=32; DROP TABLE task_handoffs; DELETE FROM schema_migrations WHERE version=31; DROP TABLE team_work; DROP TABLE work_executions; DROP TABLE work_devices; DELETE FROM schema_migrations WHERE version=30; DROP TABLE work_context_revisions; DROP TABLE work_context_records; DELETE FROM schema_migrations WHERE version=29; DROP TABLE chat_message_retractions; DROP TABLE chat_message_relations; DELETE FROM schema_migrations WHERE version=28; DROP TABLE deleted_personal_agents; DROP TABLE peer_library_signals; DROP TABLE peer_library_requests; DROP TABLE peer_library_devices; DROP TABLE chat_turn_lab_contexts; DROP TABLE research_collection_labs; DROP TABLE lab_member_invitations; DROP TABLE member_lab_contexts; DROP VIEW effective_lab_memberships; DROP TABLE lab_memberships; DROP TABLE feishu_library_sources; DROP TABLE feishu_previews; DROP TABLE feishu_connections; DROP TABLE feishu_oauth_states; DROP TABLE research_agent_bindings; DROP TABLE research_file_pages; DROP TABLE research_file_versions; DROP TABLE research_files; DROP TABLE research_collections; DROP TABLE installed_skill_uses; DROP TABLE installed_skill_versions; DROP TABLE installed_skills; DROP TABLE social_groups; DROP TABLE personal_work_participants; DROP TABLE personal_work_tasks; DROP TABLE capability_publications; DELETE FROM schema_migrations WHERE version>=20')
   const tables=s.db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(r=>String(r.name)),hashes=()=>Object.fromEntries(tables.map(t=>[t,createHash('sha256').update(JSON.stringify(s.db.prepare(`SELECT * FROM ${t} ${t==='schema_migrations'?'WHERE version<=19':''} ORDER BY rowid`).all())).digest('hex')]))
-  const before=hashes();migrate(s.db);migrate(s.db);expect(hashes()).toEqual(before);expect(s.db.prepare('SELECT max(version) v FROM schema_migrations').get()!.v).toBe(39);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
+  const before=hashes();migrate(s.db);migrate(s.db);expect(hashes()).toEqual(before);expect(s.db.prepare('SELECT max(version) v FROM schema_migrations').get()!.v).toBe(40);expect(s.db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
  })
 })

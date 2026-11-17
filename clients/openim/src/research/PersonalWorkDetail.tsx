@@ -8,8 +8,8 @@ import { usePersonalOperation } from "./usePersonalOperation";
 import { useWorkspaceConversation, workspaceApi } from "./workspace-api";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 
-import { workspaceStatusLabel, workspaceMemberLabel } from './workspace-labels';
-export { workspaceStatusLabel, workspaceMemberLabel } from './workspace-labels';
+import { workspaceStatusLabel, workspaceMemberLabel } from "./workspace-labels";
+export { workspaceStatusLabel, workspaceMemberLabel } from "./workspace-labels";
 
 export function PersonalWorkDetail({
   taskId,
@@ -119,7 +119,9 @@ export function PersonalWorkDetail({
           <span className="workspace-eyebrow">个人协作任务</span>
           <h2>{task.title}</h2>
           <span className="workspace-status">
-            {workspaceStatusLabel[task.status] || "查看当前状态"}
+            {task.result?.changesRequested
+              ? "待修改"
+              : workspaceStatusLabel[task.status] || "查看当前状态"}
           </span>
         </header>
       )}
@@ -155,7 +157,13 @@ export function PersonalWorkDetail({
       </div>
       {task.result && !embedded && (
         <section className="workspace-result">
-          <h3>{task.result.accepted ? "已验收结果" : "待核对结果"}</h3>
+          <h3>
+            {task.result.changesRequested
+              ? "已退回，待修改"
+              : task.result.accepted
+              ? "已验收结果"
+              : "待核对结果"}
+          </h3>
           <SafeMessageMarkdown text={task.result.summary} />
         </section>
       )}
@@ -289,81 +297,85 @@ export function PersonalWorkDetail({
                 </Button>
               </section>
             )}
-            {allowed("submit") && (!embedded || !window.electronAPI?.localDsh?.taskStageDelivery) && (
-              <section>
-                <h3>分享这一版成果</h3>
-                <Input.TextArea
-                  aria-label="任务结果"
-                  placeholder="说说做了什么、得到什么结果，还有哪里需要讨论。"
-                  rows={3}
-                  maxLength={8000}
-                  value={result}
-                  disabled={busy}
-                  onChange={(e) => setResult(e.target.value)}
-                />
-                <Button
-                  disabled={busy || !result.trim()}
-                  onClick={() =>
-                    void command(
-                      () =>
-                        researchApi("submitPersonalWorkResult", {
-                          params: { id: task.id },
-                          body: { expectedVersion: task.version, text: result },
-                        }),
-                      "结果已提交，等待验收。",
-                    )
-                  }
-                >
-                  提交结果
-                </Button>
-              </section>
-            )}
-            {allowed("review") && task.result?.messageId && (
-              <section>
-                <h3>核对当前结果</h3>
-                <Button
-                  disabled={busy}
-                  type="primary"
-                  onClick={() =>
-                    confirm(
-                      "接受当前结果？",
-                      "这会将上方这一版结果标记为已验收，任务随之完成。",
-                      () =>
-                        researchApi("reviewPersonalWorkResult", {
-                          params: { id: task.id },
-                          body: {
-                            expectedVersion: task.version,
-                            messageId: task.result!.messageId!,
-                            decision: "accept",
-                          },
-                        }),
-                      "当前结果已验收，任务已完成。",
-                    )
-                  }
-                >
-                  确认验收
-                </Button>
-                <Button
-                  disabled={busy}
-                  onClick={() =>
-                    void command(
-                      () =>
-                        researchApi("reviewPersonalWorkResult", {
-                          params: { id: task.id },
-                          body: {
-                            expectedVersion: task.version,
-                            messageId: task.result!.messageId!,
-                            decision: "request_changes",
-                          },
-                        }),
-                      "已退回修改，可以在任务聊天里说明具体建议。",
-                    )
-                  }
-                >
-                  要求修改
-                </Button>
-              </section>
-            )}
+            {allowed("submit") &&
+              (!embedded || !window.electronAPI?.localDsh?.taskStageDelivery) && (
+                <section>
+                  <h3>分享这一版成果</h3>
+                  <Input.TextArea
+                    aria-label="任务结果"
+                    placeholder="说说做了什么、得到什么结果，还有哪里需要讨论。"
+                    rows={3}
+                    maxLength={8000}
+                    value={result}
+                    disabled={busy}
+                    onChange={(e) => setResult(e.target.value)}
+                  />
+                  <Button
+                    disabled={busy || !result.trim()}
+                    onClick={() =>
+                      void command(
+                        () =>
+                          researchApi("submitPersonalWorkResult", {
+                            params: { id: task.id },
+                            body: { expectedVersion: task.version, text: result },
+                          }),
+                        "结果已提交，等待验收。",
+                      )
+                    }
+                  >
+                    提交结果
+                  </Button>
+                </section>
+              )}
+            {!embedded &&
+              allowed("review") &&
+              !task.result?.changesRequested &&
+              task.result?.messageId && (
+                <section>
+                  <h3>核对当前结果</h3>
+                  <Button
+                    disabled={busy}
+                    type="primary"
+                    onClick={() =>
+                      confirm(
+                        "接受当前结果？",
+                        "这会将上方这一版结果标记为已验收，任务随之完成。",
+                        () =>
+                          researchApi("reviewPersonalWorkResult", {
+                            params: { id: task.id },
+                            body: {
+                              expectedVersion: task.version,
+                              messageId: task.result!.messageId!,
+                              decision: "accept",
+                            },
+                          }),
+                        "当前结果已验收，任务已完成。",
+                      )
+                    }
+                  >
+                    确认验收
+                  </Button>
+                  <Button
+                    disabled={busy}
+                    onClick={() =>
+                      void command(
+                        () =>
+                          researchApi("reviewPersonalWorkResult", {
+                            params: { id: task.id },
+                            body: {
+                              expectedVersion: task.version,
+                              messageId: task.result!.messageId!,
+                              decision: "request_changes",
+                            },
+                          }),
+                        "已退回修改，可以在任务聊天里说明具体建议。",
+                      )
+                    }
+                  >
+                    要求修改
+                  </Button>
+                </section>
+              )}
             {allowed("invite") && (
               <section>
                 <h3>邀请其他联系人</h3>

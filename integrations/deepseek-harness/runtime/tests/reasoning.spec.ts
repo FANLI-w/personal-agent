@@ -10,10 +10,12 @@ afterEach(async () => { for (const fn of cleanup.splice(0).reverse()) await fn()
 
 describe('pinned official Messages adapter: synthetic reasoning policy and output limits', () => {
   it.each([
-    { name: 'provider default stays enabled', off: false, stop: 'end_turn', visible: '合成完整回复', failure: null },
-    { name: 'explicit off sends thinking disabled', off: true, stop: 'end_turn', visible: '合成完整回复', failure: null },
-    { name: 'reasoning-only truncation is not a reply', off: false, stop: 'max_tokens', visible: '', failure: 'OUTPUT_LIMIT' },
-    { name: 'visible but incomplete truncation is not a reply', off: true, stop: 'max_tokens', visible: '合成但尚未完成', failure: 'OUTPUT_LIMIT' },
+    { name: 'provider default stays enabled', off: false, stop: 'end_turn', visible: '合成完整回复', failure: null, maxTokens:801,inputTokens:840 },
+    { name: 'explicit off sends thinking disabled', off: true, stop: 'end_turn', visible: '合成完整回复', failure: null, maxTokens:801,inputTokens:840 },
+    { name: 'reasoning-only truncation is not a reply', off: false, stop: 'max_tokens', visible: '', failure: 'OUTPUT_LIMIT', maxTokens:801,inputTokens:840 },
+    { name: 'visible but incomplete truncation is not a reply', off: true, stop: 'max_tokens', visible: '合成但尚未完成', failure: 'OUTPUT_LIMIT', maxTokens:801,inputTokens:840 },
+    { name: 'deployed project failure profile exhausts4096 thinking tokens without visible output', off:false,stop:'max_tokens',visible:'',failure:'OUTPUT_LIMIT',maxTokens:4096,inputTokens:890 },
+    { name: 'bounded4096 project policy permits a complete visible reply with thinking disabled', off:true,stop:'end_turn',visible:'实际可核对的合成稿件。',failure:null,maxTokens:4096,inputTokens:890 },
   ])('$name', async fixture => {
     const home = mkdtempSync(join(tmpdir(), 'rap-reasoning-')); cleanup.push(() => rmSync(home, { recursive: true, force: true }))
     const seen: { thinking: unknown; outputConfig: unknown; maxTokens: number; tools: unknown }[] = []
@@ -24,7 +26,7 @@ describe('pinned official Messages adapter: synthetic reasoning policy and outpu
         seen.push({ thinking: body.thinking, outputConfig: body.output_config, maxTokens: body.max_tokens, tools: body.tools })
         const blockType = fixture.visible ? 'text' : 'thinking'
         const events = [
-          { type: 'message_start', message: { usage: { input_tokens: 840, output_tokens: 0 } } },
+          { type: 'message_start', message: { usage: { input_tokens: fixture.inputTokens, output_tokens: 0 } } },
           { type: 'content_block_start', index: 0, content_block: { type: blockType, [blockType]: '' } },
           { type: 'content_block_delta', index: 0, delta: { type: `${blockType}_delta`, [blockType]: fixture.visible || 'SYNTHETIC_REASONING_ONLY' } },
           { type: 'content_block_stop', index: 0 },
@@ -44,10 +46,10 @@ describe('pinned official Messages adapter: synthetic reasoning policy and outpu
     cleanup.push(() => { if (child.exitCode === null) child.kill() })
     let output = ''; child.stdout.on('data', chunk => { output += String(chunk) }); child.stderr.resume()
     const ended = new Promise<number | null>((resolve, reject) => { child.once('error', reject); child.once('exit', resolve) })
-    child.stdin.end(JSON.stringify({ system: 'Synthetic fixture only.', prompt: 'No live credentials.', model: 'deepseek-flash', maxTokens: 801, timeoutMs: 3000, ...(fixture.off ? { reasoningEffort: 'off' } : {}) }))
+    child.stdin.end(JSON.stringify({ system: 'Synthetic fixture only.', prompt: 'No live credentials.', model: 'deepseek-flash', maxTokens: fixture.maxTokens, timeoutMs: 3000, ...(fixture.off ? { reasoningEffort: 'off' } : {}) }))
     expect(await ended).toBe(0)
     const result = JSON.parse(output)
-    expect(seen).toEqual([{ thinking: { type: fixture.off ? 'disabled' : 'enabled' }, outputConfig: fixture.off ? undefined : { effort: 'high' }, maxTokens: 801, tools: [] }])
-    expect(result).toMatchObject({ text: fixture.failure ? '' : fixture.visible, failure: fixture.failure, finishReason: fixture.failure ? 'max-tokens' : 'stop', inputTokens: 840, outputTokens: fixture.failure ? 801 : 100 })
+    expect(seen).toEqual([{ thinking: { type: fixture.off ? 'disabled' : 'enabled' }, outputConfig: fixture.off ? undefined : { effort: 'high' }, maxTokens: fixture.maxTokens, tools: [] }])
+    expect(result).toMatchObject({ text: fixture.failure ? '' : fixture.visible, failure: fixture.failure, finishReason: fixture.failure ? 'max-tokens' : 'stop', inputTokens: fixture.inputTokens, outputTokens: fixture.failure ? fixture.maxTokens : 100 })
   }, 10000)
 })

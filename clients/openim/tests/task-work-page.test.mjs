@@ -68,17 +68,19 @@ test("rules are summarised instead of asking for more input", async () => {
 
 // Execute the actual work page against returned service snapshots. Transport and
 // the React host are controlled; no account data or desktop IPC is touched.
-async function renderWorkPage({ kind = "research", status = "completed", deliveries = [], result } = {}) {
+async function renderWorkPage({ kind = "research", status = "completed", deliveries = [], result, localState, allowedActions = [] } = {}) {
   const ts = (await import("typescript")).default;
   const vm = await import("node:vm");
   const source = await read("../src/research/TaskWorkPage.tsx");
-  const task = { id: "synthetic_task", title: "Synthetic report", goal: "Compare the evidence", acceptanceCriteria: "Show source limitations", version: 3, status, allowedActions: [], ...(kind === "personal" ? { result } : {}) };
+  const task = { id: "synthetic_task", title: "Synthetic report", goal: "Compare the evidence", acceptanceCriteria: "Show source limitations", version: 3, status, allowedActions, ...(kind === "personal" ? { result } : {}) };
   const jsx = (type, props) => typeof type === "function" ? type(props) : { type, props };
+  let hook = 0;
   const dependencies = {
-    react: { useState: value => [value, () => {}], useRef: value => ({ current: value }), useEffect() {} },
+    react: { useState: value => [hook++ === 1 ? localState : value, () => {}], useRef: value => ({ current: value }), useEffect() {} },
     "react/jsx-runtime": { jsx, jsxs: jsx, Fragment: "fragment" },
     "react-router-dom": { useNavigate: () => () => {}, Link: "Link" },
     antd: { Alert: "Alert", Button: "Button", Checkbox: "Checkbox", Input: { TextArea: "TextArea" }, Select: "Select" },
+    "./task-delivery-command": { deliveryFilename: name => name.split(/[\\/]/).at(-1), deliveryDisplaySummary: summary => summary.replace(/delivery-[a-f0-9]{64}[\\/]/g, "") },
     "./api": { researchApi: async () => { throw Error("render must not write"); } },
     "./useResearchRead": { useResearchRead: (_read, key) => ({ data: key.startsWith("work-page:") ? { task, artifacts: [], deliverables: deliveries } : undefined, refresh: async () => {} }) },
     "./usePersonalOperation": { usePersonalOperation: () => ({ scope: "synthetic", capture: () => ({ isCurrent: () => true }) }) },
@@ -218,4 +220,32 @@ test("status reads require the exact task and kind on either supported route", a
   assert.equal(match("#/workbench?task=synthetic_task&taskKind=personal", target), false);
   assert.equal(match("#/workbench?task=another_task&taskKind=research", target), false);
   assert.equal(match("#/workbench?view=team", target), false);
+});
+
+test("a terminal service result takes priority over an earlier local execution receipt", async () => {
+  const localState = { phase: "finished", files: [], events: [], binding: { directory: "synthetic_folder", sources: [] } };
+  const tree = await renderWorkPage({ deliveries: [delivery(1, "accepted")], localState });
+  const text = renderText(tree);
+  assert.match(text, /已验收/);
+  assert.doesNotMatch(text, /本轮已结束.*待核对成果/);
+  assert.equal(nodes(tree).some(node => node.type === "TaskExecutionStatus"), false);
+  assert.equal(nodes(tree).some(node => node.type === "NativeWorkbenchTaskButton"), false);
+});
+test("review grants place exactly one control by the latest result for both task types", async () => {
+  const team = await renderWorkPage({ status: "in_review", deliveries: [delivery(1, "changes_requested"), delivery(2, "pending")], allowedActions: ["review"] });
+  const reviews = nodes(team).filter(node => node.type === "TaskResultReview");
+  assert.equal(reviews.length, 1); assert.equal(reviews[0].props.delivery.id, "delivery_2");
+  const personal = await renderWorkPage({ kind: "personal", status: "awaiting_review", result: { messageId: "personal_message", accepted: false, summary: "Result" }, allowedActions: ["review"] });
+  assert.equal(nodes(personal).filter(node => node.type === "TaskResultReview").length, 1);
+  const observer = await renderWorkPage({ status: "in_review", deliveries: [delivery(1, "pending")] });
+  assert.equal(nodes(observer).some(node => node.type === "TaskResultReview"), false);
+});
+
+test("a returned personal result retains files and feedback while asking for a fresh submission", async () => {
+  const source = { locator: "research-library:file:v1:" + "a".repeat(64), label: "report.pptx" };
+  const tree = await renderWorkPage({ kind: "personal", status: "ready", result: { messageId: "returned_message", summary: "Original report", accepted: false, changesRequested: true, reviewComment: "Revise slide four", sources: [source] }, allowedActions: ["submit", "review"] });
+  const text = renderText(tree);
+  assert.match(text, /待修改/); assert.match(text, /Original report/); assert.match(text, /Revise slide four/);
+  assert.equal(nodes(tree).some(node => node.type === "TaskResultReview"), false);
+  assert.equal(nodes(tree).find(node => node.type === "TaskDeliveryDownload").props.locator, source.locator);
 });

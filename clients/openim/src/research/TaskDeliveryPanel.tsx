@@ -25,6 +25,7 @@ export function TaskDeliveryPanel({
   retry,
   currentStatus = "",
   canSubmit = true,
+  filesSupported = true,
 }: {
   target: TaskTarget;
   title: string;
@@ -37,10 +38,12 @@ export function TaskDeliveryPanel({
   retry: () => Promise<void>;
   currentStatus?: string;
   canSubmit?: boolean;
+  filesSupported?: boolean;
 }) {
-  const filesAllowed = taskDeliveryMode(target.kind) === "files";
+  const filesAllowed = filesSupported && taskDeliveryMode(target.kind) === "files";
   const [over, setOver] = useState(false),
     [assistant, setAssistant] = useState(false);
+  const [resultText, setResultText] = useState("");
   const [text, setText] = useState(""),
     [selection, setSelection] = useState<string[]>([]);
   const [attached, setAttached] = useState<string[]>([]);
@@ -117,6 +120,12 @@ export function TaskDeliveryPanel({
           }
         />
       )}
+      {!filesSupported && (
+        <Alert
+          type="info"
+          message="当前后台尚未支持个人任务文件交付，请升级配套后台；仍可提交文字成果。"
+        />
+      )}
       <div className="task-delivery-header">
         <div>
           <h3>交付成果</h3>
@@ -137,32 +146,6 @@ export function TaskDeliveryPanel({
           </Button>
         )}
       </div>
-      {!filesAllowed && (!submitted || canSubmit) && (
-        <div className="task-delivery-text">
-          <Input.TextArea
-            aria-label="提交文字成果"
-            value={text}
-            rows={3}
-            maxLength={8000}
-            onChange={(event) => setText(event.target.value)}
-            placeholder="写下成果，或粘贴结果"
-            disabled={disabled || busy}
-          />
-          <Button
-            type="primary"
-            disabled={disabled || busy || !canSubmit || !text.trim()}
-            loading={busy}
-            onClick={() =>
-              void run(async () => {
-                await submit([], text.trim());
-                setText("");
-              })
-            }
-          >
-            {taskDeliveryAction(target.kind)}
-          </Button>
-        </div>
-      )}
       {filesAllowed && canSubmit && (
         <div
           className={"task-delivery-drop" + (over ? " is-over" : "")}
@@ -225,6 +208,32 @@ export function TaskDeliveryPanel({
           </Button>
         </details>
       )}
+      {target.kind === "personal" && (!submitted || canSubmit) && (
+        <div className="task-delivery-text">
+          <Input.TextArea
+            aria-label="提交文字成果"
+            value={resultText}
+            rows={3}
+            maxLength={8000}
+            onChange={(event) => setResultText(event.target.value)}
+            placeholder="写下成果，或粘贴结果"
+            disabled={disabled || busy}
+          />
+          <Button
+            type="primary"
+            disabled={disabled || busy || !canSubmit || !resultText.trim()}
+            loading={busy}
+            onClick={() =>
+              void run(async () => {
+                await submit([], resultText.trim());
+                setResultText("");
+              })
+            }
+          >
+            提交文字成果
+          </Button>
+        </div>
+      )}
       {assistant && canSubmit && (
         <div className="task-delivery-assistant">
           <Input.Search
@@ -279,7 +288,7 @@ export function TaskDeliveryPanel({
             ))}
         </div>
       )}
-      {target.kind === "research" && selection.length > 0 && canSubmit && (
+      {filesAllowed && selection.length > 0 && canSubmit && (
         <div className="task-delivery-confirm">
           <strong>提交到「{title}」</strong>
           {selection.map((name) => (
@@ -291,7 +300,6 @@ export function TaskDeliveryPanel({
             disabled={disabled || !canSubmit}
             onClick={() =>
               void run(async () => {
-                if (target.kind !== "research") return;
                 setBusyLabel("正在提交，等待回执…");
                 await submit(selection);
                 setSelection([]);

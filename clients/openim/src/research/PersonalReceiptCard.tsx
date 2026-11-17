@@ -28,17 +28,17 @@ function DelegateCard({ receipt }: { receipt: Extract<PersonalAssistantReceipt, 
   </div>;
 }
 
-function WorkTaskReceipt({ receipt }: { receipt: Extract<PersonalAssistantReceipt, { kind: "work_task" }> }) {
+export function WorkTaskReceipt({ taskId, poll = true }: { taskId: string; poll?: boolean }) {
   const navigate = useNavigate();
-  const read = useResearchRead(() => researchApi("personalWorkTask", { params: { id: receipt.taskId } }), `work-receipt:${receipt.taskId}`);
+  const read = useResearchRead(() => researchApi("personalWorkTask", { params: { id: taskId } }), `work-receipt:${taskId}`, true, { poll: poll ? undefined : false });
   const task = read.data?.data;
   const status = task && ({ proposed: "待你确认安排", ready: "等待成员参与", running: "正在处理", blocked: "需要处理的问题", awaiting_review: "结果已准备，待你确认", completed: "已验收完成", cancelled: "已结束" }[task.status]);
   return <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
     <strong>{task?.title || "协作任务安排"}</strong>
     <p className="text-xs text-gray-500">{read.error || status || "正在读取任务安排…"}</p>
     {task?.status === "proposed" && <p className="text-xs text-gray-500">查看目标和成员，确认后建立协作群。受邀成员自行决定是否参与。</p>}
-    <Button size="small" onClick={() => navigate(workbenchTaskPath(receipt.taskId))}>查看任务安排</Button>
-    {task && !task.summaryOnly && <NativeWorkbenchTaskButton target={{ taskId: receipt.taskId, kind: "personal" }} />}
+    <Button size="small" onClick={() => navigate(workbenchTaskPath(taskId))}>查看任务安排</Button>
+    {task && !task.summaryOnly && <NativeWorkbenchTaskButton target={{ taskId, kind: "personal" }} />}
   </div>;
 }
 
@@ -63,7 +63,7 @@ export function PersonalReceiptCard({ turn, compact = false }: { turn: AgentTurn
       {followup.followupId && <Button size="small" onClick={() => setPanel("followups")}>查看定时任务</Button>}
     </div>}
     {arrangement?.kind === "delegate" && <DelegateCard receipt={arrangement} />}
-    {arrangement?.kind === "work_task" && <WorkTaskReceipt receipt={arrangement} />}
+    {arrangement?.kind === "work_task" && <WorkTaskReceipt taskId={arrangement.taskId} />}
     {arrangement?.kind === "collaborate" && <p className="rounded-lg border p-3">已保存协作建议。请查看本条消息的协作建议并确认；成员加入、任务承接和执行仍需分别完成。</p>}
   </div>;
   return <>
