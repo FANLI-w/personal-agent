@@ -3234,11 +3234,9 @@ Windows x64 正式版 0.10.113 已发布。[发布说明](https://github.com/luo
 
 Windows x64 正式版 0.10.114 已发布。工作台页头显示大肥鱼头像和 deepchat，新会话按钮移至侧栏首行。[发布说明](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.114) · [PR #231](https://github.com/luoyan96/personal-agent/pull/231)。合并及构建提交 c96bc2a30087080b7c2efc603f1c883111155b15。初次 Windows 构建误将 DSH 页面 React 加载识别为主进程依赖，修复后四项 PR 检查通过。已从 NSIS 安装包解出并核对 137 个编译文件，核对头像、页头、问候和侧栏布局，验证包启动及自动更新元数据。四项公开附件均与本机 SHA-256 一致。安装包 SHA-256 为 f9da67dd846159b07353761a841ba601c74bff7218f44a3b816410bfc53383c0。本次只发布客户端。验证记录见 D:/deepseek-agent/.runtime/release-0.10.114/。
 
-<<<<<<< HEAD
 ## 2026-11-16 记忆框架文档对账
 
 只更新文档，不改代码、不部署。确认 main 为 ff4776c、契约 0.49、迁移 039、后台 0.49/039 已部署；`assistant_memories` 只承载助理笔记，本人偏好仍由 `personal_memories` 权威，会话/旧助理记忆仍由 `chat_memories` 权威。自动写入、候选确认、`assistant` 记忆权限和记忆进 `compose()` 未接线；`assistant_memories scope='personal'` 可写但注入不读，待确认无写入后收紧。旧表与旧会话按兼容期保留，删除条件另立。
-=======
 ## 2026-11-16 本地候选 0.10.115-preview.1
 
 基线为 ff4776c，分支 codex/preflight-client-repairs。私聊助理收文档时复用了同一个收件请求及幂等键。Windows 实机以现有账号向个人助理发送合成 Markdown 文件，提问未包含答案；真实回复正确返回“青瓷松针927”和“周五复核表2”。单条支持一个带文字的 PDF、TXT、Markdown 或 CSV，读取上限为 10 MiB。
@@ -3320,4 +3318,4 @@ PR #240 以 `90470000eaec02c52ddabc03d89d1d0c112dc412` 合入 main。新近入�
 PR #240 的 API 与 worker 已于北京时间 16:45:38.242–16:45:57.070 实际前滚至上述 main，约 18.8 秒。镜像摘要为 `sha256:2e5e651d42e5ac0debdf17250f900dc5a4b9d6ce4a312fc9fb2e9717e3c0e78d`，停写备份 SHA-256 为 `c04a6e972c0709b3a563c6a146dfeb6c0c87f50ffd9bf01ac8c73398a34fa77d`。数据库仍为 040 / 127 表，副本与线上检查保全全部旧记录和 11 份原件，重复迁移无变化；设置与其余六项服务未变。独立公网 ready 200、契约 0.50.0、匿名接口 401，Harness 为 `not_verified`。只读核对旧“丁”仍失败、原根任务一条、恢复子任务为零；本次没有重放该历史失败。生产与该核对分别留在同目录 `production-receipt.json`、`post-cutover-no-replay.json`。
 
 同一 Windows 0.10.116 EXE 的“戊”轮在北京时间 16:48:46 由本人一条委托开始，没有补充催办。只读 SQL 与屏幕共同核对：6 位专业助理准入，实际自动分给一位资料专业助理，执行与协调复核均成功；16:49:09 原聊天仅生成一份 `ready:1` 成果通知、401 字，SDK 发送一次，端到端 23.192 秒。日期型截止为 2026-11-27，不补具体时刻；成果卡仍等待本人验收。可见稿件正确区分前两轮各节省 4 分钟与第三轮仅有新流程 9 分钟、缺少旧流程比较基线，纠正了旧稿。此次入口首次模型调用已成功，恢复子任务为零，不能作为实际触发入口恢复的证明。截图与可见文字保存为同目录 `released-client-wu-draft.png`、`released-client-wu-visible.txt`，只读 SQL 核对未将消息或联系人 ID 写入仓库。同屏曾短暂并列显示停止 / 预算或同步卡片，但该项目 SQL 记录均成功；该提示的呈现保留为展示一致性限制，不归因于当前项目模型失败。
->>>>>>> upstream/main
+
