@@ -3319,3 +3319,6 @@ PR #240 的 API 与 worker 已于北京时间 16:45:38.242–16:45:57.070 实际
 
 同一 Windows 0.10.116 EXE 的“戊”轮在北京时间 16:48:46 由本人一条委托开始，没有补充催办。只读 SQL 与屏幕共同核对：6 位专业助理准入，实际自动分给一位资料专业助理，执行与协调复核均成功；16:49:09 原聊天仅生成一份 `ready:1` 成果通知、401 字，SDK 发送一次，端到端 23.192 秒。日期型截止为 2026-11-27，不补具体时刻；成果卡仍等待本人验收。可见稿件正确区分前两轮各节省 4 分钟与第三轮仅有新流程 9 分钟、缺少旧流程比较基线，纠正了旧稿。此次入口首次模型调用已成功，恢复子任务为零，不能作为实际触发入口恢复的证明。截图与可见文字保存为同目录 `released-client-wu-draft.png`、`released-client-wu-visible.txt`，只读 SQL 核对未将消息或联系人 ID 写入仓库。同屏曾短暂并列显示停止 / 预算或同步卡片，但该项目 SQL 记录均成功；该提示的呈现保留为展示一致性限制，不归因于当前项目模型失败。
 
+## 2026-11-18 · 话题记忆 v1 本地候选（未合并、未部署）
+
+`feat/personal-assistant-framework` 上完成个人助理话题记忆第一版：迁移 041 新增 `assistant_topics`、`assistant_topic_revisions`、`assistant_topic_curator_jobs`；契约升到 0.51.0 并加六个 `/me/assistant-topics` 路由；新增 handler、异步 curator worker 与活动话题注入；`MemoryPanel` 增加只读“话题”页签。话题按 owner 与 `personal_agent` 归属，不绑会话；同一助理只保留一个 `active` 话题，curator 新建话题时暂停旧话题。注入只取 `active`，不做关键词打分，相关判断交给主模型；`notes` 自由段本版不开放给 curator，`summary`/`title` 只在 body 至少两段实质变化时接受。测试补 `assistant-topic.spec.ts` 与 `topic-curator.spec.ts`。本地通过 `apps/api` 类型检查、contracts 快照与 `check-content`，并用合成模型冒烟覆盖六个路由、版本冲突、4KB 上限、curator 更新与注入；vitest 仍受沙盒限制未本地执行。未进 CI、未部署，线上契约 0.50 / 迁移 040 不变。
