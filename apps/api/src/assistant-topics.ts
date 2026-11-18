@@ -136,6 +136,19 @@ function mergeBody(current: AssistantTopicBody, patch: Partial<AssistantTopicBod
   })
 }
 
+/** Counts sections with substantive changes; obsolete and superseded entries do not count. */
+function changedSections(before: AssistantTopicBody, after: AssistantTopicBody) {
+  const active = (values: { status: string }[]) => values.filter(value => value.status !== 'obsolete' && value.status !== 'superseded')
+  let count = 0
+  if (before.context !== after.context) count += 1
+  if (JSON.stringify(active(before.decisions)) !== JSON.stringify(active(after.decisions))) count += 1
+  if (JSON.stringify(active(before.notes)) !== JSON.stringify(active(after.notes))) count += 1
+  if (JSON.stringify(before.openQuestions) !== JSON.stringify(after.openQuestions)) count += 1
+  if (JSON.stringify(before.next) !== JSON.stringify(after.next)) count += 1
+  if (JSON.stringify(before.constraints) !== JSON.stringify(after.constraints)) count += 1
+  return count
+}
+
 function mergeDecisions(current: AssistantTopicBody['decisions'], incoming: AssistantTopicBody['decisions']) {
   const merged = new Map(current.map(decision => [key(decision.text), { ...decision }]))
   for (const decision of incoming) {
@@ -213,8 +226,11 @@ export function applyTopicPatch(s: ChatService, patch: AssistantTopicPatch, subj
   const current = row(s, patch.topicId)
   if (current.state === 'closed') fail('INVALID_STATE')
   if (patch.baseVersion !== undefined && current.version !== patch.baseVersion) fail('VERSION_CONFLICT')
-  const body = mergeBody(bodyOf(current), patch.body ?? {})
-  return write(s, current, { title: patch.title, summary: patch.summary, body, origin: 'curator' })
+  const before = bodyOf(current), body = mergeBody(before, patch.body ?? {})
+  // A single-section edit keeps the old summary and title; two or more substantive
+  // section changes accept the model's rewrite. Owner edits are not gated.
+  const accept = changedSections(before, body) >= 2
+  return write(s, current, { title: accept ? patch.title : undefined, summary: accept ? patch.summary : undefined, body, origin: 'curator' })
 }
 
 export function ensureActiveTopic(s: ChatService, assistantId: string, title: string, summary: string, subject: ActorFacts) {
