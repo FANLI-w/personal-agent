@@ -251,6 +251,7 @@ export function gitRunner(directory: string): GitRun {
       const chunks: Buffer[] = [];
       let size = 0,
         failed = false;
+      let outputLimitError: Error | undefined;
       let diagnostic = "";
       const timer = setTimeout(() => {
         failed = true;
@@ -258,11 +259,15 @@ export function gitRunner(directory: string): GitRun {
         reject(Error("Git操作超时；已保留原资料版本，请稍后重试。"));
       }, 120000);
       child.stdout.on("data", (b) => {
+        if (failed || outputLimitError) return;
         size += b.length;
         if (size > (options.maxBytes ?? gitLibraryLimit)) {
-          failed = true;
+          // On Windows, the Git process can still hold the cache open after
+          // kill(). Reject on close so callers can safely reuse the cache.
+          outputLimitError = Error(
+            "此文件应通过共享原件服务取用，不直接放入Git正文。",
+          );
           child.kill();
-          reject(Error("此文件应通过共享原件服务取用，不直接放入Git正文。"));
         } else chunks.push(b);
       });
       // Git/helper diagnostics may contain credentials or URLs. Keep them out of UI/logs.
@@ -275,20 +280,21 @@ export function gitRunner(directory: string): GitRun {
         if (!failed) {
           failed = true;
           reject(
-            Error(
-              error.code === "ENOENT"
-                ? "未找到Git，请安装Git for Windows后重试。"
-                : "无法启动本机 Git，请检查安装及运行权限后重试。",
-            ),
+            outputLimitError ??
+              Error(
+                error.code === "ENOENT"
+                  ? "未找到Git，请安装Git for Windows后重试。"
+                  : "无法启动本机 Git，请检查安装及运行权限后重试。",
+              ),
           );
         }
       });
       child.on("close", (code) => {
         clearTimeout(timer);
-        if (!failed)
-          code === 0
-            ? resolve(Buffer.concat(chunks))
-            : reject(Error(gitFailureMessage(args, diagnostic)));
+        if (failed) return;
+        if (outputLimitError) reject(outputLimitError);
+        else if (code === 0) resolve(Buffer.concat(chunks));
+        else reject(Error(gitFailureMessage(args, diagnostic)));
       });
       child.stdin.on("error", () => {});
       child.stdin.end(options.input);
@@ -609,7 +615,7 @@ export class TeamLibraryStore {
           await this.run(
             [
               "-c",
-              "user.name=AcceptCat",
+              "user.name=DeepChat",
               "-c",
               "user.email=acceptcat@users.noreply.github.com",
               "commit-tree",
@@ -708,7 +714,7 @@ export class TeamLibraryStore {
           await this.run(
             [
               "-c",
-              "user.name=AcceptCat",
+              "user.name=DeepChat",
               "-c",
               "user.email=acceptcat@users.noreply.github.com",
               "commit-tree",

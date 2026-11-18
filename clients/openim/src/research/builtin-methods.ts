@@ -24,6 +24,6 @@ export function matchingBuiltinMethods(methods: readonly BuiltinMethod[], search
 export function builtinMethodDraft(method: BuiltinMethod): RequestFor<"installSkill">["body"] {
   return {
     package: structuredClone(method.package),
-    source: { kind: "copy", label: `AcceptCat 内置方法 · ${method.id}`, revision: method.digest },
+    source: { kind: "copy", label: `DeepChat 内置方法 · ${method.id}`, revision: method.digest },
   };
 }

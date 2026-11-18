@@ -294,7 +294,7 @@ export default function ResearchLogin() {
                   </>
                 )}
                 <Form.Item
-                  label="AcceptCat 号"
+                  label="DeepChat 号"
                   name="username"
                   rules={[authRule("username")]}
                   extra={registering ? "设置唯一号码，用于登录和添加好友。支持字母、数字、下划线和连字符，区分大小写。" : "填写注册时的用户名，用于登录和添加好友，区分大小写。"}
@@ -303,7 +303,7 @@ export default function ResearchLogin() {
                     autoComplete="username"
                     autoCapitalize="none"
                     spellCheck={false}
-                    placeholder={registering ? "设置你的 AcceptCat 号" : "请输入 AcceptCat 号"}
+                    placeholder={registering ? "设置你的 DeepChat 号" : "请输入 DeepChat 号"}
                   />
                 </Form.Item>
                 <Form.Item

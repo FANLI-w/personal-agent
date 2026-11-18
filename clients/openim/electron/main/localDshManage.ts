@@ -76,7 +76,7 @@ export function registerLocalDshBridge() {
       pageError = "";
       const next = await dshAccount(event);
       if (epoch !== generation) return;
-      if (!next.metadata.enabled) throw Error('请先在 AcceptCat「我的 → 模型设置」启用并选择默认模型，然后点击重试。');
+      if (!next.metadata.enabled) throw Error('请先在 DeepChat「我的 → 模型设置」启用并选择默认模型，然后点击重试。');
       if (!account || account.identity !== next.identity || account.lease !== next.lease || account.metadata.fingerprint !== next.metadata.fingerprint || runtime.state.phase !== 'running') {
         disposeView(); await relay?.close(); relay = undefined; account = undefined;
         await runtime.stop();
@@ -239,7 +239,7 @@ export function registerLocalDshBridge() {
     if (quitting || runtime.state.phase === "stopped") return;
     event.preventDefault();
     void stop().then(() => { quitting = true; app.quit(); }).catch(() => {
-      void dialog.showMessageBox({ type: "error", message: "本地任务进程尚未退出，请稍后再次退出 AcceptCat。" });
+      void dialog.showMessageBox({ type: "error", message: "本地任务进程尚未退出，请稍后再次退出 DeepChat。" });
     });
   });
 }

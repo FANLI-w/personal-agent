@@ -193,7 +193,7 @@ describe(
       const role = agentRoles.find(role => role.id === "patent-drafting")!;
       const agent = (await s.call("createPersonalAgent", role.profile)).value.data;
       const direct = (await s.call("createDirectConversation", { contactId: agent.id })).value.data;
-      const installed = await s.call("installSkill", { package: method.package, source: { kind: "copy", label: "AcceptCat 内置方法", revision: method.digest } });
+      const installed = await s.call("installSkill", { package: method.package, source: { kind: "copy", label: "DeepChat 内置方法", revision: method.digest } });
       expect(installed.status, JSON.stringify(installed.value)).toBe(201);
       let skill = installed.value.data;
       expect(skill.settings).toMatchObject({ listed: false, boundAgentIds: [], callMemberIds: [], sourceMemberIds: [] });

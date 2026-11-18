@@ -89,7 +89,7 @@ export async function archiveTaskFiles(options: {
           throw Error('待交文件已经变化，请重新选择后确认提交。');
         }
         const uploadId = randomUUID();
-        items.push({key:randomUUID(),body:{uploadId,expectedCollectionVersion:s.expectedCollectionVersion+items.length},large:{snapshot,begin:{uploadId,filename,mediaType:materialMediaType(name),byteLength:copied.size,sha256:copied.sha256,scope:s.scope,metadata:{note:`由 AcceptCat 任务 ${options.taskId} 明确选择归档；归档不代表任务已验收。`}}}});
+        items.push({key:randomUUID(),body:{uploadId,expectedCollectionVersion:s.expectedCollectionVersion+items.length},large:{snapshot,begin:{uploadId,filename,mediaType:materialMediaType(name),byteLength:copied.size,sha256:copied.sha256,scope:s.scope,metadata:{note:`由 DeepChat 任务 ${options.taskId} 明确选择归档；归档不代表任务已验收。`}}}});
         continue;
       }
       const bytes = await options.read(name);
@@ -98,7 +98,7 @@ export async function archiveTaskFiles(options: {
       items.push({ key: randomUUID(), body: {
         filename, mediaType: materialMediaType(name), contentBase64: bytes.toString('base64'),
         expectedCollectionVersion: s.expectedCollectionVersion + items.length,
-        metadata: { note: `由 AcceptCat 任务 ${options.taskId} 明确选择归档；归档不代表任务已验收。` },
+        metadata: { note: `由 DeepChat 任务 ${options.taskId} 明确选择归档；归档不代表任务已验收。` },
       } });
     }} catch(error) {for(const item of items)if(item.large)await unlink(path.join(options.root,item.large.snapshot)).catch(()=>{});throw error;}
     journal = { receipt: { ...s, status: 'pending', files: [] }, nextVersion: s.expectedCollectionVersion, items };

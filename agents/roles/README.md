@@ -1,4 +1,4 @@
-# AcceptCat 角色文件
+# DeepChat 角色文件
 
 所有默认 Agent 角色的唯一内容来源。研究方法仍放在 [agents/skills](../skills)，角色包不混入科研方法列表。
 

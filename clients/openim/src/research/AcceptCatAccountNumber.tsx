@@ -47,17 +47,17 @@ export function AcceptCatAccountNumber({
   return (
     <section
       className="acceptcat-account-number"
-      aria-label={isSelf ? "我的 AcceptCat 号" : "AcceptCat 号"}
+      aria-label={isSelf ? "我的 DeepChat 号" : "DeepChat 号"}
     >
       <div className="acceptcat-account-label">
-        {isSelf ? "我的 AcceptCat 号" : "AcceptCat 号"}
+        {isSelf ? "我的 DeepChat 号" : "DeepChat 号"}
       </div>
       {username ? (
         <>
           <div className="acceptcat-account-value">
             <Input
               ref={input}
-              aria-label={isSelf ? "我的 AcceptCat 号" : "AcceptCat 号"}
+              aria-label={isSelf ? "我的 DeepChat 号" : "DeepChat 号"}
               value={username}
               readOnly
               onFocus={(event) => event.target.select()}
@@ -66,7 +66,7 @@ export function AcceptCatAccountNumber({
               icon={<CopyOutlined />}
               loading={current === "copying"}
               onClick={() => void copy()}
-              aria-label={isSelf ? "复制我的 AcceptCat 号" : "复制 AcceptCat 号"}
+              aria-label={isSelf ? "复制我的 DeepChat 号" : "复制 DeepChat 号"}
             >
               {current === "copied" ? "已复制" : "复制"}
             </Button>
@@ -79,7 +79,7 @@ export function AcceptCatAccountNumber({
           </p>
           {current === "copied" && (
             <p role="status" className="acceptcat-account-feedback">
-              AcceptCat 号已复制
+              DeepChat 号已复制
             </p>
           )}
           {current === "manual" && (
@@ -90,7 +90,7 @@ export function AcceptCatAccountNumber({
         </>
       ) : (
         <p role="status" className="acceptcat-account-help">
-          AcceptCat 号暂未读取，请刷新资料后重试。
+          DeepChat 号暂未读取，请刷新资料后重试。
         </p>
       )}
     </section>

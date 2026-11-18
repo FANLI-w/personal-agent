@@ -25,7 +25,7 @@ if (!stable && !(allowPreview && preview))
       : "Stable semver required",
   );
 const directory = path.join(root, "release", "Base", version);
-const name = `AcceptCat_${version}.exe`;
+const name = `DeepChat_${version}.exe`;
 const bytes = readFileSync(path.join(directory, name));
 // GitHub uses prerelease releases, with latest.yml for this configured provider.
 const manifestName = "latest.yml";
@@ -62,6 +62,7 @@ need(
   feed.provider === "github" &&
     feed.owner === "luoyan96" &&
     feed.repo === "personal-agent" &&
+    feed.updaterCacheDirName === "research-wechat-openim-updater" &&
     !feed.private &&
     !feed.token,
   "Unexpected packaged feed or embedded credential",

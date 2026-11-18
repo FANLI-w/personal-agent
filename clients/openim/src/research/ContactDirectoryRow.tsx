@@ -131,7 +131,7 @@ export function ContactDirectoryRow({
           <p>
             {contact.profile.introduction ||
               (contact.identity.kind === "human" && contact.username
-                ? `AcceptCat 号：${contact.username}`
+                ? `DeepChat 号：${contact.username}`
                 : contact.profile.capabilityDescription)}
           </p>
         </div>

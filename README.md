@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/acceptcat-icon.png" width="104" height="104" alt="AcceptCat 的大肥鱼头像" />
+  <img src="docs/assets/acceptcat-icon.png" width="104" height="104" alt="DeepChat 的大肥鱼头像" />
 </p>
 
-<h1 align="center">AcceptCat</h1>
+<h1 align="center">DeepChat</h1>
 
 <p align="center"><strong>给课题组用的科研协作软件</strong></p>
 <p align="center">老师在群里交代的事，学生点开就能接着做。交上来的文件、老师的意见和下一版修改，都留在同一项任务里。</p>
@@ -21,7 +21,7 @@
 
 **小林点开邀请，就知道这周要交什么。** 老师把这条讨论安排成任务，小林从群里的邀请直接进入。周五交初稿、汇报只有十分钟、要比较哪两轮实验，都能回到原来的讨论核对。
 
-**准备汇报时，助理接得上前面的话。** 小林从任务打开 deepchat 工作台，问：“十分钟怎么安排？我最想讲清楚换条件前后的差别。”助理能接着这项任务的讨论，参考任务里选好的实验记录和组会模板。模板放在课题组的 GitHub 仓库里，组里换了新版，同步后就能选用。小林之前纠正过助理：“帮我列汇报提纲时，先讲结论，再讲过程。”这次允许使用的这条习惯也会跟过来。
+**准备汇报时，助理接得上前面的话。** 小林从任务打开 DeepChat 工作台，问：“十分钟怎么安排？我最想讲清楚换条件前后的差别。”助理能接着这项任务的讨论，参考任务里选好的实验记录和组会模板。模板放在课题组的 GitHub 仓库里，组里换了新版，同步后就能选用。小林之前纠正过助理：“帮我列汇报提纲时，先讲结论，再讲过程。”这次允许使用的这条习惯也会跟过来。
 
 **周五，老师能对着具体的文件给意见。** 小林把《项目进展汇报.pptx》拖进任务，确认提交。老师看完初稿，留下反馈：“第 4 页把两轮实验放到同一张图里，标清各自的样本量。最后一页把要大家决定的问题写出来。”
 
@@ -78,7 +78,7 @@ pnpm run ci
 
 ## 来源与致谢
 
-AcceptCat 沿用作者既有科研项目探索；即时通信建立在 OpenIM 集成之上，桌面交互参考并改编 OpenMuse 的部分主题与布局，社区方法保留各自来源。感谢这些项目的维护者。
+DeepChat（原 AcceptCat）沿用作者既有科研项目探索；即时通信建立在 OpenIM 集成之上，桌面交互参考并改编 OpenMuse 的部分主题与布局，社区方法保留各自来源。感谢这些项目的维护者。
 
 - [OpenIM](https://github.com/openimsdk) · [OpenMuse](https://github.com/CopilotKit/openmuse) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
 - 项目与各依赖的适用许可、改编范围见 [NOTICE](NOTICE.md)，图标和预览来源见[展示素材说明](docs/assets/README.md)。

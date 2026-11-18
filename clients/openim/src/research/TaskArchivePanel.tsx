@@ -65,7 +65,7 @@ export function TaskArchivePanel({ target, state, selected, collections, busy, c
       <p>目标集合：{confirmation?.selection.collectionName}</p>
       <p>可见范围：<strong>{confirmation && researchScopeLabels[confirmation.selection.scope]}</strong></p>
       <ul>{confirmation?.selection.names.map(name => <li key={name}>{name}</li>)}</ul>
-      <p>这些文件将上传到 AcceptCat 资料服务。本地原件保留，任务状态不会因此变成已提交或已验收。</p>
+      <p>这些文件将上传到 DeepChat 资料服务。本地原件保留，任务状态不会因此变成已提交或已验收。</p>
     </Modal>
   </section>;
 }

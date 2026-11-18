@@ -204,7 +204,7 @@ function MaterialBrowser({
         原件保存在本机，确认导入后才上传选定文件
       </p>
       <p className="skill-muted">
-        资料位置：AcceptCat 用户数据目录 /
+        资料位置：DeepChat 用户数据目录 /
         private-skill-bundles。原路径由清单映射到校验过的原件；调用时不会自动把图片或脚本送给模型。
       </p>
       <div className="skill-actions">

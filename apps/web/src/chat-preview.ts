@@ -6,7 +6,7 @@ if(!__DEMO__)throw new Error('Chat preview is development-only');
 document.body.classList.add('chat-route');
 document.title='科研聊天开发预览';
 const app=document.querySelector<HTMLElement>('#app')!;
-app.innerHTML='<header><span class="brand">研伴 · 合成开发预览</span><nav>所有数据均为测试数据，不会创建真实任务</nav></header><main id="chat-root"></main>';
+app.innerHTML='<header><span class="brand">DeepChat · 合成开发预览</span><nav>所有数据均为测试数据，不会创建真实任务</nav></header><main id="chat-root"></main>';
 const contacts:ContactView[]=[
   {id:'preview-personal',name:'我的科研助理',identity:'个人 AI',owner:'主人：合成成员',availability:'测试状态',icon:'robot'},
   {id:'preview-human',name:'合成成员林',identity:'真人',owner:'本实验室成员',availability:'待接受邀请',icon:'user'},

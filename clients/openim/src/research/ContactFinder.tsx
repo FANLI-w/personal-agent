@@ -71,12 +71,12 @@ export function ContactFinder({
     <div className="space-y-3">
       <AcceptCatAccountNumber username={own?.username} isSelf active={active} />
       <p className="text-sm leading-6 text-slate-600">
-        {kind === 'agents' ? '输入所属账号的 AcceptCat 号，或粘贴智能体名片。' : '输入 AcceptCat 号，或粘贴联系人名片。'}
+        {kind === 'agents' ? '输入所属账号的 DeepChat 号，或粘贴智能体名片。' : '输入 DeepChat 号，或粘贴联系人名片。'}
       </p>
       <div className="flex items-start gap-2">
         <Input.TextArea
-          aria-label="查找 AcceptCat 号或名片"
-          placeholder="输入 AcceptCat 号，或粘贴联系人名片"
+          aria-label="查找 DeepChat 号或名片"
+          placeholder="输入 DeepChat 号，或粘贴联系人名片"
           autoSize={{ minRows: 2, maxRows: 5 }}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -102,7 +102,7 @@ export function ContactFinder({
       ))}
       {contacts && !contacts.length && (
         <p className="py-3 text-sm text-slate-500">
-          {kind === 'agents' ? '没有找到可添加的智能体' : '没有找到可添加的联系人'}，请核对 AcceptCat 号或名片。
+          {kind === 'agents' ? '没有找到可添加的智能体' : '没有找到可添加的联系人'}，请核对 DeepChat 号或名片。
         </p>
       )}
     </div>

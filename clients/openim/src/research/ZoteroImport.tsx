@@ -206,7 +206,7 @@ export function ZoteroImport({
         </p>
         <p className="research-library-muted">
           只读本机个人文献库的元数据与摘要。选中、预览并确认后才上传到
-          AcceptCat；不会读取 PDF、正文或批注。
+          DeepChat；不会读取 PDF、正文或批注。
         </p>
         {!available && (
           <Alert

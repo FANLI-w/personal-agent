@@ -33,6 +33,23 @@ function loadHelper(name, dependencies = {}) {
   return module.exports;
 }
 const helper = loadHelper("local-dsh-context.ts");
+const { taskEventRows } = loadHelper("task-dsh-events.ts");
+
+test("task conversation strips current and historical work context before showing the user's request", () => {
+  for (const brand of ["DeepChat", "AcceptCat"]) {
+    const rows = taskEventRows([{
+      seq: 1,
+      type: "user/message",
+      data: {
+        source: { kind: "user" },
+        content: `以下为 ${brand} 当前工作上下文。\n规则与参考材料\n\n本次要求：\n核对实验记录`,
+      },
+    }]);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].text, "核对实验记录");
+  }
+});
+
 const selection = loadHelper("team-material-selection.ts");
 const binding = {
   kind: "research",
@@ -281,11 +298,11 @@ function host({
   };
 }
 
-test("workbench header pairs deepchat with the assistant avatar and keeps the task and library navigation", () => {
+test("workbench header pairs DeepChat with the assistant avatar and keeps the task and library navigation", () => {
   const tree = host().render();
   const [header] = find(tree, node => node.type === "header");
   const [title] = find(header, node => node.type === "h1");
-  assert.ok(title.props.children.includes("deepchat"));
+  assert.ok(title.props.children.includes("DeepChat"));
   assert.equal(find(title, node => node.type === "img")[0].props.src, "dafeiyu.png");
   assert.equal(find(header, node => node.type === "p").length, 0);
   assert.ok(find(header, node => node.props.children === "任务与交付").length);

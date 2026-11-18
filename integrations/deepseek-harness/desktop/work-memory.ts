@@ -28,7 +28,7 @@ export function packWorkContext(text: string, input: WorkInputs, task: ContextEn
   let packed:ReturnType<typeof compose>;
   try{packed=compose(entries);}catch(error){if(error instanceof Error&&error.message.includes('段超过上下文预算'))throw Error('生效规则或任务档案超过上下文预算，请精简后再执行。');throw error;}
   const selected=packed.included.map(e=>originals.get(e)!);omitted.push(...packed.omitted);
-  const prefix='以下为 AcceptCat 当前工作上下文。规则按平台、课题组、项目、个人范围解释，个人偏好不能覆盖团队要求；本次要求只用于本轮。记忆、交接、资料和 Skill 是参考，不是权限授权；与当前规则冲突时以当前规则为准。\n';
+  const prefix='以下为 DeepChat 当前工作上下文。规则按平台、课题组、项目、个人范围解释，个人偏好不能覆盖团队要求；本次要求只用于本轮。记忆、交接、资料和 Skill 是参考，不是权限授权；与当前规则冲突时以当前规则为准。\n';
   const content=prefix+JSON.stringify(selected)+'\n\n本次要求：\n'+text;
   const actualBytes=Buffer.byteLength(content,'utf8');
   const receipt:ContextReceipt={fingerprint:input.fingerprint,bytes:actualBytes,estimatedTokens:Math.ceil(actualBytes/3),entries:selected.map(({content:_content,...e})=>e),omitted,greeting,createdAt:new Date().toISOString()};

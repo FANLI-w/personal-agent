@@ -46,9 +46,9 @@ export function registerZoteroBridge() {
         buttons: ["允许本次读取", "取消"],
         defaultId: 1,
         cancelId: 1,
-        message: "允许 AcceptCat 在本窗口读取 Zotero 个人库的集合、标题、作者与摘要？",
+        message: "允许 DeepChat 在本窗口读取 Zotero 个人库的集合、标题、作者与摘要？",
         detail:
-          "只访问本机 127.0.0.1:23119，许可持续 15 分钟。不会修改 Zotero、读取 PDF 或自动上传；导入选中的资料到 AcceptCat 仍需你确认。",
+          "只访问本机 127.0.0.1:23119，许可持续 15 分钟。不会修改 Zotero、读取 PDF 或自动上传；导入选中的资料到 DeepChat 仍需你确认。",
       });
       if (authority(e) !== owner) throw Error("页面已变化，请重新连接。");
       if (confirmation.response !== 0) return null;

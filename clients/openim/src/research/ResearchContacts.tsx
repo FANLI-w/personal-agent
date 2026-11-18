@@ -170,7 +170,7 @@ export function ResearchContacts() {
               className="max-w-[320px]"
               maxLength={200}
               aria-label={`搜索${label}`}
-              placeholder={kind === "agents" ? "搜索智能体" : "搜索姓名或 AcceptCat 号"}
+              placeholder={kind === "agents" ? "搜索智能体" : "搜索姓名或 DeepChat 号"}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

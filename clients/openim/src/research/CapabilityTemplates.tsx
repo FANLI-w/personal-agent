@@ -191,7 +191,7 @@ export function CapabilityTemplates({
             <CapabilityOutcomePreview id={visibleSelection.id} />
             <div className="capability-use-content">
               <span className="capability-detail-kind">
-                AcceptCat 内置 · 私人文字 Agent
+                DeepChat 内置 · 私人文字 Agent
               </span>
               <h2>
                 {starterFeedCopy[visibleSelection.id]?.title ||

@@ -3,7 +3,7 @@
  */
 {
   appId: "com.acceptcat.researchwechat",
-  productName: "AcceptCat",
+  productName: "DeepChat",
   asar: true,
   asarUnpack: ["**/*.node"],
   extends: null,
@@ -95,6 +95,6 @@
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
     deleteAppDataOnUninstall: false,
-    shortcutName: "AcceptCat",
+    shortcutName: "DeepChat",
   },
 }

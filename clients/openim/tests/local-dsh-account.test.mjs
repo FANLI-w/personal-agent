@@ -90,6 +90,8 @@ test('managed account overlay preserves user plugins and contains only a credent
   writeFileSync(path.join(home, 'cordis.patch.yml'), 'synthetic user plugin settings');
   const file = await runtime.exports.prepareAccountProfile(home, { baseURL: 'http://127.0.0.1:4321', model: 'synthetic-model', protocol: 'openai-completions', maxTokens: 8192 });
   const entries = JSON.parse(readFileSync(file, 'utf8'));
+  assert.equal(entries[0].config.providers.acceptcat.displayName, 'DeepChat');
+  assert.equal(entries[0].config.providers.acceptcat.models[0].name, 'synthetic-model · DeepChat');
   assert.equal(entries[0].config.providers.acceptcat.apiKeyEnv, 'ACCEPTCAT_DSH_TOKEN');
   assert.equal(entries[0].config.providers.acceptcat.retryPolicy.maxRetries, 0);
   assert.equal(entries[1].config.provider, 'acceptcat');

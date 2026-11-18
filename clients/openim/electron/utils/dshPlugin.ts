@@ -46,7 +46,7 @@ async function installedVersion(profile: string) {
 }
 
 // Compare against our stable bundled release. A newer independently installed
-// release (including a newer prerelease) must survive an AcceptCat restart.
+// release (including a newer prerelease) must survive a DeepChat restart.
 function olderThanBundled(current: string, bundled: string) {
   const parsed = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(current);
   if (!parsed) throw Error("科研插件版本无法比较，已保留现有插件，请在插件管理中检查。");

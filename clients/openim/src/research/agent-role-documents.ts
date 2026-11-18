@@ -21,7 +21,7 @@ export function readRoleImport(json: string) {
   const profile = raw && typeof raw === 'object' && 'format' in raw && raw.format === roleFormat
     ? { format: 'research-agent-profile/v1' as const, profile: roleProfileFromBundle(raw) } : raw;
   const parsed = AgentProfileDocument.safeParse(profile);
-  if (!parsed.success) throw new Error('请选择 AcceptCat 角色包或原版人设 JSON；只导入公开角色文字。');
+  if (!parsed.success) throw new Error('请选择 DeepChat 角色包或原版人设 JSON；只导入公开角色文字。');
   return parsed.data;
 }
 export function saveRoleText(name: string, content: string, type = 'text/markdown;charset=utf-8') {

@@ -92,7 +92,7 @@ export function registerLocalDsh(app: FastifyInstance, database: () => DatabaseS
       fence()
       if (!upstream.ok || !upstream.body) {
         await upstream.body?.cancel(); release()
-        return reply.code(upstream.status === 429 ? 429 : 502).send({ error: { code: 'MODEL_UNAVAILABLE', message: '模型服务未完成请求，请检查 AcceptCat 模型设置后重试。' } })
+        return reply.code(upstream.status === 429 ? 429 : 502).send({ error: { code: 'MODEL_UNAVAILABLE', message: '模型服务未完成请求，请检查 DeepChat 模型设置后重试。' } })
       }
       const contentType = body.stream ? 'text/event-stream; charset=utf-8' : 'application/json'
       if (!(upstream.headers.get('content-type') ?? '').includes(body.stream ? 'text/event-stream' : 'application/json')) throw Error('Unexpected model response')

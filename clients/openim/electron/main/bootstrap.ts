@@ -2,6 +2,11 @@ import { app, protocol } from "electron";
 import path from "node:path";
 import os from "node:os";
 import { smokeResult, smokeProgress } from "../utils/smoke";
+import { applyDesktopBrand } from "../utils/brand";
+
+// Set the OS-visible name before importing stores, logs or the main window.
+// The original data path and isolated smoke/review overrides stay intact.
+applyDesktopBrand(app);
 
 const fail = (error: unknown) => {
   console.error(error);

@@ -339,7 +339,7 @@ export function FeishuImport({
             <div className="feishu-authorization-step">
               <span className="feishu-step-number">2</span>
               <div>
-                <h3>返回 AcceptCat 检查结果</h3>
+                <h3>返回 DeepChat 检查结果</h3>
                 <p>浏览器显示“飞书授权已完成”后，回到此处点击“检查授权结果”。</p>
                 <Button
                   type="primary"
@@ -488,7 +488,7 @@ export function FeishuImport({
                   disabled={busy || uncertain}
                   onChange={(e) => setConfirmed(e.target.checked)}
                 >
-                  确认将这份文字副本保存到 AcceptCat，仅自己可读
+                  确认将这份文字副本保存到 DeepChat，仅自己可读
                 </Checkbox>
                 <p className="research-library-muted">
                   {preview.limitation}{" "}

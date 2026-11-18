@@ -1,4 +1,4 @@
-/** Standards compatibility for the isolated DSH document on AcceptCat's Chromium 108.
+/** Standards compatibility for the isolated DSH document on DeepChat's Chromium 108.
  * No Electron, filesystem, credentials, IPC or Node objects are exposed to this world.
  */
 declare const AC_DSH_POLYFILLS: string;

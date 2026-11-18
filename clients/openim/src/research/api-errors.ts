@@ -4,7 +4,7 @@ type ValidationIssue = { path: readonly PropertyKey[]; code?: string };
 export function validationMessage(issues: readonly ValidationIssue[]): string {
   const field = issues[0]?.path.at(-1);
   if (field === "username")
-    return "AcceptCat 号需为 1–100 个字符，只能包含字母、数字、下划线和连字符。";
+    return "DeepChat 号需为 1–100 个字符，只能包含字母、数字、下划线和连字符。";
   if (field === "password") return "密码至少 8 个字符。";
   if (field === "inviteCode") return "请填写完整的实验室邀请码，并检查是否复制正确。";
   if (field === "displayName") return "请填写昵称，最多 200 个字符。";
@@ -30,7 +30,7 @@ const messages: Record<string, string> = {
   LAB_MANAGER_CANNOT_LEAVE:
     "负责人暂不能直接退出或被移除，请联系维护者处理课题组交接。",
   LAB_ACCOUNT_NOT_FOUND:
-    "未找到这个 AcceptCat 号，请核对账号；对方尚未注册时，可生成邀请码。",
+    "未找到这个 DeepChat 号，请核对账号；对方尚未注册时，可生成邀请码。",
   LAB_ALREADY_JOINED: "这个账号已经是课题组成员。",
   FEISHU_SHARED_SOURCE_UNAVAILABLE:
     "共享资料库暂不可读，请联系库主人检查飞书连接、原表权限或字段设置；无需重新连接你自己的飞书。",
@@ -79,7 +79,7 @@ const messages: Record<string, string> = {
   INVITE_UNAVAILABLE:
     "邀请码无效、已过期、已撤销或名额已满，请向实验室负责人索取有效邀请码。",
   USERNAME_TAKEN:
-    "这个 AcceptCat 号已被使用，请换一个；如果是你刚注册的账号，可以直接登录。",
+    "这个 DeepChat 号已被使用，请换一个；如果是你刚注册的账号，可以直接登录。",
 };
 
 export function serviceErrorMessage(
@@ -99,7 +99,7 @@ export function serviceErrorMessage(
   )
     return "服务器尚未启用此功能，请联系管理员完成服务更新。";
   if (code === "UNAUTHENTICATED" && route === "login")
-    return "AcceptCat 号或密码不正确，或账号已停用，请核对后重试。";
+    return "DeepChat 号或密码不正确，或账号已停用，请核对后重试。";
   return (
     messages[code] ??
     (status >= 500

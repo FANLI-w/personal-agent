@@ -146,7 +146,7 @@ function ScopedPeerLibraryPanel() {
           请个人助理索取
         </Button>
         <small>
-          也可以在个人助理聊天中说“帮我找小王的实验记录”，名字或 AcceptCat
+          也可以在个人助理聊天中说“帮我找小王的实验记录”，名字或 DeepChat
           号需要能唯一对应同组成员。
         </small>
       </div>

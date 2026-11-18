@@ -34,7 +34,7 @@ const { chromium } = requireClient("@playwright/test");
   try {
     await page.goto("http://127.0.0.1:4389");
     await page.locator(".ck-editor__editable").waitFor();
-    assert.match(await page.title(), /AcceptCat/);
+    assert.match(await page.title(), /DeepChat/);
     assert.match(await page.locator("body").innerText(), /合成测试环境/);
     checks.push("identity and nonblank");
     const editor = page.locator(".ck-editor__editable");

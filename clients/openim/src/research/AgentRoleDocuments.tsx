@@ -13,7 +13,7 @@ export function AgentRoleDocuments({ contact }: { contact: Contact }) {
     <Tabs size="small" items={(['persona.md', 'work.md', 'SKILL.md'] as const).map(name => ({ key: name, label: name,
       children: <div><pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs leading-6">{bundle.files[name]}</pre>
         <Button size="small" onClick={() => saveRoleText(name, bundle.files[name])}>保存 {name}</Button></div> }))} />
-    <Button onClick={() => saveRoleText('acceptcat-agent-role.json', JSON.stringify(bundle, null, 2), 'application/json')}>导出完整角色包</Button>
+    <Button onClick={() => saveRoleText('DeepChat-agent-role.json', JSON.stringify(bundle, null, 2), 'application/json')}>导出完整角色包</Button>
     <p className="mt-2 text-xs text-slate-500">只导出角色文字，不包含聊天、私人记忆、账号、模型密钥或外部连接。导入后是导入者自己的助手。</p>
   </div>;
 }

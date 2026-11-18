@@ -43,11 +43,11 @@ export function makeContactCard(
   const human = contact.identity.kind === "human";
   const name = contact.displayName.replace(/[\s\u0000-\u001f\u007f]+/g, " ").trim();
   return [
-    `AcceptCat ${human ? "真人" : "Agent"}名片：${name}`,
-    human && contact.username ? `AcceptCat 号：${contact.username}` : "",
+    `DeepChat ${human ? "真人" : "Agent"}名片：${name}`,
+    human && contact.username ? `DeepChat 号：${contact.username}` : "",
     `服务：${origin}`,
     `${prefix}${encodeURIComponent(origin)}:${id}`,
-    "打开 AcceptCat → 通讯录 → 添加，粘贴此名片后查找。",
+    "打开 DeepChat → 通讯录 → 添加，粘贴此名片后查找。",
   ]
     .filter(Boolean)
     .join("\n");
@@ -61,20 +61,20 @@ export type ContactLookup =
 export function parseContactLookup(raw: string): ContactLookup {
   const text = raw.trim();
   if (!text || text.length > 2048)
-    throw new Error("请输入完整 AcceptCat 号，或粘贴一张完整名片。");
+    throw new Error("请输入完整 DeepChat 号，或粘贴一张完整名片。");
   const lines = text.split(/\r?\n/).map((line) => line.trim());
   const tokens = lines.filter((line) => line.startsWith("acceptcat-card:"));
   if (!tokens.length) {
     if (lines.length !== 1 || text.length > 100 || text.includes("://"))
       throw new Error(
-        "请使用 AcceptCat 号或新版名片口令，旧版本机链接不能跨设备添加。",
+        "请使用 DeepChat 号或新版名片口令，旧版本机链接不能跨设备添加。",
       );
     return { kind: "account", username: text };
   }
   if (tokens.length !== 1) throw new Error("一次只能查找一张名片，请分别粘贴。");
   const token = tokens[0]!;
   if (!token.startsWith(prefix))
-    throw new Error("暂不支持这个名片版本，请更新 AcceptCat 后重试。");
+    throw new Error("暂不支持这个名片版本，请更新 DeepChat 后重试。");
   const body = token.slice(prefix.length),
     split = body.lastIndexOf(":");
   try {
