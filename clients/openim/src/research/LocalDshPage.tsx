@@ -516,7 +516,7 @@ export function LocalDshPage() {
   return (
     <section className="local-dsh-page" aria-label="工作台">
       <header className="local-dsh-header">
-        <h1 className="deepchat-brand"><img src={deepchatAvatar} alt="" />deepchat</h1>
+        <h1 className="deepchat-brand"><img src={deepchatAvatar} alt="" />DeepChat</h1>
         <nav aria-label="科研工作入口">
           {target && (
             <Link to={workbenchTaskPath(target.taskId, target.kind)}>
@@ -609,7 +609,7 @@ export function LocalDshPage() {
               <>
                 <div className="local-dsh-monogram">DSH</div>
                 <h2>让助手在本机开始工作</h2>
-                <p>登录 AcceptCat 后自动连接内置 DSH，使用当前账号的默认模型。</p>
+                <p>登录 DeepChat 后自动连接内置 DSH，使用当前账号的默认模型。</p>
                 {bridge && state && (
                   <Button
                     type="primary"
@@ -622,12 +622,12 @@ export function LocalDshPage() {
                 <div className="local-dsh-note">
                   <strong>本地工作区</strong>
                   <p>
-                    会话和文件保存在这台电脑，并按 AcceptCat
+                    会话和文件保存在这台电脑，并按 DeepChat
                     账号分开。账号模型沿用「我的」中的配置。
                   </p>
                   <p>
-                    模型调用经 AcceptCat 服务发送，工具在本机执行。退出账号或关闭
-                    AcceptCat 会停止本地任务。
+                    模型调用经 DeepChat 服务发送，工具在本机执行。退出账号或关闭
+                    DeepChat 会停止本地任务。
                   </p>
                 </div>
               </>

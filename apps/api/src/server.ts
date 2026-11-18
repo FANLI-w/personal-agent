@@ -111,7 +111,7 @@ export function createServer(config: Config, options:{imClient?:OpenImClient;ext
       success=true
     }catch{/* OAuth secrets and provider errors must not enter callback HTML or logs. */}
     reply.code(success?200:400)
-    return `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>AcceptCat · 飞书授权</title><body><h1>${success?'飞书授权已完成':'飞书授权未完成'}</h1><p>${success?'请返回 AcceptCat，点击“检查授权结果”继续。':'授权可能已取消、过期或发起授权的登录已结束。请返回 AcceptCat 重新连接。'}</p></body></html>`
+    return `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>DeepChat · 飞书授权</title><body><h1>${success?'飞书授权已完成':'飞书授权未完成'}</h1><p>${success?'请返回 DeepChat，点击“检查授权结果”继续。':'授权可能已取消、过期或发起授权的登录已结束。请返回 DeepChat 重新连接。'}</p></body></html>`
   })
   for (const [name, route] of Object.entries(routes)) {
     if (route.stage === 'B0') continue

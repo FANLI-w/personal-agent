@@ -1,5 +1,7 @@
 # 初始迁移记录
 
+2026-11-18 产品显示名由 AcceptCat 更名为 DeepChat。账号及本地数据继续使用原 Electron 数据路径，NSIS appId、GUID、更新源及缓存目录沿用原身份。更名兼容处理和验证范围见[交接记录](development/deepchat-branding.md)。
+
 2026-10-28 新增 Windows 本地 DSH 试用页面。安装包不迁入 DSH 本体，运行时通过用户安装的 0.2.1-rc.3 官方命令入口调用。适配代码位于 integrations/deepseek-harness/desktop，客户端只负责沙箱容器、主窗口权限、菜单与状态。复用已锁定 core-js 3.49.0 并保留许可，用于兼容 AcceptCat Electron 22；原 OpenIM ABI、后台接口、共享包和 Skill 均未变更。DSH_HOME 独立保存在本机 AcceptCat userData，不迁移用户已有 DSH 数据。详见[试用说明](development/local-dsh-page.md)。
 
 日期：2026-09-20。方式：从干净的本地源仓库按文件选择性迁入，建立新的单仓库初始提交；未导入完整 Git 历史。原始提交可通过下面的链接追溯，旧仓库未改动或删除。

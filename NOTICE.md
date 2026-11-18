@@ -103,3 +103,5 @@ B3 的受限运行组合依赖官方 DeepSeek Harness `@deepseek-ai/dsh-llm` / `
 团队资料 Git 工作区的流程设计参考 [Tencent/teamai-cli](https://github.com/Tencent/teamai-cli/tree/a03ca33d8a02304cc22be8425cc1854d4686716c) 的团队文档与 Git 审核实践；未引入该项目代码、资源、hooks或运行时依赖。实现与边界记录于 docs/development/team-library-git.md。
 
 个人项目委派与跟进机制参考了 [DeepSeek dsh-superagent-prototype](https://github.com/deepseek-ai/dsh-superagent-prototype/tree/8c32a9dc5d72c033816c6a8110b37f40cf94fba4) 的持久任务、事件送达和执行者分工设计。AcceptCat 使用自己的个人任务、聊天权限和 SQLite worker 实现。
+
+2026-11-18 产品更名为 DeepChat，继续使用上文记录的大肥鱼图标、来源和许可。历史条目沿用发布当时的名称。

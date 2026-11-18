@@ -17,12 +17,12 @@ export async function prepareAccountProfile(home: string, gateway: { baseURL: st
   const profileExists=await fs.access(path.join(home,'profiles','web','package.json')).then(()=>true,()=>false);
   const entries = [
     { id: 'llm-pi-ai', config: { providers: { acceptcat: {
-      displayName: 'AcceptCat', apiKeyEnv: 'ACCEPTCAT_DSH_TOKEN', api: gateway.protocol,
+      displayName: 'DeepChat', apiKeyEnv: 'ACCEPTCAT_DSH_TOKEN', api: gateway.protocol,
       baseURL: gateway.baseURL + (gateway.protocol === 'openai-completions' ? '/v1' : ''),
       defaultContextWindow: contextWindow, defaultMaxTokens: gateway.maxTokens,
       ...(gateway.protocol === 'openai-completions' ? { compat: { supportsStore: false, supportsDeveloperRole: false, maxTokensField: 'max_tokens' } } : {}),
       retryPolicy: { mode: 'normal', maxRetries: 0 },
-      models: [{ id: gateway.model, name: `${gateway.model} · AcceptCat`, contextWindow, maxTokens: gateway.maxTokens }],
+      models: [{ id: gateway.model, name: `${gateway.model} · DeepChat`, contextWindow, maxTokens: gateway.maxTokens }],
     } } } },
     // Keep the old acceptcat route for existing sessions. New DeepSeek sessions use
     // DSH's own adapter, which owns the model/effort menu and serializes off/low/high/max
@@ -41,7 +41,7 @@ export async function prepareAccountProfile(home: string, gateway: { baseURL: st
     // not add full session logs or installed-package inventories to that request.
     { id: 'session-log-deepseek', config: { enabled: false } },
     { id: 'plugin-package-inventory-deepseek', config: { enabled: false } },
-    // AcceptCat handles onboarding. Suppress only the pinned DSH rc.3 product notice
+    // DeepChat handles onboarding. Suppress only the pinned DSH rc.3 product notice
     // through its public settings field; tool permissions and other prompts stay intact.
     { id: 'ui-settings-general', config: { welcomeNoticeVersion: '2026-09-28.1' } },
     ...(profileExists?[{ insert: [{ id:'acceptcat-task-context', name:'acceptcat-task-context', config:{baseURL:gateway.baseURL} }] }]:[]),

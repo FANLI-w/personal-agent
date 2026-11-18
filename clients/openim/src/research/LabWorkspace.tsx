@@ -317,8 +317,8 @@ export function LabWorkspace() {
             <>
               <Space.Compact style={{ width: "100%" }}>
                 <AutoComplete
-                  aria-label="选择联系人或输入 AcceptCat 号"
-                  placeholder="搜索联系人姓名或输入 AcceptCat 号"
+                  aria-label="选择联系人或输入 DeepChat 号"
+                  placeholder="搜索联系人姓名或输入 DeepChat 号"
                   value={username}
                   style={{ flex: 1 }}
                   options={candidates}
@@ -329,7 +329,7 @@ export function LabWorkspace() {
                   notFoundContent={
                     friends.loading
                       ? "正在查找联系人…"
-                      : "可以直接输入完整 AcceptCat 号邀请"
+                      : "可以直接输入完整 DeepChat 号邀请"
                   }
                   disabled={busy}
                 />
@@ -357,7 +357,7 @@ export function LabWorkspace() {
               </Space.Compact>
               <p className="workspace-muted">
                 {friends.error
-                  ? "联系人暂时无法读取，可以输入完整 AcceptCat 号邀请。"
+                  ? "联系人暂时无法读取，可以输入完整 DeepChat 号邀请。"
                   : "对方接受后加入课题组。"}
               </p>
             </>
@@ -395,7 +395,7 @@ export function LabWorkspace() {
               <div>
                 <strong>{m.displayName}</strong>
                 <p>
-                  AcceptCat 号：{m.username} {m.role === "manager" ? "· 负责人" : ""}
+                  DeepChat 号：{m.username} {m.role === "manager" ? "· 负责人" : ""}
                   {m.id === actor?.member.id ? " · 我" : ""}
                 </p>
               </div>

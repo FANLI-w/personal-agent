@@ -108,13 +108,13 @@ jobs:
         working-directory: clients/openim
         run: |
           $desktopVersion = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          node scripts/electron-smoke.mjs "release/Base/$desktopVersion/win-unpacked/AcceptCat.exe"
+          node scripts/electron-smoke.mjs "release/Base/$desktopVersion/win-unpacked/DeepChat.exe"
       - uses: actions/upload-artifact@v4
         with:
           name: windows-desktop-package
           path: |
-            clients/openim/release/Base/*/AcceptCat_*.exe
-            clients/openim/release/Base/*/AcceptCat_*.exe.blockmap
+            clients/openim/release/Base/*/DeepChat_*.exe
+            clients/openim/release/Base/*/DeepChat_*.exe.blockmap
             clients/openim/release/Base/*/latest.yml
           if-no-files-found: error
           retention-days: 7

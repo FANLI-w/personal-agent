@@ -8,6 +8,29 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { verifyWorkspaceLinks, verifyWorkspaceOutputs, verifyBuilderToolchain, runtimeEntryFiles, verifyArchiveEntries, runPnpm } from '../scripts/workspace-build.mjs';
 
+test('DeepChat installer branding retains the shipped NSIS identity, package and updater cache', () => {
+  const client = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const clientRequire = createRequire(path.join(client, 'package.json'));
+  const builderRequire = createRequire(clientRequire.resolve('electron-builder/package.json'));
+  const libRequire = createRequire(builderRequire.resolve('app-builder-lib/package.json'));
+  const config = libRequire('json5').parse(readFileSync(path.join(client, 'electron-builder.json5'), 'utf8'));
+  const metadata = JSON.parse(readFileSync(path.join(client, 'package.json'), 'utf8'));
+  const { AppInfo } = builderRequire('app-builder-lib/out/appInfo');
+  const { UUID } = libRequire('builder-util-runtime');
+  const appInfo = new AppInfo({ metadata, config });
+  const namespace = UUID.parse('50e065bc-3134-11e6-9bab-38c9862bdaf3');
+  const actualGuid = config.nsis.guid || UUID.v5(appInfo.id, namespace);
+  assert.equal(actualGuid, UUID.v5('com.acceptcat.researchwechat', namespace));
+  assert.equal(appInfo.productName, 'DeepChat');
+  assert.equal(appInfo.productFilename, 'DeepChat');
+  assert.equal(config.nsis.shortcutName, 'DeepChat');
+  assert.equal(appInfo.name, 'research-wechat-openim');
+  assert.equal(metadata.productName, undefined);
+  assert.equal(appInfo.updaterCacheDirName, 'research-wechat-openim-updater');
+  assert.equal(config.nsis.deleteAppDataOnUninstall, false);
+  assert.deepEqual(config.publish, [{provider:'github', owner:'luoyan96', repo:'personal-agent', releaseType:'release'}]);
+});
+
 function fixture(t) {
   const temporary = mkdtempSync(path.join(tmpdir(), 'acceptcat-build-'));
   t.after(() => {

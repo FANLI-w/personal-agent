@@ -19,6 +19,9 @@ const service = "https://chat.acceptcat.com",
   };
 test("portable human card retains exact account case and current service, never serializes arbitrary contact fields", () => {
   const text = makeContactCard(person, service);
+  assert.match(text, /^DeepChat 真人名片：/);
+  assert.match(text, /DeepChat 号：Synthetic_Teacher/);
+  assert.match(text, /\nacceptcat-card:v1:/);
   assert.match(text, /Synthetic_Teacher/);
   assert.doesNotMatch(text, /DO_NOT_SHARE|member_A|localhost|127\.0\.0\.1/);
   assert.deepEqual(parseContactLookup(text), {
@@ -43,7 +46,7 @@ test("Agent cards identify the actual contact independently from owner and dupli
   assert.equal(parseContactLookup(makeContactCard(two, service)).contactId, "agent_2");
   assert.doesNotMatch(
     makeContactCard(one, service),
-    /AcceptCat 号|member_A|DO_NOT_SHARE/,
+    /DeepChat 号|member_A|DO_NOT_SHARE/,
   );
 });
 test("whole multiline/CRLF cards and bare tokens resolve identically; accompanying display text is not identity", () => {

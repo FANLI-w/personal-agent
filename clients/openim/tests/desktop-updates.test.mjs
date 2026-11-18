@@ -6,15 +6,33 @@ import os from "node:os";
 import path from "node:path";
 import { DesktopUpdates } from "../electron/utils/desktopUpdates.ts";
 import { isInstalledWindowsApp } from "../electron/utils/desktopInstallation.ts";
+import { APP_NAME, applyDesktopBrand } from "../electron/utils/brand.ts";
+
+test("visible branding preserves the startup data directory, including isolated CLI profiles", () => {
+  for (const original of [
+    path.join(os.tmpdir(), "synthetic-appdata", "research-wechat-openim"),
+    path.join(os.tmpdir(), "synthetic-cli-profile"),
+  ]) {
+    let name = "research-wechat-openim", userData = original;
+    applyDesktopBrand({
+      getPath: (key) => { assert.equal(key, "userData"); return userData; },
+      setName: (value) => { name = value; userData = path.join(path.dirname(original), value); },
+      setPath: (key, value) => { assert.equal(key, "userData"); userData = value; },
+    });
+    assert.equal(name, "DeepChat");
+    assert.equal(name, APP_NAME);
+    assert.equal(userData, original);
+  }
+});
 
 test("renamed and legacy Windows installations retain updates; unpacked apps do not", () => {
   const directory = mkdtempSync(path.join(os.tmpdir(), "acceptcat-update-identity-"));
   assert.equal(path.dirname(path.resolve(directory)), path.resolve(os.tmpdir()));
   assert.ok(path.basename(directory).startsWith("acceptcat-update-identity-"));
-  const executable = path.join(directory, "AcceptCat.exe");
+  const executable = path.join(directory, "DeepChat.exe");
   try {
     assert.equal(isInstalledWindowsApp("win32", true, executable), false);
-    for (const name of ["Uninstall ResearchWeChat.exe", "Uninstall AcceptCat.exe"]) {
+    for (const name of ["Uninstall ResearchWeChat.exe", "Uninstall AcceptCat.exe", "Uninstall DeepChat.exe"]) {
       const uninstaller = path.join(directory, name);
       writeFileSync(uninstaller, "synthetic installation marker");
       assert.equal(isInstalledWindowsApp("win32", true, executable), true);

@@ -10,7 +10,7 @@ export function apply(ctx, config) {
       method:'POST', headers:{'content-type':'application/json',authorization:'Bearer '+process.env.ACCEPTCAT_DSH_TOKEN},
       body:JSON.stringify(body), signal:AbortSignal.timeout(25000), redirect:'error',
     });
-    if(!response.ok)throw Error('AcceptCat 任务背景当前不可核验，请重新连接任务。');
+    if(!response.ok)throw Error('DeepChat 任务背景当前不可核验，请重新连接任务。');
     return response.json();
   };
   ctx.inject(['systemPrompt'], scope => scope.effect(() => scope.systemPrompt.context({
@@ -31,7 +31,7 @@ export function apply(ctx, config) {
     const text=(event.data.content||[]).filter(p=>p.type==='text').map(p=>p.text).join('\n');
     if(text.length>2000||!/^(?:以后|请记住|记住|纠正|更正|我(?:更)?希望)/u.test(text.trim()))return;
     const pending=(feedback.get(session.id)||Promise.resolve()).then(()=>call('task-feedback',{sessionId:session.id,seq:event.seq,messageId:event.data.id,text}))
-      .catch(()=>{ctx.logger.warn('AcceptCat 习惯反馈暂不可用；本次要求仍在原会话。');});
+      .catch(()=>{ctx.logger.warn('DeepChat 习惯反馈暂不可用；本次要求仍在原会话。');});
     feedback.set(session.id,pending);
     void pending.finally(()=>{if(feedback.get(session.id)===pending)feedback.delete(session.id);});
   });

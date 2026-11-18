@@ -18,14 +18,14 @@ const getDefaultExecutable = () => {
     return path.join(
       releaseRoot,
       `mac-${process.arch}`,
-      `${rootPackage.name}.app`,
+      "DeepChat.app",
       "Contents",
       "MacOS",
-      rootPackage.name,
+      "DeepChat",
     );
   }
   if (process.platform === "win32") {
-    return path.join(releaseRoot, "win-unpacked", "AcceptCat.exe");
+    return path.join(releaseRoot, "win-unpacked", "DeepChat.exe");
   }
   return path.join(releaseRoot, "linux-unpacked", rootPackage.name);
 };

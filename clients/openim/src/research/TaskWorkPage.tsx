@@ -746,7 +746,7 @@ export function TaskWorkPage({
           <div className="task-work-empty">
             <p>
               {canWork
-                ? "选一个已有素材所在的工作文件夹即可开始，无需先上传到资料库。DSH 在此目录读取、修改和生成文件，使用当前 AcceptCat 模型。"
+                ? "选一个已有素材所在的工作文件夹即可开始，无需先上传到资料库。DSH 在此目录读取、修改和生成文件，使用当前 DeepChat 模型。"
                 : "开始任务后，这里会出现本机工作区。"}
             </p>
             {canWork && bridge?.taskOpen && (

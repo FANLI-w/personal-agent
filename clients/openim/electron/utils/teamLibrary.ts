@@ -609,7 +609,7 @@ export class TeamLibraryStore {
           await this.run(
             [
               "-c",
-              "user.name=AcceptCat",
+              "user.name=DeepChat",
               "-c",
               "user.email=acceptcat@users.noreply.github.com",
               "commit-tree",
@@ -708,7 +708,7 @@ export class TeamLibraryStore {
           await this.run(
             [
               "-c",
-              "user.name=AcceptCat",
+              "user.name=DeepChat",
               "-c",
               "user.email=acceptcat@users.noreply.github.com",
               "commit-tree",

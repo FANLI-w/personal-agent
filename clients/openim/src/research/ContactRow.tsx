@@ -32,7 +32,7 @@ export function ContactRow({
         </div>
         {contact.username && (
           <p className="truncate text-xs text-slate-500">
-            AcceptCat 号：{contact.username}
+            DeepChat 号：{contact.username}
           </p>
         )}
         <p className="line-clamp-1 text-xs leading-5 text-slate-600">

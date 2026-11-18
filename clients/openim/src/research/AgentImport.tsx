@@ -39,7 +39,7 @@ export function AgentImport({ onProfile, active = true }: { onProfile: (id: stri
   };
   return <div className="space-y-4">
     <p className="text-sm text-slate-600">导入公开人设会添加一个归你所有的 Agent，沿用你的模型。它不会接入原服务，也不会复制账号、API Key、记忆或工具。</p>
-    <Input.TextArea aria-label="Agent 角色包或资料 JSON" rows={7} value={json} disabled={!!target || busy} placeholder="粘贴导出的 AcceptCat 角色包 JSON；也兼容原版人设 JSON。" onChange={event => setJson(event.target.value)} />
+    <Input.TextArea aria-label="Agent 角色包或资料 JSON" rows={7} value={json} disabled={!!target || busy} placeholder="粘贴导出的 DeepChat 角色包 JSON；也兼容原版人设 JSON。" onChange={event => setJson(event.target.value)} />
     <label className="block text-sm text-slate-600">或选择角色包 / 资料 JSON
       <input className="mt-2 block max-w-full text-xs" type="file" accept=".json,application/json" disabled={!!target || busy} onChange={async event => {
         const file = event.currentTarget.files?.[0], ticket = epoch.current;

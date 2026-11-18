@@ -20,7 +20,7 @@ export function registerFeishuLibraryBridge() {
         new URL(event.senderFrame.url).origin !== service.rendererOrigin ||
         new URL(contents.getURL()).origin !== service.rendererOrigin
       )
-        throw new Error("请从当前 AcceptCat 主窗口打开资料库。");
+        throw new Error("请从当前 DeepChat 主窗口打开资料库。");
       const url = validateFeishuLibraryUrl(value);
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
@@ -56,7 +56,7 @@ export function registerFeishuAuthorizationBridge() {
         new URL(event.senderFrame.url).origin !== service.rendererOrigin ||
         new URL(contents.getURL()).origin !== service.rendererOrigin
       ) {
-        throw new Error("请从当前 AcceptCat 主窗口连接飞书。");
+        throw new Error("请从当前 DeepChat 主窗口连接飞书。");
       }
       const url = validateFeishuAuthorizationUrl(value, service.address);
       let timer: ReturnType<typeof setTimeout> | undefined;

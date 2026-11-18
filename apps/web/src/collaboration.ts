@@ -104,7 +104,7 @@ function schedule(s: Schedule) {
 function shell() {
   detachChat();
   document.body.classList.toggle('chat-route', route()==='/');
-  app.innerHTML = `<button class="skip" data-skip>跳到主要内容</button><header>${link('/', `<img src="/brand.png" width="38" height="38" alt=""><span>${route()==='/'?'研伴 · 科研微信':'Research Agent Platform'}</span>`, 'brand')}<nav aria-label="主导航">${link('/', '需求入口')}${link('/lab', '实验室任务')}${session?.isLabManager ? link('/lab/settings','实验室设置') : ''}${session ? `<span class="session-name">${e(session.member.displayName)}</span>${button('logout','退出登录')}` : link('/login','登录')}</nav></header><main id="main" tabindex="-1"><section class="state-panel" role="status">正在从服务读取…</section></main><footer>建议需确认 · 运行需验收 · 契约 ${contractVersion}</footer>`;
+  app.innerHTML = `<button class="skip" data-skip>跳到主要内容</button><header>${link('/', `<img src="/brand.png" width="38" height="38" alt=""><span>DeepChat</span>`, 'brand')}<nav aria-label="主导航">${link('/', '需求入口')}${link('/lab', '实验室任务')}${session?.isLabManager ? link('/lab/settings','实验室设置') : ''}${session ? `<span class="session-name">${e(session.member.displayName)}</span>${button('logout','退出登录')}` : link('/login','登录')}</nav></header><main id="main" tabindex="-1"><section class="state-panel" role="status">正在从服务读取…</section></main><footer>建议需确认 · 运行需验收 · 契约 ${contractVersion}</footer>`;
   document.querySelector<HTMLButtonElement>('[data-skip]')!.onclick = () => document.querySelector<HTMLElement>('main')!.focus();
   action('logout', async () => {
     await api.call('logout', {params:{},query:{},headers:{},body:{}});
@@ -114,7 +114,7 @@ function shell() {
 }
 function content(html: string, title: string) {
   detachChat();
-  document.title = title + ' · Research Agent Platform';
+  document.title = title + ' · DeepChat';
   document.querySelector('main')!.innerHTML = html + '<div id="feedback" class="feedback" aria-live="polite"></div>';
   document.querySelectorAll<HTMLAnchorElement>('.task-card a, .saved-plan a, [data-read-link]').forEach(anchor => anchor.addEventListener('click',()=>{nextReadSnapshot=activeSnapshot?.token;}));
   document.querySelectorAll<HTMLAnchorElement>('[data-task-scope="mine"]').forEach(anchor => anchor.addEventListener('click',()=>{scope='mine';taskFilter='';resetPages();}));

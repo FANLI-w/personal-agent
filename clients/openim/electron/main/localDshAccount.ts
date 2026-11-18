@@ -14,10 +14,10 @@ export async function dshAccount(event: Electron.IpcMainInvokeEvent) {
   const name = renderer === service ? 'rap_session' : desktopSessionCookie(service);
   const cookie = async () => (await auth.contents.session.cookies.get({ url: renderer, name })).find(c => c.name === name)?.value;
   const token = await cookie();
-  if (!token || !/^[A-Za-z0-9_-]{16,256}$/.test(token)) throw Error('请登录 AcceptCat 后使用 DSH。');
+  if (!token || !/^[A-Za-z0-9_-]{16,256}$/.test(token)) throw Error('请登录 DeepChat 后使用 DSH。');
   const valid = async () => {
     if (auth.contents.isDestroyed() || authority(event).contents !== auth.contents || (await cookie()) !== token || new URL(getResearchServiceStatus().address).origin !== service)
-      throw Error('AcceptCat 登录已变化，请重新打开 DSH。');
+      throw Error('DeepChat 登录已变化，请重新打开 DSH。');
   };
   const request = (url: string, method = 'GET') => {
     const req = net.request({ url: service + url, method, session: auth.contents.session, useSessionCookies: false, redirect: 'error' });
@@ -27,14 +27,14 @@ export async function dshAccount(event: Electron.IpcMainInvokeEvent) {
   const json = (url: string) => new Promise<any>((resolve, reject) => {
     const req = request(url), chunks: Buffer[] = []; let size = 0;
     const timer = setTimeout(() => { req.abort(); reject(Error('账号服务连接超时。')); }, 10000);
-    const fail = () => { clearTimeout(timer); reject(Error('无法读取 AcceptCat 账号，请检查连接或重新登录。')); };
+    const fail = () => { clearTimeout(timer); reject(Error('无法读取 DeepChat 账号，请检查连接或重新登录。')); };
     req.on('error', fail);
     req.on('response', res => {
       res.on('error', fail);
       res.on('data', chunk => { size += chunk.length; if (size > 1048576) { req.abort(); fail(); } else chunks.push(Buffer.from(chunk)); });
       res.on('end', () => {
         clearTimeout(timer);
-        if (res.statusCode !== 200) { reject(Error(res.statusCode === 404 ? '后台尚未支持本地 DSH，请更新配套后台后重试。' : '账号或模型配置不可用，请检查 AcceptCat 设置。')); return; }
+        if (res.statusCode !== 200) { reject(Error(res.statusCode === 404 ? '后台尚未支持本地 DSH，请更新配套后台后重试。' : '账号或模型配置不可用，请检查 DeepChat 设置。')); return; }
         try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')).data); } catch { fail(); }
       });
     }); req.end();
@@ -65,7 +65,7 @@ export async function createDshRelay(account: Awaited<ReturnType<typeof dshAccou
       res.end(JSON.stringify({ error: { type: 'api_error', message } }));
     };
     const key = req.headers.authorization?.replace(/^Bearer /, '') || req.headers['x-api-key'];
-    if (closed || req.headers.origin || typeof key !== 'string' || !/^[a-f0-9]{64}$/.test(key) || !timingSafeEqual(Buffer.from(key), Buffer.from(secret))) { failure(401, 'AcceptCat session required'); return; }
+    if (closed || req.headers.origin || typeof key !== 'string' || !/^[a-f0-9]{64}$/.test(key) || !timingSafeEqual(Buffer.from(key), Buffer.from(secret))) { failure(401, 'DeepChat session required'); return; }
     if(req.method==='POST'&&['/acceptcat/task-context','/acceptcat/task-feedback'].includes(req.url||'')){
       try{
         await account.valid();let length=0;const chunks:Buffer[]=[];
@@ -76,7 +76,7 @@ export async function createDshRelay(account: Awaited<ReturnType<typeof dshAccou
         }
         const result=req.url==='/acceptcat/task-context'?await hooks.taskContext(value.sessionId):await hooks.taskFeedback(value);
         await account.valid();res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(result));
-      }catch{failure(403,'AcceptCat task context unavailable');}return;
+      }catch{failure(403,'DeepChat task context unavailable');}return;
     }
     const suffix = account.metadata.protocol === 'anthropic-messages' ? '/v1/messages' : '/v1/chat/completions';
     // The bundled Anthropic SDK uses beta.messages.create(), which adds this
@@ -98,10 +98,10 @@ export async function createDshRelay(account: Awaited<ReturnType<typeof dshAccou
       const timer = setTimeout(() => { current.abort(); failure(504, 'Model call timed out'); }, 125000);
       const cleanup = () => { clearTimeout(timer); pending.delete(current); };
       res.once('close', () => { cleanup(); if (!res.writableEnded) current.abort(); });
-      current.on('error', () => { cleanup(); if (res.headersSent) res.destroy(); else failure(502, 'AcceptCat model connection interrupted'); });
+      current.on('error', () => { cleanup(); if (res.headersSent) res.destroy(); else failure(502, 'DeepChat model connection interrupted'); });
       current.on('response', response => {
         if (response.statusCode !== 200) {
-          current.abort(); cleanup(); failure(response.statusCode, 'AcceptCat 模型调用失败，请检查登录及模型设置。'); return;
+          current.abort(); cleanup(); failure(response.statusCode, 'DeepChat 模型调用失败，请检查登录及模型设置。'); return;
         }
         res.writeHead(200, { 'Content-Type': String(response.headers['content-type'] || 'application/json'), 'Cache-Control': 'no-store' });
         let bytes = 0;
@@ -110,7 +110,7 @@ export async function createDshRelay(account: Awaited<ReturnType<typeof dshAccou
         response.on('error', () => { cleanup(); res.destroy(); });
       });
       current.end(JSON.stringify({ fingerprint: account.metadata.fingerprint, protocol: account.metadata.protocol, request: body }));
-    } catch { upstream?.abort(); failure(401, 'AcceptCat 登录或模型设置已失效，请重新连接。'); }
+    } catch { upstream?.abort(); failure(401, 'DeepChat 登录或模型设置已失效，请重新连接。'); }
   });
   server.requestTimeout = 15000; server.headersTimeout = 10000;
   server.on('connection', socket => { sockets.add(socket); socket.once('close', () => sockets.delete(socket)); });

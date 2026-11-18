@@ -18,7 +18,7 @@ test("the installed shared contract accepts simple eight-character and long pass
 test("field and service guidance is Chinese and does not expose internal codes or issue JSON", () => {
   assert.match(validationMessage([{ path: ["username"], code: "invalid_format" }]), /字母、数字、下划线和连字符/);
   assert.equal(validationMessage([{ path: ["password"] }]), "密码至少 8 个字符。");
-  assert.match(serviceErrorMessage("UNAUTHENTICATED", 401, "login"), /AcceptCat 号或密码不正确/);
+  assert.match(serviceErrorMessage("UNAUTHENTICATED", 401, "login"), /DeepChat 号或密码不正确/);
   assert.doesNotMatch(serviceErrorMessage("SECRET_INTERNAL_CODE", 500), /SECRET|\[|\{/);
   assert.match(serviceErrorMessage("SERVICE_UNAVAILABLE", 502), /连接中断.*系统代理/);
   assert.match(serviceErrorMessage("HTTP_ERROR", 504), /连接中断/);

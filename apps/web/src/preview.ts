@@ -23,7 +23,7 @@ const noticeButton = (
 
 function shell() {
   app.innerHTML = `<button class="skip" type="button" data-skip>跳到主要内容</button><header>
-    ${link("/", '<img src="/brand.png" alt="" width="38" height="38"><span>Research Agent Platform</span>', "brand")}
+    ${link("/", '<img src="/brand.png" alt="" width="38" height="38"><span>DeepChat</span>', "brand")}
     <nav aria-label="主导航">${link(route() === "/" ? "/lab" : "/", icon(route() === "/" ? "squares-four" : "arrow-left") + (route() === "/" ? "实验室任务" : "返回对话"))}
     ${noticeButton(icon("clock-counter-clockwise"), "icon-button history", "历史记录尚未接通。演示内容不会保存为真实任务。")}
     <span class="avatar" aria-label="${demo ? "演示成员洛，非登录身份" : "尚未登录"}">${demo ? "洛" : "访"}</span></nav></header>
@@ -212,7 +212,7 @@ async function render() {
       : route() === "/lab"
         ? "实验室任务"
         : "任务详情";
-  document.title = `${title} · Research Agent Platform`;
+  document.title = `${title} · DeepChat`;
   main.innerHTML =
     route() === "/"
       ? entry()

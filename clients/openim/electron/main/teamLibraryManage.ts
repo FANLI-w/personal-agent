@@ -21,7 +21,7 @@ async function teamLibrarySession(event: IpcMainInvokeEvent) {
     (await owner.contents.session.cookies.get({ url: origin, name }))[0]?.value;
   const token = await cookie();
   if (!token || !/^[A-Za-z0-9_-]{16,256}$/.test(token))
-    throw Error("请先登录 AcceptCat。");
+    throw Error("请先登录 DeepChat。");
   const valid = async () => {
     if (
       authority(event).owner !== owner.owner ||

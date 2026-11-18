@@ -20,7 +20,7 @@ export const communityCatalogSeed: readonly CommunityEntry[] = [
     input: "Markdown 稿件、来源清单 JSON，或需要讨论的稿件片段。",
     deliverables: "问题清单与位置、来源记录和修改建议；离线脚本可输出 JSON 检查报告。",
     prerequisites:
-      "文字讨论使用你的已配置模型；离线脚本需 Python 3.11+。AcceptCat 尚未接通脚本执行。",
+      "文字讨论使用你的已配置模型；离线脚本需 Python 3.11+。DeepChat 尚未接通脚本执行。",
     costs:
       "离线检查无需 API Key；聊天按你的模型服务计费。完整上游 Writer 另需 Anthropic、Parallel 等服务，不随安装接通。",
     materials:
@@ -50,7 +50,7 @@ export const communityCatalogSeed: readonly CommunityEntry[] = [
     deliverables:
       "结构化审查草稿、证据缺口与修改清单；离线工具可输出报告规范、引用一致性及审稿意见结构检查。",
     prerequisites:
-      "文字流程可经确认安装为私人 Skill；聊天使用你的已配置模型。8 个离线 Python 脚本需 Python 3.11+ 标准库，AcceptCat 尚未接通自动执行。",
+      "文字流程可经确认安装为私人 Skill；聊天使用你的已配置模型。8 个离线 Python 脚本需 Python 3.11+ 标准库，DeepChat 尚未接通自动执行。",
     costs:
       "离线脚本无需模型、网络服务或 API Key；文字讨论按配置的模型服务计费，不要求安装完整 Writer。",
     materials:
@@ -80,7 +80,7 @@ export const communityCatalogSeed: readonly CommunityEntry[] = [
     deliverables:
       "来源片段、引用关系和回答；应保存实际检索范围、无法支持的主张与复核记录。",
     prerequisites:
-      "Python 3.11+、fhlmi / fhaviary 模型适配、嵌入服务、Tantivy 索引及 PDF 解析依赖；本地嵌入另需 sentence-transformers。不是直接可装的 SKILL.md，AcceptCat 尚无运行时连接。",
+      "Python 3.11+、fhlmi / fhaviary 模型适配、嵌入服务、Tantivy 索引及 PDF 解析依赖；本地嵌入另需 sentence-transformers。不是直接可装的 SKILL.md，DeepChat 尚无运行时连接。",
     costs:
       "云端生成与嵌入按所选供应商计费；本地模型需要计算资源。启用 Crossref / Semantic Scholar / Unpaywall 元数据访问时还需核对服务限制及网络可达性。",
     materials:
@@ -123,7 +123,7 @@ export const communityCatalogSeed: readonly CommunityEntry[] = [
     deliverables:
       "文献条目、元数据和实际读取文本；原工具也支持编辑与批注，需另行授权。",
     prerequisites:
-      "AcceptCat 原生本机元数据选入需打开 Zotero 并启用本地 API，无需 Python 或 MCP。上游高级检索、全文与编辑仍需 Python 3.10+ 和 MCP/CLI，尚未接通。",
+      "DeepChat 原生本机元数据选入需打开 Zotero 并启用本地 API，无需 Python 或 MCP。上游高级检索、全文与编辑仍需 Python 3.10+ 和 MCP/CLI，尚未接通。",
     costs:
       "本地检索不要求模型 API Key；语义检索可用本地或收费的嵌入服务，聊天模型另计。",
     materials:
@@ -131,7 +131,7 @@ export const communityCatalogSeed: readonly CommunityEntry[] = [
     validation:
       "已静态核对固定修订、文档、依赖和分模块许可；本机元数据适配用隔离合成 API 验证。尚未连接用户真实 Zotero 库或验证上游 MCP。",
     limitations:
-      "仅元数据与摘要，不是论文全文阅读、语义检索或自主工具调用。上游 Windows 插件和 CLI 问题尚未复验；AcceptCat 读取失败显示错误，不伪装空结果。关闭窗口结束本次许可，导入结果不确定时留在窗口重试原请求。",
+      "仅元数据与摘要，不是论文全文阅读、语义检索或自主工具调用。上游 Windows 插件和 CLI 问题尚未复验；DeepChat 读取失败显示错误，不伪装空结果。关闭窗口结束本次许可，导入结果不确定时留在窗口重试原请求。",
     discussions: [
       {
         label: "Windows 插件兼容性报告 #700",
@@ -182,7 +182,7 @@ export const communityCatalogSeed: readonly CommunityEntry[] = [
     summary: "为课题组技术调研与报告修订维护来源、研究主张和版本记录，区分作者自检与独立评审。",
     input: "明确的调研问题、读者、范围与信息截止日，以及获准使用的来源材料、现有报告或更新要求。",
     deliverables: "来源与主张登记、版本化报告、修订记录和实际完成检查的回执；报告本身由 Agent 编写。",
-    prerequisites: "本地 CLI 需 Python 3.10+ 标准库；MCP 另需 mcp==2.2.0 和能启动本地进程的客户端。插件方法、脚本与参考需一起提供；AcceptCat 尚未连接这些工具，不能只安装嵌套 SKILL.md 包装页。",
+    prerequisites: "本地 CLI 需 Python 3.10+ 标准库；MCP 另需 mcp==2.2.0 和能启动本地进程的客户端。插件方法、脚本与参考需一起提供；DeepChat 尚未连接这些工具，不能只安装嵌套 SKILL.md 包装页。",
     costs: "离线记录和结构检查无需模型 Key。检索、写作与配置的外部评审按所选服务或账号计费；默认作者自检不等于另一个独立模型评审。",
     materials: "每项任务单独绑定获准来源原文、已读范围、主张—证据关系、报告和修订要求。团队接入还需按任务成员隔离工作目录，不接受带私人材料或评审凭证的社区预制包。",
     validation: "固定提交文件通过 Git blob 核对与 Python 静态解析；实际 CLI 用公开虚构出货记录完成 Lite 保存、作者检查及交付，未完成检查和路径穿越均拒绝。未安装 MCP、调用外部评审或验证模型报告质量。",
@@ -205,7 +205,7 @@ export const communityCatalogSeed: readonly CommunityEntry[] = [
     summary: "和导师讨论新选题或卡住的项目：明确价值、最大风险，以及继续、补证据或转向的判断点。",
     input: "研究想法、当前进展或困难，已有证据、时间与设备条件，以及导师和学生各自的目标。",
     deliverables: "选题讨论记录、风险与待补证据清单、成功标准、决策路线和下一轮需讨论的问题；按阶段选择参考说明。",
-    prerequisites: "可确认安装为私人文字 Skill；9份参考、无脚本，无需安装整个 Bio Research 插件。使用现有聊天模型；上游部分阶段要求 PubMed 检索，AcceptCat 尚未连接这些 MCP 工具，应手动提供已核对资料。",
+    prerequisites: "可确认安装为私人文字 Skill；9份参考、无脚本，无需安装整个 Bio Research 插件。使用现有聊天模型；上游部分阶段要求 PubMed 检索，DeepChat 尚未连接这些 MCP 工具，应手动提供已核对资料。",
     costs: "文字讨论按已配置模型服务计费。选题方法本身没有独立收费服务；整个上层插件的外部数据源、订阅或模型费用不包含在本次安装中。",
     materials: "只提供本次获准的研究背景、初步结果、资源约束与来源位置；13个原件包含9份参考及适用许可，不自动读取个人或团队文献库。",
     validation: "固定提交13原件经独立Git blob/ZIP/私人存储往返核对；实际HTTP/SQLite/ChatWorker合成选题调用验证完整说明、仅选定风险/决策参考和跨账号隔离。未验证真实模型选题质量或执行联网检索。",
@@ -231,13 +231,13 @@ export const communityCatalogSeed: readonly CommunityEntry[] = [
     summary: "把一个初步观察拆成竞争解释、区分它们的预测，以及可能推翻假设的结果。",
     input: "获准使用的观察记录、研究问题、候选解释、变量与测量口径，以及已核对的证据和检索范围。",
     deliverables: "候选假设、竞争预测表、测量与对照检查、证据缺口及预注册草稿；不将草稿当成已完成的注册或实验。",
-    prerequisites: "文字流程可确认安装为私人 Skill。28原件含10份方法参考、8份模板及8个Python文件；0.10.5及以上可选择18份参考文字。7个离线CLI需Python 3.11+标准库，AcceptCat尚未接通自动执行；联网文献检索需另行适配。",
+    prerequisites: "文字流程可确认安装为私人 Skill。28原件含10份方法参考、8份模板及8个Python文件；0.10.5及以上可选择18份参考文字。7个离线CLI需Python 3.11+标准库，DeepChat尚未接通自动执行；联网文献检索需另行适配。",
     costs: "文字讨论按现有模型服务计费；离线CLI无需网络、模型Key或额外包。安装不接通完整Writer、检索或生图服务。",
     materials: "提供本次授权的观察、来源台账、检索边界和设计限制；可选假设JSON与预测CSV模板。未选参考不自动发送，安装不扩大任务材料或知识库权限。",
     validation: "固定提交28原件独立核对并完整往返；13次公开合成CLI检查覆盖有效结构、误称假设已证实、重复JSON键、相同竞争预测、英语因果表述、URL输入和拒绝覆盖。真实私人文字调用与两份所选模板进入提示通过；不评价科研结论真伪。",
-    limitations: "脚本检查结构和用户声明，不判断假设正确、新颖、伦理许可或因果识别成立。中文因果词未被上游规则检出，不能承诺自动发现中文因果夸大。模型和人工仍需核对测量、对照、证据及学科要求；AcceptCat不会自动运行这些脚本。",
+    limitations: "脚本检查结构和用户声明，不判断假设正确、新颖、伦理许可或因果识别成立。中文因果词未被上游规则检出，不能承诺自动发现中文因果夸大。模型和人工仍需核对测量、对照、证据及学科要求；DeepChat不会自动运行这些脚本。",
     discussions: [
-      { label: "上游插件兼容性讨论（已关闭，不能代表AcceptCat适配完成）", url: "https://github.com/K-Dense-AI/claude-scientific-writer/issues/19" },
+      { label: "上游插件兼容性讨论（已关闭，不能代表DeepChat适配完成）", url: "https://github.com/K-Dense-AI/claude-scientific-writer/issues/19" },
       { label: "上游allowed-tools权限报告与修复记录", url: "https://github.com/K-Dense-AI/claude-scientific-writer/issues/12" },
     ],
   },
@@ -258,7 +258,7 @@ export const communityCatalogSeed: readonly CommunityEntry[] = [
     input: "本次实际申报指南、研究想法与初步证据、人员设备条件、工期和需讨论的草稿；先说明资助机构与项目类型。",
     deliverables: "目标与可验证成果、技术路线和里程碑草稿、可行性证据缺口、预算说明提纲及修改问题清单。",
     prerequisites: "可确认安装为私人文字 Skill；17份原件含15份可选参考/模板，无脚本，现有Windows0.10.6导入器兼容。使用本人已配置模型，按阶段选择资料；可选绘图和联网检索尚未接通。",
-    costs: "文字讨论按所选聊天模型计费，无需安装整个 Writer。上游可选绘图需单独的 OpenRouter Key 和费用，AcceptCat 不自动请求或发送申报材料。",
+    costs: "文字讨论按所选聊天模型计费，无需安装整个 Writer。上游可选绘图需单独的 OpenRouter Key 和费用，DeepChat 不自动请求或发送申报材料。",
     materials: "只提供本次获准的申报指南、研究基础、团队分工及已核对来源。上游参考以NSF/NIH/DOE/DARPA/NSTC为主，不含国家自然科学基金当年指南；不会自动读取课题组材料。",
     validation: "固定17原件逐一与Git blob/原ZIP核对并完成私人存储往返；0.10.6实际包内解析器与新解析器输出一致。真实HTTP/SQLite/ChatWorker验证所选目标/核心结构参考及私人隔离，模型回复为合成夹具。",
     limitations: "仅供申请书结构讨论，不负责合规核验、自动提交、经费核准或资助成功预测。上游把NIH模块预算步长误写为$250K，官方为$25,000且有适用条件；此处提示错误并保留原件。不得直接套用国外金额、页数、期限和示例，须以本次正式指南和学校要求为准。",
@@ -283,10 +283,10 @@ export const communityCatalogSeed: readonly CommunityEntry[] = [
     summary: "建模或组会前核对CSV/TSV/JSON数据结构、缺失和异常值影响，检查同一研究对象是否跨训练与测试集。",
     input: "获准的本地数据副本、变量字典、观察单位与重复测量关系、缺失码、分组/对象/时间/数据划分字段。",
     deliverables: "有扫描范围的汇总体检报告、缺失与划分重叠提示、异常值和变换敏感性说明，以及仍需人工补充的EDA报告框架。",
-    prerequisites: "核心CSV/TSV/严格JSON工具需Python3.11+标准库；13个Python文件、6份领域参考和1份报告模板。完整GitHub原包超过桌面32MiB导入上限，且AcceptCat未接通脚本执行，因此保留待接入，无安装/调用入口。",
+    prerequisites: "核心CSV/TSV/严格JSON工具需Python3.11+标准库；13个Python文件、6份领域参考和1份报告模板。完整GitHub原包超过桌面32MiB导入上限，且DeepChat未接通脚本执行，因此保留待接入，无安装/调用入口。",
     costs: "核心本地CLI无需模型、网络服务或Key。NumPy/HDF5/序列/图片元数据等可选能力需另建环境和格式依赖，本轮未安装或验证；后续聊天模型费用另计。",
     materials: "按任务选择明确授权目录和数据副本，先保留原始数据、变量含义与来源；输出标识符token不等于匿名化，汇总值也可能敏感，不能自动上传或共享。",
-    validation: "固定源码独立Git blob校验与Python静态解析；Python3.12.14实际18组合成离线CLI验证中英文表格、缺失、划分重叠、截取范围、严格JSON、未知格式与路径/覆盖拒绝，数据和源码保持。未通过AcceptCat自动运行。",
+    validation: "固定源码独立Git blob校验与Python静态解析；Python3.12.14实际18组合成离线CLI验证中英文表格、缺失、划分重叠、截取范围、严格JSON、未知格式与路径/覆盖拒绝，数据和源码保持。未通过DeepChat自动运行。",
     limitations: "部分扫描是文件前缀，不能当作全表或随机抽样；重叠提示不证明模型已泄漏。不会自动删异常、插补、修改原始数据或作因果结论。Excel和许多领域格式仅有参考说明；可选图像检查仅元数据，不是图像质量验收。",
     discussions: [
       { label: "上游扫描文档过期报告：扫描标签不等于独立保证", url: "https://github.com/K-Dense-AI/scientific-agent-skills/issues/324" },
