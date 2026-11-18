@@ -2,6 +2,12 @@
 
 更新日期：2026-11-18（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
+## 2026-11-18 · DeepChat 0.10.117 正式发布
+
+Windows x64 [0.10.117](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.117) 已发布。更名 [PR #243](https://github.com/luoyan96/personal-agent/pull/243) 合入 main `672b50b`，四项远程检查通过。正式安装包 421737435 字节，SHA-256 `0e573e2ccf39ace6739757b08cfa130eef5a4451d464af11589414fc7170927b`。桌面副本与 Release 一致。
+
+本机从 0.10.116 覆盖升级通过，原安装目录、登录和账号连续；新版启动前本地 2234 个文件与备份逐文件校验一致，桌面和开始菜单快捷方式指向 DeepChat。新版读到原来的 14 个会话、抽查的 30 条助理历史消息及 1 条已确认习惯。线上 API/worker 沿用 0.50/040。话题记忆 [PR #242](https://github.com/luoyan96/personal-agent/pull/242) 涉及 0.51/041，独立验收。
+
 ## 2026-11-18 · DeepChat 更名预览
 
 基于 main `bec9526` 的本地分支 `codex/deepchat-branding` 将客户端、工作台及网页等产品品牌统一为 DeepChat，保留大肥鱼图标。旧版的应用标识、安装更新身份和本地数据位置继续兼容。详细范围见[更名验证记录](development/deepchat-branding.md)。
