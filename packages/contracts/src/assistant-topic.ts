@@ -110,7 +110,7 @@ function route<P extends z.ZodType, Q extends z.ZodType, B extends z.ZodType, R 
     method,
     path: `/api/v1${path}`,
     stage: 'CHAT1' as const,
-    implemented: false,
+    implemented: true,
     access: 'session' as const,
     status,
     rule,

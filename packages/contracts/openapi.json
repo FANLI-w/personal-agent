@@ -34791,7 +34791,7 @@
         "operationId": "assistantTopics",
         "description": "Current owner only. Lists own agent topics by state; index fields only, no body.",
         "x-stage": "CHAT1",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "sessionCookie": []
@@ -34845,7 +34845,7 @@
         ],
         "responses": {
           "200": {
-            "description": "CHAT1 contract; not implemented in B2b (501)",
+            "description": "CHAT1 contract; implemented",
             "content": {
               "application/json": {
                 "schema": {
@@ -35090,7 +35090,7 @@
         "operationId": "createAssistantTopic",
         "description": "Owner manual creation for an owned personal_agent. Joins the single active topic slot; no model call.",
         "x-stage": "CHAT1",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "sessionCookie": []
@@ -35311,7 +35311,7 @@
         },
         "responses": {
           "201": {
-            "description": "CHAT1 contract; not implemented in B2b (501)",
+            "description": "CHAT1 contract; implemented",
             "content": {
               "application/json": {
                 "schema": {
@@ -35719,7 +35719,7 @@
         "operationId": "assistantTopic",
         "description": "Current owner only. Full topic including body; closed topics stay readable.",
         "x-stage": "CHAT1",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "sessionCookie": []
@@ -35738,7 +35738,7 @@
         ],
         "responses": {
           "200": {
-            "description": "CHAT1 contract; not implemented in B2b (501)",
+            "description": "CHAT1 contract; implemented",
             "content": {
               "application/json": {
                 "schema": {
@@ -36144,7 +36144,7 @@
         "operationId": "updateAssistantTopic",
         "description": "Current owner only; exact version; title, summary or body. Body stays within 4KB and notes within 10 items.",
         "x-stage": "CHAT1",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "sessionCookie": []
@@ -36354,7 +36354,7 @@
         },
         "responses": {
           "200": {
-            "description": "CHAT1 contract; not implemented in B2b (501)",
+            "description": "CHAT1 contract; implemented",
             "content": {
               "application/json": {
                 "schema": {
@@ -36762,7 +36762,7 @@
         "operationId": "closeAssistantTopic",
         "description": "Current owner only; exact version. Closes the topic without deleting it; closed topics are never injected.",
         "x-stage": "CHAT1",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "sessionCookie": []
@@ -36824,7 +36824,7 @@
         },
         "responses": {
           "200": {
-            "description": "CHAT1 contract; not implemented in B2b (501)",
+            "description": "CHAT1 contract; implemented",
             "content": {
               "application/json": {
                 "schema": {
@@ -37232,7 +37232,7 @@
         "operationId": "assistantTopicHistory",
         "description": "Current owner only. At most 100 revisions, newest first after reverse; closed topics keep history.",
         "x-stage": "CHAT1",
-        "x-implemented": false,
+        "x-implemented": true,
         "security": [
           {
             "sessionCookie": []
@@ -37251,7 +37251,7 @@
         ],
         "responses": {
           "200": {
-            "description": "CHAT1 contract; not implemented in B2b (501)",
+            "description": "CHAT1 contract; implemented",
             "content": {
               "application/json": {
                 "schema": {
