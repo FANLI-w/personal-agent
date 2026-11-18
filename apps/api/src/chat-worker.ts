@@ -21,6 +21,7 @@ import type { Config } from './config.js'
 import { ApiError } from './errors.js'
 import { chatModelSystem, chatInputTokenBound, chatReplyTokenReserve, dailyChatSystem } from './chat-model-input.js'
 import { queueTopicCuration } from './topic-curator-queue.js'
+import { topicContext, topicReceipt, topicSystem } from './topic-context.js'
 import { fileChatSystem,fileReadMetadata,selectFileExcerpts } from './agent-files.js'
 import { AgentCreationOutput, agentCreationSystem, applyAgentCreation, legacyTurnDocument } from './agent-creation.js'
 import { externalForChat } from './agent-connections.js'
@@ -121,17 +122,19 @@ export class ChatWorker {
         saveDialogueSelection(s,turn.id,input,{messages:recentDialogue(s,group.id,input.inputSequence,input.continuous?.messageIds??[turn.inputMessageId]).filter(m=>(input.continuous?.messageIds??[turn.inputMessageId]).includes(m.id)),notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]},true)
       } else if(input.assistantMode==='coordinate'){
         const current=currentTurnText(s,turn.id),agentContext=s.directory.modelContext(turn.agentContactId,group.id),personal=personalMemoryContext(s,agentContext.agent,group,current),complex=assistantComplexRequest(current)
+        const topic=topicContext(s,turn.agentContactId,group.kind)
         input.memoryContextSources=memoryContextSources(s,personal.records,agentContext.memories)
         if(personal.records.length||agentContext.memories.length)console.log(`CHAT_MEMORY conversation=${group.id} ${lifecycleReceipt({preference:personal.records.length+agentContext.memories.length,turn:1})} omitted=${personal.omitted}`)
+        if(topic)console.log(`${topicReceipt(topic)} conversation=${group.id}`)
         const required=new Set(input.continuous?.messageIds??[turn.inputMessageId]),recent=recentDialogue(s,group.id,input.inputSequence,[...required]),notes=olderDialogue(s,group.id,input.inputSequence,recent,current),tasks=dialogueTaskState(s,group,current)
         let layers:DialogueLayers={messages:[],notes:{method:'source_quotes',scope:'current_conversation',summary:[],recalled:[]},tasks:[]}
-        system=personalAssistantSystem+'\n'+dialogueStyle+(complex?'\nComplex work: JSON {kind:"team",title:string,contactIds:[listed_ID]}. Save only a proposal. Owner confirms group creation; humans and Agent owners accept independently. No automatic execution or material sharing.':'')
+        system=personalAssistantSystem+'\n'+dialogueStyle+(complex?'\nComplex work: JSON {kind:"team",title:string,contactIds:[listed_ID]}. Save only a proposal. Owner confirms group creation; humans and Agent owners accept independently. No automatic execution or material sharing.':'')+(topic?'\n'+topicSystem:'')
         if(input.assistantProjectEntry)system+='\n'+assistantProjectCompactSystem
         system+=rulesSuffix
         const baseSystem=system,contextSystem=(selection:DialogueLayers)=>baseSystem+projectDecisionSuffix()+(selection.notes.summary.length||selection.notes.recalled.length||selection.tasks.length?'\n'+dialogueContextSystem:'\nAnswer currentRequest only; forwarded names may differ from the sender.')
         system=contextSystem(layers)
         const candidates=rankedAssistantCandidates(s,current),shown:typeof candidates=[]
-        const serialize=(selection=layers)=>JSON.stringify({currentRequest:current,...(input.assistantProjectEntry?{projectEntrySources:projectSources}:{}),requestedAgent:{id:agentContext.agent.id,displayName:agentContext.agent.displayName,profile:Object.fromEntries(Object.entries(modelAgentProfile(agentContext.agent)).filter(([key,value])=>key!=='version'&&value!==''))},...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(agentContext.memories.length?{memories:agentContext.memories}:{}),localSpecialists:shown,...(shown.length<candidates.length?{specialistsOmitted:true}:{}),...(complex?{labId:s.c.actor.labId,collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(selection.messages.some(m=>!required.has(m.id))?{recentDialogue:selection.messages.filter(m=>!required.has(m.id))}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
+        const serialize=(selection=layers)=>JSON.stringify({currentRequest:current,...(input.assistantProjectEntry?{projectEntrySources:projectSources}:{}),requestedAgent:{id:agentContext.agent.id,displayName:agentContext.agent.displayName,profile:Object.fromEntries(Object.entries(modelAgentProfile(agentContext.agent)).filter(([key,value])=>key!=='version'&&value!==''))},...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(topic?{currentTopic:topic}:{}),localSpecialists:shown,...(shown.length<candidates.length?{specialistsOmitted:true}:{}),...(complex?{labId:s.c.actor.labId,collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(selection.messages.some(m=>!required.has(m.id))?{recentDialogue:selection.messages.filter(m=>!required.has(m.id))}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
         prompt=serialize()
         const replyReserve=chatReplyTokenReserve(system,prompt,input.budget.maxTokens)
         for(const candidate of candidates){if(shown.length>=3)break;shown.push(candidate);const trial=serialize();if(input.budget.maxTokens-chatInputTokenBound(system,trial)>=replyReserve)prompt=trial;else shown.pop()}
@@ -169,8 +172,10 @@ export class ChatWorker {
       const contacts = candidates.flatMap(id => { try { const contact=s.contact(id);return [group.kind==='group'?{id:contact.id,displayName:contact.displayName,identity:contact.identity,availability:{status:contact.availability.status},profile:{}}:publicContact(contact)] } catch { return [] } }).slice(0, 100)
       const agentContext=s.directory.modelContext(turn.agentContactId,group.id),requestedAgent=(({availability:_availability,...value})=>value)(publicContact({...agentContext.agent,profile:modelAgentProfile(agentContext.agent)}))
       const personal=personalMemoryContext(s,agentContext.agent,group,currentTurnText(s,turn.id))
+      const topic=topicContext(s,turn.agentContactId,group.kind)
       input.memoryContextSources=memoryContextSources(s,personal.records,agentContext.memories)
       if(personal.records.length||agentContext.memories.length)console.log(`CHAT_MEMORY conversation=${group.id} ${lifecycleReceipt({preference:personal.records.length+agentContext.memories.length,turn:1})} omitted=${personal.omitted}`)
+      if(topic)console.log(`${topicReceipt(topic)} conversation=${group.id}`)
       input.agentContextFingerprint=agentContext.fingerprint
       this.db.prepare('UPDATE chat_turns SET request_json=? WHERE id=?').run(JSON.stringify(input),turn.id)
       const habits = group.kind === 'group' || !personal.fingerprint
@@ -178,6 +183,7 @@ export class ChatWorker {
       const contactColumns=['id','displayName','identity','availability','profile']
       const selectedTasks=input.context.filter(ref=>ref.kind==='task').map(ref=>s.c.task(ref.ref.id))
       system=group.kind==='group'?groupAssistantSystem:input.dailyChat?dailyChatSystem:chatModelSystem({group:group.kind==='personal'&&agentContext.agent.profile.role==='coordinator',inviteContact:false,inviteTask:false,runTask:false})
+      if(topic)system+='\n'+topicSystem
       if (input.dailyChat && !input.scheduledFollowupId) {
         system += '\n' + dialogueStyle
       }
@@ -206,7 +212,7 @@ export class ChatWorker {
         // IDs locate the complete current batch; optional old rows need no
         // duplicate UUIDs. Source quotes carry their own durable provenance.
         const messageRows=selected.map(m=>messageColumns.map(key=>key==='id'?currentIds.includes(m.id)?m.id:null:key==='sender'?m.senderContactId===null?null:senderIds.indexOf(m.senderContactId):m[key as keyof typeof m]))
-        return JSON.stringify({...(input.assistantProjectEntry?{projectEntrySources:projectSources}:{}),...(habits ? { senderWorkPreferences: habits } : {}),...(group.kind==='group'?{groupContext:groupPublicContext(s,group)}:{}),...(input.dailyChat?{currentRequest:{messageIds:currentIds}}:{}),...(selectedSkill?{selectedSkill}:{}),...(library?{researchLibrary:{retrieval:library.retrieval,limitation:library.limitation,excerpts:libraryExcerpts.map((e,i)=>({label:`R${i+1}`,...e}))}}:{}),...(!input.dailyChat||selectedSkill?{ownerId:s.c.actor.id,labId:s.c.actor.labId}:{}),requestedAgent,conversation,contactColumns,contacts:contacts.map(c=>contactColumns.map(key=>c[key as keyof typeof c])),senderIds,messageColumns,messages:messageRows,...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(input.assistantMode==='coordinate'?{currentRequest:s.projectedMessage(turn.inputMessageId).text,localSpecialists:assistantCandidates(s),collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(context.length?{context}:{}),...(earlierMessagesOmitted?{earlierMessagesOmitted:true}:{}),...(read?{fileRead:read,fileExcerpts}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
+        return JSON.stringify({...(input.assistantProjectEntry?{projectEntrySources:projectSources}:{}),...(habits ? { senderWorkPreferences: habits } : {}),...(group.kind==='group'?{groupContext:groupPublicContext(s,group)}:{}),...(input.dailyChat?{currentRequest:{messageIds:currentIds}}:{}),...(selectedSkill?{selectedSkill}:{}),...(library?{researchLibrary:{retrieval:library.retrieval,limitation:library.limitation,excerpts:libraryExcerpts.map((e,i)=>({label:`R${i+1}`,...e}))}}:{}),...(!input.dailyChat||selectedSkill?{ownerId:s.c.actor.id,labId:s.c.actor.labId}:{}),requestedAgent,conversation,contactColumns,contacts:contacts.map(c=>contactColumns.map(key=>c[key as keyof typeof c])),senderIds,messageColumns,messages:messageRows,...(agentContext.memories.length?{memories:agentContext.memories}:{}),...(personal.records.length?{personalMemories:personal.records}:{}),...(personal.omitted?{personalMemoriesOmitted:true}:{}),...(topic?{currentTopic:topic}:{}),...(input.assistantMode==='coordinate'?{currentRequest:s.projectedMessage(turn.inputMessageId).text,localSpecialists:assistantCandidates(s),collaboratingHumans:assistantPeople(s),collaboratingAgents:assistantTeamAgents(s)}:{}),...(context.length?{context}:{}),...(earlierMessagesOmitted?{earlierMessagesOmitted:true}:{}),...(read?{fileRead:read,fileExcerpts}:{}),...(selection.notes.summary.length||selection.notes.recalled.length?{dialogueContext:selection.notes}:{}),...(selection.tasks.length?{taskState:selection.tasks.map(t=>t.value)}:{})})
       }
       prompt=serialize(messages)
       if(input.dailyChat){

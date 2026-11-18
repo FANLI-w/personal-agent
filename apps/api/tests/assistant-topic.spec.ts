@@ -7,6 +7,9 @@ import { routes, type RouteName } from '@research-agent-platform/contracts'
 import { readConfig } from '../src/config.js'
 import { migrate, openDatabase } from '../src/database.js'
 import { createServer } from '../src/server.js'
+import { ChatService } from '../src/chat.js'
+import { serviceFor } from '../src/execution-worker.js'
+import { topicContext } from '../src/topic-context.js'
 
 const cleanup: (() => unknown | Promise<unknown>)[] = []
 afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close() })
@@ -41,7 +44,7 @@ async function fixture() {
     const own = (await call('personalConversation', session)).value.data
     return { ...session, agentId: own.agent.id }
   }
-  return { db, call, member }
+  return { db, config, call, member }
 }
 
 it('creates one active topic, versions edits and keeps closed topics readable', { timeout: 30000 }, async () => {
@@ -99,4 +102,15 @@ it('hides another member topic and rejects unknown agents', { timeout: 30000 }, 
   expect((await s.call('updateAssistantTopic', other, { expectedVersion: 1, summary: '越权修改' }, { id })).status).toBe(404)
   expect((await s.call('assistantTopics', other, null, {}, `?assistantId=${owner.agentId}`)).status).toBe(404)
   expect((await s.call('createAssistantTopic', owner, { assistantId: 'missing_agent', title: '无效', summary: '无效', body: {} })).status).toBe(404)
+})
+
+it('exposes only the active topic to the chat context', { timeout: 30000 }, async () => {
+  const s = await fixture(), owner = await s.member('owner')
+  const created = await s.call('createAssistantTopic', owner, { assistantId: owner.agentId, title: '实验讨论', summary: '结晶条件', body: { next: ['补充对照组'], openQuestions: ['温度上限'] } })
+  expect(created.status, created.text).toBe(201)
+  const service = new ChatService(serviceFor(s.db, owner.id, s.config).c, s.config)
+  expect(topicContext(service, owner.agentId, 'personal')).toMatchObject({ id: created.value.data.id, next: ['补充对照组'], openQuestions: ['温度上限'] })
+  expect(topicContext(service, owner.agentId, 'group')).toBeUndefined()
+  await s.call('closeAssistantTopic', owner, { expectedVersion: 1 }, { id: created.value.data.id })
+  expect(topicContext(service, owner.agentId, 'personal')).toBeUndefined()
 })
