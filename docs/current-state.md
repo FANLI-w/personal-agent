@@ -4,7 +4,7 @@
 
 ## 记忆现状（2026-11-16）
 
-`assistant_memories` 只承载助理笔记（`scope='agent'`）；本人偏好仍由 `personal_memories` 权威，会话/旧助理记忆仍由 `chat_memories` 权威。自动写入、候选确认、`assistant` 记忆权限和记忆进 `compose()` 未接线；`assistant_memories scope='personal'` 可写但注入不读，待确认无写入后收紧。旧表与旧会话按兼容期保留。压缩入口在助理资料卡 →“管理助理专属记忆”→“助理笔记”→“高级管理”，不在“我的助理”弹窗。
+`assistant_memories` 只承载助理笔记（`scope='agent'`）；本人偏好仍由 `personal_memories` 权威，会话/旧助理记忆仍由 `chat_memories` 权威。自动写入、候选确认、`assistant` 记忆权限和记忆进 `compose()` 未接线；`assistant_memories scope='personal'` 可写但注入不读，待确认无写入后收紧。旧表与旧会话按兼容期保留。压缩入口在助理资料卡 →“管理助理专属记忆”→“助理笔记”→“高级管理”，不在“我的助理”弹窗。0.10.116 的 `assistant_projects`/commitments/events 是持续项目与分工跟踪，不是记忆表。
 ## 2026-11-16 · 0.10.116 发布与项目修复验收
 
 Windows 正式版仍为 [0.10.116](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.116)，安装包与标签固定于 [PR #236](https://github.com/luoyan96/personal-agent/pull/236) 的 `6776610`。后续修正均在后台，未重新打包或替换公开附件。
