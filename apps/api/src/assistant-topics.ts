@@ -206,7 +206,7 @@ function write(s: ChatService, value: Row, patch: { title?: string; summary?: st
   return updated
 }
 
-export function createTopic(s: ChatService, input: AssistantTopicInput, origin: Row['origin'], subject: ActorFacts) {
+export function createTopic(s: ChatService, input: AssistantTopicInput, origin: Row['origin'], subject: ActorFacts, titleStatus: Row['title_status'] = 'final') {
   assertAllowed('personal', 'memory', subject, 'write')
   agentOwner(s, input.assistantId)
   assertBody(input.body)
@@ -214,7 +214,7 @@ export function createTopic(s: ChatService, input: AssistantTopicInput, origin: 
   if (existing) fail('INVALID_STATE')
   const id = randomUUID(), at = now()
   s.db.prepare('INSERT INTO assistant_topics(id,owner_id,assistant_id,title,title_status,summary,body_json,state,origin,version,created_at,updated_at,last_active_at) VALUES(?,?,?,?,?,?,?,\'active\',?,1,?,?,?)')
-    .run(id, s.c.actor.id, input.assistantId, input.title, 'final', input.summary, JSON.stringify(input.body), origin, at, at, at)
+    .run(id, s.c.actor.id, input.assistantId, input.title, titleStatus, input.summary, JSON.stringify(input.body), origin, at, at, at)
   const created = row(s, id)
   revision(s, view(created))
   return created
@@ -231,6 +231,15 @@ export function applyTopicPatch(s: ChatService, patch: AssistantTopicPatch, subj
   // section changes accept the model's rewrite. Owner edits are not gated.
   const accept = changedSections(before, body) >= 2
   return write(s, current, { title: accept ? patch.title : undefined, summary: accept ? patch.summary : undefined, body, origin: 'curator' })
+}
+
+/** Curator switching topics pauses the old active one; closed topics are never injected. */
+export function pauseActiveTopic(s: ChatService, assistantId: string, subject: ActorFacts) {
+  assertAllowed('personal', 'memory', subject, 'write')
+  agentOwner(s, assistantId)
+  const current = s.db.prepare("SELECT * FROM assistant_topics WHERE owner_id=? AND assistant_id=? AND state='active'").get(s.c.actor.id, assistantId) as Row | undefined
+  if (!current) return undefined
+  return write(s, current, { state: 'paused', origin: 'curator', active: false })
 }
 
 export function ensureActiveTopic(s: ChatService, assistantId: string, title: string, summary: string, subject: ActorFacts) {

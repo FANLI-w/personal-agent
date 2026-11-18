@@ -20,6 +20,7 @@ import { instant } from './ai.js'
 import type { Config } from './config.js'
 import { ApiError } from './errors.js'
 import { chatModelSystem, chatInputTokenBound, chatReplyTokenReserve, dailyChatSystem } from './chat-model-input.js'
+import { queueTopicCuration } from './topic-curator-queue.js'
 import { fileChatSystem,fileReadMetadata,selectFileExcerpts } from './agent-files.js'
 import { AgentCreationOutput, agentCreationSystem, applyAgentCreation, legacyTurnDocument } from './agent-creation.js'
 import { externalForChat } from './agent-connections.js'
@@ -418,6 +419,7 @@ export class ChatWorker {
       }
       turn.version++; turn.updatedAt = instant(); s.saveTurn(turn)
       this.db.prepare('UPDATE chat_turns SET lease_owner=NULL,lease_until=NULL WHERE id=?').run(turn.id)
+      if(turn.status==='succeeded'){try{const c=s.contact(turn.agentContactId);if(group.kind==='personal'&&c.identity.kind==='personal_agent'&&c.identity.ownerMemberId===s.c.actor.id)queueTopicCuration(this.db,s.c.actor.id,c.id,group.id,turn.id)}catch{}}
       if(result.failure==='OUTPUT_LIMIT')queueIntakeOutputRecovery(s,turn.id)
     })) } finally { clearInterval(lease) }
     return true
