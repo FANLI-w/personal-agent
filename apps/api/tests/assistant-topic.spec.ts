@@ -41,8 +41,8 @@ async function fixture() {
     session.cookie = login.cookie
     session.csrf = (await call('session', session)).value.data.csrfToken
     session.id = login.value.data.id
-    const own = (await call('personalConversation', session)).value.data
-    return { ...session, agentId: own.agent.id }
+    const agent = (await call('createPersonalAgent', session, { displayName: 'Synthetic agent', introduction: '合成助理', capabilityDescription: '整理合成话题', personality: '简洁' })).value.data
+    return { ...session, agentId: agent.id }
   }
   return { db, config, call, member }
 }
