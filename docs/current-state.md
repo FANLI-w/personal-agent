@@ -1,5 +1,11 @@
 # 新 AI 接手：当前项目状态
 
+## 2026-11-19 · 话题记忆合并候选
+
+[PR #242](https://github.com/luoyan96/personal-agent/pull/242) 与 DeepChat 0.10.117 的主线整合。候选版本为客户端 0.10.118、契约 0.51、迁移 041。助理会在新话题出现时暂停上一话题，用户可在「话题」页恢复暂停项。话题整理读取对应轮次及其补充消息，跳过无关的后续消息。模型处理中若话题被手动切换，过期结果不会覆盖用户选择。
+
+本地真实 HTTP、SQLite 与两类 worker 使用合成模型通过「创建组会话题 → 切换论文话题 → 恢复组会 → 重启后续聊」用例。确认旧聊天和本人习惯仍可读取，下一轮输入包含恢复话题的决定和下一步。生产恢复副本、正式包与部署有独立回执。
+
 更新日期：2026-11-18（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
 ## 2026-11-18 · DeepChat 0.10.117 正式发布
@@ -15,6 +21,14 @@ Windows x64 [0.10.117](https://github.com/luoyan96/personal-agent/releases/tag/v
 Windows 候选为 `DeepChat_0.10.117-preview.1.exe`，桌面副本已校验 SHA-256 `1a49812de8ed2d81df414f30d32a5305eff2b3a7f4e7e01f9359460731e8cf72`。安装包、更新清单和启动检查均通过，隔离实包验证窗口标题、登录和注册页。真实旧版覆盖安装尚未执行。公开版仍为 0.10.116，后台未部署本轮文案。
 
 完整 CI 复跑通过，1109 项通过、1 项可选测试跳过，生产入口检查通过。额外 Windows 资料库检查有一项临时文件清理 EBUSY，见[项目日志](project-log.md)。
+
+## 记忆现状（2026-11-16）
+
+`assistant_memories` 只承载助理笔记（`scope='agent'`）；本人偏好仍由 `personal_memories` 权威，会话/旧助理记忆仍由 `chat_memories` 权威。自动写入、候选确认、`assistant` 记忆权限和记忆进 `compose()` 未接线；`assistant_memories scope='personal'` 可写但注入不读，待确认无写入后收紧。旧表与旧会话按兼容期保留。压缩入口在助理资料卡 →“管理助理专属记忆”→“助理笔记”→“高级管理”，不在“我的助理”弹窗。0.10.116 的 `assistant_projects`/commitments/events 是持续项目与分工跟踪，不是记忆表。
+
+## 本地候选 · 话题记忆 v1（未合并、未部署）
+
+分支 `feat/personal-assistant-framework` 上实现：迁移 041（`assistant_topics`、`assistant_topic_revisions`、`assistant_topic_curator_jobs`）、契约 0.51（六个 `/me/assistant-topics` 路由）、`apps/api/src/assistant-topics.ts` handler、异步 `TopicCuratorWorker`、`topic-context.ts` 注入活动话题、`MemoryPanel` 只读「话题」页签（`supports(51)` 门控）。注入只取 `state='active'` 的话题，不做相似度打分；相关判断交给主模型。curator 以 `assistant` 主体授权，actor 仍是 owner。记录判据为四类变更，`notes` 自由段 v1 不开放给 curator；`summary`/`title` 只在 body 至少两段实质变化时接受。本地已过 `apps/api` 类型检查、contracts 快照与 `check-content`，并用合成模型冒烟覆盖创建、版本冲突、4KB 上限、curator 更新与注入。未进 CI、未部署；线上仍为契约 0.50 / 迁移 040。
 
 ## 2026-11-16 · 0.10.116 发布与项目修复验收
 
@@ -85,7 +99,6 @@ Windows x64 正式版 0.10.115 已发布。桌面私聊助理可以一起接收�
 0.10.115-preview.1 基于 `ff4776c`。桌面助理将文档与本条问题作为一次文件阅读请求提交。个人任务交文件使用任务可读的原件及版本引用。负责人可在当前成果旁验收或要求修改。个人任务文件需要配套 API，排除临时反馈的学习逻辑需要配套 worker。此次工作范围为本地验证与试用包。
 
 Windows 实机用已登录的个人助理发送一份合成周报，问题只问校验词和待确认事项。助理准确读出两项，消息显示已使用附件全部可提取文字。双账号本地走查发现个人任务退回时原稿和意见消失，现按提交消息保留该版本的原件、意见和待修改状态。没有数据库迁移。
-
 ## Windows 0.10.114 正式发布
 
 Windows x64 正式版 0.10.114 已发布。工作台页头显示大肥鱼头像和 deepchat，新会话按钮移至侧栏首行。[发布回执](deployment/acceptcat-0.10.114-release.md)
