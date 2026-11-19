@@ -1,8 +1,8 @@
 # 新 AI 接手：当前项目状态
 
-## 2026-11-19 · DeepChat 0.10.119 正式版准备
+## 2026-11-19 · DeepChat 0.10.119 正式发布
 
-桌面版本在 1490f46 升为 0.10.119；六个栏目改版的烟测和使用记录来自下方预览包。正式 Windows 安装包及更新清单待构建和核对，当前公开版为 0.10.118。
+Windows x64 0.10.119 已公开并设为最新稳定版。改版经 PR #247 合入 main `a29fbee5d0bb7c55419816758ea581f1f4deaa89`，四项远程检查通过。发布附件分别核对了大小和 SHA-256。安装包为 421733662 字节，SHA-256 为 `1795f2346a63d3d1f3583b722813e43dc678401630b1df8230b167f385d3de45`，桌面副本 `C:/Users/luo/Desktop/DeepChat_0.10.119.exe` 校验一致。[正式 Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.119) · [PR #247](https://github.com/luoyan96/personal-agent/pull/247)
 
 ## 2026-11-19 · 六个桌面栏目改版，Windows x64 本地预览 0.10.119-preview.1
 
