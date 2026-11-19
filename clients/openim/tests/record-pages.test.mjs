@@ -226,8 +226,8 @@ test("readonly members see records without edit, publish, confirm or revoke affo
   f.canPublish = false;
   f.records = f.records.map((r) => ({ ...r, allowedActions: [] }));
   const tree = f.render();
-  assert.equal(button(tree, "新增规则"), undefined);
-  assert.equal(button(tree, "编辑规则"), undefined);
+  assert.equal(button(tree, "新增规范"), undefined);
+  assert.equal(button(tree, "编辑规范"), undefined);
   assert.equal(button(tree, "确认生效"), undefined);
   const dropdown = nodes(tree).find((n) => n.type === "Dropdown");
   assert.deepEqual(
@@ -238,10 +238,10 @@ test("readonly members see records without edit, publish, confirm or revoke affo
 test("failed edits preserve the draft; successful edits keep expectedVersion and current API shape", async () => {
   const f = await fixture("LabStandards.tsx");
   let tree = f.render();
-  button(tree, "编辑规则").props.onClick();
+  button(tree, "编辑规范").props.onClick();
   tree = f.render();
   nodes(tree)
-    .find((n) => n.props?.["aria-label"] === "规则正文")
+    .find((n) => n.props?.["aria-label"] === "规范正文")
     .props.onChange({ target: { value: "Revised rule" } });
   f.fail = true;
   tree = f.render();
@@ -249,7 +249,7 @@ test("failed edits preserve the draft; successful edits keep expectedVersion and
   await new Promise(setImmediate);
   tree = f.render();
   assert.equal(
-    nodes(tree).find((n) => n.props?.["aria-label"] === "规则正文").props.value,
+    nodes(tree).find((n) => n.props?.["aria-label"] === "规范正文").props.value,
     "Revised rule",
   );
   assert(
@@ -282,8 +282,8 @@ test("platform rules remain readonly and separate from local files and methods",
   f.params = new URLSearchParams("panel=standards&section=platform");
   const tree = f.render();
   assert(text(tree).includes("Read-only policy"));
-  assert.equal(button(tree, "编辑规则"), undefined);
-  assert.equal(button(tree, "新增规则"), undefined);
+  assert.equal(button(tree, "编辑规范"), undefined);
+  assert.equal(button(tree, "新增规范"), undefined);
   assert.equal(
     nodes(tree).some((n) => n.props?.onClick && text(n) === "选择文件夹"),
     false,
@@ -332,7 +332,7 @@ test("library standards navigation keeps each section's heading and only related
   for (const [section, heading, tabs] of [
     ["templates", "PPT 工作模板", ["PPT 模板", "可复用方法"]],
     ["methods", "可复用方法", ["PPT 模板", "可复用方法"]],
-    ["platform", "平台基本规则", ["课题组规则", "平台基本规则"]],
+    ["platform", "平台基本规则", ["课题组规范", "平台基本规则"]],
   ]) {
     f.params.set("section", section);
     const tree = f.render();
@@ -372,18 +372,19 @@ test("identical rule titles and bodies do not repeat summaries or full body; dis
   assert(nodes(tree).some(node => node.props?.className === "record-content" && text(node) === complete));
 });
 
-test("empty template actions sit inside their explanation, preserving manager and member permissions", async () => {
+test("template browsing is visible and creation stays in the manager menu", async () => {
   const f = await fixture("LabStandards.tsx");
   f.records = [];
   f.params = new URLSearchParams("panel=standards&section=templates");
   let tree = f.render();
   const empty = nodes(tree).find(node => node.props?.className === "library-record-empty");
-  assert(button(empty, "新增模板"));
-  assert(button(empty, "设置本地资料文件夹"));
   assert(button(empty, "查看共享模板与范文"));
-  assert.equal(nodes(tree).filter(node => node.type === "Button" && text(node) === "新增模板").length, 1);
+  const itemsFor = (tree) => nodes(tree)
+    .find(node => node.type === "Dropdown" && text(node.props.children) === "管理模板")
+    .props.menu.items;
+  assert.deepEqual(Array.from(itemsFor(tree), item => item.label), ["新增模板", "设置本地资料文件夹"]);
+  assert.equal(button(tree, "新增模板"), undefined);
   f.canPublish = false;
   tree = f.render();
-  assert.equal(button(tree, "新增模板"), undefined);
-  assert(button(tree, "设置本地资料文件夹"));
+  assert.deepEqual(Array.from(itemsFor(tree), item => item.label), ["设置本地资料文件夹"]);
 });

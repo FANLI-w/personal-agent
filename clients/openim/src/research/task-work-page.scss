@@ -408,10 +408,54 @@
   .task-delivery-assistant { display: flex; gap: 10px; flex-wrap: wrap; }
   .task-delivery-assistant > .ant-input-group-wrapper { flex: 1 1 300px; }
   .task-delivery-confirm { width: 100%; background: #f4f8fc; border-radius: 10px; padding: 16px; }
-  .task-delivery-confirm .ant-btn { margin: 8px 8px 0 0; }
+  .task-delivery-confirm > .ant-btn { margin: 8px 8px 0 0; }
+  .task-delivery-output-options summary { cursor: pointer; }
+  .task-delivery-choices { display: grid; width: 100%; gap: 6px; margin: 6px 0; }
+  .task-delivery-choice, .task-delivery-selected-file {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-width: 0;
+  }
+  .task-delivery-selected-file {
+    margin-top: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #dce7f2;
+  }
+  .task-delivery-selected-file > .task-delivery-file-identity,
+  .task-delivery-choice > .ant-btn:first-child { flex: 1 1 205px; min-width: 0; }
+  .task-delivery-choices .ant-btn { min-width: 0; height: auto; }
+  .task-delivery-choices > .ant-btn, .task-delivery-choice > .ant-btn:first-child {
+    padding: 6px 12px;
+    text-align: left;
+    white-space: normal;
+  }
+  .task-delivery-choices .ant-btn[aria-pressed="true"] { background: #eaf5ff; border-color: #9ec8ed; }
+  .task-delivery-file-identity {
+    display: grid;
+    gap: 2px;
+    overflow-wrap: anywhere;
+    strong { font-size: 13px; }
+    small { font-size: 12px; }
+  }
+  .task-delivery-assistant-question { width: 100%; }
 }
 
 .task-delivery-file { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border: 1px solid #e5ebf1; border-radius: 10px; margin: 8px 0; overflow-wrap: anywhere; }
+
+.task-work-result-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.task-work-review-target:focus-visible {
+  outline: 2px solid #1473c8;
+  outline-offset: 4px;
+  border-radius: 6px;
+}
 
 .personal-agent-desktop .workspace-workbench .task-work-page {
   padding: 22px 26px;

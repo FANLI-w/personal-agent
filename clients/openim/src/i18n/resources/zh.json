@@ -303,7 +303,7 @@
     "logOut": "退出登录",
     "personalSetting": "个人设置",
     "chooseLanguage": "选择语言",
-    "closeButtonEvent": "点击关闭按钮时的事件",
+    "closeButtonEvent": "关闭窗口时",
     "exitApplication": "退出应用",
     "minimize": "最小化托盘",
     "messageToast": "消息提示",

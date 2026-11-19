@@ -74,12 +74,6 @@ export function LabStandards() {
     supported && Boolean(actor),
     { timeoutMs: 10000 },
   );
-  const collections = useResearchRead(
-    (signal) => researchApi("researchCollections", { signal, query: { limit: 100 } }),
-    "lab-standards-collections",
-    supported && Boolean(actor) && section === "templates",
-    { timeoutMs: 10000 },
-  );
   const [editing, setEditing] = useState<{
     id?: string;
     version: number;
@@ -149,9 +143,6 @@ export function LabStandards() {
   const templates = records.filter((r) => r.kind === "rule" && isPptTemplate(r.title));
   const links = records.filter((r) => r.kind === "link");
   const rules = records.filter((r) => r.kind !== "link" && !isPptTemplate(r.title));
-  const labCollections = (collections.data?.data || []).filter(
-    (c) => c.scope === "lab_shared",
-  );
   const submit = async (
     action: "save" | "confirm" | "revoke",
     record?: {
@@ -267,7 +258,10 @@ export function LabStandards() {
         .toLocaleLowerCase()
         .includes(search.trim().toLocaleLowerCase()),
   );
-  const selected = visible.find((r) => r.id === selectedId) || visible[0];
+  const selected =
+    visible.find((r) => r.id === selectedId) ||
+    (section === "templates" && visible.find((r) => r.status === "active")) ||
+    visible[0];
   const edit = (record?: WorkRule) => {
     const ppt = section === "templates";
     const template =
@@ -299,7 +293,7 @@ export function LabStandards() {
       ? "可复用方法"
       : section === "platform"
       ? "平台基本规则"
-      : "课题组规则";
+      : "课题组规范";
   const groupedNavigation = availability.supports(44);
   const tabs = groupedNavigation
     ? section === "templates" || section === "methods"
@@ -308,11 +302,11 @@ export function LabStandards() {
           ["methods", "可复用方法"],
         ]
       : [
-          ["rules", "课题组规则"],
+          ["rules", "课题组规范"],
           ["platform", "平台基本规则"],
         ]
     : [
-        ["rules", "课题组规则"],
+        ["rules", "课题组规范"],
         ["platform", "平台基本规则"],
         ["templates", "PPT 模板"],
         ["methods", "可复用方法"],
@@ -332,24 +326,13 @@ export function LabStandards() {
         ? "提交方法"
         : section === "templates"
         ? "新增模板"
-        : "新增规则"}
+        : "新增规范"}
     </Button>
   ) : null;
-  const templateSources = (
-    <div className="record-page-actions">
-      <Button onClick={() => navigate("/library?panel=index")}>
-        设置本地资料文件夹
-      </Button>
+  const sharedTemplates = (
       <Button onClick={() => navigate("/library?panel=collections")}>
         查看共享模板与范文
       </Button>
-      {collections.error && <span role="alert">{collections.error}</span>}
-      {labCollections.length > 0 && (
-        <span className="workspace-muted">
-          {labCollections.length} 个课题组资料集合
-        </span>
-      )}
-    </div>
   );
   if (!supported)
     return (
@@ -370,7 +353,9 @@ export function LabStandards() {
               ? "选择模板开始任务，保留本次要求与所需文件。"
               : section === "methods"
               ? "从已完成的工作中整理方法，按需查阅复用。"
-              : "资料按需引用，不会自动变成规则。"}
+              : section === "rules"
+              ? "查看课题组任务采用的规范和生效状态。"
+              : "适用于所有任务。"}
           </p>
         </div>
         <div className="record-page-actions">
@@ -379,7 +364,20 @@ export function LabStandards() {
               返回资料
             </Button>
           )}
-          {sectionRecords.length > 0 && addAction}
+          {section === "templates" ? (
+            <Dropdown
+              trigger={["click"]}
+              menu={{
+                items: [
+                  ...(canAdd ? [{ key: "new", label: "新增模板", disabled: busy }] : []),
+                  { key: "folder", label: "设置本地资料文件夹" },
+                ],
+                onClick: ({ key }) => key === "new" ? edit() : navigate("/library?panel=index"),
+              }}
+            >
+              <Button>管理模板</Button>
+            </Dropdown>
+          ) : sectionRecords.length > 0 && addAction}
         </div>
       </header>
       <nav className="record-tabs" aria-label="规范分类">
@@ -441,7 +439,7 @@ export function LabStandards() {
             <section className="record-detail-section">
               <h3>适用范围</h3>
               <p className="record-content">
-                所有任务遵守平台基本规则。课题组任务叠加组内规则与项目约定；本人个人任务使用平台及个人规则，共享个人任务不继承课题组约定。
+                所有任务遵守平台基本规则。课题组任务同时使用课题组规范与项目约定。本人个人任务也会使用个人规则。
               </p>
             </section>
           </div>
@@ -451,14 +449,15 @@ export function LabStandards() {
             <p>
               {section === "methods"
                 ? "提交可复用的方法，并保留来源任务。"
+                : section === "templates"
+                ? "可以先到共享原件查找可用的模板与范文。"
                 : data.canPublish
-                ? `新增${
-                    section === "templates" ? "模板" : "规则"
-                  }，填写要求与适用范围。`
+                ? "新增规范，填写要求与适用范围。"
                 : "课题组负责人发布后，可以在这里查阅。"}
             </p>
-            <div className="record-page-actions">{addAction}</div>
-            {section === "templates" && templateSources}
+            <div className="record-page-actions">
+              {section === "templates" ? sharedTemplates : addAction}
+            </div>
           </section>
         ) : (
           <RecordWorkspace
@@ -542,13 +541,18 @@ export function LabStandards() {
                     </p>
                   </div>
                   <div className="record-detail-actions">
+                    {section === "templates" && selected.status === "active" && (
+                      <Button type="primary" disabled={busy} onClick={() => startWithTemplate(selected)}>
+                        使用模板开始任务
+                      </Button>
+                    )}
                     {selected.allowedActions.includes("revise") && (
                       <Button
                         icon={<EditOutlined />}
                         disabled={busy}
                         onClick={() => edit(selected)}
                       >
-                        {section === "rules" ? "编辑规则" : "编辑"}
+                        {section === "rules" ? "编辑规范" : "编辑"}
                       </Button>
                     )}
                     {selected.status === "candidate" &&
@@ -571,6 +575,11 @@ export function LabStandards() {
                             icon: <InfoCircleOutlined />,
                             onClick: () => setVersionRecord(selected),
                           },
+                          ...(section === "templates" ? [{
+                            key: "shared",
+                            label: "查看共享模板与范文",
+                            onClick: () => navigate("/library?panel=collections"),
+                          }] : []),
                           ...(selected.status !== "revoked" &&
                           selected.allowedActions.includes("revoke")
                             ? [
@@ -594,7 +603,7 @@ export function LabStandards() {
                   <h3>{section === "rules" ? "适用范围" : "使用方式"}</h3>
                   <p className="record-content">
                     {section === "rules"
-                      ? "生效的课题组规则由既有规则链带入课题组任务。本人个人任务与共享个人任务保持各自规则范围。"
+                      ? "生效的课题组规范用于课题组任务。本人个人任务与共享个人任务沿用各自的要求。"
                       : section === "methods"
                       ? "方法按需查阅，不自动加入规划或聊天；来源任务的派发人或负责人确认后可供全组复用。"
                       : "开始任务时带入模板要求，你只需补充本次变化。"}
@@ -604,7 +613,7 @@ export function LabStandards() {
                   <section className="record-detail-section">
                     <h3>
                       {section === "rules"
-                        ? "规则内容"
+                        ? "规范内容"
                         : section === "methods"
                         ? "方法内容"
                         : "模板要求"}
@@ -622,15 +631,6 @@ export function LabStandards() {
                         ) || "未指定文件。"}
                       </p>
                     </section>
-                    {selected.status === "active" && (
-                      <Button
-                        type="primary"
-                        disabled={busy}
-                        onClick={() => startWithTemplate(selected)}
-                      >
-                        用它开始
-                      </Button>
-                    )}
                   </>
                 )}
                 {selected.sourceTaskId && (
@@ -649,13 +649,12 @@ export function LabStandards() {
                 <p>
                   {data.canPublish
                     ? "可以从上方新增，或调整筛选条件。"
-                    : "生效规则由课题组负责人发布。"}
+                    : "生效规范由课题组负责人发布。"}
                 </p>
               </div>
             )}
           </RecordWorkspace>
         ))}
-      {section === "templates" && data && templates.length > 0 && templateSources}
       <Modal
         open={!!editing}
         title={
@@ -664,8 +663,8 @@ export function LabStandards() {
             : editing?.mode === "link"
             ? "编辑可复用方法"
             : editing?.id
-            ? "编辑课题组规则"
-            : "新增课题组规则"
+            ? "编辑课题组规范"
+            : "新增课题组规范"
         }
         width={640}
         className="record-editor"
@@ -687,14 +686,14 @@ export function LabStandards() {
         </p>
         {failure && <Alert type="error" message={failure} />}
         {editing && (
-          <div className="workspace-standards-editor" aria-label="编辑课题组规则">
+          <div className="workspace-standards-editor" aria-label="编辑课题组规范">
             <Input
               aria-label={
                 editing.mode === "ppt"
                   ? "模板名称"
                   : editing.mode === "link"
                   ? "链路名称"
-                  : "规则标题"
+                  : "规范标题"
               }
               maxLength={80}
               placeholder={
@@ -714,7 +713,7 @@ export function LabStandards() {
                   ? "模板要求"
                   : editing.mode === "link"
                   ? "链路正文"
-                  : "规则正文"
+                  : "规范正文"
               }
               rows={4}
               maxLength={2000}

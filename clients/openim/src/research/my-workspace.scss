@@ -129,19 +129,18 @@
 .my-profile-account {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 20px;
-  margin: 0 0 26px;
-  padding: 22px;
-  border: 1px solid #e8edef;
-  border-radius: 18px;
+  align-items: start;
+  gap: 12px 20px;
+  margin: 0 0 12px;
+  padding-block: 8px;
   .contact-card-share {
     margin: 0;
   }
 }
 .my-profile-share {
   align-self: start;
-  padding: 12px;
-  summary { cursor: pointer; color: #1473c8; font-weight: 500; }
+  padding: 2px 0;
+  summary { cursor: pointer; color: #1473c8; font-size: 13px; font-weight: 500; }
   &[open] summary { margin-bottom: 12px; }
 }
 .my-profile-facts {
@@ -264,4 +263,11 @@
     margin: 0;
     font-size: 14px;
   }
+}
+
+.personal-rules-scope {
+  color: #647780;
+  font-size: 13px;
+  summary { width: fit-content; cursor: pointer; }
+  p { margin-top: 8px; }
 }

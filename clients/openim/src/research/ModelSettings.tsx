@@ -121,12 +121,16 @@ export function ModelSettings({
     "personal-models",
     open && !!actorId,
   );
+  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Draft>();
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
   const [notice, setNotice] = useState("");
   const [replacingKey, setReplacingKey] = useState(false);
+  const configs = read.data?.data.configurations || [];
+  const editorVisible = !!read.data && (editing || configs.length === 0);
   useEffect(() => {
+    setEditing(false);
     setDraft(undefined);
     setBusy(false);
     setFailure("");
@@ -134,12 +138,12 @@ export function ModelSettings({
     setReplacingKey(false);
   }, [scope]);
   useEffect(() => {
-    if (!open || !read.data || draft) return;
+    if (!open || !editorVisible || !read.data || draft) return;
     const settings = read.data.data;
     const config =
       settings.configurations.find((c) => c.isDefault) || settings.configurations[0];
     setDraft(config ? editDraft(config) : newDraft(true));
-  }, [open, read.data, draft]);
+  }, [open, editorVisible, read.data, draft]);
   const select = (next: Draft) => {
     setDraft(next);
     setFailure("");
@@ -268,7 +272,6 @@ export function ModelSettings({
       },
     });
   };
-  const configs = read.data?.data.configurations || [];
   const selected = configs.find((c) => c.id === draft?.id);
   const defaultConfig = configs.find(
     (c) => c.id === read.data?.data.defaultConfigurationId,
@@ -289,38 +292,17 @@ export function ModelSettings({
     preview.version === draft?.version
       ? preview.apiKeyPreview
       : null;
-  const content = (
+  const cancelEdit = () => {
+    if (!configs.length) return close();
+    confirmation.current?.destroy();
+    setEditing(false);
+    setDraft(undefined);
+    setReplacingKey(false);
+    setFailure("");
+    setNotice("");
+  };
+  const editor = editorVisible && (
     <>
-      {read.data && (
-        <section className="model-saved-summary" aria-label="当前默认模型">
-          <span>当前默认模型</span>
-          <div>
-            <strong>
-              {defaultConfig
-                ? modelLabel(defaultConfig.model)
-                : read.data.data.source === "legacy_lab"
-                ? "沿用课题组模型"
-                : "尚未选择默认模型"}
-            </strong>
-            {defaultConfig && (
-              <small>
-                {providers[defaultConfig.provider].name} · {defaultConfig.name}
-              </small>
-            )}
-          </div>
-          {defaultConfig && (
-            <small>
-              {!read.data.data.platformEnabled
-                ? "平台模型服务未启用"
-                : !defaultConfig.enabled
-                ? "配置已停用"
-                : !defaultConfig.hasApiKey
-                ? "尚未保存 API Key"
-                : "已启用"}
-            </small>
-          )}
-        </section>
-      )}
       <div className="model-settings-layout">
         <aside className="model-settings-list" aria-label="我的模型">
           <h3>我的模型</h3>
@@ -361,13 +343,6 @@ export function ModelSettings({
           ) : (
             <>
               <h2>{providers[draft.provider].name}</h2>
-              <p className="model-form-description">
-                {selected
-                  ? `已保存：${modelLabel(selected.model)} · ${
-                      providers[selected.provider].name
-                    }`
-                  : "为科研、学习与日常交流选择你的模型。"}
-              </p>
               <div className="model-form-fields">
                 <label>
                   模型服务
@@ -480,7 +455,10 @@ export function ModelSettings({
                           }
                           autoComplete="off"
                           onChange={(event) =>
-                            patch({ apiKey: event.target.value, removeApiKey: false })
+                            patch({
+                              apiKey: event.target.value,
+                              removeApiKey: false,
+                            })
                           }
                         />
                       )}
@@ -569,13 +547,8 @@ export function ModelSettings({
               message="平台模型服务当前未启用。配置可以保存，聊天暂不可用。"
             />
           )}
-          {(read.error || failure) && (
-            <Alert
-              className="model-error"
-              type="error"
-              showIcon
-              message={failure || read.error}
-            />
+          {failure && (
+            <Alert className="model-error" type="error" showIcon message={failure} />
           )}
           {notice && (
             <p role="status" className="model-privacy">
@@ -595,7 +568,9 @@ export function ModelSettings({
           删除配置
         </Button>
         <div className="model-footer-actions">
-          <Button onClick={close}>取消</Button>
+          <Button disabled={busy} onClick={cancelEdit}>
+            取消
+          </Button>
           <Button
             type="primary"
             loading={busy}
@@ -606,6 +581,47 @@ export function ModelSettings({
           </Button>
         </div>
       </div>
+    </>
+  );
+  const content = (
+    <>
+      {!read.data && !read.error && <Spin className="model-settings-reading" />}
+      {read.error && (
+        <Alert
+          className="model-error"
+          type="error"
+          message={read.error}
+          action={<Button onClick={read.refresh}>重试</Button>}
+        />
+      )}
+      {read.data && (
+        <section className="model-saved-summary" aria-label="当前默认模型">
+          <span>当前默认模型</span>
+          <div>
+            <strong>
+              {defaultConfig
+                ? modelLabel(defaultConfig.model)
+                : read.data.data.source === "legacy_lab"
+                ? "沿用课题组模型"
+                : "尚未选择默认模型"}
+            </strong>
+            {defaultConfig && <small>{providers[defaultConfig.provider].name}</small>}
+          </div>
+          {defaultConfig && (
+            <small>
+              {!read.data.data.platformEnabled
+                ? "平台模型服务未启用"
+                : !defaultConfig.enabled
+                ? "配置已停用"
+                : !defaultConfig.hasApiKey
+                ? "尚未保存 API Key"
+                : "已启用"}
+            </small>
+          )}
+          {!editorVisible && <Button onClick={() => setEditing(true)}>编辑模型</Button>}
+        </section>
+      )}
+      {editor}
     </>
   );
   if (embedded)

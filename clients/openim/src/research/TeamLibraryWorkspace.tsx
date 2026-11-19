@@ -499,6 +499,18 @@ export function TeamLibraryWorkspace({
       if (ticket.isCurrent()) setError(message(e));
     }
   };
+  const syncIssue = syncError || (snapshot?.stale ? snapshot.warning || "未能读取最新资料。" : "");
+  const showSyncRecovery = Boolean(binding && (syncIssue || !snapshot));
+  const syncDetails = binding && syncIssue && (
+    <details className="team-library-sync-details">
+      <summary>查看同步详情</summary>
+      <p>{syncIssue}</p>
+      <p>仓库地址：{binding.url}</p>
+      <Button type="link" size="small" onClick={() => setConfigure(true)}>
+        {current?.canConfigure ? "仓库设置" : "查看仓库配置"}
+      </Button>
+    </details>
+  );
   return (
     <section className="team-library" aria-label="团队资料工作区">
       <div className="team-library-bar">
@@ -508,14 +520,14 @@ export function TeamLibraryWorkspace({
         <div className="team-library-tools">
           {tab === "team" && (
             <>
-              {current?.canConfigure && (
+              {current?.canConfigure && snapshot && !showSyncRecovery && (
                 <Button
                   icon={<SettingOutlined />}
                   aria-label="仓库设置"
                   onClick={() => setConfigure(true)}
                 />
               )}
-              {snapshot && (
+              {snapshot && !showSyncRecovery && (
                 <Button
                   icon={<ReloadOutlined />}
                   disabled={!binding || !bridge}
@@ -580,7 +592,7 @@ export function TeamLibraryWorkspace({
             <small>
               {" "}
               ·{" "}
-              {snapshot.stale || error
+              {snapshot.stale || syncError || error
                 ? "上次成功同步 " +
                   new Date(snapshot.syncedAt).toLocaleString("zh-CN", {
                     month: "numeric",
@@ -601,27 +613,16 @@ export function TeamLibraryWorkspace({
       {tab === "team" && (error || (snapshot && repository.error)) && (
         <Alert type="error" showIcon message={error || repository.error} />
       )}
-      {tab === "team" && snapshot && (syncError || snapshot.stale) && (
+      {tab === "team" && snapshot && syncIssue && (
         <Alert
           type="warning"
           showIcon
           message="团队资料同步未完成，正在显示上次成功同步的资料"
-          description={
-            <details className="team-library-sync-details">
-              <summary>查看同步详情</summary>
-              <p>{syncError || snapshot.warning}</p>
-              {binding && <p>仓库地址：{binding.url}</p>}
-            </details>
-          }
+          description={syncDetails}
           action={
-            <div className="team-library-recovery-actions">
-              <Button size="small" loading={busy} onClick={() => void sync()}>
-                重新同步
-              </Button>
-              <Button size="small" onClick={() => setConfigure(true)}>
-                检查仓库地址
-              </Button>
-            </div>
+            <Button size="small" type="primary" loading={busy} onClick={() => void sync()}>
+              重新同步
+            </Button>
           }
         />
       )}
@@ -641,7 +642,7 @@ export function TeamLibraryWorkspace({
               type="info"
               message="请在新版 Windows 客户端中同步和取用团队仓库。"
             />
-          ) : repository.loading && !current ? (
+          ) : !current && !repository.error ? (
             <div className="team-library-empty">
               <Spin tip="正在读取团队资料" />
             </div>
@@ -649,7 +650,7 @@ export function TeamLibraryWorkspace({
             <div className="team-library-empty">
               <h2>团队资料暂时无法读取</h2>
               <p role="alert">{repository.error}</p>
-              <Button onClick={repository.refresh}>重新连接</Button>
+              <Button type="primary" onClick={repository.refresh}>重试读取配置</Button>
             </div>
           ) : !binding ? (
             <div className="team-library-empty">
@@ -671,21 +672,12 @@ export function TeamLibraryWorkspace({
               ) : (
                 <>
                   <FolderOpenOutlined />
-                  <h2>{syncError ? "团队资料同步未完成" : "还没有可读取的资料目录"}</h2>
-                  <p>同步成功后，资料会显示在这里。我的资料可独立使用。</p>
-                  <div className="team-library-recovery-actions">
-                    <Button type="primary" onClick={sync}>
-                      重新同步
-                    </Button>
-                    <Button onClick={() => setConfigure(true)}>检查仓库地址</Button>
-                  </div>
-                  {syncError && (
-                    <details className="team-library-sync-details">
-                      <summary>查看同步详情</summary>
-                      <p>{syncError}</p>
-                      <p>仓库地址：{binding.url}</p>
-                    </details>
-                  )}
+                  <h2>{syncIssue ? "团队资料同步未完成" : "团队仓库已连接"}</h2>
+                  <p>同步后即可查看仓库文件和资料目录。</p>
+                  <Button type="primary" onClick={sync}>
+                    {syncIssue ? "重新同步" : "同步团队资料"}
+                  </Button>
+                  {syncDetails}
                 </>
               )}
             </div>

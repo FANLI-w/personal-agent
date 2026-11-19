@@ -77,7 +77,7 @@ export function TaskKnowledgePanel({
               </article>
             ))}
             <p className="task-knowledge-hint">
-              要改团队规则，去「资料 → 课题组规范」；个人规则去「我的 → 个人规则」，记忆去「我的 → 记忆与偏好」。
+              在「资料 → 课题组规范」管理课题组规范。在「我的」管理个人规则、记忆与偏好。
             </p>
           </details>
           {binding?.contextReceipt && <details><summary>上轮实际带入（{binding.contextReceipt.entries.length} 项）</summary>{binding.contextReceipt.entries.map(e=><p key={`${e.kind}:${e.id}`}>{e.title} · v{e.version}</p>)}{binding.contextReceipt.omitted.length>0&&<p>未带入：{binding.contextReceipt.omitted.join("；")}</p>}</details>}

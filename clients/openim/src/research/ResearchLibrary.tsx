@@ -17,6 +17,7 @@ import { FeishuImport } from "./FeishuImport";
 import { ResearchFileImport as FileImport } from "./ResearchFileImport";
 import { LibraryAgent } from "./LibraryAgent";
 import { FeishuLibrarySource } from "./FeishuLibrarySource";
+import { authorizedDeliveryTitles, deliveryTaskId } from "./library-delivery-labels";
 type ResearchCollection = ResponseFor<"researchCollections">["data"][number];
 type ResearchFile = ResponseFor<"researchFiles">["data"][number];
 
@@ -85,7 +86,9 @@ function SourceDetail({ id, collection, onVersion, onChanged, onClose }: { id: s
   const [version, setVersion] = useState<number>(), [busy, setBusy] = useState(false), [error, setError] = useState("");
   const operation = usePersonalOperation(true, `source-detail:${id}`);
   const { modal } = App.useApp();
-  const data = read.data?.data, source = data?.file, selectedVersion = data?.versions.find(v => v.version === (version ?? source?.version));
+  const data = read.data?.data;
+  const source = data?.file.collectionId === collection.id ? data.file : undefined;
+  const selectedVersion = data?.versions.find(v => v.version === (version ?? source?.version));
   const withdraw = async () => {
     if (!source || busy) return;
     const { isCurrent } = operation.capture(); setBusy(true); setError("");
@@ -97,6 +100,7 @@ function SourceDetail({ id, collection, onVersion, onChanged, onClose }: { id: s
     <div className="research-library-subheading"><h3>来源与版本</h3><Button type="text" onClick={onClose}>收起</Button></div>
     {(read.error || error) && <Alert type="warning" message={error || read.error} action={<Button onClick={read.refresh}>重新读取</Button>} />}
     {!data && !read.error && <p role="status">正在读取来源…</p>}
+    {data && !source && <p role="status">所选来源不在这个集合中。</p>}
     {source && selectedVersion && <>
       <h4><FileTextOutlined /> {selectedVersion.filename}</h4>
       <Select aria-label="来源版本" value={selectedVersion.version} options={data?.versions.map(v => ({ value: v.version, label: `v${v.version}${v.version === source.version ? " · 当前版本" : ""}` }))} onChange={setVersion} />
@@ -120,22 +124,82 @@ function LibraryBody() {
   const [zoteroId, setZoteroId] = useState<string>();
   const [scope, setScope] = useState<"mine" | "visible" | "lab">("visible"), [collectionSearch, setCollectionSearch] = useState(""), [selectedId, setSelectedId] = useState<string>(), [sourceId, setSourceId] = useState<string>(), [search, setSearch] = useState(""), [query, setQuery] = useState("");
   const [editing, setEditing] = useState<ResearchCollection | "new">(), [importing, setImporting] = useState<{ collection: ResearchCollection; source?: ResearchFile }>();
-  const collections = useResearchRead((signal) => researchApi("researchCollections", { query: { scope: scope === "mine" ? "mine" : "visible", q: collectionSearch, limit: 100 }, signal }), `library-collections:${scope}:${collectionSearch}`);
-  const shownCollections = collections.data?.data.filter(c => scope !== "lab" || c.scope === "lab_shared");
+  const readCollections = (signal: AbortSignal, q?: string) =>
+    researchApi("researchCollections", { query: { scope: scope === "mine" ? "mine" : "visible", q, limit: 100 }, signal });
+  const collections = useResearchRead(readCollections, `library-collections:${scope}`);
+  const collectionMatches = useResearchRead(
+    (signal) => readCollections(signal, collectionSearch),
+    `library-collection-matches:${scope}:${collectionSearch}`,
+    Boolean(collectionSearch),
+  );
+  const deliveryTasks = useResearchRead(
+    (signal) => researchApi("workbench", { query: { category: "all", limit: 100 }, signal }),
+    "library-delivery-tasks",
+    Boolean(collections.data?.data.some(deliveryTaskId) || collectionMatches.data?.data.some(deliveryTaskId)),
+  );
+  const deliveryTitles = authorizedDeliveryTitles(deliveryTasks.data?.data ?? []);
+  const storedMatches = collectionSearch ? collectionMatches : collections;
+  const candidates = new Map(storedMatches.data?.data.map((item) => [item.id, item]));
+  const selectedCollection = selectedId
+    ? collections.data?.data.find((item) => item.id === selectedId) ?? candidates.get(selectedId)
+    : collections.data?.data[0];
+  const selectedTaskId = selectedCollection && deliveryTaskId(selectedCollection);
+  const selectedDeliveryTask = useResearchRead(
+    async (signal) => {
+      const [research, personal] = await Promise.allSettled([
+        researchApi("task", { params: { id: selectedTaskId! }, signal }),
+        researchApi("personalWorkTask", { params: { id: selectedTaskId! }, signal }),
+      ]);
+      if (research.status === "fulfilled" && personal.status === "fulfilled") return undefined;
+      const researchTask = research.status === "fulfilled" && "task" in research.value.data
+        ? research.value.data.task
+        : undefined;
+      const personalTask = personal.status === "fulfilled" ? personal.value.data : undefined;
+      const task = researchTask ?? personalTask;
+      if (!task || task.id !== selectedTaskId || ("summaryOnly" in task && task.summaryOnly))
+        return undefined;
+      return task.title;
+    },
+    `library-delivery-task:${selectedTaskId}`,
+    Boolean(selectedTaskId && deliveryTasks.data && !deliveryTitles.has(selectedTaskId)),
+  );
+  const relatedTaskTitle = (taskId: string) =>
+    (taskId === selectedTaskId ? selectedDeliveryTask.data : undefined) || deliveryTitles.get(taskId);
+  const collectionTitle = (item: ResearchCollection) => {
+    const taskId = deliveryTaskId(item);
+    return taskId ? relatedTaskTitle(taskId) || "任务交付" : item.name;
+  };
+  if (collectionSearch) {
+    const term = collectionSearch.toLocaleLowerCase();
+    for (const item of collections.data?.data ?? []) {
+      const taskId = deliveryTaskId(item);
+      if (taskId && relatedTaskTitle(taskId)?.toLocaleLowerCase().includes(term) && !candidates.has(item.id))
+        candidates.set(item.id, item);
+    }
+  }
+  const shownCollections = storedMatches.data || candidates.size
+    ? [...candidates.values()].filter(c => scope !== "lab" || c.scope === "lab_shared")
+    : undefined;
   const collection = shownCollections?.find(c => c.id === selectedId) ?? (!selectedId ? shownCollections?.[0] : undefined);
   const files = useResearchRead((signal) => researchApi("researchFiles", { params: { id: collection!.id }, query: { limit: 100 }, signal }), `library-files:${collection?.id}`, !!collection && !collection.externalSource);
+  const collectionTaskId = collection && deliveryTaskId(collection);
+  const singleDeliveryFile =
+    collectionTaskId && collection?.fileCount === 1 && files.data?.data.length === 1 &&
+      files.data.data[0].collectionId === collection.id
+      ? files.data.data[0]
+      : undefined;
   const matches = useResearchRead((signal) => researchApi("researchLibrarySearch", { query: { q: query, collectionId: collection!.id, limit: 20 }, signal }), `library-search:${collection?.id}:${query}`, !!collection && !!query);
   const [failure, setFailure] = useState("");
   useEffect(() => {
     if (linkedCollection) { setScope('visible'); setCollectionSearch(''); setSelectedId(linkedCollection); setSourceId(linkedFile || undefined); setQuery(''); }
   }, [linkedCollection, linkedFile]);
   const operation = usePersonalOperation(true, "library-body"); const { modal } = App.useApp();
-  const refresh = async () => { await Promise.all([collections.refresh(), files.refresh(), matches.refresh()]); };
-  const refreshAfterImport = async () => { await Promise.all([collections.refreshChecked(), files.refreshChecked(), matches.refreshChecked()]); };
+  const refresh = async () => { await Promise.all([collections.refresh(), collectionMatches.refresh(), files.refresh(), matches.refresh()]); };
+  const refreshAfterImport = async () => { await Promise.all([collections.refreshChecked(), collectionMatches.refreshChecked(), files.refreshChecked(), matches.refreshChecked()]); };
   const withdraw = async () => {
     if (!collection) return; const { isCurrent } = operation.capture(); setFailure("");
-    try { await researchApi("withdrawResearchCollection", { params: { id: collection.id }, body: { expectedVersion: collection.version } }); if (!isCurrent()) return; setSelectedId(undefined); setSourceId(undefined); await collections.refresh(); }
-    catch (error) { if (isCurrent()) { setFailure(failureText(error)); await collections.refresh(); } }
+    try { await researchApi("withdrawResearchCollection", { params: { id: collection.id }, body: { expectedVersion: collection.version } }); if (!isCurrent()) return; setSelectedId(undefined); setSourceId(undefined); await refresh(); }
+    catch (error) { if (isCurrent()) { setFailure(failureText(error)); await refresh(); } }
   };
   return <div className="research-library">
     <header className="research-library-heading"><div><h2>{params.get("panel") === "collections" ? "共享原件" : "资料库"}</h2><p>按集合保存原件与版本，读取范围由集合权限决定。</p></div><div className="research-library-actions"><Button onClick={() => setFeishuOpen(true)}>连接飞书资料</Button>{Boolean(shownCollections?.length) && <Button type="primary" onClick={() => setEditing("new")}>新建集合</Button>}</div></header>
@@ -143,14 +207,40 @@ function LibraryBody() {
     <div className={`research-library-body ${sourceId ? "has-source" : ""} ${shownCollections && !shownCollections.length ? "is-empty" : ""}`}>
       <aside className="research-collection-rail" aria-label="资料集合">
         <Segmented aria-label="集合范围" value={scope} options={[{ label: "全部", value: "visible" }, { label: "课题组", value: "lab" }, { label: "我的", value: "mine" }]} onChange={v => { setScope(v as typeof scope); setSelectedId(undefined); setSourceId(undefined); }} />
-        <Input.Search aria-label="搜索资料集合" placeholder="搜索集合" onSearch={setCollectionSearch} allowClear />
-        {collections.error && <Alert type="warning" message={collections.error} action={<Button onClick={collections.refresh}>重试</Button>} />}
-        {!collections.data && !collections.error && <p role="status">正在读取集合…</p>}
-        {shownCollections?.map(c => <button className="research-collection-row" key={c.id} aria-pressed={collection?.id === c.id} onClick={() => { setSelectedId(c.id); setSourceId(undefined); setQuery(""); setSearch(""); }}><FolderOutlined /><span><strong>{c.name}</strong><small>{researchScopeLabels[c.scope]} · {c.externalSource ? '飞书实时资料库' : `${c.fileCount} 份来源`}</small></span></button>)}
+        <Input.Search aria-label="搜索资料集合" placeholder="搜索集合或任务标题" onSearch={(value) => setCollectionSearch(value.trim())} allowClear />
+        {storedMatches.error && <Alert type="warning" message={storedMatches.error} action={<Button onClick={storedMatches.refresh}>重试</Button>} />}
+        {!shownCollections && !storedMatches.error && <p role="status">正在读取集合…</p>}
+        {shownCollections?.map(c => {
+          const selected = collection?.id === c.id;
+          const taskId = deliveryTaskId(c);
+          const title = collectionTitle(c);
+          return (
+            <button className="research-collection-row" key={c.id} aria-pressed={selected} onClick={() => { setSelectedId(c.id); setSourceId(undefined); setQuery(""); setSearch(""); }}>
+              <FolderOutlined />
+              <span>
+                <strong>{title}</strong>
+                {selected && singleDeliveryFile && (
+                  <small>{singleDeliveryFile.filename} · v{singleDeliveryFile.version}</small>
+                )}
+                <small>
+                  {taskId ? `${researchScopeLabels[c.scope]} · ${new Date(c.updatedAt).toLocaleDateString("zh-CN")}` : researchScopeLabels[c.scope]}
+                  {" · "}
+                  {c.externalSource ? "飞书实时资料库" : `${c.fileCount} 份来源`}
+                </small>
+              </span>
+            </button>
+          );
+        })}
       </aside>
       <section className="research-file-list" aria-label="集合文件">
         {collection ? <>
-          <div className="research-library-subheading"><div><h3>{collection.name}</h3></div>{collection.owned && <Button onClick={() => setEditing(collection)}>集合设置</Button>}</div>
+          <div className="research-library-subheading">
+            <div>
+              <h3>{collectionTitle(collection)}</h3>
+              {collectionTaskId && <p>任务授权 · {collection.fileCount} 份来源</p>}
+            </div>
+            {collection.owned && <Button onClick={() => setEditing(collection)}>集合设置</Button>}
+          </div>
           {collection.externalSource ? <FeishuLibrarySource id={collection.id} scope={collection.scope} onAsk={()=>{setChatCollectionId(collection.id);setChatFocus(n=>n+1);}}/> : <>
           <div className="research-library-actions">{collection.owned && <Button type="primary" icon={<UploadOutlined />} onClick={() => setImporting({ collection })}>导入文件</Button>}{collection.owned && collection.scope === "owner_private" && <Button onClick={() => setZoteroId(collection.id)}>从 Zotero 选择</Button>}<Input.Search aria-label="检索资料正文" placeholder="检索实际提取文字" value={search} allowClear onChange={e => setSearch(e.target.value)} onSearch={v => setQuery(v.trim())} /></div>
           {(files.error || matches.error) && <Alert type="warning" message={files.error || matches.error} action={<Button onClick={() => { void files.refresh(); void matches.refresh(); }}>重试</Button>} />}
@@ -159,12 +249,21 @@ function LibraryBody() {
             {files.loading && !files.data && <p role="status">正在读取来源…</p>}{files.data && !files.data.data.length && <div className="research-library-empty"><h3>集合中尚无来源</h3><p>{collection.owned ? "从上方导入文件，保留原件与版本。" : "集合所有者尚未导入可用资料。"}</p></div>}
           </>}
           </>}
+          {collectionTaskId && (
+            <details className="research-collection-details">
+              <summary>集合信息</summary>
+              <dl>
+                <dt>任务编号</dt><dd>{collectionTaskId}</dd>
+                <dt>集合编号</dt><dd>{collection.id}</dd>
+              </dl>
+            </details>
+          )}
           {collection.owned && <div className="research-library-withdraw"><Button type="text" danger onClick={() => modal.confirm({ title: "撤回此资料集合？", content: "后续查询将停止使用此集合，飞书原表保持。", onOk: withdraw })}>撤回集合</Button></div>}
-        </> : collections.error ? <div className="research-library-empty"><h3>暂时无法读取集合</h3><p>请重试读取后再选择或新建集合。</p><Button onClick={collections.refresh}>重新读取</Button></div> : !collections.data ? <p role="status">正在读取集合…</p> : shownCollections?.length === 0 ? <div className="research-library-empty"><FolderOutlined /><h3>{collectionSearch ? "没有匹配的资料集合" : scope === "lab" ? "暂无课题组共享集合" : "还没有资料集合"}</h3><p>{collectionSearch ? "换个名称搜索，或新建一个集合。" : scope === "lab" ? "新建集合并选择课题组共享，再导入原件。" : "新建集合，再导入论文、笔记或素材。"}</p><Button type="primary" onClick={() => setEditing("new")}>新建资料集合</Button></div> : <div className="research-library-empty"><h3>选择资料集合</h3><p>查看原件、版本与检索结果。</p></div>}
+        </> : storedMatches.error ? <div className="research-library-empty"><h3>暂时无法读取集合</h3><p>请重试读取后再选择或新建集合。</p><Button onClick={storedMatches.refresh}>重新读取</Button></div> : !shownCollections ? <p role="status">正在读取集合…</p> : shownCollections.length === 0 ? <div className="research-library-empty"><FolderOutlined /><h3>{collectionSearch ? "没有匹配的资料集合" : scope === "lab" ? "暂无课题组共享集合" : "还没有资料集合"}</h3><p>{collectionSearch ? "换个名称搜索，或新建一个集合。" : scope === "lab" ? "新建集合并选择课题组共享，再导入原件。" : "新建集合，再导入论文、笔记或素材。"}</p><Button type="primary" onClick={() => setEditing("new")}>新建资料集合</Button></div> : <div className="research-library-empty"><h3>选择资料集合</h3><p>查看原件、版本与检索结果。</p></div>}
       </section>
       {sourceId && collection && <SourceDetail key={sourceId} id={sourceId} collection={collection} onClose={() => setSourceId(undefined)} onChanged={refresh} onVersion={source => setImporting({ collection, source })} />}
     </div>
-    <LibraryAgent onConnectFeishu={() => {setFeishuLibraryRead(true);setFeishuOpen(true);}} focusRequest={chatFocus} queryCollectionId={chatCollectionId} visibleCollections={collections.data?.data} onLibraryBound={async id=>{await collections.refreshChecked();setSelectedId(id);setChatCollectionId(id);setSourceId(undefined);setQuery('');}} />
+    <LibraryAgent onConnectFeishu={() => {setFeishuLibraryRead(true);setFeishuOpen(true);}} focusRequest={chatFocus} queryCollectionId={chatCollectionId} visibleCollections={collections.data?.data} onLibraryBound={async id=>{await collections.refreshChecked();setSelectedId(id);setChatCollectionId(id);setSourceId(undefined);setCollectionSearch("");setQuery('');}} />
     {feishuOpen && <FeishuImport libraryRead={feishuLibraryRead} collectionId={collection?.owned && collection.scope === "owner_private" && !collection.externalSource ? collection.id : undefined} onClose={() => {setFeishuOpen(false);setFeishuLibraryRead(false);}} onSaved={refreshAfterImport} onChat={() => { setFeishuOpen(false); setFeishuLibraryRead(false);setChatFocus(n => n + 1); }} />}
     {zoteroId && collection?.id === zoteroId && collection.owned && collection.scope === "owner_private" && <ZoteroImport key={zoteroId} collection={collection} onClose={() => setZoteroId(undefined)} onSaved={refresh} />}
     {editing && <CollectionEditor key={editing === "new" ? "new" : editing.id} collection={editing === "new" ? undefined : editing} onClose={() => setEditing(undefined)} onSaved={refresh} />}

@@ -1,4 +1,5 @@
 import { Alert, Button } from "antd";
+import { ChatSourceQuote } from "./ChatSourceQuote";
 import {GroupNoticeCard} from './GroupNoticeCard';
 import { OpenImResearchPointer } from "@research-agent-platform/contracts";
 import { IMessageItemProps } from "@/pages/chat/queryChat/MessageItem";
@@ -105,6 +106,8 @@ export default function ResearchMessageRender({
   );
   const readableActions =
     actions.data?.data.filter((action) => actionIds.includes(action.id)) || [];
+  const pendingActions = readableActions.filter((action) => action.allowedDecisions.length);
+  const pastActions = readableActions.filter((action) => !action.allowedDecisions.length);
   const { tasks: taskResources, others: otherResources } = splitTaskResources(
     read.data?.fact.resources || [],
   );
@@ -162,6 +165,9 @@ export default function ResearchMessageRender({
   );
   useChatRecordChanges(pointer?.conversationId, 'turn', turnId ?? undefined, turn.refresh, turn.invalidate);
   const currentTurn = turn.data?.data || currentRetry;
+  const ownReceipt = currentTurn && currentTurn.outputMessageId === read.data?.fact.id
+    ? currentTurn : undefined;
+  const hasTaskReceipt = ownReceipt?.assistantReceipt?.kind === "work_task";
   const fileRead = currentTurn?.fileRead;
   const fileCoverage = fileRead ? agentFileReadCoverage(fileRead) : undefined;
   const canContinueFileReading =
@@ -241,20 +247,36 @@ export default function ResearchMessageRender({
       )}
       {read.data && (
         <>
-          {read.data.details?.replyTo && (
-            <button
-              type="button"
-              className="chat-source-link"
-              onClick={() =>
-                locateMessage(timelineScope(actorGeneration, imID || ""), {
-                  messageId: read.data!.details!.replyTo!.messageId,
-                  sequence: read.data!.details!.replyTo!.sequence,
-                })
-              }
-            >
-              <span>{read.data.fact.origin === "human" ? "引用" : "回复的问题"}</span>
-              <p>{read.data.details.replyTo.text}</p>
-            </button>
+          {pendingActions.length > 0 && (
+            <section aria-label="待处理的协作建议" className="chat-message-actions">
+              {pendingActions.map((action) => (
+                <ResearchActionCard
+                  key={action.id + ":" + action.version + ":" + action.status}
+                  action={action}
+                />
+              ))}
+            </section>
+          )}
+          {hasTaskReceipt && ownReceipt && (
+            <div className="chat-message-actions">
+              <PersonalReceiptCard turn={ownReceipt} />
+            </div>
+          )}
+          {!taskNotice && (
+            <>
+              {projectNotice.data && <WorkTaskReceipt taskId={projectNotice.data.taskId} poll={false} />}
+              {!!taskResources.length && (
+                <div className="space-y-2">
+                  {taskResources.map((resource) => (
+                    <ResearchTaskCard
+                      key={`${resource.kind}:${resource.ref.id}`}
+                      resource={resource}
+                      source={{ conversationId: read.data!.fact.conversationId, messageId: read.data!.fact.id }}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
           {taskNotice && read.data.fact.resources[0] ? (
             <ResearchTaskCard
@@ -276,19 +298,20 @@ export default function ResearchMessageRender({
                   ) : <SafeMessageMarkdown text={read.data.fact.text} />
                 )
               )}
-              {projectNotice.data && <WorkTaskReceipt taskId={projectNotice.data.taskId} poll={false} />}
-              {!!taskResources.length && (
-                <div className="space-y-2">
-                  {taskResources.map((resource) => (
-                    <ResearchTaskCard
-                      key={`${resource.kind}:${resource.ref.id}`}
-                      resource={resource}
-                      source={{ conversationId: read.data!.fact.conversationId, messageId: read.data!.fact.id }}
-                    />
-                  ))}
-                </div>
-              )}
             </>
+          )}
+          {read.data.details?.replyTo && (
+            <ChatSourceQuote
+              key={read.data.details.replyTo.messageId}
+              label={read.data.fact.origin === "human" ? "引用" : "回复的问题"}
+              text={read.data.details.replyTo.text}
+              onLocate={() =>
+                locateMessage(timelineScope(actorGeneration, imID || ""), {
+                  messageId: read.data!.details!.replyTo!.messageId,
+                  sequence: read.data!.details!.replyTo!.sequence,
+                })
+              }
+            />
           )}
           {currentTurn?.libraryRead &&
             currentTurn.outputMessageId === read.data.fact.id && (
@@ -337,10 +360,10 @@ export default function ResearchMessageRender({
               </Button>
             </div>
           )}
-          {!!readableActions.length && (
+          {pastActions.length > 0 && (
             <details className="mt-2">
-              <summary>协作建议（{readableActions.length}）</summary>
-              {readableActions.map((action) => (
+              <summary>协作建议记录（{pastActions.length}）</summary>
+              {pastActions.map((action) => (
                 <ResearchActionCard
                   key={action.id + ":" + action.version + ":" + action.status}
                   action={action}
@@ -385,11 +408,11 @@ export default function ResearchMessageRender({
           inputText={read.data.fact.text || ""}
         />
       )}
-      {currentTurn && currentTurn.outputMessageId === read.data?.fact.id && (
+      {ownReceipt && !hasTaskReceipt && (
         <div className="mt-2">
           <PersonalReceiptCard
-            turn={currentTurn}
-            compact={!!currentTurn.memoryReceipt || !!currentTurn.followupReceipt}
+            turn={ownReceipt}
+            compact={!!ownReceipt.memoryReceipt || !!ownReceipt.followupReceipt}
           />
         </div>
       )}

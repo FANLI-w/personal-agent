@@ -172,7 +172,7 @@
   align-items: center;
   gap: 18px;
   border-bottom: 1px solid #ececec;
-  padding-bottom: 24px;
+  padding-bottom: 12px;
   h2 {
     display: inline;
     margin: 0;
@@ -184,8 +184,11 @@
     margin: 7px 0 0;
   }
 }
+.workspace-namecard-heading + .workspace-card-actions {
+  margin-bottom: 12px;
+}
 .workspace-card-intro {
-  margin: 24px 0;
+  margin: 20px 0;
   white-space: pre-wrap;
   line-height: 1.7;
   font-size: 14px;
@@ -644,7 +647,13 @@
   }
 }
 .directory-star { margin-left: 9px; color: #bf8d28; font-size: 16px; }
-.directory-actions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; min-height: 56px; padding: 10px 16px; }
+.desktop-contacts-content .workspace-contact-toolbar {
+  display: flex;
+  gap: 8px;
+  padding-block: 0 8px;
+  .ant-input { min-width: 0; }
+  .ant-btn { flex: none; }
+}
 .desktop-contacts-content .workspace-person-row {
   strong { font-size: 15px; }
   p { font-size: 13px; }

@@ -70,7 +70,6 @@ type Props = {
   fresh?: number;
   /** A work template hands over a prepared message instead of retyping it. */
   draft?: string;
-  submitDraft?: boolean;
   planId?: string;
   requestId?: string;
   onExpandedChange: (expanded: boolean) => void;
@@ -118,7 +117,6 @@ function PlanningAgentSession({
   focus,
   fresh,
   draft,
-  submitDraft,
   planId: adoptPlan,
   requestId: adoptRequest,
   onExpandedChange,
@@ -169,7 +167,6 @@ function PlanningAgentSession({
     messages = useRef<HTMLDivElement>(null),
     locked = useRef(false);
   const appliedDraft = useRef<string>();
-  const draftToSend = useRef<string>();
   const latest = useRef(history);
   latest.current = history;
   const thread = history.threads.find((t) => t.id === history.active)!;
@@ -257,7 +254,6 @@ function PlanningAgentSession({
     }
     if (appliedDraft.current === text) return;
     appliedDraft.current = text;
-    if (submitDraft) draftToSend.current = text;
     setExpanded(true);
     setHistory((h) => {
       const active = h.threads.find((t) => t.id === h.active);
@@ -703,12 +699,6 @@ function PlanningAgentSession({
       await submit(intent, isCurrent);
     });
   };
-  useEffect(() => {
-    const text = draftToSend.current;
-    if (!text || thread.draft !== text || busy || frozen || !available) return;
-    draftToSend.current = undefined;
-    send(false, text);
-  }, [thread.id, thread.draft, busy, frozen, available]);
   const saveArrangement = () => {
     if (!editing || !current || current.ownerId !== actor.member.id || !preview || frozen || discussion) return;
     const reviewed = editing;

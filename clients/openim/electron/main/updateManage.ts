@@ -28,9 +28,11 @@ function installedWindows() {
   return isInstalledWindowsApp(process.platform, app.isPackaged, app.getPath("exe"));
 }
 function snapshot(): DesktopUpdateSnapshot {
+  const supported = installedWindows();
   return {
     ...(updates?.state || { phase: "idle", currentVersion: app.getVersion() }),
-    supported: installedWindows(),
+    supported,
+    channel: supported ? "stable" : undefined,
   };
 }
 
@@ -134,7 +136,7 @@ async function present(stillAllowed: () => boolean = () => true) {
     }
     const detail =
       state.phase === "current"
-        ? "当前已是最新版本。"
+        ? "本次检查未发现可用更新。"
         : state.phase === "downloading"
         ? `正在下载更新：${Math.floor(
             state.percent || 0,

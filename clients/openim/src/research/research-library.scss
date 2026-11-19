@@ -30,6 +30,15 @@
 .research-library-form { display: flex; flex-direction: column; gap: 17px; padding: 12px 0; > label { display: flex; flex-direction: column; gap: 7px; font-size: 13px; font-weight: 500; } p, small { color: #718097; font-size: 12px; line-height: 1.75; } > .ant-btn { align-self: end; } input[type="file"] { padding: 12px; border: 1px dashed #c7d2df; border-radius: 10px; font-size: 12px; } }
 .research-search-results > button { width: 100%; display: block; padding: 17px 12px; background: #fff; text-align: left; border-bottom: 1px solid #e6ebf2; border-radius: 8px; strong, small { display: block; } small { font-size: 11px; color: #78859a; margin: 8px 0; } p { white-space: pre-wrap; color: #42546b; font-size: 13px; line-height: 1.75; } &:hover { background: #f5f8fb; } }
 .research-library-withdraw { padding-top: 20px; }
+.research-collection-details {
+  margin-top: 16px;
+  color: #617387;
+  font-size: 12px;
+
+  summary { cursor: pointer; width: fit-content; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 8px 0; }
+  dd { margin: 0; overflow-wrap: anywhere; }
+}
 .zotero-import { display: flex; flex-direction: column; gap: 14px; padding-top: 10px; color: #32445b; > label { display: flex; flex-direction: column; gap: 8px; } p { margin: 0; line-height: 1.7; } .research-source-preview { max-height: 320px; overflow: auto; margin: 0; overflow-wrap: anywhere; } .research-library-actions { margin: 0; } h3 { margin: 0; font-size: 16px; } }
 .zotero-scope { padding: 10px 14px; background: #eaf3ee; border-radius: 10px; }
 .zotero-results { display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow: auto; }

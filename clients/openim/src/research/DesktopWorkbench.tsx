@@ -1,13 +1,13 @@
 import { Alert, Button, Dropdown, Input, Modal, Segmented, Select } from "antd";
 import { DownOutlined } from "@ant-design/icons";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import type { WorkbenchCard } from "@research-agent-platform/contracts";
 import { useResearchRead } from "./useResearchRead";
 import { useResearchStore } from "./store";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { researchApi } from "./api";
-import { workspaceApi, useWorkspaceConversation } from "./workspace-api";
+import { useWorkspaceConversation } from "./workspace-api";
 import { workspaceMemberLabel, workspaceStatusLabel } from "./workspace-labels";
 import {
   TaskWorkspace,
@@ -16,7 +16,7 @@ import {
   WorkspaceTaskDetail,
 } from "./TaskWorkspace";
 import { transientReadFailure } from "./read-errors";
-import { collectTaskInbox , workbenchNextAction } from "./task-inbox";
+import { collectTaskInbox, workbenchNextAction } from "./task-inbox";
 import { collectTeamWorkspace } from "./team-progress";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import "./workspace.scss";
@@ -138,12 +138,6 @@ export function DesktopWorkbench() {
     valid: requestedValid,
   } = workbenchTaskTarget(params);
   const [taskSearch, setTaskSearch] = useState("");
-  const [quickRequest, setQuickRequest] = useState("");
-  const [quickDraft, setQuickDraft] = useState<string>();
-  const expandedChanged = useCallback((value: boolean) => {
-    setPlanningExpanded(value);
-    if (value) setQuickDraft(undefined);
-  }, []);
   const generation = useResearchStore((s) => s.generation),
     actor = useResearchStore((s) => s.actor),
     contacts = useResearchStore((s) => s.contacts);
@@ -199,9 +193,15 @@ export function DesktopWorkbench() {
     inFlight.current = false;
     setForm({ goal: "", contactIds: [] });
   }, [generation]);
+  const query = taskSearch.trim().toLocaleLowerCase();
+  const cards = (read.data?.data || []).filter((card) =>
+    !query || [card.title, card.goal, card.owner.displayName].join(" ").toLocaleLowerCase().includes(query),
+  );
+  const awaiting = cards.filter((card) => card.category === "awaiting_me");
+  const summaryCards = awaiting.length ? awaiting : cards;
   const activeCard =
     selected &&
-    read.data?.data.find(
+    cards.find(
       (card) => card.id === selected.id && card.source === selected.source,
     );
   const eligible = contacts
@@ -445,15 +445,7 @@ export function DesktopWorkbench() {
                   </p>
                 )}
                 {(() => {
-                  const cards = (read.data?.data || []).filter(
-                      (card) =>
-                        !taskSearch.trim() ||
-                        [card.title, card.goal || "", card.owner.displayName]
-                          .join(" ")
-                          .toLocaleLowerCase()
-                          .includes(taskSearch.trim().toLocaleLowerCase()),
-                    ),
-                    partial = !!read.data?.truncated,
+                  const partial = !!read.data?.truncated,
                     groups = [
                       { key: "awaiting_me", label: "需要你动手" },
                       { key: "ongoing", label: "未完成" },
@@ -512,9 +504,6 @@ export function DesktopWorkbench() {
                         ? "还没有已完成的任务"
                         : "暂时没有要推进的任务"}
                     </h2>
-                    <p>
-                      聊天中的协作建议会在这里确认；新建课题组任务跟下面的助手说一句，只给自己的点「新建个人任务」。
-                    </p>
                   </div>
                 )}
                 {read.data && read.data.data.length > 0 && (
@@ -534,14 +523,7 @@ export function DesktopWorkbench() {
                     {filter === "completed" ? "返回待办" : "查看已完成"}
                   </Button>
                 )}
-                {read.data &&
-                  taskSearch.trim() &&
-                  !read.data.data.some((card) =>
-                    [card.title, card.goal || "", card.owner.displayName]
-                      .join(" ")
-                      .toLocaleLowerCase()
-                      .includes(taskSearch.trim().toLocaleLowerCase()),
-                  ) && (
+                {read.data && query && !cards.length && (
                     <p className="workspace-task-list-note">没有符合搜索条件的任务。</p>
                   )}
               </>
@@ -563,65 +545,43 @@ export function DesktopWorkbench() {
                 key={`${activeCard.source}:${activeCard.id}`}
                 card={activeCard}
               />
-            ) : (
+            ) : summaryCards.length ? (
+              <section className="workspace-task-detail workspace-inbox-summary">
+                <header>
+                  <h2>{awaiting.length ? "需要你动手" : filter === "completed" ? "已完成的任务" : "最近的任务"}</h2>
+                </header>
+                <ul>
+                  {summaryCards.slice(0, 5).map((card) => (
+                    <li key={`${card.source}:${card.id}`}>
+                      <div>
+                        <strong>{card.title}</strong>
+                        {card.goal && card.goal.trim() !== card.title && <p>{card.goal}</p>}
+                      </div>
+                      <Button onClick={() => select(card)}>{workbenchNextAction(card)}</Button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : read.data ? (
               <div className="workspace-empty">
-                <h2>有什么事要安排？</h2>
-                <p>说一句，先看安排，再确认发出。</p>
-                <form
-                  className="workspace-quick-task"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    if (!quickRequest.trim() || !assistantReady) return;
-                    setQuickDraft(quickRequest.trim());
-                    setPlanningLaunch((value) => value + 1);
-                    setQuickRequest("");
-                  }}
-                >
-                  <Input.TextArea
-                    aria-label="一句话安排任务"
-                    placeholder="例如：下周五组会，请小陈汇报这周的实验进展，交一份报告"
-                    autoSize={{ minRows: 2, maxRows: 4 }}
-                    value={quickRequest}
-                    maxLength={4000}
-                    disabled={!assistantReady}
-                    onChange={(event) => setQuickRequest(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" &&
-                        !event.shiftKey &&
-                        !event.nativeEvent.isComposing
-                      ) {
-                        event.preventDefault();
-                        event.currentTarget.form?.requestSubmit();
-                      }
-                    }}
-                  />
-                  <Button
-                    htmlType="submit"
-                    type="primary"
-                    disabled={!assistantReady || !quickRequest.trim()}
-                  >
-                    整理成任务
-                  </Button>
-                </form>
+                <h2>{query ? "没有符合搜索条件的任务" : filter === "completed" ? "还没有已完成的任务" : "暂时没有要推进的任务"}</h2>
               </div>
-            )}
+            ) : null}
           </TaskWorkspace>
         )}
       </div>
       {!!actor && (
         <PlanningAgent
           view={tab}
-          hidden={detailOpen || tab === "history" || (tab === "tasks" && !activeCard && !planningExpanded)}
+          hidden={detailOpen || tab === "history"}
           available={supported && availability.supports(23)}
           conversationAvailable={availability.supports(32)}
           focus={planningLaunch}
           fresh={taskLaunch}
-          onExpandedChange={expandedChanged}
+          onExpandedChange={setPlanningExpanded}
           planId={planId}
           requestId={requestId}
-          draft={quickDraft || draft}
-          submitDraft={!!quickDraft}
+          draft={draft}
           onCreated={() => {
             setWorkbenchRevision((value) => value + 1);
             void read.refresh();

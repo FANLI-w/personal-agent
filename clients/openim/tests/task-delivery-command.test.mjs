@@ -22,6 +22,18 @@ test("attached snapshots survive a generic instruction, same-name versions need 
   assert.deepEqual(prepareTaskDelivery("帮我交一下", "组会", [], [files[0]]).names, [files[0]]);
   assert.deepEqual(prepareTaskDelivery("提交报告.pdf", "组会", [files[0], "delivery-c/报告.pdf"], []).names, []);
 });
+test("the parsed filename must match in full, including after common request phrases", () => {
+  const groupReport = "team/组会报告.pdf";
+  const shorter = "local/报告.pdf";
+  const known = [shorter, groupReport];
+  assert.deepEqual(prepareTaskDelivery("把组会报告.pdf提交到这项任务", "组会", known, []).names, [groupReport]);
+  assert.deepEqual(prepareTaskDelivery("帮我交组会报告.pdf", "组会", known, []).names, [groupReport]);
+  assert.deepEqual(prepareTaskDelivery("把「组会报告.pdf」交到「项目周报」", "项目周报", known, []).names, [groupReport]);
+  assert.deepEqual(prepareTaskDelivery("把「组会报告.pdf」交到「组会报告.pdf」", "组会报告.pdf", known, []).names, [groupReport]);
+  assert.deepEqual(prepareTaskDelivery("把组会报告.pdf提交", "组会", [shorter], []).names, []);
+  assert.deepEqual(prepareTaskDelivery("把其他组会报告.pdf提交", "组会", known, []).names, []);
+  assert.deepEqual(prepareTaskDelivery("把组会报告.pdf和报告.pdf提交", "组会", known, []).names, [groupReport, shorter]);
+});
 test("a saved submission receipt follows the actual service review status", () => {
   assert.equal(deliveryReceiptLabel("in_review"), "已提交，等待验收");
   assert.equal(deliveryReceiptLabel("awaiting_review"), "已提交，等待验收");
@@ -60,7 +72,7 @@ function panelHost(overrides = {}) {
     "@ant-design/icons": { CloudUploadOutlined: "UploadIcon", MessageOutlined: "MessageIcon", PaperClipOutlined: "AttachIcon" },
   };
   const module = { exports: {} };
-  vm.runInNewContext(panelBuild.outputFiles[0].text, { module, exports: module.exports, Error, require: name => {
+  vm.runInNewContext(panelBuild.outputFiles[0].text, { module, exports: module.exports, Error, window: { electronAPI: { getFilePath: file => file.path } }, require: name => {
     assert.ok(name in dependencies, `Unexpected component dependency: ${name}`);
     return dependencies[name];
   } });
@@ -134,6 +146,72 @@ test("research file staging requires an explicit confirmation and retains select
   await settle();
   assert.deepEqual(calls, [["delivery-snapshot/report.pdf"], ["delivery-snapshot/report.pdf"]]);
   assert.equal(button(host.render(), "确认提交"), undefined);
+});
+
+const staged = (token, name) => `delivery-${token.repeat(64)}/${name}`;
+const drop = (host, paths) =>
+  nodes(host.render()).find(node => node.props?.onDrop).props.onDrop({
+    preventDefault() {},
+    dataTransfer: { files: paths.map(path => ({ path })) },
+  });
+const prepare = (host, text) => {
+  nodes(host.render()).find(node => node.type === "Search").props.onChange({ target: { value: text } });
+  nodes(host.render()).find(node => node.type === "Search").props.onSearch();
+};
+function textOf(node) {
+  if (Array.isArray(node)) return node.map(textOf).join(" ");
+  return node?.props ? textOf(node.props.children) : typeof node === "string" ? node : "";
+}
+
+test("successive drops keep the selected files, deduplicate by staged name, and enforce the total limit", async () => {
+  const deliveries = [], batches = [];
+  const paths = {
+    a: staged("a", "a.pdf"), b: staged("b", "b.pdf"), c: staged("c", "c.pdf"),
+    d: staged("d", "d.pdf"), e: staged("e", "e.pdf"), f: staged("f", "f.pdf"), g: staged("1", "g.pdf"),
+  };
+  const host = panelHost({
+    stage: async selected => { batches.push(plain(selected)); return selected.map(name => paths[name]); },
+    submit: async names => deliveries.push(plain(names)),
+  });
+  drop(host, ["a", "b", "a"]); await settle();
+  assert.deepEqual(batches, [["a", "b"]]);
+  button(host.render(), "让助理帮我交").props.onClick();
+  prepare(host, "提交a.pdf");
+  drop(host, ["c", "a"]); await settle();
+  drop(host, ["d", "e", "f"]); await settle();
+  drop(host, ["g"]); await settle();
+  const tree = host.render();
+  assert.match(nodes(tree).find(node => node.type === "Alert").props.message, /最多提交 5 份文件/);
+  const removeD = nodes(tree).find(node => node.type === "Button" && node.props["aria-label"]?.startsWith("移除 d.pdf"));
+  removeD.props.onClick();
+  drop(host, ["g"]); await settle();
+  button(host.render(), "确认提交").props.onClick(); await settle();
+  assert.deepEqual(deliveries, [[paths.a, paths.c, paths.e, paths.f, paths.g]]);
+});
+
+test("same-name versions show origin, size, identity, and reveal the exact path before confirmation", async () => {
+  const draft = staged("a", "报告.pdf"), updated = staged("b", "报告.pdf"), chart = "results/chart.png";
+  const revealed = [], delivered = [];
+  const host = panelHost({
+    outputs: [{ name: draft, size: 2048 }, { name: updated, size: 2048 }, { name: chart, size: 32 }],
+    revealFile: name => revealed.push(name),
+    submit: async names => delivered.push(plain(names)),
+  });
+  button(host.render(), "让助理帮我交").props.onClick();
+  prepare(host, "提交报告.pdf和chart.png");
+  const choiceTree = host.render();
+  assert.equal(button(choiceTree, "确认提交"), undefined);
+  const choices = nodes(choiceTree).filter(node => node.props?.className === "task-delivery-choice");
+  assert.equal(choices.length, 2);
+  assert.match(textOf(choices[0]), /报告.pdf.*从电脑选入 · 2.0 KiB · 版本 aaaaaaaaaaaa/);
+  assert.match(textOf(choices[1]), /报告.pdf.*从电脑选入 · 2.0 KiB · 版本 bbbbbbbbbbbb/);
+  button(choices[1], "在文件夹中查看").props.onClick();
+  assert.deepEqual(revealed, [updated]);
+  nodes(choices[1]).find(node => node.type === "Button").props.onClick();
+  const confirmTree = host.render();
+  assert.match(textOf(confirmTree), /chart.png.*报告.pdf.*版本 bbbbbbbbbbbb/);
+  button(confirmTree, "确认提交").props.onClick(); await settle();
+  assert.deepEqual(delivered, [[chart, updated]]);
 });
 
 test("a pending lost acknowledgement replays exactly once without a new submit grant", async () => {

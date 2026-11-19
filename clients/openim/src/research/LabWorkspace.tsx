@@ -1,4 +1,5 @@
-import { Alert, App, AutoComplete, Button, Input, Select, Space, Tag } from "antd";
+import { EllipsisOutlined } from "@ant-design/icons";
+import { Alert, App, AutoComplete, Button, Dropdown, Input, Select, Space } from "antd";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type {
@@ -41,7 +42,7 @@ export function LabWorkspace() {
   const detail = useResearchRead(
     (signal) => researchApi("labMembership", { params: { id: current!.id }, signal }),
     "lab-members:" + current?.id,
-    !!current
+    !!current,
   );
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -63,7 +64,7 @@ export function LabWorkspace() {
       }),
     JSON.stringify(["invite-friends", current?.id, search]),
     pickerOpen && current?.role === "manager",
-    { poll: false }
+    { poll: false },
   );
   const candidates = (friends.data?.data ?? []).flatMap((c) => {
     if (
@@ -75,7 +76,7 @@ export function LabWorkspace() {
     const memberId = c.identity.memberId;
     const joined = detail.data?.data.members.some((m) => m.id === memberId);
     const pending = detail.data?.data.invitations.some(
-      (i) => i.memberId === memberId && i.status === "pending"
+      (i) => i.memberId === memberId && i.status === "pending",
     );
     return [
       {
@@ -90,13 +91,13 @@ export function LabWorkspace() {
   const invites = useResearchRead(
     (signal) => researchApi("managerInvites", { params: { id: current!.id }, signal }),
     "lab-codes:" + current?.id,
-    current?.role === "manager"
+    current?.role === "manager",
   );
   async function run<K extends RouteName>(
     command: K,
     options: { body?: RequestFor<K>["body"]; params?: RequestFor<K>["params"] },
     message: string,
-    context = false
+    context = false,
   ): Promise<ResponseFor<K> | undefined> {
     if (lock.current) return;
     const { isCurrent } = operation.capture();
@@ -131,7 +132,7 @@ export function LabWorkspace() {
             ? "操作已保存，但当前空间刷新未完成。请点击下方刷新课题组。"
             : error instanceof Error
             ? error.message
-            : "操作未完成，请重试。"
+            : "操作未完成，请重试。",
         );
     } finally {
       lock.current = false;
@@ -141,7 +142,7 @@ export function LabWorkspace() {
   const confirm = (
     title: string,
     content: ReactNode,
-    action: () => Promise<unknown>
+    action: () => Promise<unknown>,
   ) => {
     const { isCurrent } = operation.capture();
     confirmation.current = modal.confirm({
@@ -158,20 +159,23 @@ export function LabWorkspace() {
     const result = await run(
       "previewLabCode",
       { body: { inviteCode: code.trim() } },
-      ""
+      "",
     );
     if (result)
       confirm(
         `加入「${result.data.name}」？`,
         "加入后可以使用该课题组明确共享的资料和任务。你的私人资料、模型 Key 和飞书授权不会自动共享。",
         () =>
-          run("joinLab", { body: { inviteCode: code.trim() } }, "已加入课题组。", true)
+          run("joinLab", { body: { inviteCode: code.trim() } }, "已加入课题组。", true),
       );
   };
   const pending = (invite: { status: string; expiresAt: string }) =>
     invite.status === "pending" && new Date(invite.expiresAt).getTime() > Date.now();
   const invitationStatus = (invite: { status: string; expiresAt: string }) =>
-    invite.status === "pending" ? "已过期" : ({ accepted: "已接受", declined: "已谢绝", revoked: "已撤销" }[invite.status] || invite.status);
+    invite.status === "pending"
+      ? "已过期"
+      : { accepted: "已接受", declined: "已谢绝", revoked: "已撤销" }[invite.status] ||
+        invite.status;
   if (labs.error)
     return (
       <Alert
@@ -195,7 +199,7 @@ export function LabWorkspace() {
             } catch (error) {
               if (isCurrent())
                 setFailure(
-                  error instanceof Error ? error.message : "刷新未完成，请重试。"
+                  error instanceof Error ? error.message : "刷新未完成，请重试。",
                 );
             }
           }}
@@ -233,8 +237,8 @@ export function LabWorkspace() {
                             body: { expectedVersion: i.version, decision: "accepted" },
                           },
                           "已接受邀请。",
-                          true
-                        )
+                          true,
+                        ),
                     )
                   }
                 >
@@ -249,7 +253,7 @@ export function LabWorkspace() {
                         params: { id: i.id },
                         body: { expectedVersion: i.version, decision: "declined" },
                       },
-                      "已谢绝邀请。"
+                      "已谢绝邀请。",
                     )
                   }
                 >
@@ -272,7 +276,7 @@ export function LabWorkspace() {
               ? [{ label: "个人空间", value: labs.data.data.personalLabId }]
               : []),
             ...labs.data.data.groups.map((g) => ({
-              label: g.name + (g.role === "manager" ? "（负责人）" : ""),
+              label: g.name + (g.role === "manager" ? "（负责人）" : "（成员）"),
               value: g.id,
             })),
           ]}
@@ -283,9 +287,7 @@ export function LabWorkspace() {
       </section>
       {current && (
         <section aria-label="课题组成员">
-          <h3>
-            {current.name} <Tag>{current.role === "manager" ? "负责人" : "成员"}</Tag>
-          </h3>
+          <h3>成员管理</h3>
           {current.role === "manager" && (
             <Button
               disabled={busy}
@@ -305,8 +307,8 @@ export function LabWorkspace() {
                     run(
                       "renameLab",
                       { params: { id: current.id }, body: { name: edited.trim() } },
-                      "课题组名称已更新。"
-                    )
+                      "课题组名称已更新。",
+                    ),
                 );
               }}
             >
@@ -347,7 +349,7 @@ export function LabWorkspace() {
                         params: { id: current.id },
                         body: { username: username.trim() },
                       },
-                      "已发出课题组邀请。"
+                      "已发出课题组邀请。",
                     );
                     if (result) setUsername("");
                   }}
@@ -374,8 +376,8 @@ export function LabWorkspace() {
                       "leaveLab",
                       { params: { id: current.id } },
                       "已退出课题组。",
-                      true
-                    )
+                      true,
+                    ),
                 )
               }
             >
@@ -400,27 +402,39 @@ export function LabWorkspace() {
                 </p>
               </div>
               {current.role === "manager" && m.role !== "manager" && (
-                <Button
-                  danger
+                <Dropdown
                   disabled={busy}
-                  onClick={() =>
-                    confirm(
-                      `移除 ${m.displayName}？`,
-                      "移除后立即停止该成员的课题组资料与任务访问。其私人资料和账号保留，共享资料改回私人；重新邀请不会恢复旧的任务授权。",
-                      () =>
-                        run(
-                          "removeLabMember",
-                          {
-                            params: { id: current.id, memberId: m.id },
-                            body: { expectedVersion: m.version },
-                          },
-                          "已移除成员。"
-                        )
-                    )
-                  }
+                  trigger={["click"]}
+                  menu={{
+                    items: [
+                      {
+                        key: "remove",
+                        label: "移除成员",
+                        danger: true,
+                        onClick: () =>
+                          confirm(
+                            `移除 ${m.displayName}？`,
+                            "移除后立即停止该成员的课题组资料与任务访问。其私人资料和账号保留，共享资料改回私人；重新邀请不会恢复旧的任务授权。",
+                            () =>
+                              run(
+                                "removeLabMember",
+                                {
+                                  params: { id: current.id, memberId: m.id },
+                                  body: { expectedVersion: m.version },
+                                },
+                                "已移除成员。",
+                              ),
+                          ),
+                      },
+                    ],
+                  }}
                 >
-                  移除
-                </Button>
+                  <Button
+                    type="text"
+                    icon={<EllipsisOutlined />}
+                    aria-label={`${m.displayName}的成员操作`}
+                  />
+                </Dropdown>
               )}
             </div>
           ))}
@@ -436,7 +450,7 @@ export function LabWorkspace() {
                   run(
                     "revokeLabInvitation",
                     { params: { id: i.id }, body: { expectedVersion: i.version } },
-                    "已撤销邀请。"
+                    "已撤销邀请。",
                   )
                 }
               >
@@ -444,12 +458,22 @@ export function LabWorkspace() {
               </Button>
             </div>
           ))}
-          {detail.data?.data.invitations.some(i => !pending(i)) && <details className="lab-secondary">
-            <summary>历史成员邀请</summary>
-            {detail.data.data.invitations.filter(i => !pending(i)).map(i => <div className="lab-member-row" key={i.id}>
-              <span>{i.memberName}</span><span>{invitationStatus(i)} · 有效期至 {new Date(i.expiresAt).toLocaleDateString()}</span>
-            </div>)}
-          </details>}
+          {detail.data?.data.invitations.some((i) => !pending(i)) && (
+            <details className="lab-secondary">
+              <summary>历史成员邀请</summary>
+              {detail.data.data.invitations
+                .filter((i) => !pending(i))
+                .map((i) => (
+                  <div className="lab-member-row" key={i.id}>
+                    <span>{i.memberName}</span>
+                    <span>
+                      {invitationStatus(i)} · 有效期至{" "}
+                      {new Date(i.expiresAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+            </details>
+          )}
           {current.role === "manager" && (
             <details className="lab-secondary" open={Boolean(issued)}>
               <summary>邀请码与邀请记录</summary>
@@ -467,7 +491,7 @@ export function LabWorkspace() {
                       params: { id: current.id },
                       body: codeDraft.current,
                     },
-                    "邀请码已生成。"
+                    "邀请码已生成。",
                   );
                   if (r) {
                     setIssued(r.data);
@@ -525,7 +549,7 @@ export function LabWorkspace() {
                         run(
                           "revokeManagerInvite",
                           { params: { id: current.id, inviteId: i.id } },
-                          "邀请码已撤销。"
+                          "邀请码已撤销。",
                         )
                       }
                     >
@@ -576,7 +600,7 @@ export function LabWorkspace() {
                   "createLab",
                   { body: { name: name.trim() } },
                   "课题组已创建。",
-                  true
+                  true,
                 )
               }
             >
@@ -585,10 +609,24 @@ export function LabWorkspace() {
           </Space.Compact>
         </details>
       )}
-      {labs.data.data.invitations.some(i => !pending(i)) && <details className="lab-secondary">
-        <summary>收到邀请的历史记录</summary>
-        {labs.data.data.invitations.filter(i => !pending(i)).map(i => <div className="lab-member-row" key={i.id}><span>{i.labName} · {i.inviterName} 邀请</span><span>{invitationStatus(i)} · 有效期至 {new Date(i.expiresAt).toLocaleDateString()}</span></div>)}
-      </details>}
+      {labs.data.data.invitations.some((i) => !pending(i)) && (
+        <details className="lab-secondary">
+          <summary>收到邀请的历史记录</summary>
+          {labs.data.data.invitations
+            .filter((i) => !pending(i))
+            .map((i) => (
+              <div className="lab-member-row" key={i.id}>
+                <span>
+                  {i.labName} · {i.inviterName} 邀请
+                </span>
+                <span>
+                  {invitationStatus(i)} · 有效期至{" "}
+                  {new Date(i.expiresAt).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+        </details>
+      )}
       <p className="workspace-muted">
         加入课题组不会开放私人论文库、模型 Key
         或飞书账号。资料仍由库主人明确选择共享；飞书原表的网页访问继续受飞书权限控制。

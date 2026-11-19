@@ -91,6 +91,8 @@ function fixture(initial = snapshot()) {
     generation: 1,
     actorId: "actor",
     binding: initial.binding,
+    canConfigure: true,
+    repositoryError: "",
     next: initial,
     previews: [],
     paths: [],
@@ -158,7 +160,8 @@ function fixture(initial = snapshot()) {
     "./api": { researchApi: async () => ({ data: [], nextCursor: null }) },
     "./useResearchRead": {
       useResearchRead: () => ({
-        data: { data: { binding: f.binding, canConfigure: true } },
+        data: f.repositoryError ? undefined : { data: { binding: f.binding, canConfigure: f.canConfigure } },
+        error: f.repositoryError,
         refresh: async () => {},
       }),
     },
@@ -255,6 +258,27 @@ test("root lists every real direct child including dotfiles and manifest with no
   assert.equal(f.previews.length, 0);
   assert.equal(f.paths.length, 0);
   assert(textOf(f.tree).includes("files"));
+});
+
+test("the repository offers one primary recovery for each actionable sync or configuration state", async () => {
+  const primary = (tree) => nodes(tree).filter(n => n.type === "Button" && n.props.type === "primary").map(textOf);
+  const f = fixture();
+  f.repositoryError = "配置暂不可用";
+  assert.deepEqual(primary(await f.settle()), ["重试读取配置"]);
+
+  f.repositoryError = "";
+  const binding = f.binding;
+  f.binding = null;
+  assert.deepEqual(primary(await f.settle()), ["连接团队仓库"]);
+  f.canConfigure = false;
+  assert.deepEqual(primary(await f.settle()), []);
+  assert(textOf(f.tree).includes("请课题组管理员配置仓库"));
+
+  f.binding = binding;
+  f.sync = async () => { throw Error("网络暂不可用"); };
+  assert.deepEqual(primary(await f.settle()), ["重新同步"]);
+  const details = nodes(f.tree).find(n => n.type === "details");
+  assert(textOf(details).includes("查看仓库配置"));
 });
 
 test("folder drill-in, parent and root breadcrumbs preserve actual paths", async () => {

@@ -125,7 +125,11 @@ function host({
   const bridge = {
     status: async () => ({ pageReady: false, phase: "running" }),
     show: async () => {},
-    taskStatus: async () => nextSnapshot(),
+    taskStatus: async () => {
+      if (runtime.denied)
+        throw Error("Error invoking remote method 'task-dsh-status': Error: 任务或资料当前不可访问，请核对参与权限。");
+      return nextSnapshot();
+    },
     taskOpen: async (target, pick) => {
       calls.push(["open", target, pick]);
       if (openWait) await openWait;
@@ -335,11 +339,28 @@ test("arrival restores exact task, imports pinned materials and attaches context
     false,
   );
   assert.match(text(page.tree), /已接上 · 任务背景 · 适用规范/);
+  assert.match(text(page.tree), /当前任务 · Synthetic task/);
+  assert.equal(
+    find(page.tree, node => node.props?.["aria-label"] === "打开工作文件夹 task")[0].props.title,
+    "C:/synthetic/task",
+  );
   assert.match(text(page.tree), /带 1 份成果回任务/);
   assert.match(text(page.tree), /selected_git_revision/);
   assert.match(text(page.tree), /Pinned template/);
   const destination = page.calls.find((call) => call[0] === "navigate")[1];
   assert.equal(destination, "/dsh?task=task_1&taskKind=research");
+});
+
+test("a revoked task clears the current task and folder from the workbench", async () => {
+  const page = host();
+  page.render();
+  await page.settle();
+  assert.match(text(page.tree), /当前任务 · Synthetic task/);
+  page.runtime.denied = true;
+  await Promise.all(page.timers.map((callback) => callback()));
+  await page.settle();
+  assert.doesNotMatch(text(page.tree), /Synthetic task|C:\/synthetic\/task/);
+  assert(find(page.tree, node => node.type === "Alert" && /当前不可访问/.test(node.props.message)).length);
 });
 
 test("failed attachment never presents a previous binding receipt as connected", async () => {

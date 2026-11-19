@@ -51,3 +51,22 @@ test("empty and oversized uploads fail before reading local bytes; unknown asset
   assert.equal(library.researchFileMediaType({ name: "research.py", type: "" }), "application/octet-stream");
   assert.equal(library.researchFileMediaType({ name: "NOTES.MD", type: "" }), "text/markdown");
 });
+
+test("lab capabilities group by canonical owner even when member and assistant names match", () => {
+  const person = (id, name) => ({
+    id, identity: { kind: "human", memberId: id }, displayName: name,
+    profile: { role: "human", introduction: "", capabilityDescription: "" },
+  });
+  const assistant = (id, ownerMemberId, role) => ({
+    id, identity: { kind: "personal_agent", ownerMemberId }, displayName: "文献助手",
+    profile: { role, introduction: "阅读文献", capabilityDescription: "" },
+    allowedActions: ["chat"],
+  });
+  const people = [person("a", "王老师"), person("b", "王老师")];
+  const data = [assistant("c", "a", "coordinator"), assistant("d", "b", "specialist"), ...people, assistant("e", "a", "specialist")];
+  const groups = helpers.groupLabCapabilities(data, "文献与阅读", "阅读");
+  assert.deepEqual(JSON.parse(JSON.stringify(groups.map(({ owner, capabilities }) => [owner.id, capabilities.map(({ id }) => id)]))), [["a", ["e"]], ["b", ["d"]]]);
+  const searched = helpers.groupLabCapabilities(data, "全部", "王老师");
+  assert.equal(searched.length, 2);
+  assert.equal(searched.some(({ capabilities }) => capabilities.some(({ id }) => id === "c")), false);
+});

@@ -29,11 +29,13 @@ export const contactRelationshipLabel: Record<
 export function WorkspaceContactCard({
   contactId,
   onManage,
+  onOpenContact,
   onChanged,
   onOpenSkills,
   children,
 }: {
   contactId: string;
+  onOpenContact?: (id: string) => void;
   onManage?: (id: string) => void;
   onChanged?: () => Promise<void>;
   onOpenSkills?: OpenAgentSkills;
@@ -133,19 +135,103 @@ export function WorkspaceContactCard({
           </span>
         </div>
       </header>
-      {c.identity.kind === "human" && <AcceptCatAccountNumber username={c.username} isSelf={c.identity.memberId === actor?.member.id} />}
-      <p className="workspace-card-intro">
-        {c.profile.introduction || "还没有填写介绍"}
-      </p>
+      <div className="workspace-card-actions">
+        {c.allowedActions.includes("chat") && (
+          <Button
+            type="primary"
+            loading={currentAction?.busy}
+            onClick={() => void command((isCurrent) => openChat(c.id, isCurrent))}
+          >
+            发消息
+          </Button>
+        )}
+        {c.identity.kind === "human" && c.username && onOpenContact && (
+          <Button
+            loading={currentAction?.busy}
+            onClick={() =>
+              void command(async (isCurrent) => {
+                const page = await researchApi("chatContacts", {
+                  query: { view: "directory", scope: "global", search: c.username!, limit: 100 },
+                });
+                if (!isCurrent() || c.identity.kind !== "human") return;
+                const memberId = c.identity.memberId;
+                const assistant = page.data.find((entry) =>
+                  entry.identity.kind === "personal_agent" &&
+                  entry.identity.ownerMemberId === memberId &&
+                  entry.profile.role === "coordinator"
+                );
+                if (!assistant) throw Error("暂时找不到这位联系人的个人助理。");
+                if (assistant.allowedActions.includes("chat")) await openChat(assistant.id, isCurrent);
+                else onOpenContact(assistant.id);
+              })
+            }
+          >
+            联系个人助理
+          </Button>
+        )}
+        {c.allowedActions.includes("request") && (
+          <Button
+            type="primary"
+            loading={currentAction?.busy}
+            onClick={() =>
+              void command(
+                () => researchApi("requestContact", { params: { id: c.id }, body: {} }),
+                "申请已发送，等待对方同意。",
+              )
+            }
+          >
+            添加联系人
+          </Button>
+        )}
+        {request?.allowedDecisions.includes("accept") && (
+          <Button
+            type="primary"
+            loading={currentAction?.busy}
+            onClick={() =>
+              void command(
+                () =>
+                  researchApi("decideContactRequest", {
+                    params: { id: request.id },
+                    body: { expectedVersion: request.version, decision: "accept" },
+                  }),
+                "已同意添加，可以开始聊天。",
+              )
+            }
+          >
+            同意添加
+          </Button>
+        )}
+      </div>
+      {(currentAction?.error || currentAction?.notice) && (
+        <Alert
+          className="workspace-action-feedback"
+          type={currentAction.error ? "error" : "info"}
+          message={currentAction.error || currentAction.notice}
+        />
+      )}
+      {c.identity.kind === "human" && (
+        <AcceptCatAccountNumber
+          username={c.username}
+          compact
+          isSelf={c.identity.memberId === actor?.member.id}
+        />
+      )}
+      {c.profile.introduction.trim() && (
+        <p className="workspace-card-intro">{c.profile.introduction}</p>
+      )}
       <dl className="workspace-profile-fields">
-        <div>
-          <dt>能力</dt>
-          <dd>{c.profile.capabilityDescription || "还没有填写能力介绍"}</dd>
-        </div>
-        <div>
-          <dt>性格与偏好</dt>
-          <dd>{c.profile.personality || "还没有填写"}</dd>
-        </div>
+        {c.profile.capabilityDescription.trim() && (
+          <div>
+            <dt>能力</dt>
+            <dd>{c.profile.capabilityDescription}</dd>
+          </div>
+        )}
+        {c.profile.personality.trim() && (
+          <div>
+            <dt>性格与偏好</dt>
+            <dd>{c.profile.personality}</dd>
+          </div>
+        )}
         {!human && (
           <div>
             <dt>所属</dt>
@@ -195,55 +281,7 @@ export function WorkspaceContactCard({
           </div>
         )}
       </dl>
-      {(currentAction?.error || currentAction?.notice) && (
-        <Alert
-          className="workspace-action-feedback"
-          type={currentAction.error ? "error" : "info"}
-          message={currentAction.error || currentAction.notice}
-        />
-      )}
       <div className="workspace-card-actions">
-        {c.allowedActions.includes("chat") && (
-          <Button
-            type="primary"
-            loading={currentAction?.busy}
-            onClick={() => void command((isCurrent) => openChat(c.id, isCurrent))}
-          >
-            发消息
-          </Button>
-        )}
-        {c.allowedActions.includes("request") && (
-          <Button
-            type="primary"
-            loading={currentAction?.busy}
-            onClick={() =>
-              void command(
-                () => researchApi("requestContact", { params: { id: c.id }, body: {} }),
-                "申请已发送，等待对方同意。",
-              )
-            }
-          >
-            添加联系人
-          </Button>
-        )}
-        {request?.allowedDecisions.includes("accept") && (
-          <Button
-            type="primary"
-            loading={currentAction?.busy}
-            onClick={() =>
-              void command(
-                () =>
-                  researchApi("decideContactRequest", {
-                    params: { id: request.id },
-                    body: { expectedVersion: request.version, decision: "accept" },
-                  }),
-                "已同意添加，可以开始聊天。",
-              )
-            }
-          >
-            同意添加
-          </Button>
-        )}
         {onManage && (
           <Button onClick={() => onManage(c.id)}>
             {c.allowedActions.includes("edit_profile") ? "资料与管理" : "更多资料"}

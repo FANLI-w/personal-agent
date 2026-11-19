@@ -5,11 +5,12 @@ export type UpdatePhase =
 export type UpdateState = {
   phase: UpdatePhase;
   currentVersion: string;
+  lastCheckedAt?: string;
   version?: string;
   percent?: number;
   notes?: string;
   error?: "check" | "download" | "install";
 };
 
-export type DesktopUpdateSnapshot = UpdateState & { supported: boolean };
+export type DesktopUpdateSnapshot = UpdateState & { supported: boolean; channel?: "stable" };
 export type DesktopUpdateAction = "check" | "download" | "install";

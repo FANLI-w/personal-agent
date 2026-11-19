@@ -86,7 +86,7 @@ test("the standards page reads templates out of the same lab rules", async () =>
   assert.match(page, /isPptTemplate\(r\.title\)/);
   assert.match(page, /pptTemplateTitle\(draft\.title\)/);
   assert.match(page, /composePptTemplate\(/);
-  assert.match(page, /用它开始/);
+  assert.match(page, /使用模板开始任务/);
   // Starting a deck hands the assistant a prepared message, not a new form.
   assert.match(page, /draft: pptStartPrompt\(template\)/);
 });

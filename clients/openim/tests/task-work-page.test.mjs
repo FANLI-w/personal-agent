@@ -68,7 +68,7 @@ test("rules are summarised instead of asking for more input", async () => {
 
 // Execute the actual work page against returned service snapshots. Transport and
 // the React host are controlled; no account data or desktop IPC is touched.
-async function renderWorkPage({ kind = "research", status = "completed", deliveries = [], result, localState, allowedActions = [] } = {}) {
+async function renderWorkPage({ kind = "research", status = "completed", deliveries = [], result, localState, allowedActions = [], bridge } = {}) {
   const ts = (await import("typescript")).default;
   const vm = await import("node:vm");
   const source = await read("../src/research/TaskWorkPage.tsx");
@@ -89,7 +89,7 @@ async function renderWorkPage({ kind = "research", status = "completed", deliver
     "./workspace-labels": { workspaceStatusLabel: { completed: "已完成" } },
   };
   const module = { exports: {} };
-  const context = { module, exports: module.exports, window: {}, require: name => dependencies[name] || new Proxy({}, { get: (_, key) => String(key) }) };
+  const context = { module, exports: module.exports, window: { electronAPI: { localDsh: bridge } }, require: name => dependencies[name] || new Proxy({}, { get: (_, key) => String(key) }) };
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText, context);
   return module.exports.TaskWorkPage({ taskId: task.id, kind, onChanged: async () => {}, children: () => "Arrangement controls" });
 }
@@ -118,6 +118,39 @@ test("personal accepted text results stay visible in the single delivery area wi
   assert.match(text, /Synthetic accepted text/);
   assert.doesNotMatch(text, /暂无可查看的交付记录/);
   assert.doesNotMatch(text, /开始任务后，这里会出现本机工作区/);
+});
+
+test("the current delivery, its download, and its review controls are before the new upload", async () => {
+  const latest = { ...delivery(2), review: undefined };
+  const tree = await renderWorkPage({
+    status: "in_review",
+    deliveries: [delivery(1, "accepted"), latest],
+    allowedActions: ["submit", "review"],
+    bridge: { taskStageDelivery: async () => [] },
+  });
+  const ordered = nodes(tree);
+  const currentSource = ordered.findIndex(node => node.type === "TaskDeliveryDownload" && node.props.label === "report-v2.pdf");
+  const review = ordered.findIndex(node => node.type === "TaskResultReview" && node.props.delivery === latest);
+  const upload = ordered.findIndex(node => node.type === "TaskDeliveryPanel");
+  assert.ok(currentSource >= 0 && currentSource < review && review < upload);
+});
+
+test("long results link directly to their own version's review while keeping the full text", async () => {
+  const summary = ("Long result text for manual review and copy.\n").repeat(60).trim();
+  const result = { messageId: "personal_current", summary, accepted: false };
+  const tree = await renderWorkPage({ kind: "personal", status: "awaiting_review", result, allowedActions: ["review"] });
+  const ordered = nodes(tree);
+  const shortcut = ordered.findIndex(node => node.type === "Button" && node.props.children === "去验收");
+  const fullText = ordered.findIndex(node => node.props?.text === summary);
+  const review = ordered.findIndex(node => node.type === "TaskResultReview" && node.props.messageId === "personal_current" && node.props.taskVersion === 3);
+  assert.ok(shortcut >= 0 && shortcut < fullText && fullText < review);
+  const target = ordered.find(node => node.props?.className === "task-work-review-target");
+  const jumped = [];
+  target.props.ref.current = { scrollIntoView: () => jumped.push("scroll"), focus: () => jumped.push("focus") };
+  ordered[shortcut].props.onClick();
+  assert.deepEqual(jumped, ["scroll", "focus"]);
+  const short = await renderWorkPage({ kind: "personal", status: "awaiting_review", result: { ...result, summary: "Short result" }, allowedActions: ["review"] });
+  assert.equal(nodes(short).some(node => node.type === "Button" && node.props.children === "去验收"), false);
 });
 
 async function statusHost(readStatus) {
@@ -230,6 +263,15 @@ test("a terminal service result takes priority over an earlier local execution r
   assert.doesNotMatch(text, /本轮已结束.*待核对成果/);
   assert.equal(nodes(tree).some(node => node.type === "TaskExecutionStatus"), false);
   assert.equal(nodes(tree).some(node => node.type === "NativeWorkbenchTaskButton"), false);
+});
+test("work folder headings keep the verified path available while hiding legacy hash names", async () => {
+  for (const [name, label] of [["report-files", "report-files"], ["a".repeat(64), "本机工作文件夹"]]) {
+    const directory = `C:\\Synthetic\\tasks\\${name}`;
+    const localState = { phase: "finished", files: [], events: [], binding: { directory, sources: [] } };
+    const tree = await renderWorkPage({ deliveries: [delivery(1, "accepted")], localState });
+    const hint = nodes(tree).find(node => node.props?.className === "task-work-section-hint" && node.props.title === directory);
+    assert.equal(hint?.props.children, label);
+  }
 });
 test("review grants place exactly one control by the latest result for both task types", async () => {
   const team = await renderWorkPage({ status: "in_review", deliveries: [delivery(1, "changes_requested"), delivery(2, "pending")], allowedActions: ["review"] });
