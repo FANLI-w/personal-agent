@@ -11,7 +11,7 @@ import { randomUUID } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
 import { z } from 'zod'
 import { AgentTurn, ChatActionPayload, PlanInput, Title, Text, Id, SharedContext, ModelUsage } from '@research-agent-platform/contracts'
-import { ChatService } from './chat.js'
+import { ChatService, type TurnInput } from './chat.js'
 import { transaction } from './database.js'
 import { serviceFor, callHarness } from './execution-worker.js'
 import type { ModelCall, ModelResult } from './execution-worker.js'
@@ -20,6 +20,8 @@ import { instant } from './ai.js'
 import type { Config } from './config.js'
 import { ApiError } from './errors.js'
 import { chatModelSystem, chatInputTokenBound, chatReplyTokenReserve, dailyChatSystem } from './chat-model-input.js'
+import { queueTopicCuration } from './topic-curator-queue.js'
+import { topicContext, topicReceipt, topicSystem } from './topic-context.js'
 import { fileChatSystem,fileReadMetadata,selectFileExcerpts } from './agent-files.js'
 import { AgentCreationOutput, agentCreationSystem, applyAgentCreation, legacyTurnDocument } from './agent-creation.js'
 import { externalForChat } from './agent-connections.js'
@@ -61,6 +63,12 @@ export function reconcileChat(db: DatabaseSync, config: Config) {
 }
 // Re-evaluate conversational style from the dialogue actually selected for this turn.
 const dialogueStyle = 'Adapt reply length, tone and approach to the sender’s latest feedback.'
+
+function topicMemoryTurn(input: TurnInput) {
+  return input.dailyChat && !input.externalConsent && !input.fileSource && !input.skill &&
+    !input.purpose && !input.scheduledFollowupId && !input.assistantMode &&
+    !input.projectExecution && !input.intakeOutputLimitRecovery
+}
 
 export class ChatWorker {
   readonly owner = randomUUID()
@@ -250,6 +258,18 @@ export class ChatWorker {
       }
       if(projectSources)input.projectEntryInventory={specialistIds:[...new Set([...shownProjectSpecialistIds,...(projectSources.localSpecialists??[]).map(c=>c.id)])],humanIds:[...new Set([...shownProjectHumanIds,...(projectSources.humans??[]).map(c=>c.id)])],messageIds:projectSources.messages.map(m=>m.id),fileMessageIds:projectSources.fileMessageIds,taskIds:projectSources.existingTasks.map(t=>t.id),projects:projectSources.projects.map(p=>({id:p.id,commitmentIds:p.commitments.map(c=>c.id)}))}
       if(projectSources)input.dialogueSources=dialogueSources(s,[...new Set([...(input.dialogueSources??[]).map(source=>source.id),...projectSources.messages.map(message=>message.id)])])
+      // Topic context is optional. Keep existing sources and the reply reserve
+      // in place, and never include it in group, remote, tool or scheduled work.
+      if(!external && topicMemoryTurn(input)) {
+        const topic=topicContext(s,turn.agentContactId,group.kind)
+        if(topic){
+          const withTopic=JSON.stringify({...JSON.parse(prompt),currentTopic:topic})
+          const topicInstructions=system+'\n'+topicSystem
+          if(withTopic.length<=100000&&input.budget.maxTokens-chatInputTokenBound(topicInstructions,withTopic)>=chatReplyTokenReserve(system,prompt,input.budget.maxTokens)){
+            prompt=withTopic;system=topicInstructions;console.log(`${topicReceipt(topic)} conversation=${group.id}`)
+          }
+        }
+      }
       const inputTokenBound=chatInputTokenBound(system,prompt),remainingOutput=input.budget.maxTokens-inputTokenBound
       const admitted=prompt.length <= (input.skill?256000:100000) && remainingOutput>=(input.intakeOutputLimitRecovery?1024:64)
       // Counts only, private to the requester-side runtime. Never copy prompt,
@@ -418,6 +438,7 @@ export class ChatWorker {
       }
       turn.version++; turn.updatedAt = instant(); s.saveTurn(turn)
       this.db.prepare('UPDATE chat_turns SET lease_owner=NULL,lease_until=NULL WHERE id=?').run(turn.id)
+      if(turn.status==='succeeded'&&!job.externalEndpoint&&topicMemoryTurn(job.input)){try{const c=s.contact(turn.agentContactId);if(group.kind==='personal'&&c.identity.kind==='personal_agent'&&c.identity.ownerMemberId===s.c.actor.id&&personalModelRuntime(this.db,s.c.actor,this.config).source==='personal')queueTopicCuration(this.db,s.c.actor.id,c.id,group.id,turn.id)}catch{}}
       if(result.failure==='OUTPUT_LIMIT')queueIntakeOutputRecovery(s,turn.id)
     })) } finally { clearInterval(lease) }
     return true

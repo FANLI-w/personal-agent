@@ -9,6 +9,7 @@ import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import { MemoryText } from "./memory-presentation";
 import { usePersonalOperation } from "./usePersonalOperation";
+import { TopicPanel } from "./TopicPanel";
 import "./personal-memory.scss";
 
 type MemoryView = {
@@ -111,24 +112,31 @@ export function MemoryPanel(props: MemoryPanelProps) {
   );
   const [tab, setTab] = useState("habits");
   const hasNotes = props.scope === "private_agent" && availability.supports(49);
+  const hasTopics = props.scope === "private_agent" && availability.supports(51);
   const notes = hasNotes && tab === "notes";
+  const topics = hasTopics && tab === "topics";
   return (
     <>
-      {hasNotes && (
+      {(hasNotes || hasTopics) && (
         <Segmented
           value={tab}
           onChange={(value) => setTab(String(value))}
           options={[
             { label: "专属记忆", value: "habits" },
-            { label: "助理笔记", value: "notes" },
+            ...(hasNotes ? [{ label: "助理笔记", value: "notes" }] : []),
+            ...(hasTopics ? [{ label: "话题", value: "topics" }] : []),
           ]}
         />
       )}
-      <MemoryPanelBody
-        key={JSON.stringify([props.scope, props.scopeId, notes])}
-        {...props}
-        notes={notes}
-      />
+      {topics ? (
+        <TopicPanel key={props.scopeId} assistantId={props.scopeId} />
+      ) : (
+        <MemoryPanelBody
+          key={JSON.stringify([props.scope, props.scopeId, notes])}
+          {...props}
+          notes={notes}
+        />
+      )}
     </>
   );
 }

@@ -10,6 +10,7 @@ import {openDatabase,migrate} from '../src/database.js'
 import {createServer} from '../src/server.js'
 import {masterAvailable} from '../src/lab-ai-settings.js'
 import {ChatWorker,reconcileChat} from '../src/chat-worker.js'
+import {TopicCuratorWorker} from '../src/topic-curator-worker.js'
 import {extendContinuous,startContinuous} from '../src/continuous-chat.js'
 import type {ModelCall,ModelResult} from '../src/execution-worker.js'
 import {DatabaseSync} from 'node:sqlite'
@@ -46,6 +47,43 @@ async function setup(){
  return {db,config,call,own,send,turn,progress,tick,count,actors,restart}
 }
 describe('continuous local chat: actual HTTP/SQLite, synthetic ModelCall only',{timeout:20000},()=>{
+ it('continues a resumed topic through chat and keeps original messages and habits',async()=>{
+  const s=await setup(),habit='比较方案时先给结论，再列证据。'
+  expect((await s.call('createPersonalMemory',{topic:'回答方式',content:habit,scope:'general'})).status).toBe(201)
+  const firstText='下周组会用海棠色封面，下一步补实验数据表。'
+  const first=await s.send(firstText,randomUUID(),false)
+  await s.tick(async()=>result('组会封面已定，下一步是补实验数据表。'))
+  expect((await s.turn(first.turn.id)).status).toBe('succeeded')
+  const curate=(output:unknown)=>new TopicCuratorWorker(s.db,s.config,Date.now,async()=>result(JSON.stringify(output))).tick()
+  expect(await curate({action:'new_topic',title:'下周组会汇报',summary:'准备用于下周组会的进展汇报',body:{decisions:[{text:'封面用海棠色'}],next:['补实验数据表']}})).toBe(true)
+  const getActive=()=>s.db.prepare("SELECT id,version FROM assistant_topics WHERE state='active'").get()
+  const groupTopic=getActive()!
+  expect(groupTopic).toBeDefined()
+  const second=await s.send('换个话题，论文模板先采用两列排版。',randomUUID(),false)
+  await s.tick(async()=>result('论文模板先按两列排。'))
+  expect((await s.turn(second.turn.id)).status).toBe('succeeded')
+  expect(await curate({action:'new_topic',title:'论文模板',summary:'论文暂用两列排版'})).toBe(true)
+  const otherTopic=getActive()!
+  expect(otherTopic.id).not.toBe(groupTopic.id)
+  const id=String(groupTopic.id),paused=(await s.call('assistantTopic',null,id)).value.data
+  expect(paused).toMatchObject({state:'paused',allowedActions:expect.arrayContaining(['resume'])})
+  expect((await s.call('resumeAssistantTopic',{expectedVersion:paused.version},id,1)).status).toBe(404)
+  expect((await s.call('resumeAssistantTopic',{expectedVersion:groupTopic.version},id)).status).toBe(409)
+  const resumed=await s.call('resumeAssistantTopic',{expectedVersion:paused.version},id)
+  expect(resumed.value.data).toMatchObject({id,state:'active',version:paused.version+1})
+  expect((await s.call('assistantTopic',null,String(otherTopic.id))).value.data.state).toBe('paused')
+  await s.restart()
+  const third=await s.send('接着聊，下一步是什么？',randomUUID(),false)
+  await s.tick(async input=>{
+   const prompt=JSON.parse(input.prompt)
+   expect(prompt.currentTopic).toMatchObject({id,title:'下周组会汇报',decisions:['封面用海棠色'],next:['补实验数据表']})
+   expect(input.prompt).toContain(habit)
+   return result('先补实验数据表，再放进组会汇报。')
+  })
+  expect((await s.turn(third.turn.id)).status).toBe('succeeded')
+  const messages=(await s.call('chatMessages',null,s.own.conversation.id)).value.data
+  expect(messages).toEqual(expect.arrayContaining([expect.objectContaining({id:first.message.id,text:firstText}),expect.objectContaining({text:'先补实验数据表，再放进组会汇报。'})]))
+ })
  it('retains a returned answer across a competing writer without calling the model twice',async()=>{
   const s=await setup(),sent=await s.send('合成锁竞争检查')
   s.db.exec('PRAGMA busy_timeout=1')

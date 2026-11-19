@@ -10,6 +10,7 @@ import { AssistantProjectWorker } from './assistant-projects.js'
 import { CommunityCatalogWorker } from './community-catalog.js'
 import { TaskInvitationWorker } from './task-invitation.js'
 import { MemoryCompressionWorker } from './memory-compression-worker.js'
+import { TopicCuratorWorker } from './topic-curator-worker.js'
 import { waitForWorkerDatabase, workerStep } from './worker-database.js'
 const config=readConfig()
 const releaseProcess=processGuard(config.databasePath);process.once('exit',releaseProcess)
@@ -21,6 +22,7 @@ let stopping=false
 const catalogWorker=new CommunityCatalogWorker(db,config)
 let catalogFlight:Promise<unknown>|undefined
 let memoryFlight:Promise<unknown>|undefined
+let topicFlight:Promise<unknown>|undefined
 const feedbackWorker = new FeedbackWorker(db, config)
 let feedbackFlight: Promise<void> | undefined
 const stop=()=>{stopping=true;catalogWorker.close()}
@@ -32,6 +34,7 @@ const followupWorker=new PersonalFollowupWorker(db,config)
 const projectWorker=new AssistantProjectWorker(db,config)
 const invitationWorker=new TaskInvitationWorker(db,config)
 const memoryWorker=new MemoryCompressionWorker(db,config)
+const topicWorker=new TopicCuratorWorker(db,config)
 console.log('B3 worker started; task invitation notices enabled; historical notification kinds remain dormant.')
 try {
   do {
@@ -41,6 +44,9 @@ try {
     if (!memoryFlight && !stopping) memoryFlight = memoryWorker.tick().catch(() => {
       console.error('Assistant memory compression failed; prior memories preserved.')
     }).finally(() => { memoryFlight = undefined })
+    if (!topicFlight && !stopping) topicFlight = topicWorker.tick().catch(() => {
+      console.error('Assistant topic curation failed; prior topics preserved.')
+    }).finally(() => { topicFlight = undefined })
     const invitation = await workerStep('INVITATION', () => invitationWorker.tick())
     const reminder = await workerStep('FOLLOWUP', () => followupWorker.tick())
     const project = await workerStep('PROJECT', () => projectWorker.tick())
@@ -52,4 +58,4 @@ try {
     }).finally(() => { feedbackFlight = undefined })
     if (!invitation && !reminder && !project && !chat && !execution && !im) await new Promise(resolve => setTimeout(resolve, 1000))
   } while (!stopping && !process.argv.includes('--once'))
-} finally { catalogWorker.close(); await Promise.all([catalogFlight, memoryFlight, feedbackFlight]); db.close() }
+} finally { catalogWorker.close(); await Promise.all([catalogFlight, memoryFlight, topicFlight, feedbackFlight]); db.close() }
