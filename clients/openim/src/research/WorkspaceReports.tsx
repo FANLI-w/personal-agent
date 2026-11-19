@@ -27,7 +27,8 @@ export function WorkspaceReports({ active }: { active: boolean }) {
         .map((j) => j.scope.conversationId),
     ),
   ];
-  const available = !!window.electronAPI?.listDesktopReports && !!actorId;
+  const supported = Boolean(window.electronAPI?.listDesktopReports);
+  const available = supported && !!actorId;
   const read = useResearchRead(
     async () => {
       const startGeneration = useResearchStore.getState().generation,
@@ -93,10 +94,13 @@ export function WorkspaceReports({ active }: { active: boolean }) {
     <section className="workspace-reports">
       <h2>本机报告</h2>
       <p className="workspace-muted">仅显示当前获准聊天中保存在这台电脑上的报告。</p>
-      {!available && (
+      {!supported && (
         <p className="workspace-muted mt-6">
           Windows 桌面客户端可以在这里查看本机报告。
         </p>
+      )}
+      {supported && !actorId && (
+        <p className="workspace-muted mt-6">登录后即可查看当前账号的本机报告。</p>
       )}
       {read.error && (
         <Alert
@@ -134,7 +138,7 @@ export function WorkspaceReports({ active }: { active: boolean }) {
           </Button>
         </article>
       ))}
-      {read.data && !read.data.length && (
+      {read.data && !read.data.length && !activeJobScopes.length && (
         <div className="workspace-empty">
           <h2>还没有保存的报告</h2>
           <p>在本机工作台处理文件，保存后的报告会出现在这里。</p>

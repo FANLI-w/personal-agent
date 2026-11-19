@@ -54,7 +54,9 @@ export class DesktopUpdates {
     port.allowPrerelease = false;
     port.disableWebInstaller = true;
     port.on("checking-for-update", () => this.set({ phase: "checking" }));
-    port.on("update-not-available", () => this.set({ phase: "current" }));
+    port.on("update-not-available", () =>
+      this.set({ phase: "current", lastCheckedAt: new Date().toISOString() }),
+    );
     port.on("update-available", (info) => {
       if (typeof info?.version !== "string" || !/^\d+\.\d+\.\d+$/.test(info.version)) {
         this.fail("check");
@@ -62,6 +64,7 @@ export class DesktopUpdates {
       }
       this.set({
         phase: "available",
+        lastCheckedAt: new Date().toISOString(),
         version: info.version,
         notes: releaseNotes(info.releaseNotes),
       });
@@ -90,12 +93,20 @@ export class DesktopUpdates {
     );
   }
   private set(value: Omit<UpdateState, "currentVersion">) {
-    this.state = { ...value, currentVersion: this.state.currentVersion };
+    this.state = {
+      lastCheckedAt: this.state.lastCheckedAt,
+      ...value,
+      currentVersion: this.state.currentVersion,
+    };
     this.changed({ ...this.state });
   }
   private fail(error: UpdateState["error"]) {
     if (error === "install") this.installFailed();
-    this.set({ phase: "error", error });
+    this.set({
+      phase: "error",
+      error,
+      ...(error === "check" && { lastCheckedAt: new Date().toISOString() }),
+    });
   }
   async check() {
     if (["downloading", "downloaded", "installing"].includes(this.state.phase)) return;

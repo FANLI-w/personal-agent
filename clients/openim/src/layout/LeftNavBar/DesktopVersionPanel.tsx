@@ -35,7 +35,7 @@ export function DesktopVersionPanel({ updates }: { updates: DesktopUpdateControl
     : !state.supported
     ? "自动更新适用于 Windows 安装版，请从安装后的快捷方式启动。"
     : state.phase === "current"
-    ? "当前已是最新版本"
+    ? "本次检查未发现可用更新"
     : state.phase === "available"
     ? `发现新版本 ${state.version}`
     : state.phase === "downloading"
@@ -62,6 +62,26 @@ export function DesktopVersionPanel({ updates }: { updates: DesktopUpdateControl
       <p role="status" className="desktop-version-status">
         {loadError ? "版本信息读取失败" : status}
       </p>
+      {state?.supported && !loadError && (
+        <dl className="desktop-version-check">
+          <div>
+            <dt>更新通道</dt>
+            <dd>{state.channel === "stable" ? "正式版" : "暂不可读取"}</dd>
+          </div>
+          <div>
+            <dt>最近一次检查</dt>
+            <dd>
+              {state.lastCheckedAt ? (
+                <time dateTime={state.lastCheckedAt}>
+                  {new Date(state.lastCheckedAt).toLocaleString()}
+                </time>
+              ) : (
+                "本次启动后尚未完成检查"
+              )}
+            </dd>
+          </div>
+        </dl>
+      )}
       {(loadError || actionError || state?.phase === "error") && (
         <Alert
           type="error"

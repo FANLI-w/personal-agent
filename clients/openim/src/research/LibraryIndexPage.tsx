@@ -139,16 +139,7 @@ export function LibraryIndexPage() {
       setBusy(false);
     }
   };
-  const firstAction = !local.status?.registered ? (
-    <Button
-      type="primary"
-      loading={local.busy}
-      disabled={!bridge}
-      onClick={() => void local.pick()}
-    >
-      选择资料文件夹
-    </Button>
-  ) : (
+  const addIndex = local.status?.registered && (
     <Button
       type="primary"
       disabled={busy}
@@ -184,24 +175,30 @@ export function LibraryIndexPage() {
       <div className="library-index-head">
         <div>
           <h2>我的资料</h2>
-          <p>原件保留在本机，资料索引供课题组成员查阅。</p>
         </div>
-        {entries.length > 0 && firstAction}
+        {entries.length > 0 && addIndex}
       </div>
-      {local.status?.registered && (
+      {bridge && (local.status || local.failure) && (
         <div className="library-index-folder">
-          {local.status?.registered ? (
-            <span>
-              本地文件夹：<strong>{local.status.name}</strong>
-              {local.manifest
-                ? `（${local.manifest.files.length} 个可用文件）`
-                : "（现在打不开）"}
-            </span>
-          ) : (
-            <span>还没有登记本地资料文件夹，先选一个再新增索引。</span>
-          )}
-          <Button size="small" loading={local.busy} onClick={() => void local.pick()}>
-            {local.status?.registered ? "更换文件夹" : "选择文件夹"}
+          <div>
+            {local.status?.registered ? (
+              <p>
+                本地文件夹 <strong>{local.status.name}</strong>
+                {local.manifest
+                  ? `（${local.manifest.files.length} 个可用文件）`
+                  : local.status.available ? "" : "（现在打不开）"}
+              </p>
+            ) : (
+              <p><strong>选择存放资料的文件夹</strong></p>
+            )}
+            <p>原件保留在本机。登记的文件名、相对路径和用途可由课题组成员查阅。</p>
+          </div>
+          <Button
+            type={local.status?.registered ? "default" : "primary"}
+            loading={local.busy}
+            onClick={() => void local.pick()}
+          >
+            {local.status?.registered ? "更换文件夹" : "选择资料文件夹"}
           </Button>
         </div>
       )}
@@ -228,14 +225,10 @@ export function LibraryIndexPage() {
         />
       )}
       {!read.data && !read.error && <p role="status">正在读取索引…</p>}
-      {read.data && !entries.length && !draft && !read.error && (
+      {read.data && local.status?.registered && !entries.length && !draft && !read.error && (
         <div className="library-index-empty">
-          <p>
-            {local.status?.registered
-              ? "还没有资料索引。新增一条，记录文件用途和位置。"
-              : "先选择存放资料的文件夹，再登记常用文件。原件不会上传。"}
-          </p>
-          {firstAction}
+          <p>还没有资料索引。新增一条，记录文件用途和位置。</p>
+          {addIndex}
         </div>
       )}
       {!!entries.length && !visible.length && (

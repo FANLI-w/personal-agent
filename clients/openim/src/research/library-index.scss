@@ -43,6 +43,7 @@
 
 .library-index-folder {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -54,6 +55,12 @@
 
   strong {
     color: #26343d;
+    overflow-wrap: anywhere;
+  }
+
+  > div {
+    flex: 1 1 220px;
+    min-width: 0;
   }
 }
 

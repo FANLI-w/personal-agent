@@ -814,24 +814,6 @@
     width: 100%;
   }
 }
-.personal-agent-desktop .workspace-quick-task {
-  display: grid;
-  gap: 12px;
-  width: min(560px, 100%);
-  margin-top: 20px;
-  text-align: left;
-  textarea.ant-input {
-    font-size: 15px;
-    padding: 14px 16px;
-    border-radius: 12px;
-  }
-  .ant-btn {
-    justify-self: end;
-    height: 38px;
-    border-radius: 10px;
-  }
-}
-
 .personal-agent-desktop .workspace-workbench {
   .planning-agent-composer {
     border-top: 1px solid #dce7ef;

@@ -89,7 +89,7 @@ export function TaskListRow({
         <span className="workspace-task-row-title">{title}</span>
         <span className="workspace-status">{status}</span>
       </span>
-      <footer>{meta}</footer>
+      {meta && <footer>{meta}</footer>}
       {hint && <small className="workspace-task-row-hint">{hint}</small>}
     </button>
   );

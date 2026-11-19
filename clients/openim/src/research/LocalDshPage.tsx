@@ -55,7 +55,7 @@ export function LocalDshPage() {
   const seat = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<LocalDshSnapshot>();
   const [workspace, setWorkspace] = useState<DshTaskState>();
-  const [brief, setBrief] = useState<TaskBrief>();
+  const [briefRecord, setBrief] = useState<TaskBrief & { scope: string }>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
@@ -77,6 +77,7 @@ export function LocalDshPage() {
   const accountScope = `${generation}:${memberId}:${labId}`;
   const serviceOrigin = service?.scope === accountScope ? service.origin : undefined;
   const routeScope = `${accountScope}:${serviceOrigin}:${params.toString()}`;
+  const brief = briefRecord?.scope === routeScope ? briefRecord : undefined;
   const visibleScope = useRef(routeScope);
   visibleScope.current = routeScope;
   const target: TaskTarget | undefined =
@@ -186,11 +187,24 @@ export function LocalDshPage() {
     const current = () =>
       !controller.signal.aborted && visibleScope.current === routeScope &&
       taskStatusRouteMatches(window.location.hash, target);
+    const clearDeniedTask = (failure: unknown, reason: string) => {
+      if (
+        [401, 403, 404].includes((failure as { status?: number } | null)?.status ?? 0) ||
+        ["任务或资料当前不可访问，请核对参与权限。", "接受任务后才能使用工作区。"].includes(reason)
+      ) {
+        setWorkspace(undefined);
+        setBrief(undefined);
+        setCanStage(false);
+        setConnectedScope("");
+        setAttachedScope("");
+      }
+    };
     const verifyService = async () => {
       if (!current()) return false;
       if ((await readWorkbenchServiceOrigin()) !== serviceOrigin) {
         if (current()) {
           setWorkspace(undefined);
+          setBrief(undefined);
           setAttachedScope("");
           setConnectedScope("");
         }
@@ -215,8 +229,11 @@ export function LocalDshPage() {
           }
         }
       } catch (failure) {
-        if (current())
-          setError("这项任务的本机进度暂不可用：" + taskStatusFailure(failure));
+        if (current()) {
+          const reason = taskStatusFailure(failure);
+          clearDeniedTask(failure, reason);
+          setError("这项任务的本机进度暂不可用：" + reason);
+        }
       } finally {
         polling = false;
       }
@@ -242,6 +259,7 @@ export function LocalDshPage() {
           value.allowedActions.some((action) => action === "submit"),
         );
         setBrief({
+          scope: routeScope,
           title: value.title,
           goal:
             ("goal" in value && value.goal) ||
@@ -311,10 +329,11 @@ export function LocalDshPage() {
             /* optional pointer */
           }
       } catch (failure) {
-        if (current())
-          setError(
-            taskStatusFailure(failure, "任务背景暂未接上，请重试。"),
-          );
+        if (current()) {
+          const reason = taskStatusFailure(failure, "任务背景暂未接上，请重试。");
+          clearDeniedTask(failure, reason);
+          setError(reason);
+        }
       } finally {
         initializing = false;
         if (current()) setBusy(false);
@@ -494,7 +513,10 @@ export function LocalDshPage() {
     attachedScope === routeScope || previousRun
       ? workspace?.binding.contextAttachment
       : undefined;
-  const outputs = workbenchOutputs(workspace);
+  const attachedWorkspace = connectedScope === routeScope && brief ? workspace : undefined;
+  const outputs = workbenchOutputs(attachedWorkspace);
+  const directory = attachedWorkspace?.binding.directory;
+  const folder = directory?.split(/[\\/]/).filter(Boolean).at(-1);
   const contextSummary = receipt?.entries
     .reduce<string[]>((summary, entry) => {
       const label = (
@@ -518,12 +540,12 @@ export function LocalDshPage() {
       <header className="local-dsh-header">
         <h1 className="deepchat-brand"><img src={deepchatAvatar} alt="" />DeepChat</h1>
         <nav aria-label="科研工作入口">
-          {target && (
+          {target && brief && (
             <Link to={workbenchTaskPath(target.taskId, target.kind)}>
               {outputs.length ? `带 ${outputs.length} 份成果回任务` : "返回当前任务"}
             </Link>
           )}
-          {canStage && (
+          {canStage && brief && (
             <Button
               disabled={busy || workspace?.phase === "running"}
               onClick={() => setSourcesOpen(true)}
@@ -560,7 +582,9 @@ export function LocalDshPage() {
       {target && (
         <div className="local-dsh-connected" aria-label="任务连接状态">
           <div className="local-dsh-connected-text">
-            <strong>{brief?.title || "正在读取任务"}</strong>
+            <strong title={brief?.title}>
+              {brief ? `当前任务 · ${brief.title}` : busy ? "正在读取任务" : "任务尚未接入"}
+            </strong>
             <span>
               {busy
                 ? "正在接入任务背景…"
@@ -573,9 +597,21 @@ export function LocalDshPage() {
                 : "任务背景尚未接上"}
             </span>
           </div>
+          {folder && (
+            <Button
+              size="small"
+              type="link"
+              className="local-dsh-folder"
+              title={directory}
+              aria-label={`打开工作文件夹 ${folder}`}
+              onClick={() => void reveal()}
+            >
+              工作文件夹 · {folder}
+            </Button>
+          )}
           <Button
             size="small"
-            disabled={!workspace && !instruction}
+            disabled={!attachedWorkspace && !instruction}
             onClick={() => setSourcesOpen(true)}
           >
             {instruction ? "查看指令草稿与来源" : "查看来源"}
@@ -674,13 +710,13 @@ export function LocalDshPage() {
               <p>{brief.goal}</p>
             </>
           )}
-          {workspace && (
+          {attachedWorkspace && (
             <>
               <h4>继续工作的地方</h4>
               <p>
-                会话：{workspace.binding.sessionTitle || workspace.binding.sessionId}
+                会话：{attachedWorkspace.binding.sessionTitle || attachedWorkspace.binding.sessionId}
               </p>
-              <p className="local-dsh-source-path">{workspace.binding.directory}</p>
+              <p className="local-dsh-source-path">{directory}</p>
               <Button onClick={() => void reveal()}>打开文件夹</Button>
             </>
           )}
@@ -707,7 +743,7 @@ export function LocalDshPage() {
             <p>尚无成功接入回执。返回工作台重试后核对来源。</p>
           )}
           {materialReceipt && <p>{materialReceipt}</p>}
-          {(workspace?.binding.teamMaterialReceipts || []).map((material) => (
+          {(attachedWorkspace?.binding.teamMaterialReceipts || []).map((material) => (
             <section key={`${material.repository}:${material.revision}`}>
               <h4>团队资料来源</h4>
               <p className="local-dsh-source-path">{material.repository}</p>
@@ -720,7 +756,7 @@ export function LocalDshPage() {
               ))}
             </section>
           ))}
-          {canStage && (
+          {canStage && brief && (
             <>
               <h4>取回科研插件中的成果</h4>
               <p>
@@ -736,10 +772,10 @@ export function LocalDshPage() {
               </Button>
             </>
           )}
-          {(workspace?.binding.localMaterials || []).length > 0 && (
+          {(attachedWorkspace?.binding.localMaterials || []).length > 0 && (
             <>
               <h4>本任务的材料副本</h4>
-              {workspace!.binding.localMaterials!.map((file) => (
+              {attachedWorkspace!.binding.localMaterials!.map((file) => (
                 <article key={file.localName}>
                   <strong>{file.filename}</strong>
                   <span>SHA256 {file.sha256.slice(0, 12)}</span>

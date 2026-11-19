@@ -1,4 +1,5 @@
 import type { IMessageItemProps } from ".";
+import { ChatSourceQuote } from "@/research/ChatSourceQuote";
 import SafeMessageMarkdown from "@/research/SafeMessageMarkdown";
 import { readableMessage } from "@/research/chat-reply";
 import styles from "./message-item.module.scss";
@@ -38,24 +39,20 @@ export default function QuoteMessageRender({ message }: IMessageItemProps) {
     <div className={styles.bubble}>
       <SafeMessageMarkdown text={quote?.text || ""} />
       {quote?.quoteMessage && (
-        <button
-          type="button"
-          className="desktop-message-quote chat-source-link"
-          onClick={() =>
+        <ChatSourceQuote
+          key={quote.quoteMessage.clientMsgID}
+          label={quote.quoteMessage.senderNickname || "成员"}
+          text={pointer
+            ? source.error
+              ? "引用内容暂不可读取"
+              : source.data?.fact.text || "正在读取引用…"
+            : readableMessage(quote.quoteMessage) || "引用消息"}
+          onLocate={() =>
             locateMessage(timelineScope(generation, id), {
               clientMsgID: quote.quoteMessage.clientMsgID,
             })
           }
-        >
-          <strong>{quote.quoteMessage.senderNickname || "成员"}</strong>
-          <p>
-            {pointer
-              ? source.error
-                ? "引用内容暂不可读取"
-                : source.data?.fact.text || "正在读取引用…"
-              : readableMessage(quote.quoteMessage) || "引用消息"}
-          </p>
-        </button>
+        />
       )}
     </div>
   );

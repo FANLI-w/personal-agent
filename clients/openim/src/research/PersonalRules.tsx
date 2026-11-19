@@ -31,7 +31,7 @@ export function PersonalRules() {
   const read = useResearchRead(
     () => researchApi("personalWorkRules"),
     "personal-work-rules",
-    supported
+    supported,
   );
   const [editing, setEditing] = useState<{
     id?: string;
@@ -53,7 +53,7 @@ export function PersonalRules() {
 
   const submit = async (
     action: "save" | "confirm" | "revoke",
-    record?: { id: string; version: number; title: string; content: string }
+    record?: { id: string; version: number; title: string; content: string },
   ) => {
     const draft = record ?? editing;
     if (!draft) return;
@@ -79,7 +79,7 @@ export function PersonalRules() {
           ? "已撤回，这条不会再进入你的私聊。"
           : action === "confirm"
           ? "已确认生效。"
-          : "已保存，之后的本人私聊与本机任务执行会使用这条规则。"
+          : "已保存，之后的本人私聊与本机任务执行会使用这条规则。",
       );
       await read.refresh();
     } catch (e) {
@@ -106,10 +106,13 @@ export function PersonalRules() {
     <section className="my-rules workspace-standards" aria-label="固定要求">
       <header className="my-section-heading">
         <h2>固定要求</h2>
-        <p>
-          由你明确设定，和聊天中形成的习惯分别保存。用于本人私聊、个人会话及本机任务工作区。
-          群聊和共享个人任务不加载，不能覆盖平台或团队要求。
-        </p>
+        <details className="personal-rules-scope">
+          <summary>查看使用范围</summary>
+          <p>
+            由你明确设定，和聊天中形成的习惯分别保存。用于本人私聊、个人会话及本机任务工作区。
+            群聊和共享个人任务不加载，不能覆盖平台或团队要求。
+          </p>
+        </details>
       </header>
       {read.error && (
         <Alert
@@ -142,9 +145,7 @@ export function PersonalRules() {
             placeholder="一句话说明这条规则，例如：回答先给结论"
             value={editing.title}
             disabled={busy}
-            onChange={(e) =>
-              setEditing((s) => s && { ...s, title: e.target.value })
-            }
+            onChange={(e) => setEditing((s) => s && { ...s, title: e.target.value })}
           />
           <Input.TextArea
             aria-label="规则正文"
@@ -153,9 +154,7 @@ export function PersonalRules() {
             placeholder="写清要求本身，例如：先给结论，再给证据；不确定的地方直接说不确定。"
             value={editing.content}
             disabled={busy}
-            onChange={(e) =>
-              setEditing((s) => s && { ...s, content: e.target.value })
-            }
+            onChange={(e) => setEditing((s) => s && { ...s, content: e.target.value })}
           />
           <div>
             <Button
@@ -186,8 +185,7 @@ export function PersonalRules() {
               {statusLabels[record.status]}
             </span>
             <small>
-              v{record.version} ·{" "}
-              {new Date(record.updatedAt).toLocaleString("zh-CN")}
+              v{record.version} · {new Date(record.updatedAt).toLocaleString("zh-CN")}
             </small>
           </header>
           <p>{record.content}</p>

@@ -54,6 +54,7 @@ async function renderMessage(projectNotice){
   antd:{Alert:'Alert',Button:'Button'},
   '@research-agent-platform/contracts':{OpenImResearchPointer:{safeParse:()=>({success:true,data:{conversationId:'personal',messageId:'decision',sequence:5}})}},
   './api':{researchApi:async()=>({data:projectNotice}),supportsTranscriptSync:()=>true},
+  './ChatSourceQuote':{ChatSourceQuote:'ChatSourceQuote'},
   './useResearchRead':{useResearchRead(_read,identity,enabled,options){
    queries.push({identity,enabled,options});
    return {data:identity.startsWith('project-message:')?projectNotice:identity==='im:personal:decision:5'?{fact,details:{replyTo:reply}}:undefined,refresh(){},invalidate(){}};
@@ -80,6 +81,8 @@ test('real message renderer expands host project questions/results with the corr
   assert.ok(all.some(node=>node.type==='SafeMessageMarkdown'&&node.props.text===fact.text));
   assert.equal(all.find(node=>node.type==='WorkTaskReceipt').props.taskId,'work');
   assert.equal(all.find(node=>node.type==='WorkTaskReceipt').props.poll,false);
+  assert.ok(all.findIndex(node=>node.type==='WorkTaskReceipt') < all.findIndex(node=>node.type==='SafeMessageMarkdown'));
+  assert.equal(all.find(node=>node.type==='ChatSourceQuote').props.text,reply.text);
   assert.equal(queries.find(query=>query.identity.startsWith('project-message:')).options.poll,false);
  }
 });

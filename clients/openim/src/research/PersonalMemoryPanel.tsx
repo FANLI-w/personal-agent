@@ -57,6 +57,18 @@ function MemoryEntry({
       <div className="memory-entry-copy">
         <h3>{memory.topic}</h3>
         <MemoryText text={memory.content} />
+        {memory.allowedActions.includes("edit") && (
+          <Button
+            size="small"
+            type="link"
+            className="memory-edit"
+            disabled={busy}
+            onClick={() => edit(memory)}
+            aria-label={`修改${memory.topic}`}
+          >
+            修改
+          </Button>
+        )}
         <div className="memory-entry-meta">
           {origins[memory.origin]} ·{" "}
           {memory.scope === "general" ? "通用偏好" : "主题记忆"} ·{" "}
@@ -71,16 +83,6 @@ function MemoryEntry({
             className="memory-confirm"
           >
             确认记住
-          </Button>
-        )}
-        {memory.allowedActions.includes("edit") && (
-          <Button
-            type="text"
-            disabled={busy}
-            onClick={() => edit(memory)}
-            aria-label={`修改${memory.topic}`}
-          >
-            修改
           </Button>
         )}
         <Dropdown
@@ -126,7 +128,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
       for (const overlay of overlays.current) overlay.destroy();
       overlays.current = [];
     },
-    [operation.scope]
+    [operation.scope],
   );
   const ownModal = (overlay: { destroy: () => void }) => {
     overlays.current.push(overlay);
@@ -145,7 +147,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
         signal,
       }),
     `memory-overview:${operation.scope}`,
-    active
+    active,
   );
   const history = useResearchRead(
     (signal) =>
@@ -154,20 +156,19 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
         signal,
       }),
     `memory-history:${operation.scope}:${filter}:${cursor || ""}`,
-    active && filter !== "confirmed"
+    active && filter !== "confirmed",
   );
   const settings = useResearchRead(
     (signal) => researchApi("personalMemorySettings", { signal }),
     `memory-settings:${operation.scope}`,
-    active
+    active,
   );
   const [policy, setPolicy] = useState<PersonalMemorySettings>();
   const [editorOpen, setEditorOpen] = useState(false),
     [settingsOpen, setSettingsOpen] = useState(false);
   const [topic, setTopic] = useState(""),
     [content, setContent] = useState("");
-  const [memoryScope, setMemoryScope] =
-    useState<PersonalMemory["scope"]>("general");
+  const [memoryScope, setMemoryScope] = useState<PersonalMemory["scope"]>("general");
   const [editing, setEditing] = useState<PersonalMemory>();
   const [busy, setBusy] = useState(false),
     [failure, setFailure] = useState(""),
@@ -202,19 +203,18 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
       (!search.trim() ||
         `${memory.topic} ${memory.content}`
           .toLocaleLowerCase()
-          .includes(search.trim().toLocaleLowerCase()))
+          .includes(search.trim().toLocaleLowerCase())),
   );
   const newest = memories.reduce<string | undefined>(
-    (date, memory) =>
-      !date || memory.updatedAt > date ? memory.updatedAt : date,
-    undefined
+    (date, memory) => (!date || memory.updatedAt > date ? memory.updatedAt : date),
+    undefined,
   );
   const refresh = () =>
     Promise.all([confirmed.refresh(), history.refresh(), settings.refresh()]);
   const run = async (
     request: () => Promise<unknown>,
     after?: () => void,
-    success = "记忆已更新。"
+    success = "记忆已更新。",
   ) => {
     if (inFlight.current || !ready) return;
     const current = operation.capture();
@@ -230,9 +230,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
       if (current.isCurrent()) setSaved(success);
     } catch (error) {
       if (current.isCurrent()) {
-        setFailure(
-          error instanceof Error ? error.message : "操作未完成，请稍后重试。"
-        );
+        setFailure(error instanceof Error ? error.message : "操作未完成，请稍后重试。");
         await refresh();
       }
     } finally {
@@ -265,7 +263,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
             researchApi("decidePersonalMemory", {
               params: { id: memory.id },
               body: { expectedVersion: memory.version, decision: value },
-            })
+            }),
           )
         : undefined;
     ownModal(
@@ -285,8 +283,8 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
               okText: "确认记住",
               cancelText: "取消",
               onOk: submit,
-            }
-      )
+            },
+      ),
     );
   };
   const showSource = (memory: PersonalMemory) =>
@@ -302,13 +300,11 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
               更新于 {new Date(memory.updatedAt).toLocaleString("zh-CN")} · 版本{" "}
               {memory.version}
             </p>
-            {memory.sourceMessageId && (
-              <p>来源消息：{memory.sourceMessageId}</p>
-            )}
+            {memory.sourceMessageId && <p>来源消息：{memory.sourceMessageId}</p>}
           </div>
         ),
         okText: "知道了",
-      })
+      }),
     );
   const showScope = () =>
     ownModal(
@@ -317,17 +313,15 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
         content: (
           <div className="memory-source">
             <p>
-              只用于你自己的本站 Agent 私聊。群聊、其他人的 Agent 和接入的外部
-              Agent 不会使用。
+              只用于你自己的本站 Agent 私聊。群聊、其他人的 Agent 和接入的外部 Agent
+              不会使用。
             </p>
-            <p>
-              “待确认”中的候选不会用于回答，确认后才生效。你可以随时修改或移除。
-            </p>
+            <p>“待确认”中的候选不会用于回答，确认后才生效。你可以随时修改或移除。</p>
             <p>这里是你的个人记忆，与单个 Agent 的私有记忆分别管理。</p>
           </div>
         ),
         okText: "知道了",
-      })
+      }),
     );
 
   return (
@@ -366,9 +360,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
       {(confirmed.error || currentList.error || settings.error || failure) && (
         <Alert
           type="error"
-          message={
-            failure || confirmed.error || currentList.error || settings.error
-          }
+          message={failure || confirmed.error || currentList.error || settings.error}
           action={
             <Button size="small" disabled={busy} onClick={() => void refresh()}>
               重试读取
@@ -394,12 +386,8 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
             }))}
           />
           <Input
-            aria-label={
-              filter === "confirmed" ? "搜索我的习惯" : "搜索本页习惯"
-            }
-            placeholder={
-              filter === "confirmed" ? "搜索我的习惯" : "搜索本页习惯"
-            }
+            aria-label={filter === "confirmed" ? "搜索我的习惯" : "搜索本页习惯"}
+            placeholder={filter === "confirmed" ? "搜索我的习惯" : "搜索本页习惯"}
             prefix={<SearchOutlined />}
             value={search}
             allowClear
@@ -423,9 +411,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
           </p>
         )}
         {filter === "revoked" && (
-          <p className="memory-state-note">
-            这些记忆已停止使用，保留在这里供你查看。
-          </p>
+          <p className="memory-state-note">这些记忆已停止使用，保留在这里供你查看。</p>
         )}
         <div role="tabpanel" aria-label={filters[filter]}>
           {!currentList.data && !currentList.error && (
@@ -462,40 +448,34 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
                   ? "有新的候选时，会在这里等你确认。"
                   : "移除后的记忆会保留在这里，不再用于回答。"}
               </p>
-              {filter === "confirmed" &&
-                !search.trim() &&
-                category === "all" && (
-                  <Button
-                    disabled={!ready || busy}
-                    onClick={() => openEditor()}
-                  >
-                    记住第一件事
-                  </Button>
-                )}
+              {filter === "confirmed" && !search.trim() && category === "all" && (
+                <Button disabled={!ready || busy} onClick={() => openEditor()}>
+                  记住第一件事
+                </Button>
+              )}
             </div>
           )}
         </div>
-        {filter !== "confirmed" &&
-          (pages.length > 1 || history.data?.nextCursor) && (
-            <nav className="memory-pagination" aria-label="记忆分页">
-              <Button
-                disabled={busy || !history.data || pages.length <= 1}
-                onClick={() => setPages((value) => value.slice(0, -1))}
-              >
-                上一页
-              </Button>
-              <span>第 {pages.length} 页</span>
-              <Button
-                disabled={busy || !history.data?.nextCursor}
-                onClick={() => {
-                  if (history.data?.nextCursor)
-                    setPages((value) => [...value, history.data!.nextCursor!]);
-                }}
-              >
-                下一页
-              </Button>
-            </nav>
-          )}
+        {filter !== "confirmed" && (pages.length > 1 || history.data?.nextCursor) && (
+          <nav className="memory-pagination" aria-label="记忆分页">
+            <Button
+              disabled={busy || !history.data || pages.length <= 1}
+              onClick={() => setPages((value) => value.slice(0, -1))}
+            >
+              上一页
+            </Button>
+            <span>第 {pages.length} 页</span>
+            <Button
+              disabled={busy || !history.data?.nextCursor}
+              onClick={() => {
+                if (history.data?.nextCursor)
+                  setPages((value) => [...value, history.data!.nextCursor!]);
+              }}
+            >
+              下一页
+            </Button>
+          </nav>
+        )}
       </div>
       <footer className="memory-privacy">
         <LockOutlined aria-hidden />
@@ -537,7 +517,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
               setEditing(undefined);
               setTopic("");
               setContent("");
-            }
+            },
           )
         }
       />
@@ -557,7 +537,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
               if (current.isCurrent()) setPolicy(response.data);
             },
             undefined,
-            "已重新读取当前设置。"
+            "已重新读取当前设置。",
           );
         }}
         onSave={() => {
@@ -579,21 +559,18 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
                   policy.quietHours.start === policy.quietHours.end)
               )
                 throw new Error("安静时段的开始和结束时间不能相同。");
-              const response = await researchApi(
-                "updatePersonalMemorySettings",
-                {
-                  body: {
-                    expectedVersion: policy.version,
-                    candidateLearning: policy.candidateLearning,
-                    timeZone: policy.timeZone,
-                    quietHours: policy.quietHours,
-                  },
-                }
-              );
+              const response = await researchApi("updatePersonalMemorySettings", {
+                body: {
+                  expectedVersion: policy.version,
+                  candidateLearning: policy.candidateLearning,
+                  timeZone: policy.timeZone,
+                  quietHours: policy.quietHours,
+                },
+              });
               if (current.isCurrent()) setPolicy(response.data);
             },
             () => setSettingsOpen(false),
-            "设置已保存。"
+            "设置已保存。",
           );
         }}
       />

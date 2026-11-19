@@ -48,26 +48,16 @@ const text = node => !node ? "" : Array.isArray(node) ? node.map(text).join("") 
 const find = (tree, predicate) => nodes(tree).find(predicate);
 const button = (tree, label) => find(tree, node => ["button", "Button"].includes(node.type) && text(node) === label);
 
-test("directory switches object-specific actions below a stable title, tabs and search", async () => {
+test("directory opens people search without specialist tabs or creation", async () => {
   const f = await fixture();
-  let tree = f.render();
-  const layout = tree => Array.from(find(tree, node => node.type === "aside").props.children).filter(Boolean).map(node => node.props.className);
-  assert.deepEqual(layout(tree).slice(0, 4), ["workspace-heading", "directory-page-tabs", "workspace-toolbar", "directory-actions"]);
-  assert(button(tree, "添加联系人"));
+  const tree = f.render();
   assert(button(tree, "好友申请"));
-  assert.equal(button(tree, "技能库"), undefined);
+  assert(button(tree, "群邀请"));
+  assert.equal(button(tree, "智能体"), undefined);
+  assert.equal(button(tree, "添加智能体"), undefined);
   assert.match(text(tree), /选择一位联系人/);
-  assert.equal(nodes(tree).filter(node => text(node) === "添加联系人" && node.type === "Button").length, 1);
-  button(tree, "智能体").props.onClick();
-  tree = f.render();
-  assert.deepEqual(layout(tree).slice(0, 4), ["workspace-heading", "directory-page-tabs", "workspace-toolbar", "directory-actions"]);
-  assert(button(tree, "添加智能体"));
-  assert(button(tree, "技能库"));
-  assert.equal(button(tree, "好友申请"), undefined);
-  assert.equal(button(tree, "群邀请"), undefined);
-  assert.match(text(tree), /选择一位智能体/);
-  button(tree, "添加智能体").props.onClick();
-  tree = f.render();
-  assert.equal(find(tree, node => node.type === "Modal" && node.props.title === "添加智能体").props.open, true);
-  assert.equal(find(tree, node => node.type === "Tabs").props.activeKey, "agent");
+  button(tree, "添加联系人").props.onClick();
+  const modal = find(f.render(), node => node.type === "Modal");
+  assert.equal(modal.props.open, true);
+  assert.equal(modal.props.children.props.kind, "people");
 });

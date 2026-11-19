@@ -60,9 +60,16 @@ export function PlanningHistory({
   const requests = useResearchRead(
     (signal) => researchApi("planningRequests", { query: { limit: 10 }, signal }),
     "chat-planning-request-history",
-    !!actor && showRequests,
+    !!actor,
     { poll: false, timeoutMs: 10000 },
   );
+  const recentByPlan = new Map<string, string>();
+  for (const request of requests.data?.data || []) {
+    if (!request.planId) continue;
+    const previous = recentByPlan.get(request.planId);
+    if (!previous || Date.parse(request.updatedAt) > Date.parse(previous))
+      recentByPlan.set(request.planId, request.updatedAt);
+  }
   useLayoutEffect(() => {
     setStatus("draft");
     setPages([undefined]);
@@ -151,21 +158,30 @@ export function PlanningHistory({
                 正在读取计划…
               </p>
             )}
-            {visible.map((p) => (
-              <button
-                className="record-row"
-                key={p.id}
-                aria-pressed={selected?.id === p.id}
-                onClick={() => setSelection(p.id)}
-              >
-                <div>
-                  <strong>{personalTaskTitle(p.goal)}</strong>
-                </div>
-                <small>
-                  创建于 {new Date(p.createdAt).toLocaleDateString("zh-CN")} · v{p.version}
-                </small>
-              </button>
-            ))}
+            {visible.map((p) => {
+              const title = personalTaskTitle(p.goal);
+              const rest = p.goal.slice(p.goal.indexOf(title) + title.length).replace(/^[。！？!?；;\s]+/, "");
+              const question = plan?.id === p.id ? plan.unresolvedQuestions[0] : undefined;
+              const hint = question ? (typeof question === "string" ? question : question.question) : rest;
+              const recent = recentByPlan.get(p.id);
+              return (
+                <button
+                  className="record-row"
+                  key={p.id}
+                  aria-pressed={selected?.id === p.id}
+                  onClick={() => setSelection(p.id)}
+                >
+                  <div>
+                    <strong>{title}</strong>
+                  </div>
+                  {hint && <p>{question && "待补充 · "}{hint}</p>}
+                  <small>
+                    {recent ? "生成记录更新于" : "创建于"}{" "}
+                    {new Date(recent || p.createdAt).toLocaleString("zh-CN")} · 第 {p.version} 版
+                  </small>
+                </button>
+              );
+            })}
             {read.data && !visible.length && (
               <div className="record-empty">
                 <h3>

@@ -1,5 +1,19 @@
 # 新 AI 接手：当前项目状态
 
+## 2026-11-19 · DeepChat 0.10.119 正式版准备
+
+桌面版本在 1490f46 升为 0.10.119；六个栏目改版的烟测和使用记录来自下方预览包。正式 Windows 安装包及更新清单待构建和核对，当前公开版为 0.10.118。
+
+## 2026-11-19 · 六个桌面栏目改版，Windows x64 本地预览 0.10.119-preview.1
+
+本地分支 codex/people-first-contacts 基于 968b28e。通讯录从人进入本人或其个人助理。消息收起长引用并支持回到原消息。任务优先展示本版交付及验收动作，支持同名修订稿。工作台按使用频率排列工具。资料展示文件的来源与可见范围。「我的」整理习惯入口、模型设置与更新信息。本次沿用既有聊天、派工和记忆数据结构及授权规则，契约 0.51、迁移 041。
+
+根 CI 通过，桌面测试 726/726。用两个测试账号走过退回、同名文件再交和验收。固定 DSH 0.2.1-rc.3 搭配科研插件在两个窗口尺寸实际打开折叠工具。打包后的 Electron 通过隔离启动验证，日志记录一次 electron-log 重复初始化提示。生产账号、在线模型与 Office 人工联调留待正式发布前验收。本批仅本地交付。检查记录位于 D:/deepseek-agent/.runtime/deepchat-redesign-review，另有 deepchat-ui-audit-20261119 与 deepchat-people-ui-20261119。
+
+## 2026-11-19 · 桌面通讯录按人查找（本地候选）
+
+基于主线 968b28e。通讯录直接列出联系人，从名片联系本人或其个人助理；专业智能体分页和添加入口已移除。当前改动限桌面源码，尚未发布。
+
 ## 2026-11-19 · DeepChat 0.10.118 正式发布
 
 话题记忆 [PR #242](https://github.com/luoyan96/personal-agent/pull/242) 经 [PR #245](https://github.com/luoyan96/personal-agent/pull/245) 合入 main `968b28ef75fc01aaf60988394b539e25735aec76`。Windows x64 [0.10.118](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.118) 已公开，四个附件的大小与 SHA-256 已核对。桌面安装包为 `C:/Users/luo/Desktop/DeepChat_0.10.118.exe`，421740506 字节，SHA-256 `bb657d1cecd4f5cf92a77f52a6f060774d1b74cb164ff1233077039ba4d8b63c`。

@@ -52,7 +52,7 @@ export async function prepareAccountProfile(home: string, gateway: { baseURL: st
   const nativeTaskContextClient = buildNativeTaskContextClient(avatar ? workbenchBrandClient(avatar) : '');
   await fs.writeFile(path.join(plugin,'client.mjs'), nativeTaskContextClient, { mode:0o600 });
   const version='1.0.0-'+createHash('sha256').update(nativeTaskContextPlugin+nativeTaskContextClient).digest('hex').slice(0,16);
-  await fs.writeFile(path.join(plugin,'package.json'),JSON.stringify({name:'acceptcat-task-context',version,type:'module',main:'./index.mjs',exports:{'.':'./index.mjs','./client':'./client.mjs','./package.json':'./package.json'},dsh:{client:{inject:['@deepseek-ai/dsh-client-ui-workspace'],platform:'web'}}}),{mode:0o600});
+  await fs.writeFile(path.join(plugin,'package.json'),JSON.stringify({name:'acceptcat-task-context',version,type:'module',main:'./index.mjs',exports:{'.':'./index.mjs','./client':'./client.mjs','./package.json':'./package.json'},dsh:{client:{inject:['@deepseek-ai/dsh-client-ui-workspace',...(avatar ? ['@deepseek-ai/dsh-client-ui-sidebar'] : [])],platform:'web'}}}),{mode:0o600});
   await fs.writeFile(file + '.tmp', JSON.stringify(entries, null, 2), { mode: 0o600 });
   await fs.rename(file + '.tmp', file);
   return file;

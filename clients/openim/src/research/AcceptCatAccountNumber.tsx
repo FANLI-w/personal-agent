@@ -9,10 +9,12 @@ export function AcceptCatAccountNumber({
   username,
   isSelf = false,
   active = true,
+  compact = false,
 }: {
   username: string | null | undefined;
   isSelf?: boolean;
   active?: boolean;
+  compact?: boolean;
 }) {
   const operation = usePersonalOperation(active, `account-number:${username || ""}`);
   const input = useRef<InputRef>(null),
@@ -46,7 +48,7 @@ export function AcceptCatAccountNumber({
   };
   return (
     <section
-      className="acceptcat-account-number"
+      className={`acceptcat-account-number${compact ? " is-compact" : ""}`}
       aria-label={isSelf ? "我的 DeepChat 号" : "DeepChat 号"}
     >
       <div className="acceptcat-account-label">
@@ -56,6 +58,7 @@ export function AcceptCatAccountNumber({
         <>
           <div className="acceptcat-account-value">
             <Input
+              size={compact ? "small" : "middle"}
               ref={input}
               aria-label={isSelf ? "我的 DeepChat 号" : "DeepChat 号"}
               value={username}
@@ -63,6 +66,7 @@ export function AcceptCatAccountNumber({
               onFocus={(event) => event.target.select()}
             />
             <Button
+              size={compact ? "small" : "middle"}
               icon={<CopyOutlined />}
               loading={current === "copying"}
               onClick={() => void copy()}
@@ -71,12 +75,14 @@ export function AcceptCatAccountNumber({
               {current === "copied" ? "已复制" : "复制"}
             </Button>
           </div>
-          <p className="acceptcat-account-help">
-            {isSelf
-              ? "把这个号发给同事，对方可在通讯录中添加你。"
-              : "输入此号可查找联系人。"}
-            区分大小写。
-          </p>
+          {!compact && (
+            <p className="acceptcat-account-help">
+              {isSelf
+                ? "把这个号发给同事，对方可在通讯录中添加你。"
+                : "输入此号可查找联系人。"}
+              区分大小写。
+            </p>
+          )}
           {current === "copied" && (
             <p role="status" className="acceptcat-account-feedback">
               DeepChat 号已复制

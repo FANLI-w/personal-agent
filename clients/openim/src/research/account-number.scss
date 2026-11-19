@@ -37,3 +37,18 @@
     color: #42634f;
   }
 }
+
+.acceptcat-account-number.is-compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  max-width: 420px;
+  padding: 0;
+  border: 0;
+  background: none;
+  .acceptcat-account-label { margin: 0; }
+  .acceptcat-account-value { flex: 1 1 145px; min-width: 0; }
+  .acceptcat-account-feedback { flex: 0 0 100%; margin-top: 0; }
+  .acceptcat-account-help { margin: 0; }
+}

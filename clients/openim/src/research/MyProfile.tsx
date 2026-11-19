@@ -139,7 +139,7 @@ export function MyProfile() {
       {contact && (
         <>
           <div className="my-profile-account">
-            <AcceptCatAccountNumber username={contact.username} isSelf />
+            <AcceptCatAccountNumber username={contact.username} isSelf compact />
             <details className="my-profile-share">
               <summary>分享我的名片</summary>
               <ContactCardShare contact={contact} active />
@@ -193,16 +193,18 @@ export function MyProfile() {
             </form>
           ) : (
             <dl className="my-profile-facts">
-              {fields.map(([key, label]) => (
-                <div key={key}>
-                  <dt>{label}</dt>
-                  <dd>
-                    {(key === "displayName"
-                      ? contact.displayName
-                      : contact.profile[key]) || "尚未填写"}
-                  </dd>
-                </div>
-              ))}
+              {fields
+                .filter(([key]) => key === "displayName" || contact.profile[key].trim())
+                .map(([key, label]) => (
+                  <div key={key}>
+                    <dt>{label}</dt>
+                    <dd>
+                      {key === "displayName"
+                        ? contact.displayName
+                        : contact.profile[key]}
+                    </dd>
+                  </div>
+                ))}
             </dl>
           )}
         </>

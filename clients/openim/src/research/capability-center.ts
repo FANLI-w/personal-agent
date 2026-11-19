@@ -31,3 +31,41 @@ export function capabilityStatus(contact: Pick<Contact, "identity" | "availabili
   if (contact.agentRuntime) return contact.agentRuntime.callerAllowed ? "外部文字服务 · 每次授权" : "外部服务 · 未获准调用";
   return contact.allowedActions.includes("chat") ? "站内文字对话可用" : "先申请添加";
 }
+
+
+/** Group authorized capabilities by the service's owner identity before applying filters. */
+export function groupLabCapabilities(
+  contacts: Contact[],
+  category: ResearchCategory,
+  query: string,
+) {
+  const groups = new Map<string, {
+    ownerId: string;
+    owner?: Contact;
+    capabilities: Contact[];
+  }>();
+  for (const contact of contacts) {
+    const ownerId = contact.identity.kind === "human"
+      ? contact.identity.memberId
+      : contact.identity.ownerMemberId;
+    const group = groups.get(ownerId) || { ownerId, capabilities: [] };
+    if (contact.identity.kind === "human") group.owner = contact;
+    else if (contact.profile.role !== "coordinator") group.capabilities.push(contact);
+    groups.set(ownerId, group);
+  }
+  const search = query.toLocaleLowerCase();
+  const matchesText = (contact: Contact) => [
+    contact.displayName, contact.username, contact.profile.introduction,
+    contact.profile.capabilityDescription,
+  ].join(" ").toLocaleLowerCase().includes(search);
+  return [...groups.values()].flatMap((group) => {
+    const matchesOwner = !!group.owner && matchesText(group.owner);
+    const capabilities = group.capabilities.filter((contact) =>
+      (category === "全部" || capabilityCategory(contact) === category) &&
+      (matchesOwner || matchesText(contact)),
+    );
+    const showOwner = matchesOwner && group.owner &&
+      (category === "全部" || capabilityCategory(group.owner) === category);
+    return showOwner || capabilities.length ? [{ ...group, capabilities }] : [];
+  }).sort((a, b) => (a.owner?.displayName || "").localeCompare(b.owner?.displayName || "", "zh-CN"));
+}

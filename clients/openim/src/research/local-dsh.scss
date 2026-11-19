@@ -42,7 +42,8 @@
   .local-dsh-connected {
     display: flex;
     align-items: center;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 8px 14px;
     margin: 8px 20px;
     padding: 10px 14px;
     background: #fff;
@@ -51,10 +52,10 @@
   }
   .local-dsh-connected-text {
     display: flex;
-    align-items: baseline;
-    gap: 16px;
+    flex-direction: column;
+    gap: 2px;
     min-width: 0;
-    flex: 1;
+    flex: 1 1 220px;
   }
   .local-dsh-connected-text strong {
     font-size: 13px;
@@ -65,6 +66,13 @@
   .local-dsh-connected-text span {
     color: #667b73;
     font-size: 12px;
+  }
+  .local-dsh-folder {
+    display: block;
+    max-width: min(100%, 350px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
   }
   .local-dsh-task {
     margin: 10px 20px 0;

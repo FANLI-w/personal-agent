@@ -20,10 +20,10 @@ test("the standards page reads and writes lab rules and points templates at the 
   assert.match(page, /availability\.supports\(40\)/);
   // What a task actually carries is spelled out, not left to guesswork.
   assert.match(page, /平台基本规则/);
-  assert.match(page, /本人个人任务使用平台及个人规则/);
-  // Templates are materials, and the page says so before linking to the library.
+  assert.match(page, /本人个人任务也会使用个人规则/);
+  // Templates can start a task, while shared source files are separately reachable.
   assert.match(page, /模板与范文/);
-  assert.match(page, /资料按需引用，不会自动变成规则/);
+  assert.match(page, /使用模板开始任务/);
   assert.match(page, /navigate\("\/library"\)/);
   // Members stage candidates; only the manager publishes.
   assert.match(page, /待负责人确认/);

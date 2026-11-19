@@ -10,7 +10,9 @@ import { taskDeliveryAction, taskDeliveryMode } from "./task-delivery-mode";
 
 import {
   deliveryFilename as filename,
+  deliveryFileDetails,
   deliveryReceiptLabel,
+  maxTaskDeliveryFiles,
   prepareTaskDelivery,
 } from "./task-delivery-command";
 export function TaskDeliveryPanel({
@@ -20,6 +22,7 @@ export function TaskDeliveryPanel({
   disabled,
   submit,
   stage,
+  revealFile,
   submitted,
   pending,
   retry,
@@ -33,6 +36,7 @@ export function TaskDeliveryPanel({
   disabled: boolean;
   submit: (names: string[], summary?: string) => Promise<void>;
   stage: (paths?: string[]) => Promise<string[]>;
+  revealFile?: (name: string) => void;
   submitted?: { names: string[]; status: string; summary: string };
   pending?: boolean;
   retry: () => Promise<void>;
@@ -47,15 +51,17 @@ export function TaskDeliveryPanel({
   const [text, setText] = useState(""),
     [selection, setSelection] = useState<string[]>([]);
   const [attached, setAttached] = useState<string[]>([]);
+  const [alternatives, setAlternatives] = useState<string[][]>([]);
   const [question, setQuestion] = useState(""),
     [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [busyLabel, setBusyLabel] = useState("");
   const flight = useRef(false);
-  const run = async (action: () => Promise<void>) => {
+  const run = async (label: string, action: () => Promise<void>) => {
     if (flight.current || disabled || !canSubmit) return;
     flight.current = true;
     setBusy(true);
+    setBusyLabel(label);
     setError("");
     try {
       await action();
@@ -66,15 +72,60 @@ export function TaskDeliveryPanel({
       setBusy(false);
     }
   };
+  const resetQuestion = () => {
+    setQuestion("");
+    setAlternatives([]);
+  };
+  const selectFiles = (names: string[]) => {
+    if (names.length > maxTaskDeliveryFiles) {
+      setError("每次最多提交 5 份文件，请移除后再添加。");
+      return false;
+    }
+    setSelection(names);
+    setError("");
+    return true;
+  };
+  const toggleFile = (name: string) => {
+    if (selection.includes(name)) {
+      if (selectFiles(selection.filter((file) => file !== name))) {
+        setAttached(attached.filter((file) => file !== name));
+      }
+    } else {
+      selectFiles([...selection, name]);
+    }
+    resetQuestion();
+  };
+  const fileDetails = (name: string) =>
+    deliveryFileDetails(name, outputs.find((file) => file.name === name)?.size);
+  const renderFile = (name: string) => (
+    <span className="task-delivery-file-identity">
+      <strong>{filename(name)}</strong>
+      <small>{fileDetails(name)}</small>
+    </span>
+  );
+  const renderReveal = (name: string) =>
+    revealFile && (
+      <Button
+        type="text"
+        size="small"
+        disabled={disabled || busy}
+        aria-label={`在文件夹中查看 ${filename(name)} · ${fileDetails(name)}`}
+        onClick={() => revealFile(name)}
+      >
+        在文件夹中查看
+      </Button>
+    );
   const choose = async (paths?: string[]) => {
     if (!filesAllowed) return;
-    await run(async () => {
-      setBusyLabel("正在准备文件…");
-      const names = await stage(paths);
+    await run("正在准备文件…", async () => {
+      const names = await stage(paths && [...new Set(paths)]);
       if (!names.length) return;
-      setAttached(names);
-      setSelection(names);
-      setQuestion("");
+      const nextAttached = [...new Set([...attached, ...names])];
+      const nextSelection = [...new Set([...selection, ...names])];
+      if (selectFiles(nextSelection)) {
+        setAttached(nextAttached);
+        resetQuestion();
+      }
     });
   };
   const prepare = () => {
@@ -85,7 +136,8 @@ export function TaskDeliveryPanel({
       outputs.map((file) => file.name),
       attached,
     );
-    setSelection(result.names);
+    selectFiles(result.names);
+    setAlternatives(result.alternatives || []);
     setQuestion(result.question);
   };
   return (
@@ -104,6 +156,7 @@ export function TaskDeliveryPanel({
                 if (flight.current || busy || !pending) return;
                 flight.current = true;
                 setBusy(true);
+                setBusyLabel("正在核对提交回执…");
                 setError("");
                 void retry()
                   .catch((failure) =>
@@ -120,32 +173,34 @@ export function TaskDeliveryPanel({
           }
         />
       )}
-      {!filesSupported && (
+      {!filesSupported && canSubmit && (
         <Alert
           type="info"
           message="当前后台尚未支持个人任务文件交付，请升级配套后台；仍可提交文字成果。"
         />
       )}
-      <div className="task-delivery-header">
-        <div>
-          <h3>交付成果</h3>
-          <p>
-            {!filesAllowed
-              ? "本任务支持文字成果"
-              : "文件会提交到这项任务，负责人可直接下载"}
-          </p>
+      {canSubmit && (
+        <div className="task-delivery-header">
+          <div>
+            <h3>交付成果</h3>
+            <p>
+              {!filesAllowed
+                ? "本任务支持文字成果"
+                : "文件会提交到这项任务，负责人可直接下载"}
+            </p>
+          </div>
+          {filesAllowed && canSubmit && (
+            <Button
+              icon={<MessageOutlined />}
+              disabled={disabled || busy}
+              aria-expanded={assistant}
+              onClick={() => setAssistant((value) => !value)}
+            >
+              让助理帮我交
+            </Button>
+          )}
         </div>
-        {filesAllowed && canSubmit && (
-          <Button
-            icon={<MessageOutlined />}
-            disabled={disabled || busy}
-            aria-expanded={assistant}
-            onClick={() => setAssistant((value) => !value)}
-          >
-            让助理帮我交
-          </Button>
-        )}
-      </div>
+      )}
       {filesAllowed && canSubmit && (
         <div
           className={"task-delivery-drop" + (over ? " is-over" : "")}
@@ -171,7 +226,9 @@ export function TaskDeliveryPanel({
           <CloudUploadOutlined aria-hidden />
           <div>
             <strong>拖入要交付的文件</strong>
-            <small>最多 5 份 · 单份 512 MiB · 核对后提交</small>
+            <small>
+              已选 {selection.length} / {maxTaskDeliveryFiles} 份 · 单份 512 MiB
+            </small>
           </div>
           <Button
             type="primary"
@@ -185,30 +242,36 @@ export function TaskDeliveryPanel({
       {filesAllowed && canSubmit && outputs.length > 0 && (
         <details className="task-delivery-output-options">
           <summary>从工作文件夹选择（{outputs.length}）</summary>
-          {outputs.map((file) => (
+          <div className="task-delivery-choices">
+            {outputs.map((file) => (
+              <Button
+                key={file.name}
+                aria-pressed={selection.includes(file.name)}
+                disabled={disabled || busy}
+                onClick={() => toggleFile(file.name)}
+              >
+                {renderFile(file.name)}
+              </Button>
+            ))}
+          </div>
+          {outputs.length <= maxTaskDeliveryFiles && (
             <Button
-              key={file.name}
               disabled={disabled || busy}
               onClick={() => {
-                setSelection([file.name]);
-                setQuestion("");
+                if (
+                  selectFiles([
+                    ...new Set([...selection, ...outputs.map((file) => file.name)]),
+                  ])
+                )
+                  resetQuestion();
               }}
             >
-              {filename(file.name)}
+              选择全部产出
             </Button>
-          ))}
-          <Button
-            disabled={disabled || busy}
-            onClick={() => {
-              setSelection(outputs.map((file) => file.name));
-              setQuestion("");
-            }}
-          >
-            选择全部产出
-          </Button>
+          )}
         </details>
       )}
-      {target.kind === "personal" && (!submitted || canSubmit) && (
+      {target.kind === "personal" && canSubmit && (
         <div className="task-delivery-text">
           <Input.TextArea
             aria-label="提交文字成果"
@@ -224,7 +287,7 @@ export function TaskDeliveryPanel({
             disabled={disabled || busy || !canSubmit || !resultText.trim()}
             loading={busy}
             onClick={() =>
-              void run(async () => {
+              void run("正在提交，等待回执…", async () => {
                 await submit([], resultText.trim());
                 setResultText("");
               })
@@ -242,7 +305,7 @@ export function TaskDeliveryPanel({
             onChange={(event) => {
               setText(event.target.value);
               setSelection([]);
-              setQuestion("");
+              resetQuestion();
             }}
             placeholder="把组会报告.pdf交到这项任务"
             enterButton="帮我准备"
@@ -256,64 +319,81 @@ export function TaskDeliveryPanel({
           >
             附上文件
           </Button>
-          {attached.length > 0 && (
-            <p>
-              已附上 {attached.map(filename).join("、")}{" "}
+          {question && (
+            <p role="status" className="task-delivery-assistant-question">
+              {question}
+            </p>
+          )}
+          {alternatives.map((names) => (
+            <div
+              className="task-delivery-choices"
+              key={names[0]}
+              aria-label={filename(names[0])}
+            >
+              {names.map((name) => (
+                <div className="task-delivery-choice" key={name}>
+                  <Button
+                    disabled={disabled || busy}
+                    onClick={() => {
+                      if (!selectFiles([...new Set([...selection, name])])) return;
+                      const remaining = alternatives.filter((group) => group !== names);
+                      setAlternatives(remaining);
+                      if (!remaining.length) setQuestion("");
+                    }}
+                  >
+                    {renderFile(name)}
+                  </Button>
+                  {renderReveal(name)}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+      {filesAllowed && (selection.length > 0 || attached.length > 0) && canSubmit && (
+        <div className="task-delivery-confirm">
+          <strong>{selection.length ? `提交到「${title}」` : "已附上的文件"}</strong>
+          {(selection.length ? selection : attached).map((name) => (
+            <div className="task-delivery-selected-file" key={name}>
+              {renderFile(name)}
+              {renderReveal(name)}
               <Button
-                size="small"
                 type="text"
-                disabled={busy}
+                size="small"
+                disabled={disabled || busy}
+                aria-label={`移除 ${filename(name)} · ${fileDetails(name)}`}
                 onClick={() => {
-                  setAttached([]);
-                  setSelection([]);
+                  setAttached(attached.filter((file) => file !== name));
+                  selectFiles(selection.filter((file) => file !== name));
                 }}
               >
                 移除
               </Button>
-            </p>
-          )}
-          {question && <p role="status">{question}</p>}
-          {!!question &&
-            !/先不提交/.test(question) &&
-            outputs.slice(0, 20).map((file) => (
-              <Button
-                key={file.name}
-                onClick={() => {
-                  setSelection([file.name]);
-                  setQuestion("");
-                }}
-              >
-                {filename(file.name)}
-              </Button>
-            ))}
-        </div>
-      )}
-      {filesAllowed && selection.length > 0 && canSubmit && (
-        <div className="task-delivery-confirm">
-          <strong>提交到「{title}」</strong>
-          {selection.map((name) => (
-            <p key={name}>{filename(name)}</p>
+            </div>
           ))}
-          <Button
-            type="primary"
-            loading={busy}
-            disabled={disabled || !canSubmit}
-            onClick={() =>
-              void run(async () => {
-                setBusyLabel("正在提交，等待回执…");
-                await submit(selection);
-                setSelection([]);
-                setAttached([]);
-                setText("");
-              })
-            }
-          >
-            确认提交
-          </Button>
+          {selection.length > 0 && !alternatives.length && (
+            <Button
+              type="primary"
+              loading={busy}
+              disabled={disabled || !canSubmit}
+              onClick={() =>
+                void run("正在提交，等待回执…", async () => {
+                  await submit(selection);
+                  setSelection([]);
+                  setAttached([]);
+                  setText("");
+                })
+              }
+            >
+              确认提交
+            </Button>
+          )}
           <Button
             onClick={() => {
               setSelection([]);
               setAttached([]);
+              setError("");
+              resetQuestion();
             }}
             disabled={busy}
           >

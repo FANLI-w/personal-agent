@@ -23,6 +23,7 @@ import { AgentCapabilityFeedCard } from "./AgentCapabilityFeedCard";
 import { AgentResources, type OpenAgentSkills } from "./AgentResources";
 import {
   capabilityCategory,
+  groupLabCapabilities,
   capabilityStatus,
   researchCategories,
   type ResearchCategory,
@@ -61,10 +62,7 @@ export function WorkbenchCapabilities({
             <div className="workspace-empty" role="status">
               <h2>你还没有加入课题组</h2>
               <p>加入后，这里会显示课题组成员和 Agent 的能力。</p>
-              <p>
-                请联系课题组负责人获取邀请码，在注册时加入。已有个人账号目前还不能直接加入课题组。
-              </p>
-              <p>发起群聊或添加好友不会加入课题组。</p>
+              <p>可在「我的 → 课题组」查看加入邀请。</p>
             </div>
           </div>
         ) : (
@@ -116,19 +114,33 @@ function CapabilityBrowser({
     generation = useResearchStore((s) => s.generation);
   const actorId = actor?.member.id;
   const local = useResearchRead(
-    (signal) =>
-      researchApi("chatContacts", {
-        query: {
-          view: view === "mine" ? "mine" : "directory",
-          scope: "local",
-          search: query,
-          cursor,
-          limit: 30,
-        },
-        signal,
-      }),
-    `square-contacts:${view}:${query}:${cursor || ""}`,
+    async (signal) => {
+      if (view !== "lab") {
+        return researchApi("chatContacts", {
+          query: { view: "mine", scope: "local", search: query, cursor, limit: 30 },
+          signal,
+        });
+      }
+      const data: Contact[] = [];
+      const seen = new Set<string>();
+      let next: string | undefined;
+      do {
+        const page = await researchApi("chatContacts", {
+          query: { view: "directory", scope: "local", cursor: next, limit: 100 },
+          signal,
+        });
+        data.push(...page.data);
+        next = page.nextCursor ?? undefined;
+        if (next && seen.has(next)) throw new Error("课题组能力未能完整读取，请重试。");
+        if (next) seen.add(next);
+      } while (next);
+      return { data, nextCursor: null };
+    },
+    view === "lab"
+      ? "lab-capabilities"
+      : `square-contacts:${view}:${query}:${cursor || ""}`,
     supported && view !== "public",
+    { poll: view === "lab" ? false : undefined },
   );
   const community = useResearchRead(
     (signal) => researchApi("communityCatalog", { signal }),
@@ -207,6 +219,8 @@ function CapabilityBrowser({
           c.identity.ownerMemberId === actorId)) &&
       (category === "全部" || capabilityCategory(c) === category),
   );
+  const labGroups =
+    view === "lab" ? groupLabCapabilities(local.data?.data || [], category, query) : [];
   const hasTemplates =
     view === "mine" && matchingStarterTemplates(category, query).length > 0;
   const librarySupported =
@@ -323,8 +337,20 @@ function CapabilityBrowser({
         </div>
         <Input.Search
           className="capability-feed-search"
-          aria-label={view === "public" ? "搜索公开能力" : "搜索科研助手"}
-          placeholder={view === "public" ? "搜索 GitHub 科研能力" : "搜索科研助手"}
+          aria-label={
+            view === "public"
+              ? "搜索公开能力"
+              : view === "lab"
+              ? "搜索成员或能力"
+              : "搜索科研助手"
+          }
+          placeholder={
+            view === "public"
+              ? "搜索 GitHub 科研能力"
+              : view === "lab"
+              ? "搜索成员或能力"
+              : "搜索科研助手"
+          }
           value={search}
           allowClear
           maxLength={100}
@@ -429,61 +455,106 @@ function CapabilityBrowser({
                     正在读取科研能力…
                   </p>
                 )}
-                {!!localResults.length && (
-                  <div className="capability-feed-section-heading">
-                    <h2>{view === "mine" ? "我的科研助手" : "来自课题组的能力"}</h2>
-                    <p>
-                      {view === "mine"
-                        ? "打开配置，管理技能、模型与资料。"
-                        : "由维护者填写，点开了解与联系。"}
-                    </p>
+                {view === "lab" ? (
+                  <div className="lab-capability-directory">
+                    {labGroups.map(({ owner, ownerId, capabilities }) => (
+                      <article className="lab-capability-owner" key={ownerId}>
+                        <header>
+                          <OIMAvatar text={owner?.displayName || "成员"} size={36} />
+                          <div>
+                            <h3>{owner?.displayName || "成员资料暂不可读"}</h3>
+                            {owner?.username && <small>{owner.username}</small>}
+                            {owner?.profile.capabilityDescription && (
+                              <p>{owner.profile.capabilityDescription}</p>
+                            )}
+                          </div>
+                          {owner && (
+                            <Button
+                              size="small"
+                              onClick={() => setSelectedContact(owner.id)}
+                            >
+                              查看名片
+                            </Button>
+                          )}
+                        </header>
+                        {capabilities.length > 0 && (
+                          <ul aria-label="成员的专业能力">
+                            {capabilities.map((contact) => (
+                              <li key={contact.id}>
+                                <details>
+                                  <summary>
+                                    <strong>{contact.displayName}</strong>
+                                    <span>{capabilityCategory(contact)}</span>
+                                  </summary>
+                                  <p>
+                                    {contact.profile.capabilityDescription ||
+                                      contact.profile.introduction ||
+                                      "暂无能力说明"}
+                                  </p>
+                                </details>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </article>
+                    ))}
                   </div>
-                )}
-                <div className="capability-discovery-grid capability-live-grid">
-                  {localResults.map((c) => (
-                    <AgentCapabilityFeedCard
-                      key={c.id}
-                      contact={c}
-                      actionName={c.displayName}
-                      operationScope={`${view}:${selectedContact}:${publishing}:${category}:${query}`}
-                      onConfigure={(id) => setSelectedContact(id)}
-                      title={c.displayName}
-                      openLabel={`查看${c.displayName}配置`}
-                      name={
-                        c.identity.kind === "human"
-                          ? c.displayName
-                          : c.identity.ownerMemberId === actorId
-                          ? "由你维护"
-                          : "由所属账号维护"
-                      }
-                      outcomes={
-                        c.profile.introduction ||
-                        c.profile.capabilityDescription ||
-                        "尚未填写介绍"
-                      }
-                      status={capabilityStatus(c)}
-                      icon={<OIMAvatar text={c.displayName} size={32} />}
-                      preview={null}
-                      metadata={<span>{capabilityCategory(c)}</span>}
-                      selected={selectedContact === c.id}
-                      onOpen={() => setSelectedContact(c.id)}
-                    />
-                  ))}
-                </div>
-                {local.data && !localResults.length && (
-                  <div className="capability-feed-empty">
-                    <p>
-                      {view === "mine"
-                        ? "还没有匹配的私人 Agent，从下面的内置助手挑一个开始。"
-                        : "还没有匹配的课题组能力。"}
-                    </p>
-                    {(query || category !== "全部") && (
-                      <Button size="small" onClick={resetFilters}>
-                        清除筛选
-                      </Button>
+                ) : (
+                  <>
+                    {!!localResults.length && (
+                      <div className="capability-feed-section-heading">
+                        <h2>我的科研助手</h2>
+                        <p>打开配置，管理技能、模型与资料。</p>
+                      </div>
                     )}
-                  </div>
+                    <div className="capability-discovery-grid capability-live-grid">
+                      {localResults.map((c) => (
+                        <AgentCapabilityFeedCard
+                          key={c.id}
+                          contact={c}
+                          actionName={c.displayName}
+                          operationScope={`${view}:${selectedContact}:${publishing}:${category}:${query}`}
+                          onConfigure={(id) => setSelectedContact(id)}
+                          title={c.displayName}
+                          openLabel={`查看${c.displayName}配置`}
+                          name={
+                            c.identity.kind === "human"
+                              ? c.displayName
+                              : c.identity.ownerMemberId === actorId
+                              ? "由你维护"
+                              : "由所属账号维护"
+                          }
+                          outcomes={
+                            c.profile.introduction ||
+                            c.profile.capabilityDescription ||
+                            "尚未填写介绍"
+                          }
+                          status={capabilityStatus(c)}
+                          icon={<OIMAvatar text={c.displayName} size={32} />}
+                          preview={null}
+                          metadata={<span>{capabilityCategory(c)}</span>}
+                          selected={selectedContact === c.id}
+                          onOpen={() => setSelectedContact(c.id)}
+                        />
+                      ))}
+                    </div>
+                  </>
                 )}
+                {local.data &&
+                  !(view === "lab" ? labGroups.length : localResults.length) && (
+                    <div className="capability-feed-empty">
+                      <p>
+                        {view === "mine"
+                          ? "还没有匹配的私人 Agent，从下面的内置助手挑一个开始。"
+                          : "还没有匹配的课题组能力。"}
+                      </p>
+                      {(query || category !== "全部") && (
+                        <Button size="small" onClick={resetFilters}>
+                          清除筛选
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 {(pages.length > 1 || local.data?.nextCursor) && (
                   <div className="workspace-pages">
                     <Button
@@ -544,6 +615,7 @@ function CapabilityBrowser({
               <WorkspaceContactCard
                 key={selectedContact}
                 contactId={selectedContact}
+                onOpenContact={view === "lab" ? setSelectedContact : undefined}
                 onManage={(id) => {
                   setManagedContact(id);
                   profile.current?.openOverlay();

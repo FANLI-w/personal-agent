@@ -64,9 +64,10 @@ test('embedded workbench overrides the official DSH brand slots and supplies a r
     load({ factory }) {
       factory(() => ({ jsx: element, jsxs: element })).apply({
         slots: {
-          inject(name, callback) { Array.from(callback()); },
+          inject(name, callback) { callback()?.[Symbol.iterator]?.()?.next(); },
           register({ name, priority }, component) {
-            assert.ok(priority < 0, 'brand must precede the built-in slot at priority zero');
+            if (name !== 'sidebar.panellist.actions')
+              assert.ok(priority < 0, 'brand must precede the built-in slot at priority zero');
             components.set(name, component);
           },
         },
@@ -80,6 +81,20 @@ test('embedded workbench overrides the official DSH brand slots and supplies a r
   const hero = components.get('conversation.hero.brand.mark')();
   assert.equal(hero.children.find(node => node.type === 'img').src, avatar);
   assert.ok(hero.children.some(node => node.type === 'span' && node.children.includes('？')));
+  const events = [];
+  const tools = components.get('sidebar.panellist.actions')({
+    entries: [
+      { id: 'research-slides', label: 'PPT 工作台', active: false },
+      { id: 'research-ip', label: '专利与软著', active: true },
+      { id: 'independent-plugin', label: '其他插件', active: false },
+    ],
+    onDismiss: () => events.push('dismiss'),
+    onOpen: id => events.push(id),
+  });
+  assert.deepEqual(Array.from(tools, row => row.children), ['专利与软著']);
+  assert.equal(tools[0].current, true);
+  tools[0].onSelect();
+  assert.deepEqual(events, ['dismiss', 'research-ip']);
 });
 
 test('managed account overlay preserves user plugins and contains only a credential reference', async t => {

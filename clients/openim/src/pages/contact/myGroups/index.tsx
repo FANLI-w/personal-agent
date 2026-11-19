@@ -37,6 +37,14 @@ export const MyGroups = () => {
     return selectGroup === GroupTypeEnum.AllGroups;
   });
 
+  const groupNameCounts = new Map<string, number>();
+  for (const group of joinedGroupList) {
+    groupNameCounts.set(
+      group.groupName,
+      (groupNameCounts.get(group.groupName) || 0) + 1,
+    );
+  }
+
   const showGroupCard = useCallback((group: GroupItem) => {
     emit("OPEN_GROUP_CARD", group);
   }, []);
@@ -99,6 +107,7 @@ export const MyGroups = () => {
               <GroupListItem
                 key={group.groupID}
                 source={group}
+                showGroupIdentifier={(groupNameCounts.get(group.groupName) || 0) > 1}
                 showGroupCard={showGroupCard}
               />
             )}

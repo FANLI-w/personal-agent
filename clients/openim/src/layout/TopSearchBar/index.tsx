@@ -6,7 +6,7 @@ import {
   SignalingInvitation,
 } from "@openim/wasm-client-sdk/lib/types/entity";
 import { Popover } from "antd";
-import { PlusOutlined, RobotOutlined } from "@ant-design/icons";
+import { PlusOutlined } from "@ant-design/icons";
 import i18n, { t } from "i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -153,7 +153,6 @@ const TopSearchBar = () => {
   const actionClick = (idx: number) => {
     if (researchMode) {
       if (idx === 0) navigate("/contact?action=add-contact");
-      if (idx === 1) navigate("/contact?action=create-agent");
       if (idx === 2) {
         setChooseModalState({ type: "CRATE_GROUP" });
         chooseModalRef.current?.openOverlay();
@@ -258,7 +257,6 @@ i18n.on("languageChanged", () => {
 
 const researchActionMenuList = [
   { idx: 0, title: "添加联系人", icon: add_friend },
-  { idx: 1, title: "创建或接入 Agent", icon: "" },
   { idx: 2, title: "发起群聊", icon: create_group },
 ];
 
@@ -279,11 +277,7 @@ const ActionPopContent = ({
           key={action.idx}
           onClick={() => actionClick?.(action.idx)}
         >
-          {action.icon ? (
-            <img width={20} src={action.icon} alt="" />
-          ) : (
-            <RobotOutlined className="text-xl text-[var(--primary)]" />
-          )}
+          <img width={20} src={action.icon} alt="" />
           <div className="ml-3">{action.title}</div>
         </button>
       ))}

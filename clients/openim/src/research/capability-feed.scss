@@ -1115,3 +1115,40 @@
     flex-wrap: wrap;
   }
 }
+
+.lab-capability-directory {
+  display: grid;
+  gap: 14px;
+}
+.lab-capability-owner {
+  border: 1px solid #e2e9e7;
+  border-radius: 10px;
+  padding: 14px 16px;
+  min-width: 0;
+
+  > header {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+
+    > div { flex: 1; min-width: 0; }
+    > .ant-btn { flex: none; }
+  }
+
+  h3 { font-weight: 600; overflow-wrap: anywhere; }
+  small { color: #61746c; font-size: 12px; overflow-wrap: anywhere; }
+  p { margin: 4px 0 0; color: #51665d; white-space: pre-wrap; overflow-wrap: anywhere; }
+  ul { list-style: none; padding: 0; margin: 10px 0 0; }
+
+  li {
+    border-top: 1px solid #e9eeec;
+    padding-block: 7px;
+
+    summary {
+      cursor: pointer;
+      color: #304741;
+      strong { margin-inline-end: 10px; font-weight: 500; }
+      span { color: #61746c; font-size: 12px; }
+    }
+  }
+}

@@ -281,51 +281,54 @@ export function ResearchTeamWorkbench({
               action={<Button onClick={members.refresh}>重试</Button>}
             />
           )}
-          {visible.slice((currentPage - 1) * 8, currentPage * 8).map((group) => (
-            <details className="workspace-task-plan" key={group.id} open>
-              <summary>
-                <strong>{group.title}</strong>
-                <small>
-                  {group.matches.length} 项任务 ·{" "}
-                  {group.progressVisible
-                    ? `已验收 ${group.accepted}/${group.total} 项`
-                    : "进度按权限查看"}
-                </small>
-              </summary>
-              {group.matches.map((row) => {
-                const task = row.task,
-                  status = teamTaskStatus(task),
-                  deadline = teamDeadline(task);
-                const claimable = task.allowedActions.includes("claim");
-                const owner = row.acceptedAssignment
-                  ? name(row.acceptedAssignment.memberId)
-                  : row.pendingInvitation
-                  ? name(row.pendingInvitation.memberId) + " · 待接受"
-                  : !isFullTask(task) && task.pendingInvitation
-                  ? "待我接受"
-                  : claimable
-                  ? "待认领"
-                  : "待分工";
-                return (
-                  <TaskListRow
-                    key={task.id}
-                    title={task.title}
-                    status={
-                      claimable
-                        ? "待认领"
-                        : status === "ready"
-                        ? "待开始"
-                        : workspaceStatusLabel[status] || status
-                    }
-                    meta={`${owner} · ${deadline.label}`}
-                    hint={teamNextStep(task, actor.member.id)}
-                    selected={displayTask === task.id}
-                    onSelect={() => onSelectTask(task.id)}
-                  />
-                );
-              })}
-            </details>
-          ))}
+          {visible.slice((currentPage - 1) * 8, currentPage * 8).map((group) => {
+            const taskRows = group.matches.map((row) => {
+              const task = row.task,
+                status = teamTaskStatus(task),
+                deadline = teamDeadline(task);
+              const claimable = task.allowedActions.includes("claim");
+              const assignee = row.acceptedAssignment || row.pendingInvitation;
+              const meta = [
+                assignee && name(assignee.memberId),
+                deadline.label === "未设置截止" ? undefined : deadline.label,
+              ].filter(Boolean).join(" · ");
+              const next =
+                ["completed", "cancelled", "unassigned", "awaiting_acceptance", "ready"].includes(status)
+                  ? undefined
+                  : teamNextStep(task, actor.member.id);
+              return (
+                <TaskListRow
+                  key={task.id}
+                  title={task.title}
+                  status={
+                    claimable
+                      ? "待认领"
+                      : status === "ready"
+                      ? "待开始"
+                      : workspaceStatusLabel[status] || status
+                  }
+                  meta={meta}
+                  hint={next}
+                  selected={displayTask === task.id}
+                  onSelect={() => onSelectTask(task.id)}
+                />
+              );
+            });
+            if (group.rows.length === 1) return taskRows;
+            return (
+              <details className="workspace-task-plan" key={group.id} open>
+                <summary>
+                  <strong>{group.title}</strong>
+                  <small>
+                    {group.progressVisible
+                      ? `已验收 ${group.accepted}/${group.total} 项`
+                      : `${group.matches.length} 项可见任务`}
+                  </small>
+                </summary>
+                {taskRows}
+              </details>
+            );
+          })}
           {read.data && !visible.length && (
             <div className="workspace-task-list-note">
               <p>

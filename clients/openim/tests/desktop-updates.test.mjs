@@ -83,6 +83,8 @@ test("detection does not download or install; explicit actions required and no i
   await x.updates.check();
   assert.equal(x.updates.state.phase, "available");
   assert.equal(x.updates.state.notes, "合成更新");
+  const checkTime = x.updates.state.lastCheckedAt;
+  assert.ok(Number.isFinite(Date.parse(checkTime)));
   assert.equal(x.port.downloads, 0);
   assert.equal(x.port.installs, 0);
   for (const flag of [
@@ -95,6 +97,7 @@ test("detection does not download or install; explicit actions required and no i
   assert.equal(x.port.disableWebInstaller, true);
   await x.updates.download();
   assert.equal(x.updates.state.phase, "downloaded");
+  assert.equal(x.updates.state.lastCheckedAt, checkTime);
   assert.equal(x.port.installs, 0);
   assert.ok(x.states.some((s) => s.phase === "downloading" && s.percent === 42));
   x.updates.install();
@@ -121,6 +124,7 @@ test("failed check stays truthful, can retry, and cannot install or download", a
   const x = create(p);
   await x.updates.check();
   assert.equal(x.updates.state.error, "check");
+  assert.ok(Number.isFinite(Date.parse(x.updates.state.lastCheckedAt)));
   assert.throws(() => x.updates.install());
   await assert.rejects(() => x.updates.download());
   p.checkForUpdates = Port.prototype.checkForUpdates;

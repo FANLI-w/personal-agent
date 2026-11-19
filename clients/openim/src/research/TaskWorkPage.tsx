@@ -39,6 +39,7 @@ const phases = {
 function Section({
   title,
   hint,
+  hintTitle,
   open,
   onToggle,
   nodeRef,
@@ -46,6 +47,7 @@ function Section({
 }: {
   title: string;
   hint?: string;
+  hintTitle?: string;
   open: boolean;
   onToggle: () => void;
   nodeRef?: RefObject<HTMLElement>;
@@ -60,7 +62,11 @@ function Section({
         onClick={onToggle}
       >
         <span className="task-work-section-title">{title}</span>
-        {hint && <span className="task-work-section-hint">{hint}</span>}
+        {hint && (
+          <span className="task-work-section-hint" title={hintTitle}>
+            {hint}
+          </span>
+        )}
         <span className="task-work-section-toggle" aria-hidden="true">
           {open ? "收起" : "展开"}
         </span>
@@ -190,6 +196,7 @@ export function TaskWorkPage({
   const transcript = useRef<HTMLDivElement>(null),
     materialsRef = useRef<HTMLElement>(null),
     planRef = useRef<HTMLElement>(null),
+    reviewRef = useRef<HTMLDivElement>(null),
     follow = useRef(true);
   useEffect(() => {
     flight.current = false;
@@ -254,6 +261,7 @@ export function TaskWorkPage({
       undefined,
     );
   const completed = serviceStatus === "completed" || serviceStatus === "cancelled";
+  const awaitingReview = ["in_review", "awaiting_review"].includes(serviceStatus);
   const statusLabel =
     serviceStatus === "completed" &&
     kind === "research" &&
@@ -379,6 +387,19 @@ export function TaskWorkPage({
     if (version === undefined) throw new Error("任务版本尚未读取，请刷新后重试。");
     return version;
   };
+  const reviewShortcut = (summary: string) =>
+    (summary.length > 450 || summary.split("\n").length > 7) && (
+      <Button
+        size="small"
+        type="primary"
+        onClick={() => {
+          reviewRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+          reviewRef.current?.focus({ preventScroll: true });
+        }}
+      >
+        去验收
+      </Button>
+    );
   const start = () =>
     command(() =>
       researchApi(kind === "personal" ? "activatePersonalWorkTask" : "start", {
@@ -432,6 +453,18 @@ export function TaskWorkPage({
     state?.binding.delivery?.status === "submitted"
       ? state.binding.delivery
       : undefined;
+  const directory = state?.binding.directory;
+  const directoryName = directory?.split(/[\\/]/).filter(Boolean).at(-1);
+  const directoryHint =
+    directoryName && !/^[a-f0-9]{32,}$/i.test(directoryName)
+      ? directoryName
+      : directory
+      ? "本机工作文件夹"
+      : "本机文件夹与 DSH 会话";
+  const reviewMessageId =
+    actions.includes("review") && !personalResult?.changesRequested
+      ? personalResult?.messageId
+      : undefined;
   const submit = (selectedNames?: string[], summaryText?: string) =>
     command(async () => {
       const { isCurrent } = operation.capture();
@@ -480,7 +513,7 @@ export function TaskWorkPage({
           <span>{connectionError ? "本机进度待核对" : phases[state!.phase]}</span>
         )}
       </header>
-      {!completed && <TaskExecutionStatus target={target} />}
+      {!completed && !awaitingReview && <TaskExecutionStatus target={target} />}
       {!state && (canStart || canClaim || canActivate) && (
         <div className="task-work-start" role="status">
           <Button
@@ -519,6 +552,111 @@ export function TaskWorkPage({
       )}
       {notice && <Alert type="success" message={notice} />}
       <section className="task-work-delivery" aria-label="交付成果">
+        {personalResult && (
+          <div className="task-work-submitted">
+            <div className="task-work-result-heading">
+              <strong>
+                {personalResult.changesRequested
+                  ? "已退回，待修改"
+                  : personalResult.accepted
+                  ? "已验收结果"
+                  : awaitingReview
+                  ? "待验收结果"
+                  : "待核对结果"}
+              </strong>
+              {reviewMessageId && reviewShortcut(personalResult.summary)}
+            </div>
+            <SafeMessageMarkdown
+              text={deliveryDisplaySummary(personalResult.summary)}
+            />
+            {personalResult.reviewComment && (
+              <p>审阅意见：{personalResult.reviewComment}</p>
+            )}
+            {(personalResult.sources || []).map((source) => (
+              <TaskDeliveryDownload
+                key={source.locator}
+                target={target}
+                locator={source.locator}
+                label={source.label}
+              />
+            ))}
+            {reviewMessageId && (
+              <div ref={reviewRef} tabIndex={-1} className="task-work-review-target">
+                <TaskResultReview
+                  key={`${taskId}:${version}:${reviewMessageId}`}
+                  target={target}
+                  taskVersion={currentVersion()}
+                  messageId={reviewMessageId}
+                  supportsComment={Boolean(
+                    task &&
+                      "fileDeliverySupported" in task &&
+                      task.fileDeliverySupported,
+                  )}
+                  onChanged={async () => {
+                    await detail.refresh();
+                    await onChanged();
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        {deliveries.length > 0 && (
+          <div className="task-work-delivery-history">
+            {[
+              latestDelivery,
+              ...deliveries.filter((item) => item.id !== latestDelivery?.id),
+            ]
+              .filter((item): item is NonNullable<typeof item> => Boolean(item))
+              .map((delivery, index) => (
+                <details key={delivery.id} open={index === 0}>
+                  <summary>
+                    第 {delivery.revision} 版 ·{" "}
+                    {delivery.review?.decision === "accepted"
+                      ? "已验收"
+                      : delivery.review?.decision === "changes_requested"
+                      ? "要求修改"
+                      : "等待验收"}
+                  </summary>
+                  {delivery.id === latestDelivery?.id && actions.includes("review") &&
+                    reviewShortcut(delivery.summary)}
+                  <SafeMessageMarkdown
+                    text={deliveryDisplaySummary(delivery.summary)}
+                  />
+                  {delivery.review && (
+                    <p className="research-task-feedback">
+                      审阅意见：{delivery.review.comment}
+                    </p>
+                  )}
+                  {delivery.artifactRefs.length > 0 && (
+                    <p>关联材料：{delivery.artifactRefs.join("、")}</p>
+                  )}
+                  {delivery.sources.map((source, index) => (
+                    <TaskDeliveryDownload
+                      key={index}
+                      target={target}
+                      locator={source.locator}
+                      label={source.label}
+                    />
+                  ))}
+                  {delivery.id === latestDelivery?.id && actions.includes("review") && (
+                    <div ref={reviewRef} tabIndex={-1} className="task-work-review-target">
+                      <TaskResultReview
+                        key={`${taskId}:${version}:${delivery.id}`}
+                        target={target}
+                        taskVersion={currentVersion()}
+                        delivery={delivery}
+                        onChanged={async () => {
+                          await detail.refresh();
+                          await onChanged();
+                        }}
+                      />
+                    </div>
+                  )}
+                </details>
+              ))}
+          </div>
+        )}
         {actions.includes("submit") && noteText && (
           <Input.TextArea
             aria-label="补充说明"
@@ -554,6 +692,7 @@ export function TaskWorkPage({
               submitted={hasServerDelivery ? undefined : submitted}
               submit={submit}
               pending={state?.binding.delivery?.status === "pending"}
+              revealFile={(name) => void command(() => bridge.taskReveal(target, name))}
               retry={() =>
                 command(async () => {
                   const delivery = state?.binding.delivery;
@@ -561,105 +700,13 @@ export function TaskWorkPage({
                     await bridge.taskSubmit(target, delivery.summary, delivery.names);
                 }, true)
               }
-              stage={(paths) => bridge.taskStageDelivery(target, paths)}
+              stage={async (paths) => {
+                const names = await bridge.taskStageDelivery(target, paths);
+                if (names.length) await refresh();
+                return names;
+              }}
             />
           )}
-        {personalResult && (
-          <div className="task-work-submitted">
-            <strong>
-              {personalResult.changesRequested
-                ? "已退回，待修改"
-                : personalResult.accepted
-                ? "已验收结果"
-                : "待核对结果"}
-            </strong>
-            <SafeMessageMarkdown
-              text={deliveryDisplaySummary(personalResult.summary)}
-            />
-            {personalResult.reviewComment && (
-              <p>审阅意见：{personalResult.reviewComment}</p>
-            )}
-            {(personalResult.sources || []).map((source) => (
-              <TaskDeliveryDownload
-                key={source.locator}
-                target={target}
-                locator={source.locator}
-                label={source.label}
-              />
-            ))}
-            {actions.includes("review") &&
-              !personalResult.changesRequested &&
-              personalResult.messageId && (
-                <TaskResultReview
-                  key={`${taskId}:${version}:${personalResult.messageId}`}
-                  target={target}
-                  taskVersion={currentVersion()}
-                  messageId={personalResult.messageId}
-                  supportsComment={Boolean(
-                    task &&
-                      "fileDeliverySupported" in task &&
-                      task.fileDeliverySupported,
-                  )}
-                  onChanged={async () => {
-                    await detail.refresh();
-                    await onChanged();
-                  }}
-                />
-              )}
-          </div>
-        )}
-        {deliveries.length > 0 && (
-          <div className="task-work-delivery-history">
-            {[
-              latestDelivery,
-              ...deliveries.filter((item) => item.id !== latestDelivery?.id),
-            ]
-              .filter((item): item is NonNullable<typeof item> => Boolean(item))
-              .map((delivery, index) => (
-                <details key={delivery.id} open={index === 0}>
-                  <summary>
-                    第 {delivery.revision} 版 ·{" "}
-                    {delivery.review?.decision === "accepted"
-                      ? "已验收"
-                      : delivery.review?.decision === "changes_requested"
-                      ? "要求修改"
-                      : "等待验收"}
-                  </summary>
-                  <SafeMessageMarkdown
-                    text={deliveryDisplaySummary(delivery.summary)}
-                  />
-                  {delivery.review && (
-                    <p className="research-task-feedback">
-                      审阅意见：{delivery.review.comment}
-                    </p>
-                  )}
-                  {delivery.artifactRefs.length > 0 && (
-                    <p>关联材料：{delivery.artifactRefs.join("、")}</p>
-                  )}
-                  {delivery.id === latestDelivery?.id && actions.includes("review") && (
-                    <TaskResultReview
-                      key={`${taskId}:${version}:${delivery.id}`}
-                      target={target}
-                      taskVersion={currentVersion()}
-                      delivery={delivery}
-                      onChanged={async () => {
-                        await detail.refresh();
-                        await onChanged();
-                      }}
-                    />
-                  )}
-                  {delivery.sources.map((source, index) => (
-                    <TaskDeliveryDownload
-                      key={index}
-                      target={target}
-                      locator={source.locator}
-                      label={source.label}
-                    />
-                  ))}
-                </details>
-              ))}
-          </div>
-        )}
         {actions.includes("submit") &&
           outputs.map((file) => (
             <div className="task-work-file" key={file.name}>
@@ -726,6 +773,7 @@ export function TaskWorkPage({
             <p className="task-work-muted">暂无可查看的交付记录。</p>
           )}
       </section>
+      {awaitingReview && <TaskExecutionStatus target={target} />}
       {task && "goal" in task && task.goal && (
         <TaskBrief
           goal={task.goal}
@@ -738,7 +786,8 @@ export function TaskWorkPage({
       )}
       <Section
         title="工作"
-        hint={state ? state.binding.directory : "本机文件夹与 DSH 会话"}
+        hint={directoryHint}
+        hintTitle={directory}
         open={isOpen("work")}
         onToggle={() => toggle("work")}
       >
