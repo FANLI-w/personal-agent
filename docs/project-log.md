@@ -3361,3 +3361,9 @@ Windows x64 `0.10.117-preview.1` 本地构建通过，确认安装器和 EXE 产
 ## 2026-11-19 · DeepChat 0.10.119 正式版准备
 
 在 codex/people-first-contacts 上将桌面版本从 0.10.119-preview.1 升为 0.10.119（1490f46），并同步 main ea4d4fd 的 0.10.118 发布及部署回执。此前的验收对应预览包；0.10.119 的 Windows x64 安装包和更新附件待核对。
+
+## 2026-11-19 · DeepChat 0.10.119 正式发布
+
+PR #247 合入 main `a29fbee5d0bb7c55419816758ea581f1f4deaa89`，Windows 打包及三项 Foundation 检查通过。Windows x64 正式版发布为最新稳定版，`v0.10.119` 指向该合并提交。[PR #247](https://github.com/luoyan96/personal-agent/pull/247) · [正式 Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.119)
+
+逐一比对公开的安装包、`.exe.blockmap`、`latest.yml` 和 `SHA256SUMS.txt`，四个附件的大小及 SHA-256 均与本地一致。正式安装包为 421733662 字节，SHA-256 为 `1795f2346a63d3d1f3583b722813e43dc678401630b1df8230b167f385d3de45`。桌面副本位于 `C:/Users/luo/Desktop/DeepChat_0.10.119.exe`，校验结果一致。
