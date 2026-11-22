@@ -94,3 +94,41 @@ it('fails invalid model output and unavailable models without touching the topic
   expect(await new TopicCuratorWorker(g.db, g.config).tick()).toBe(true)
   expect(g.job(otherTurn).failure).toBe('MODEL_UNAVAILABLE')
 })
+
+it('shapes over-long output instead of rejecting the patch', { timeout: 30000 }, async () => {
+  const f = await fixture(), turnId = f.queue()
+  const worker = new TopicCuratorWorker(f.db, f.config, Date.now, async () => result({
+    action: 'update_topic', topicId: f.topic.id, baseVersion: 1,
+    title: 't'.repeat(70), summary: 's'.repeat(320),
+    body: { context: 'c'.repeat(1200), decisions: Array.from({ length: 6 }, (_, index) => ({ text: `${index}`.padEnd(320, 'd'), status: 'confirmed' })) },
+  }))
+  expect(await worker.tick()).toBe(true)
+  expect(f.job(turnId)).toMatchObject({ status: 'succeeded' })
+  const saved = f.call('assistantTopic', null, f.topic.id).data
+  expect(saved.title.length).toBe(60)
+  expect(saved.summary.length).toBe(300)
+  expect(saved.body.context.length).toBe(1000)
+  expect(saved.body.decisions.length).toBe(3)
+  expect(JSON.parse(f.job(turnId).result_json!).shaped.trimmed).toBeGreaterThan(0)
+})
+
+it('records an over-cap body and passes the split signal to the next turn', { timeout: 30000 }, async () => {
+  const f = await fixture(), first = f.queue()
+  const worker = new TopicCuratorWorker(f.db, f.config, Date.now, async () => result({
+    action: 'update_topic', topicId: f.topic.id, baseVersion: 1,
+    body: { context: '背景'.repeat(500), constraints: Array.from({ length: 5 }, (_, index) => `${index}`.padEnd(300, '约')) },
+  }))
+  expect(await worker.tick()).toBe(true)
+  expect(f.job(first)).toMatchObject({ status: 'failed', failure: 'PAYLOAD_TOO_LARGE' })
+  expect(JSON.parse(f.job(first).result_json!).action).toBe('over_limit')
+  expect(f.current()).toMatchObject({ version: 1 })
+  const second = f.queue()
+  let prompt = ''
+  const next = new TopicCuratorWorker(f.db, f.config, Date.now, async input => {
+    prompt = input.prompt
+    return result({ action: 'no_change', reason: 'no_increment' })
+  })
+  expect(await next.tick()).toBe(true)
+  expect(JSON.parse(prompt).previousFailure).toBe('over_limit')
+  expect(f.job(second)).toMatchObject({ status: 'succeeded' })
+})

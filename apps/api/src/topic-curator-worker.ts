@@ -6,6 +6,7 @@ import { transaction } from './database.js'
 import { ChatService, type TurnInput } from './chat.js'
 import { isMessageRetracted } from './chat-message-actions.js'
 import { callHarness, serviceFor, type ModelCall } from './execution-worker.js'
+import { ApiError } from './errors.js'
 import { applyTopicPatch, createTopic, pauseActiveTopic } from './assistant-topics.js'
 import { personalModelKey, personalModelRuntime } from './personal-models.js'
 import { curatorSystem } from './topic-curator-prompt.js'
@@ -31,18 +32,108 @@ const CuratorOutput = z.strictObject({
   hint: z.literal('preference').optional(),
 })
 type CuratorOutput = z.infer<typeof CuratorOutput>
-type Result = { action: string; topicId?: string; version?: number; reason?: string; hint?: string }
+type Result = { action: string; topicId?: string; version?: number; reason?: string; hint?: string; shaped?: ShapeCounts; bytes?: number }
+type ShapeCounts = { trimmed: number; dropped: number }
 
 const leaseMs = 60_000
-const maxTokens = 1200
+const maxTokens = 2000
 
 /** Parse the first JSON object from a model reply; anything outside braces is ignored. */
-function parseOutput(text: string): CuratorOutput {
+function parseJson(text: string): unknown {
   const start = text.indexOf('{'), end = text.lastIndexOf('}')
   if (start < 0 || end <= start) throw new Error('INVALID_MODEL_OUTPUT')
-  const parsed = CuratorOutput.safeParse(JSON.parse(text.slice(start, end + 1)))
-  if (!parsed.success) throw new Error('INVALID_MODEL_OUTPUT')
-  return parsed.data
+  try { return JSON.parse(text.slice(start, end + 1)) } catch { throw new Error('INVALID_MODEL_OUTPUT') }
+}
+
+const textKey = (text: string) => text.normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim()
+
+/** Curator output is shaped before strict validation: over-long text is clipped and
+ * over-cap lists are trimmed so a shape violation does not discard the whole patch. */
+function clip(value: unknown, limit: number) {
+  if (typeof value !== 'string') return undefined
+  const chars = Array.from(value.trim())
+  return chars.length ? chars.slice(0, limit).join('') : undefined
+}
+
+function existingTexts(body: unknown, name: string) {
+  const source = body && typeof body === 'object' ? (body as Record<string, unknown>)[name] : undefined
+  if (!Array.isArray(source)) return new Set<string>()
+  return new Set(source.flatMap(entry => {
+    const text = typeof entry === 'string' ? entry : entry && typeof entry === 'object' ? (entry as { text?: unknown }).text : undefined
+    return typeof text === 'string' ? [textKey(text)] : []
+  }))
+}
+
+function shapeList(value: unknown, limit: number, existing: Set<string> | null, counts: ShapeCounts) {
+  if (!Array.isArray(value)) return undefined
+  const seen = new Set<string>(), out: string[] = []
+  let fresh = 0
+  for (const entry of value) {
+    const text = clip(entry, 300)
+    const key = text ? textKey(text) : ''
+    const added = existing !== null && !existing.has(key)
+    if (!text || seen.has(key) || (added && fresh >= 3)) { counts.dropped += 1; continue }
+    if (added) fresh += 1
+    seen.add(key); out.push(text)
+  }
+  if (out.length > limit) { counts.dropped += out.length - limit; return out.slice(-limit) }
+  return out
+}
+
+function shapeDecisions(value: unknown, existing: Set<string> | null, counts: ShapeCounts) {
+  if (!Array.isArray(value)) return undefined
+  const seen = new Set<string>(), out: { text: string; status: 'confirmed' | 'superseded' }[] = []
+  let fresh = 0
+  for (const entry of value) {
+    const record: { text?: unknown; status?: unknown } = entry && typeof entry === 'object' ? entry as { text?: unknown; status?: unknown } : {}
+    const text = clip(record.text, 300)
+    const status = record.status === 'superseded' ? 'superseded' as const : record.status === 'confirmed' || record.status === undefined ? 'confirmed' as const : undefined
+    const key = text ? textKey(text) : ''
+    const added = existing !== null && !existing.has(key)
+    if (!text || !status || seen.has(key) || (added && fresh >= 3)) { counts.dropped += 1; continue }
+    if (added) fresh += 1
+    seen.add(key); out.push({ text, status })
+  }
+  // Over the cap, superseded entries leave first; the rest drop oldest first.
+  while (out.length > 20) {
+    const at = out.findIndex(entry => entry.status === 'superseded')
+    out.splice(at < 0 ? 0 : at, 1); counts.dropped += 1
+  }
+  return out
+}
+
+function shapeTopic(value: unknown, body: unknown, capNew: boolean) {
+  const counts: ShapeCounts = { trimmed: 0, dropped: 0 }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { value, counts }
+  const output = { ...(value as Record<string, unknown>) }
+  for (const [name, limit] of [['title', 60], ['summary', 300]] as const) {
+    if (output[name] === undefined) continue
+    const next = clip(output[name], limit)
+    if (next === undefined) { delete output[name]; counts.dropped += 1; continue }
+    if (next !== output[name]) counts.trimmed += 1
+    output[name] = next
+  }
+  const patch = output.body
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return { value: output, counts }
+  const section = { ...(patch as Record<string, unknown>) }
+  if (typeof section.context === 'string') {
+    const next = Array.from(section.context).slice(0, 1000).join('')
+    if (next !== section.context) { section.context = next; counts.trimmed += 1 }
+  }
+  if (section.decisions !== undefined) {
+    const decisions = shapeDecisions(section.decisions, capNew ? existingTexts(body, 'decisions') : null, counts)
+    if (decisions) section.decisions = decisions
+    else { delete section.decisions; counts.dropped += 1 }
+  }
+  for (const name of ['openQuestions', 'next', 'constraints'] as const) {
+    if (section[name] === undefined) continue
+    const list = shapeList(section[name], 10, capNew ? existingTexts(body, name) : null, counts)
+    if (list) section[name] = list
+    else { delete section[name]; counts.dropped += 1 }
+  }
+  if (section.notes !== undefined) { delete section.notes; counts.dropped += 1 }
+  output.body = section
+  return { value: output, counts }
 }
 
 /** Asynchronous topic curator. It never runs inside a chat turn and never blocks replies. */
@@ -92,7 +183,11 @@ export class TopicCuratorWorker {
           : []
       } catch { return [] }
     })
-    return { currentTopic, messages }
+    // A body that overflowed last time is a split signal for the next patch, not a
+    // reason to retry the same patch.
+    const previous = service.db.prepare("SELECT failure FROM assistant_topic_curator_jobs WHERE owner_id=? AND assistant_id=? AND conversation_id=? AND turn_id<>? AND status IN ('succeeded','failed') ORDER BY created_at DESC,rowid DESC LIMIT 1")
+      .get(job.owner_id, job.assistant_id, job.conversation_id, job.turn_id) as { failure: string | null } | undefined
+    return { currentTopic, messages, ...(previous?.failure === 'PAYLOAD_TOO_LARGE' ? { previousFailure: 'over_limit' as const } : {}) }
   }
 
   private async complete(prepared: { prompt: string; runtime: ReturnType<typeof personalModelRuntime>; apiKey: string | undefined }, signal: AbortSignal) {
@@ -143,10 +238,10 @@ export class TopicCuratorWorker {
       .run(JSON.stringify(result), at, job.id, job.attempts, this.clock())
   }
 
-  private fail(job: Job, failure: string) {
+  private fail(job: Job, failure: string, result?: Result) {
     const at = new Date(this.clock()).toISOString()
-    this.db.prepare("UPDATE assistant_topic_curator_jobs SET status='failed',lease_until=NULL,failure=?,updated_at=? WHERE id=? AND status='running' AND attempts=? AND lease_until>?")
-      .run(failure, at, job.id, job.attempts, this.clock())
+    this.db.prepare("UPDATE assistant_topic_curator_jobs SET status='failed',lease_until=NULL,failure=?,result_json=?,updated_at=? WHERE id=? AND status='running' AND attempts=? AND lease_until>?")
+      .run(failure, result ? JSON.stringify(result) : null, at, job.id, job.attempts, this.clock())
   }
 
   async tick(): Promise<boolean> {
@@ -184,7 +279,14 @@ export class TopicCuratorWorker {
       if (!prepared.input) { await waitForWorkerDatabase(() => this.finish(job, { action: 'stale' })); return true }
       const text = await this.complete(prepared, controller.signal)
       if (!text) { await waitForWorkerDatabase(() => this.fail(job, 'MODEL_UNAVAILABLE')); return true }
-      const output = parseOutput(text)
+      const raw = parseJson(text)
+      const action = raw && typeof raw === 'object' ? (raw as { action?: unknown }).action : undefined
+      // Only an update counts new entries against the three-item patch cap; a new
+      // topic carries its own first body.
+      const shaped = shapeTopic(raw, prepared.input?.currentTopic?.body ?? null, action === 'update_topic')
+      const parsed = CuratorOutput.safeParse(shaped.value)
+      if (!parsed.success) throw new Error('INVALID_MODEL_OUTPUT')
+      const output = parsed.data
       phase = 'apply'
       await waitForWorkerDatabase(() => transaction(this.db, () => {
         if (!this.owns(job)) return
@@ -194,7 +296,18 @@ export class TopicCuratorWorker {
         const stale = JSON.stringify(this.input(service, job)) !== prepared.prompt ||
           !runtime.enabled || runtime.fingerprint !== prepared.runtime.fingerprint ||
           (output.action === 'update_topic' && output.topicId !== activeId)
-        this.finish(job, stale ? { action: 'stale' } : this.apply(service, job, output))
+        if (stale) { this.finish(job, { action: 'stale' }); return }
+        let result: Result
+        try { result = this.apply(service, job, output) }
+        catch (error) {
+          // An over-cap body is a split signal: record the size, keep the topic as is.
+          if (error instanceof ApiError && error.code === 'PAYLOAD_TOO_LARGE') {
+            this.fail(job, 'PAYLOAD_TOO_LARGE', { action: 'over_limit', bytes: Buffer.byteLength(JSON.stringify(output.body ?? {}), 'utf8') })
+            return
+          }
+          throw error
+        }
+        this.finish(job, shaped.counts.trimmed || shaped.counts.dropped ? { ...result, shaped: shaped.counts } : result)
       }))
     } catch {
       await waitForWorkerDatabase(() => this.fail(job, phase === 'apply' ? 'CURATOR_APPLY_FAILED' : 'INVALID_MODEL_OUTPUT'))

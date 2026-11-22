@@ -21,7 +21,7 @@ import type { Config } from './config.js'
 import { ApiError } from './errors.js'
 import { chatModelSystem, chatInputTokenBound, chatReplyTokenReserve, dailyChatSystem } from './chat-model-input.js'
 import { queueTopicCuration } from './topic-curator-queue.js'
-import { topicContext, topicReceipt, topicSystem } from './topic-context.js'
+import { topicReference, topicIndexReceipt, topicIndexSystem, topicReceipt, topicSystem } from './topic-context.js'
 import { fileChatSystem,fileReadMetadata,selectFileExcerpts } from './agent-files.js'
 import { AgentCreationOutput, agentCreationSystem, applyAgentCreation, legacyTurnDocument } from './agent-creation.js'
 import { externalForChat } from './agent-connections.js'
@@ -68,6 +68,13 @@ function topicMemoryTurn(input: TurnInput) {
   return input.dailyChat && !input.externalConsent && !input.fileSource && !input.skill &&
     !input.purpose && !input.scheduledFollowupId && !input.assistantMode &&
     !input.projectExecution && !input.intakeOutputLimitRecovery
+}
+
+const indexBudget = 1200
+/** The previous turn's curation decides whether an index is worth its tokens. */
+function topicIndexWanted(db: DatabaseSync, conversationId: string) {
+  const row = db.prepare("SELECT result_json FROM assistant_topic_curator_jobs WHERE conversation_id=? AND status='succeeded' ORDER BY created_at DESC,rowid DESC LIMIT 1").get(conversationId) as { result_json: string | null } | undefined
+  try { return !!row?.result_json && (JSON.parse(String(row.result_json)) as { action?: string }).action === 'no_change' } catch { return false }
 }
 
 export class ChatWorker {
@@ -261,12 +268,30 @@ export class ChatWorker {
       // Topic context is optional. Keep existing sources and the reply reserve
       // in place, and never include it in group, remote, tool or scheduled work.
       if(!external && topicMemoryTurn(input)) {
-        const topic=topicContext(s,turn.agentContactId,group.kind)
-        if(topic){
-          const withTopic=JSON.stringify({...JSON.parse(prompt),currentTopic:topic})
+        const reference=topicReference(s,turn.agentContactId,group.kind,{now:this.clock(),includeIndex:topicIndexWanted(this.db,group.id)})
+        if(reference?.topic){
+          const withTopic=JSON.stringify({...JSON.parse(prompt),currentTopic:reference.topic})
           const topicInstructions=system+'\n'+topicSystem
           if(withTopic.length<=100000&&input.budget.maxTokens-chatInputTokenBound(topicInstructions,withTopic)>=chatReplyTokenReserve(system,prompt,input.budget.maxTokens)){
-            prompt=withTopic;system=topicInstructions;console.log(`${topicReceipt(topic)} conversation=${group.id}`)
+            prompt=withTopic;system=topicInstructions;console.log(`${topicReceipt(reference.topic)} conversation=${group.id}`)
+          }
+        }
+        if(reference?.index){
+          // The index is optional reference. Drop entries from the tail until both
+          // its own cap and the reply reserve hold; drop the whole block if none fit.
+          const instructions=system+'\n'+topicIndexSystem,baseCost=chatInputTokenBound(system,prompt)
+          const reserve=chatReplyTokenReserve(system,prompt,input.budget.maxTokens)
+          let entries=reference.index.entries.slice(),omitted=reference.index.omitted
+          while(entries.length){
+            const candidate=JSON.stringify({...JSON.parse(prompt),topicIndex:entries})
+            const fits=chatInputTokenBound(instructions,candidate)-baseCost<=indexBudget&&input.budget.maxTokens-chatInputTokenBound(instructions,candidate)>=reserve&&candidate.length<=100000
+            if(fits)break
+            entries.pop();omitted+=1
+          }
+          if(entries.length){
+            prompt=JSON.stringify({...JSON.parse(prompt),topicIndex:entries})
+            system=instructions
+            console.log(`${topicIndexReceipt({entries,omitted})} conversation=${group.id}`)
           }
         }
       }
