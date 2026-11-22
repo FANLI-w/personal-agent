@@ -58,6 +58,8 @@ Windows 候选为 `DeepChat_0.10.117-preview.1.exe`，桌面副本已校验 SHA-
 
 拟调整：24 小时新鲜度；无新鲜 active 时注入目录（标题 + 40 字摘要，≤20 条，含 paused/closed）；`body` 上限维持 4 KB，写不下时由 curator 分拆成新话题；分散小话题由压缩入口合并；curator 先按格式整形再校验；`closed` 允许 `resume`；`notes` 收窄后重新开放；标签拆 `entry`/`intent`/`modality`。细节见根目录 `个人助理记忆框架.md` §2.4.1。
 
+本地分支 `feat/topic-memory-fixes` 已实现其中一批（仅在本地分支，未发布、未部署，契约仍 0.51、迁移仍 041）：24 小时新鲜度；上一轮 curator 判 `no_change` 时追加索引（标题 + 40 字摘要，≤20 条，含 paused/closed，1200 token 预算）；curator 写路径改为 `decisions` 合并、另三段替换；`title`/`summary` 门槛降到一段并按归一化去同名；整理器先整形再校验，`body` 超 4 KB 记 `PAYLOAD_TOO_LARGE` 并回传 `previousFailure`。`closed` 的 `resume`、`notes`、lab-only、标签重构仍在后续批次。
+
 ## 2026-11-16 · 0.10.116 发布与项目修复验收
 
 Windows 正式版仍为 [0.10.116](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.116)，安装包与标签固定于 [PR #236](https://github.com/luoyan96/personal-agent/pull/236) 的 `6776610`。后续修正均在后台，未重新打包或替换公开附件。
