@@ -10,7 +10,7 @@ import { provisionTestAccounts } from '../src/auth.js'
 import { ChatService } from '../src/chat.js'
 import { serviceFor, type ModelCall, type ModelResult } from '../src/execution-worker.js'
 import { runPersonalModel } from '../src/personal-models.js'
-import { queueTopicCuration } from '../src/topic-curator-queue.js'
+import { queueTopicCuration, topicIndexWanted } from '../src/topic-curator-queue.js'
 import { TopicCuratorWorker } from '../src/topic-curator-worker.js'
 
 const cleanup: (() => void)[] = []
@@ -131,4 +131,17 @@ it('records an over-cap body and passes the split signal to the next turn', { ti
   expect(await next.tick()).toBe(true)
   expect(JSON.parse(prompt).previousFailure).toBe('over_limit')
   expect(f.job(second)).toMatchObject({ status: 'succeeded' })
+})
+
+it('asks for the topic index only after a no-change curation', { timeout: 30000 }, async () => {
+  const f = await fixture()
+  const settle = (turnId: string, action: string) => f.db.prepare("UPDATE assistant_topic_curator_jobs SET status='succeeded',result_json=? WHERE turn_id=?").run(JSON.stringify({ action }), turnId)
+  const first = f.queue()
+  settle(first, 'update_topic')
+  expect(topicIndexWanted(f.db, f.conversation.id)).toBe(false)
+  const second = f.queue()
+  settle(second, 'no_change')
+  expect(topicIndexWanted(f.db, f.conversation.id)).toBe(true)
+  f.queue()
+  expect(topicIndexWanted(f.db, f.conversation.id)).toBe(true)
 })

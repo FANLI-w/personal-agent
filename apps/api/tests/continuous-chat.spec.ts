@@ -220,9 +220,15 @@ describe('continuous local chat: actual HTTP/SQLite, synthetic ModelCall only',{
   const second=await s.send('接着说封面。',randomUUID(),false)
   await s.tick(async input=>{const prompt=JSON.parse(input.prompt);expect(prompt.currentTopic).toMatchObject({title:'组会准备'});expect(prompt.topicIndex).toBeUndefined();return result('继续。')})
   expect((await s.turn(second.turn.id)).status).toBe('succeeded')
-  expect(await curate({action:'no_change',reason:'no_increment'})).toBe(true)
+  // Mark the previous curation directly: the index gate reads the latest finished
+  // job, so the asynchronous curator is not part of what this case checks.
+  s.db.prepare("UPDATE assistant_topic_curator_jobs SET status='succeeded',result_json=?,updated_at=? WHERE conversation_id=?")
+    .run(JSON.stringify({action:'no_change',reason:'no_increment'}),new Date().toISOString(),s.own.conversation.id)
+  let prompt:Record<string,unknown>={}
   const third=await s.send('我们之前聊过什么？',randomUUID(),false)
-  await s.tick(async input=>{const prompt=JSON.parse(input.prompt);expect(prompt.topicIndex.entries[0]).toMatchObject({title:'组会准备',state:'active'});return result('聊过组会准备。')})
+  await s.tick(async input=>{prompt=JSON.parse(input.prompt);return result('聊过组会准备。')})
   expect((await s.turn(third.turn.id)).status).toBe('succeeded')
+  const index=prompt.topicIndex as {entries:{title:string;state:string}[]}|undefined
+  expect(index?.entries[0]).toMatchObject({title:'组会准备',state:'active'})
  })
 })

@@ -20,7 +20,7 @@ import { instant } from './ai.js'
 import type { Config } from './config.js'
 import { ApiError } from './errors.js'
 import { chatModelSystem, chatInputTokenBound, chatReplyTokenReserve, dailyChatSystem } from './chat-model-input.js'
-import { queueTopicCuration } from './topic-curator-queue.js'
+import { queueTopicCuration, topicIndexWanted } from './topic-curator-queue.js'
 import { topicReference, topicIndexReceipt, topicIndexSystem, topicReceipt, topicSystem } from './topic-context.js'
 import { fileChatSystem,fileReadMetadata,selectFileExcerpts } from './agent-files.js'
 import { AgentCreationOutput, agentCreationSystem, applyAgentCreation, legacyTurnDocument } from './agent-creation.js'
@@ -71,11 +71,6 @@ function topicMemoryTurn(input: TurnInput) {
 }
 
 const indexBudget = 1200
-/** The previous turn's curation decides whether an index is worth its tokens. */
-function topicIndexWanted(db: DatabaseSync, conversationId: string) {
-  const row = db.prepare("SELECT result_json FROM assistant_topic_curator_jobs WHERE conversation_id=? AND status='succeeded' ORDER BY created_at DESC,rowid DESC LIMIT 1").get(conversationId) as { result_json: string | null } | undefined
-  try { return !!row?.result_json && (JSON.parse(String(row.result_json)) as { action?: string }).action === 'no_change' } catch { return false }
-}
 
 export class ChatWorker {
   readonly owner = randomUUID()
