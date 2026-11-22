@@ -2,7 +2,7 @@
 
 ## 2026-11-22 话题记忆修正（未实现）
 
-0.10.118 已上线话题记忆（契约 0.51 / 迁移 041）。修正方向：active 话题加 24 小时新鲜度；没有新鲜 active 时注入标题目录（title + 40 字 summary，≤20 条，含 paused/closed）；`closed` 允许 `resume`；恢复 curator 的 `sourceRefs` 要求；lab-only 用户回退课题组模型；`notes` 收窄后重新开放。另拆 turn 标签为 `entry`/`intent`/`modality`，topic 准入看 `intent`，不再看 `dailyChat`。细节见根目录 `个人助理记忆框架.md` §2.4.1。以下为历史批次。
+0.10.118 已上线话题记忆（契约 0.51 / 迁移 041）。修正方向：active 话题加 24 小时新鲜度；没有新鲜 active 时注入标题目录（title + 40 字 summary，≤20 条，含 paused/closed）；`closed` 允许 `resume`；恢复 curator 的 `sourceRefs` 要求；lab-only 用户回退课题组模型；`notes` 收窄后重新开放；`body` 上限维持 4 KB，写不下时由 curator 分拆新话题，分散小话题由压缩入口合并；curator 先按格式整形再校验。另拆 turn 标签为 `entry`/`intent`/`modality`，topic 准入看 `intent`，不再看 `dailyChat`。细节见根目录 `个人助理记忆框架.md` §2.4.1。以下为历史批次。
 
 ## 2026-11-12 群聊规则调整（客户端已发布，待后台升级）
 

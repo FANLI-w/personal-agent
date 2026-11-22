@@ -3375,3 +3375,9 @@ PR #247 合入 main `a29fbee5d0bb7c55419816758ea581f1f4deaa89`，Windows 打包�
 同时记录导师合并时改动带来的问题：`dailyChat` 实际表示「非群发消息」，协调模式（`assistantMode='coordinate'`）因此既不注入也不入队；active 缺新鲜度与 7 天关闭；没有目录；`closed` 不能 resume；lab-only 用户因强制 `runtime.source='personal'` 而 curator 静默失败；提示词删掉了 sourceRefs 要求。标签问题计划拆 `entry`/`intent`/`modality` 解决，先加分类器保持现有行为，再逐段替换 `chat.ts`。工具检索需要聊天协议支持 tools，本批不做，先做目录。
 
 本次只更新框架文档与记录，没有改代码、没有迁移、没有部署。
+
+## 2026-11-22 · 话题分拆、合并与整理器整形
+
+话题演化分两类形态：主题型的 `title` 与 `summary` 随讨论重写，做法型的内容随实践增补、`title` 基本不变；不把做法型概括成主题型。`body` 上限维持 4 KB，可评估调到 8 KB，约束本身不取消。写不下时不删内容、不放宽上限：curator 输出 `new_topic`，把新增内容放进新话题，旧话题保留可读；同一助理仍只有一个 `active`。分散且关联的小话题由压缩入口合并，保留 revisions、来源话题 id 与来源消息指针；合并由 owner 手动触发，模型只提议分组，合并可回滚。
+
+整理器现状是硬校验：`CuratorOutput` 与 `BodyPatch` 用 `strictObject` 与各字段上限校验，文本超长、条目超限、`body` 超过 4 KB 都导致整条失败（`INVALID_MODEL_OUTPUT` / `PAYLOAD_TOO_LARGE`），失败原因不回传下一轮。拟调整为输出先确定性整形再校验，整形结果记入 job 结果。本次只更新文档，没有改代码、没有迁移、没有部署。

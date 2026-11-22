@@ -56,7 +56,7 @@ Windows 候选为 `DeepChat_0.10.117-preview.1.exe`，桌面副本已校验 SHA-
 
 已知问题：`dailyChat` 实际表示「非群发消息」，协调模式因此不注入也不入队；active 缺 24 小时新鲜度与 7 天关闭；没有历史话题目录；`closed` 不能 `resume`；lab-only 用户 curator 强制个人模型而失败；`notes` 未开放；工具检索未做。
 
-拟调整：24 小时新鲜度；无新鲜 active 时注入目录（标题 + 40 字摘要，≤20 条，含 paused/closed）；`closed` 允许 `resume`；`notes` 收窄后重新开放；标签拆 `entry`/`intent`/`modality`。细节见根目录 `个人助理记忆框架.md` §2.4.1。
+拟调整：24 小时新鲜度；无新鲜 active 时注入目录（标题 + 40 字摘要，≤20 条，含 paused/closed）；`body` 上限维持 4 KB，写不下时由 curator 分拆成新话题；分散小话题由压缩入口合并；curator 先按格式整形再校验；`closed` 允许 `resume`；`notes` 收窄后重新开放；标签拆 `entry`/`intent`/`modality`。细节见根目录 `个人助理记忆框架.md` §2.4.1。
 
 ## 2026-11-16 · 0.10.116 发布与项目修复验收
 
