@@ -10,7 +10,7 @@ import { createServer } from '../src/server.js'
 import { ChatService } from '../src/chat.js'
 import { serviceFor } from '../src/execution-worker.js'
 import { applyTopicPatch } from '../src/assistant-topics.js'
-import { topicReference } from '../src/topic-context.js'
+import { fitTopicIndex, topicReference } from '../src/topic-context.js'
 
 const cleanup: (() => unknown | Promise<unknown>)[] = []
 afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close() })
@@ -157,4 +157,16 @@ it('replaces current sections, keeps decisions and ignores punctuation-only rena
   topic = (await s.call('assistantTopic', owner, null, { id: created.id })).value.data
   expect(topic.title).toBe('健康午餐')
   expect(topic.titleStatus).toBe('final')
+})
+
+it('fits the topic index under its own budget and the reply reserve', { timeout: 30000 }, async () => {
+  const prompt = JSON.stringify({ currentRequest: { messageIds: ['m1'] } })
+  const entries = Array.from({ length: 20 }, (_, index) => ({ id: `topic_${index}`, title: `话题${index}`, summary: '摘'.repeat(40), state: 'active' as const }))
+  const fitted = fitTopicIndex('system', prompt, { entries, omitted: 0 }, 16000)
+  expect(fitted).toBeDefined()
+  expect(fitted!.entries.length).toBeLessThan(entries.length)
+  expect(fitted!.omitted).toBeGreaterThan(0)
+  expect(JSON.parse(fitted!.prompt).topicIndex.length).toBe(fitted!.entries.length)
+  expect(JSON.parse(fitted!.prompt).currentRequest).toEqual({ messageIds: ['m1'] })
+  expect(fitTopicIndex('system', prompt, { entries, omitted: 0 }, 300)).toBeUndefined()
 })

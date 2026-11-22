@@ -1,5 +1,6 @@
 import type { AssistantTopicBody, AssistantTopicState } from '@research-agent-platform/contracts'
 import type { ChatService } from './chat.js'
+import { chatInputTokenBound, chatReplyTokenReserve } from './chat-model-input.js'
 
 /**
  * The active topic is selected by lifecycle, not by similarity: one personal
@@ -25,6 +26,7 @@ export const topicIndexSystem = 'Topic index reference: topicIndex lists this as
 const freshMs = 24 * 60 * 60 * 1000
 const indexLimit = 20
 const summaryLimit = 40
+const indexBudget = 1200
 
 export type TopicIndexEntry = { id: string; title: string; summary: string; state: AssistantTopicState }
 /** The index lists every topic; the body, when present, is the expanded active one. */
@@ -79,6 +81,22 @@ export function topicReference(s: ChatService, assistantId: string, conversation
     if (entries.length) reference.index = { entries, omitted: Math.max(0, total - entries.length) }
   }
   return reference.topic || reference.index ? reference : undefined
+}
+
+/** The index is optional reference: it must fit its own cap and leave the reply reserve. */
+export function fitTopicIndex(system: string, prompt: string, index: { entries: TopicIndexEntry[]; omitted: number }, maxTokens: number) {
+  const instructions = system + '\n' + topicIndexSystem
+  const baseCost = chatInputTokenBound(system, prompt)
+  const reserve = chatReplyTokenReserve(system, prompt, maxTokens)
+  let entries = index.entries.slice(), omitted = index.omitted
+  while (entries.length) {
+    const candidate = JSON.stringify({ ...JSON.parse(prompt) as Record<string, unknown>, topicIndex: entries })
+    const fits = chatInputTokenBound(instructions, candidate) - baseCost <= indexBudget &&
+      maxTokens - chatInputTokenBound(instructions, candidate) >= reserve && candidate.length <= 100000
+    if (fits) return { system: instructions, prompt: candidate, entries, omitted }
+    entries.pop(); omitted += 1
+  }
+  return undefined
 }
 
 export function topicReceipt(topic: TopicContext) {
