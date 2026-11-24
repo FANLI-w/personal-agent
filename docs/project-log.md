@@ -3377,3 +3377,5 @@ PR #247 合入 main `a29fbee5d0bb7c55419816758ea581f1f4deaa89`，Windows 打包�
 测试在 `assistant-topic.spec.ts` 新增 `resumes a closed topic and keeps a single active topic`，覆盖 `closed` 恢复后 `state/version/allowedActions`、恢复时原 `active` 转 `paused`、对 `active` 再恢复返回 409 `INVALID_STATE`、`paused` 恢复仍可用，以及历史版本 `1..4` 的状态序列；原用例中 `closed` 的 `allowedActions` 断言同步更新。`apps/web/tests/contracts.spec.ts` 的版本断言改为 `0.52.0`。
 
 本地通过 `apps/api` 类型检查（`tsconfig.check.json`，含 `tests`）、契约包编译与 `scripts/export-contracts.mjs --check`。vitest 受沙盒限制未在本地执行（Vite 启动时 `spawn EPERM`），单测由 CI 运行；本批未进 CI 通过记录、未部署，生产仍是契约 0.51 / 迁移 041。
+
+同批修正 CI 打包脚本：`scripts/desktop-tools.mjs` 的 zip 解包从 `Expand-Archive` 换成 `%SystemRoot%\System32\tar.exe`，并在缺少指定成员时打印解出内容。原因是 Windows 打包 job 连续两轮报 `ENOENT ... tectonic.unpack\tectonic.exe`，而本机用同一份 zip、同一段 PowerShell 命令可正常解出；`Expand-Archive` 对个别成员写失败只发非终止错误、退出码仍为 0，失败因此延迟到复制阶段。属 CI 基础设施修复，与契约改动无关；本机已用同一命令验证 `tar.exe` 能解出 51,538,432 字节的 `tectonic.exe`，完整脚本因沙盒禁止 Node 起子进程未能本地执行。
