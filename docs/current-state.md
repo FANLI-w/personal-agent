@@ -1,5 +1,11 @@
 # 新 AI 接手：当前项目状态
 
+## 2026-11-24 · closed 话题可恢复（本地分支，契约 0.52）
+
+分支 `feat/topic-resume` 基于 main `75ac50e`。`resumeAssistantTopic` 接受 `paused` 与 `closed`，恢复时暂停该助理当前的 `active` 话题，仍只有一个 `active`；`closed` 的 `allowedActions` 从空改为 `['resume']`，仍不可编辑、不进入注入。契约升到 0.52.0，两条规则文本与 `openapi.json`、`examples.json` 同步重新导出；响应形状与 `allowedActions` 枚举不变，无数据库迁移。同时更正 `packages/contracts/README.md` 中 0.51.0 段落的两处笔误：话题路由为七个，且七个路由均已实现。
+
+本地通过 `apps/api` 类型检查（含 `tests`）、契约包编译与 `scripts/export-contracts.mjs --check`。新增用例覆盖 `closed` 恢复、恢复时暂停原 `active`、对 `active` 再恢复返回 409、`paused` 恢复仍可用，以及历史版本序列。vitest 仍受沙盒限制未在本地执行，单测交给 CI；本批未部署，生产仍是契约 0.51 / 迁移 041。
+
 ## 2026-11-19 · DeepChat 0.10.119 正式发布
 
 Windows x64 0.10.119 已公开并设为最新稳定版。改版经 PR #247 合入 main `a29fbee5d0bb7c55419816758ea581f1f4deaa89`，四项远程检查通过。发布附件分别核对了大小和 SHA-256。安装包为 421733662 字节，SHA-256 为 `1795f2346a63d3d1f3583b722813e43dc678401630b1df8230b167f385d3de45`，桌面副本 `C:/Users/luo/Desktop/DeepChat_0.10.119.exe` 校验一致。[正式 Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.119) · [PR #247](https://github.com/luoyan96/personal-agent/pull/247)
@@ -30,7 +36,7 @@ Windows x64 0.10.119 已公开并设为最新稳定版。改版经 PR #247 合�
 
 本地真实 HTTP、SQLite 与两类 worker 使用合成模型通过「创建组会话题 → 切换论文话题 → 恢复组会 → 重启后续聊」用例。确认旧聊天和本人习惯仍可读取，下一轮输入包含恢复话题的决定和下一步。生产恢复副本、正式包与部署有独立回执。
 
-更新日期：2026-11-19（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
+更新日期：2026-11-24（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
 ## 2026-11-18 · DeepChat 0.10.117 正式发布
 

@@ -3367,3 +3367,13 @@ Windows x64 `0.10.117-preview.1` 本地构建通过，确认安装器和 EXE 产
 PR #247 合入 main `a29fbee5d0bb7c55419816758ea581f1f4deaa89`，Windows 打包及三项 Foundation 检查通过。Windows x64 正式版发布为最新稳定版，`v0.10.119` 指向该合并提交。[PR #247](https://github.com/luoyan96/personal-agent/pull/247) · [正式 Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.119)
 
 逐一比对公开的安装包、`.exe.blockmap`、`latest.yml` 和 `SHA256SUMS.txt`，四个附件的大小及 SHA-256 均与本地一致。正式安装包为 421733662 字节，SHA-256 为 `1795f2346a63d3d1f3583b722813e43dc678401630b1df8230b167f385d3de45`。桌面副本位于 `C:/Users/luo/Desktop/DeepChat_0.10.119.exe`，校验结果一致。
+
+## 2026-11-24 · closed 话题可恢复（本地分支，契约 0.52）
+
+`feat/topic-resume` 基于 main `75ac50e`。`assistant-topics.ts` 的 `view()` 把 `closed` 的 `allowedActions` 从空改为 `['resume']`；`resumeAssistantTopic` 的准入从「只接受 `paused`」放宽到「`paused` 或 `closed`」，写入路径不变，先 `pauseActiveTopic` 暂停该助理当前 `active`，再写回 `active`，因此仍只有一个 `active`。`closed` 仍不可编辑，也不进入注入。
+
+契约升到 0.52.0：`closeAssistantTopic` 与 `resumeAssistantTopic` 的规则文本改为「`closed` 可读且可恢复」「恢复 `paused` 或 `closed` 并暂停此前 `active`」；`allowedActions` 枚举与响应形状不变，无数据库迁移。重新导出 `openapi.json` 与 `examples.json`，后者 524 行变动逐行核对后只有版本字符串。同时更正 `packages/contracts/README.md` 中 0.51.0 段落的两处笔误：路由为七个（原写六个），七个路由均已实现（原写未实现）。
+
+测试在 `assistant-topic.spec.ts` 新增 `resumes a closed topic and keeps a single active topic`，覆盖 `closed` 恢复后 `state/version/allowedActions`、恢复时原 `active` 转 `paused`、对 `active` 再恢复返回 409 `INVALID_STATE`、`paused` 恢复仍可用，以及历史版本 `1..4` 的状态序列；原用例中 `closed` 的 `allowedActions` 断言同步更新。`apps/web/tests/contracts.spec.ts` 的版本断言改为 `0.52.0`。
+
+本地通过 `apps/api` 类型检查（`tsconfig.check.json`，含 `tests`）、契约包编译与 `scripts/export-contracts.mjs --check`。vitest 受沙盒限制未在本地执行（Vite 启动时 `spawn EPERM`），单测由 CI 运行；本批未进 CI 通过记录、未部署，生产仍是契约 0.51 / 迁移 041。

@@ -77,7 +77,7 @@ function view(value: Row): AssistantTopicValue {
     lastActiveAt: value.last_active_at,
     createdAt: value.created_at,
     updatedAt: value.updated_at,
-    allowedActions: state === 'closed' ? [] : state === 'paused' ? ['edit', 'close', 'resume'] : ['edit', 'close'],
+    allowedActions: state === 'closed' ? ['resume'] : state === 'paused' ? ['edit', 'close', 'resume'] : ['edit', 'close'],
   })
 }
 
@@ -287,7 +287,9 @@ export function handleAssistantTopic(s: ChatService, name: string, req: ChatRequ
   }
   if (name === 'resumeAssistantTopic') {
     const current = row(s, req.params.id!), input = req.body as { expectedVersion: number }
-    if (current.state !== 'paused') fail('INVALID_STATE')
+    // A closed topic is finished, not deleted. Resume puts it back into the single
+    // active slot, so a closed topic never stays active alongside another one.
+    if (current.state !== 'paused' && current.state !== 'closed') fail('INVALID_STATE')
     s.c.checkVersion(current.version, input.expectedVersion)
     pauseActiveTopic(s, current.assistant_id, { owner: true }, 'owner')
     return { data: view(write(s, current, { state: 'active', origin: 'owner' })) }
