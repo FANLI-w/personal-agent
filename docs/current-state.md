@@ -1,6 +1,12 @@
 # 新 AI 接手：当前项目状态
 
-## 2026-11-24 · closed 话题可恢复（本地分支，契约 0.52）
+## 2026-11-26 · DeepChat 0.10.120 话题记忆整合候选
+
+以 main `75ac50e` 为基线，保留 [PR #249](https://github.com/luoyan96/personal-agent/pull/249) 与 [PR #250](https://github.com/luoyan96/personal-agent/pull/250) 的提交历史。沿用整理器先整形再严格校验的写入规则。聊天在 24 小时内使用当前话题正文，上一轮整理结果为 `no_change` 时可附上活跃和暂停话题的标题、短摘要及状态。关闭话题仍在本人话题管理中可读，恢复前从话题正文和索引注入中排除。新话题写入失败会回滚原话题的状态和修订记录，超限原因仍供下一轮整理使用。
+
+桌面「继续这个话题」对暂停话题照常提供。服务契约为 0.52.0 或以上的 0.x 时，已关闭的话题也可恢复，原活跃话题转为暂停。话题列表采用原有响应字段，数据库迁移仍为 041。此条记录源码候选，待发布与后端验收回执。此前公开稳定版为 0.10.119，生产契约为 0.51.0。
+
+## 历史 · 2026-11-24 closed 话题可恢复（本地分支，契约 0.52）
 
 分支 `feat/topic-resume` 基于 main `75ac50e`。`resumeAssistantTopic` 接受 `paused` 与 `closed`，恢复时暂停该助理当前的 `active` 话题，仍只有一个 `active`；`closed` 的 `allowedActions` 从空改为 `['resume']`，仍不可编辑、不进入注入。契约升到 0.52.0，两条规则文本与 `openapi.json`、`examples.json` 同步重新导出；响应形状与 `allowedActions` 枚举不变，无数据库迁移。同时更正 `packages/contracts/README.md` 中 0.51.0 段落的两处笔误：话题路由为七个，且七个路由均已实现。
 
@@ -36,7 +42,7 @@ Windows x64 0.10.119 已公开并设为最新稳定版。改版经 PR #247 合�
 
 本地真实 HTTP、SQLite 与两类 worker 使用合成模型通过「创建组会话题 → 切换论文话题 → 恢复组会 → 重启后续聊」用例。确认旧聊天和本人习惯仍可读取，下一轮输入包含恢复话题的决定和下一步。生产恢复副本、正式包与部署有独立回执。
 
-更新日期：2026-11-24（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
+更新日期：2026-11-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
 ## 2026-11-18 · DeepChat 0.10.117 正式发布
 
@@ -56,7 +62,7 @@ Windows 候选为 `DeepChat_0.10.117-preview.1.exe`，桌面副本已校验 SHA-
 
 `assistant_memories` 只承载助理笔记（`scope='agent'`）；本人偏好仍由 `personal_memories` 权威，会话/旧助理记忆仍由 `chat_memories` 权威；话题记忆由 `assistant_topics` 承载，默认只注入 active 话题。自动写入、候选确认、`assistant` 记忆权限和记忆进 `compose()` 未接线；`assistant_memories scope='personal'` 可写但注入不读，待确认无写入后收紧。旧表与旧会话按兼容期保留。压缩入口在助理资料卡 →“管理助理专属记忆”→“助理笔记”→“高级管理”，不在“我的助理”弹窗。0.10.116 的 `assistant_projects`/commitments/events 是持续项目与分工跟踪，不是记忆表。
 
-## 话题记忆现状（2026-11-22）
+## 历史 · 话题记忆现状（2026-11-22）
 
 0.10.118 起话题记忆随契约 0.51 / 迁移 041 上线：`assistant_topics`、revisions、curator jobs 三张表，七个路由（含 `resume`），异步 curator，active 话题注入，只读「话题」页签。导师合并时增加 `resume` 与 `decisions`/`constraints` 注入，收紧 curator 输入，未升契约版本。
 

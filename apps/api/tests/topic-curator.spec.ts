@@ -133,6 +133,23 @@ it('records an over-cap body and passes the split signal to the next turn', { ti
   expect(f.job(second)).toMatchObject({ status: 'succeeded' })
 })
 
+it('rolls back the active topic and its history when a new topic is too large', { timeout: 30000 }, async () => {
+  const f = await fixture(), turnId = f.queue()
+  const before = f.call('assistantTopicHistory', null, f.topic.id).data
+  const worker = new TopicCuratorWorker(f.db, f.config, Date.now, async () => result({
+    action: 'new_topic', title: '另一个话题', summary: '新的话题摘要',
+    body: { context: '背景'.repeat(500), constraints: Array.from({ length: 5 }, (_, index) => `${index}`.padEnd(300, '约')) },
+  }))
+  expect(await worker.tick()).toBe(true)
+  const job = f.job(turnId)
+  expect(job).toMatchObject({ status: 'failed', failure: 'PAYLOAD_TOO_LARGE' })
+  const failure = JSON.parse(job.result_json!)
+  expect(failure.action).toBe('over_limit')
+  expect(failure.bytes).toBeGreaterThan(4000)
+  expect(f.call('assistantTopicHistory', null, f.topic.id).data).toEqual(before)
+  expect(f.db.prepare('SELECT id,state FROM assistant_topics').all()).toEqual([{ id: f.topic.id, state: 'active' }])
+})
+
 it('asks for the topic index only after a no-change curation', { timeout: 30000 }, async () => {
   const f = await fixture()
   const settle = (turnId: string, action: string) => f.db.prepare("UPDATE assistant_topic_curator_jobs SET status='succeeded',result_json=? WHERE turn_id=?").run(JSON.stringify({ action }), turnId)

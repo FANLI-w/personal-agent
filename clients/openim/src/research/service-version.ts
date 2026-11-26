@@ -16,6 +16,11 @@ export function observeServiceVersion(value: unknown) {
   for (const listener of listeners) listener();
 }
 export const getServiceVersion = () => version;
+export function supportsClosedTopicResume() {
+  if (!version) return false;
+  const [major, minor] = version.split(".").map(Number);
+  return major === 0 && minor >= 52;
+}
 export function subscribeServiceVersion(listener: () => void) {
   listeners.add(listener);
   return () => {

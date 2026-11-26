@@ -145,10 +145,10 @@ it('exposes the fresh active topic and only asks for an index when requested', {
   expect(reference?.index).toBeUndefined()
   expect(topicReference(service, owner.agentId, 'group')).toBeUndefined()
   await s.call('closeAssistantTopic', owner, { expectedVersion: 1 }, { id: created.value.data.id })
-  expect(topicReference(service, owner.agentId, 'personal')).toBeUndefined()
+  expect(topicReference(service, owner.agentId, 'personal', { includeIndex: true })).toBeUndefined()
 })
 
-it('drops the body after a day but still lists every topic in the index', { timeout: 30000 }, async () => {
+it('drops the body after a day and excludes closed topics from the index', { timeout: 30000 }, async () => {
   const s = await fixture(), owner = await s.member('owner')
   const older = (await s.call('createAssistantTopic', owner, { assistantId: owner.agentId, title: '旧话题', summary: '旧摘要', body: {} })).value.data
   await s.call('closeAssistantTopic', owner, { expectedVersion: 1 }, { id: older.id })
@@ -159,9 +159,14 @@ it('drops the body after a day but still lists every topic in the index', { time
   s.db.prepare('UPDATE assistant_topics SET last_active_at=? WHERE id=?').run(new Date(now - 30 * 60 * 60 * 1000).toISOString(), older.id)
   expect(topicReference(service, owner.agentId, 'personal', { now })).toBeUndefined()
   const index = topicReference(service, owner.agentId, 'personal', { now, includeIndex: true })?.index
-  expect(index?.entries.map(entry => entry.title)).toEqual(['当前话题', '旧话题'])
-  expect(index?.entries.map(entry => entry.state)).toEqual(['active', 'closed'])
+  expect(index?.entries).toEqual([{ id: current.id, title: '当前话题', summary: '当前摘要', state: 'active' }])
   expect(index?.omitted).toBe(0)
+  const listed = await s.call('assistantTopics', owner, null, {}, `?assistantId=${owner.agentId}&state=all`)
+  expect(listed.status).toBe(200)
+  const closed = listed.value.data.find((entry: { id: string }) => entry.id === older.id)
+  expect(closed).toMatchObject({ id: older.id, state: 'closed' })
+  expect(closed).not.toHaveProperty('allowedActions')
+  expect(closed).not.toHaveProperty('body')
 })
 
 it('replaces current sections, keeps decisions and ignores punctuation-only renames', { timeout: 30000 }, async () => {

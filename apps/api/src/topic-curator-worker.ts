@@ -297,18 +297,14 @@ export class TopicCuratorWorker {
           !runtime.enabled || runtime.fingerprint !== prepared.runtime.fingerprint ||
           (output.action === 'update_topic' && output.topicId !== activeId)
         if (stale) { this.finish(job, { action: 'stale' }); return }
-        let result: Result
-        try { result = this.apply(service, job, output) }
-        catch (error) {
-          // An over-cap body is a split signal: record the size, keep the topic as is.
-          if (error instanceof ApiError && error.code === 'PAYLOAD_TOO_LARGE') {
-            this.fail(job, 'PAYLOAD_TOO_LARGE', { action: 'over_limit', bytes: Buffer.byteLength(JSON.stringify(output.body ?? {}), 'utf8') })
-            return
-          }
-          throw error
-        }
+        const result = this.apply(service, job, output)
         this.finish(job, shaped.counts.trimmed || shaped.counts.dropped ? { ...result, shaped: shaped.counts } : result)
-      }))
+      })).catch(error => {
+        if (!(error instanceof ApiError) || error.code !== 'PAYLOAD_TOO_LARGE') throw error
+        // The transaction has rolled back topic and revision writes. Record the split signal separately.
+        const bytes = Buffer.byteLength(JSON.stringify(output.body ?? {}), 'utf8')
+        return waitForWorkerDatabase(() => this.fail(job, 'PAYLOAD_TOO_LARGE', { action: 'over_limit', bytes }))
+      })
     } catch {
       await waitForWorkerDatabase(() => this.fail(job, phase === 'apply' ? 'CURATOR_APPLY_FAILED' : 'INVALID_MODEL_OUTPUT'))
     } finally {

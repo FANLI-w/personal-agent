@@ -84,6 +84,43 @@ describe('continuous local chat: actual HTTP/SQLite, synthetic ModelCall only',{
   const messages=(await s.call('chatMessages',null,s.own.conversation.id)).value.data
   expect(messages).toEqual(expect.arrayContaining([expect.objectContaining({id:first.message.id,text:firstText}),expect.objectContaining({text:'先补实验数据表，再放进组会汇报。'})]))
  })
+ it('injects active and paused topics after no-change while keeping closed topics out of the model request',async()=>{
+  const s=await setup()
+  const assistantId=s.own.agent.id
+  const closed=await s.call('createAssistantTopic',{assistantId,title:'Archived marker',summary:'Archived unique summary',body:{next:['Archived unique next step']}})
+  expect(closed.status).toBe(201)
+  expect((await s.call('closeAssistantTopic',{expectedVersion:1},closed.value.data.id)).status).toBe(200)
+  const paused=await s.call('createAssistantTopic',{assistantId,title:'Paused marker',summary:'Paused unique summary'})
+  expect(paused.status).toBe(201)
+  const curate=(output:unknown)=>new TopicCuratorWorker(s.db,s.config,Date.now,async()=>result(JSON.stringify(output))).tick()
+  const first=await s.send('第一个合成问题。',randomUUID(),false)
+  await s.tick(async()=>result('第一个合成回复。'))
+  expect((await s.turn(first.turn.id)).status).toBe('succeeded')
+  expect(await curate({action:'new_topic',title:'Active marker',summary:'Active unique summary',body:{next:['Active next step']}})).toBe(true)
+
+  const second=await s.send('第二个合成问题。',randomUUID(),false)
+  await s.tick(async input=>{
+   expect(JSON.parse(input.prompt).topicIndex).toBeUndefined()
+   return result('第二个合成回复。')
+  })
+  expect((await s.turn(second.turn.id)).status).toBe('succeeded')
+  expect(await curate({action:'no_change',reason:'no_increment'})).toBe(true)
+
+  const third=await s.send('第三个合成问题。',randomUUID(),false)
+  await s.tick(async input=>{
+   const prompt=JSON.parse(input.prompt)
+   expect(prompt.currentTopic).toMatchObject({title:'Active marker',next:['Active next step']})
+   expect(prompt.topicIndex).toHaveLength(2)
+   expect(prompt.topicIndex).toEqual(expect.arrayContaining([
+    expect.objectContaining({title:'Active marker',state:'active'}),
+    {id:paused.value.data.id,title:'Paused marker',summary:'Paused unique summary',state:'paused'},
+   ]))
+   expect(input.prompt).not.toContain(closed.value.data.id)
+   expect(input.prompt).not.toContain('Archived')
+   return result('第三个合成回复。')
+  })
+  expect((await s.turn(third.turn.id)).status).toBe('succeeded')
+ })
  it('retains a returned answer across a competing writer without calling the model twice',async()=>{
   const s=await setup(),sent=await s.send('合成锁竞争检查')
   s.db.exec('PRAGMA busy_timeout=1')

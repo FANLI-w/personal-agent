@@ -28,8 +28,8 @@ const indexLimit = 20
 const summaryLimit = 40
 const indexBudget = 1200
 
-export type TopicIndexEntry = { id: string; title: string; summary: string; state: AssistantTopicState }
-/** The index lists every topic; the body, when present, is the expanded active one. */
+export type TopicIndexEntry = { id: string; title: string; summary: string; state: Exclude<AssistantTopicState, 'closed'> }
+/** The index lists active and paused topics; the body, when present, is the expanded active one. */
 export type TopicReference = { topic?: TopicContext; index?: { entries: TopicIndexEntry[]; omitted: number } }
 
 const personalAgent = (s: ChatService, assistantId: string) => {
@@ -62,9 +62,8 @@ const clipSummary = (summary: string) => {
 
 /**
  * Reference shape for one chat turn. A recently written active topic supplies its
- * body; otherwise the model gets an index of titles and summaries so it can notice
- * other topics. The index carries no body, so relevance judgment stays with the
- * chat model. Returns undefined when there is nothing worth injecting.
+ * body. When requested, the index supplies titles and summaries of active and
+ * paused topics for the chat model to judge relevance.
  */
 export function topicReference(s: ChatService, assistantId: string, conversationKind: string,
   options: { now?: number; includeIndex?: boolean } = {}): TopicReference | undefined {
@@ -74,11 +73,12 @@ export function topicReference(s: ChatService, assistantId: string, conversation
   const reference: TopicReference = {}
   if (active && Date.parse(String(active.last_active_at)) >= (options.now ?? Date.now()) - freshMs) reference.topic = contextOf(active)
   if (options.includeIndex) {
-    const total = Number(s.db.prepare('SELECT count(*) n FROM assistant_topics WHERE owner_id=? AND assistant_id=?').get(s.c.actor.id, assistantId)!.n)
-    const rows = s.db.prepare('SELECT id,title,summary,state FROM assistant_topics WHERE owner_id=? AND assistant_id=? ORDER BY last_active_at DESC,id DESC LIMIT ?')
-      .all(s.c.actor.id, assistantId, indexLimit) as { id: string; title: string; summary: string; state: string }[]
-    const entries = rows.map(row => ({ id: String(row.id), title: String(row.title), summary: clipSummary(String(row.summary)), state: String(row.state) as AssistantTopicState }))
-    if (entries.length) reference.index = { entries, omitted: Math.max(0, total - entries.length) }
+    const rows = s.db.prepare("SELECT id,title,summary,state,count(*) OVER () AS total FROM assistant_topics WHERE owner_id=? AND assistant_id=? AND state IN ('active','paused') ORDER BY last_active_at DESC,id DESC LIMIT ?")
+      .all(s.c.actor.id, assistantId, indexLimit) as (TopicIndexEntry & { total: number })[]
+    if (rows.length) {
+      const entries = rows.map(({ id, title, summary, state }) => ({ id, title, summary: clipSummary(summary), state }))
+      reference.index = { entries, omitted: rows[0]!.total - entries.length }
+    }
   }
   return reference.topic || reference.index ? reference : undefined
 }

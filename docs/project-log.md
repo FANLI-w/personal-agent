@@ -3401,3 +3401,9 @@ curator 写路径改为混合：`decisions` 合并，`openQuestions`/`next`/`con
 本地通过 `apps/api` 类型检查（`tsconfig.check.json`，含 `tests`）、契约包编译与 `scripts/export-contracts.mjs --check`。vitest 受沙盒限制未在本地执行（Vite 启动时 `spawn EPERM`），单测由 CI 运行；本批未进 CI 通过记录、未部署，生产仍是契约 0.51 / 迁移 041。
 
 同批修正 CI 打包脚本：`scripts/desktop-tools.mjs` 的 zip 解包从 `Expand-Archive` 换成 `%SystemRoot%\System32\tar.exe`，并在缺少指定成员时打印解出内容。原因是 Windows 打包 job 连续两轮报 `ENOENT ... tectonic.unpack\tectonic.exe`，而本机用同一份 zip、同一段 PowerShell 命令可正常解出；`Expand-Archive` 对个别成员写失败只发非终止错误、退出码仍为 0，失败因此延迟到复制阶段。属 CI 基础设施修复，与契约改动无关；本机已用同一命令验证 `tar.exe` 能解出 51,538,432 字节的 `tectonic.exe`，完整脚本因沙盒禁止 Node 起子进程未能本地执行。
+
+## 2026-11-26 · DeepChat 0.10.120 话题记忆整合候选
+
+从 main `75ac50e` 新建 `codex/topic-249-250-release`，以普通合并提交纳入 PR #249（`cb3b555`）与 PR #250（`1ed19d5`）。冲突仅涉及项目日志，保留两批原始记录。候选桌面版本 0.10.120，后端契约 0.52.0，迁移仍为 041。公开稳定版基线为 0.10.119。
+
+关闭话题保留本人管理页的列表、详情和修订历史，恢复前不进入聊天的话题正文或索引。整理器创建新话题失败时回滚原话题的暂停及修订记录，保留超限结果。桌面通过服务契约版本显示已关闭话题的恢复按钮，旧服务仍可恢复暂停话题，列表响应字段沿用原有结构。新增定向回归覆盖实际聊天 worker 的输入、失败事务前后话题和历史、0.51/0.52 的桌面契约兼容。打包、公开发布和生产验证以相应回执为准。
