@@ -3367,3 +3367,25 @@ Windows x64 `0.10.117-preview.1` 本地构建通过，确认安装器和 EXE 产
 PR #247 合入 main `a29fbee5d0bb7c55419816758ea581f1f4deaa89`，Windows 打包及三项 Foundation 检查通过。Windows x64 正式版发布为最新稳定版，`v0.10.119` 指向该合并提交。[PR #247](https://github.com/luoyan96/personal-agent/pull/247) · [正式 Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.119)
 
 逐一比对公开的安装包、`.exe.blockmap`、`latest.yml` 和 `SHA256SUMS.txt`，四个附件的大小及 SHA-256 均与本地一致。正式安装包为 421733662 字节，SHA-256 为 `1795f2346a63d3d1f3583b722813e43dc678401630b1df8230b167f385d3de45`。桌面副本位于 `C:/Users/luo/Desktop/DeepChat_0.10.119.exe`，校验结果一致。
+
+## 2026-11-22 · 话题记忆框架讨论与修正方向
+
+基于 0.10.118 已上线的话题记忆，重新讨论「当前话题」与「历史检索」的边界。结论：active 只作工作集，默认注入 24 小时内活跃的话题；没有新鲜 active 时注入标题目录（title + 40 字 summary，上限 20 条，含 paused/closed），由主模型判断相关性，不做关键词与打分；`closed` 允许 `resume`。`notes` 自由度收窄为 observation/idea/risk/reference 四类，要求 sourceRefs，单次新增不超过 3 条，importance 只留 low/medium，重新开放前先补话题详情展示。
+
+同时记录导师合并时改动带来的问题：`dailyChat` 实际表示「非群发消息」，协调模式（`assistantMode='coordinate'`）因此既不注入也不入队；active 缺新鲜度与 7 天关闭；没有目录；`closed` 不能 resume；lab-only 用户因强制 `runtime.source='personal'` 而 curator 静默失败；提示词删掉了 sourceRefs 要求。标签问题计划拆 `entry`/`intent`/`modality` 解决，先加分类器保持现有行为，再逐段替换 `chat.ts`。工具检索需要聊天协议支持 tools，本批不做，先做目录。
+
+本次只更新框架文档与记录，没有改代码、没有迁移、没有部署。
+
+## 2026-11-22 · 话题分拆、合并与整理器整形
+
+话题演化分两类形态：主题型的 `title` 与 `summary` 随讨论重写，做法型的内容随实践增补、`title` 基本不变；不把做法型概括成主题型。`body` 上限维持 4 KB，可评估调到 8 KB，约束本身不取消。写不下时不删内容、不放宽上限：curator 输出 `new_topic`，把新增内容放进新话题，旧话题保留可读；同一助理仍只有一个 `active`。分散且关联的小话题由压缩入口合并，保留 revisions、来源话题 id 与来源消息指针；合并由 owner 手动触发，模型只提议分组，合并可回滚。
+
+整理器现状是硬校验：`CuratorOutput` 与 `BodyPatch` 用 `strictObject` 与各字段上限校验，文本超长、条目超限、`body` 超过 4 KB 都导致整条失败（`INVALID_MODEL_OUTPUT` / `PAYLOAD_TOO_LARGE`），失败原因不回传下一轮。拟调整为输出先确定性整形再校验，整形结果记入 job 结果。本次只更新文档，没有改代码、没有迁移、没有部署。
+
+## 2026-11-23 · 话题注入与整理器修正（本地分支）
+
+`feat/topic-memory-fixes` 上完成第一批代码修正，仅本地分支，未发布、未部署，契约仍 0.51、迁移仍 041。注入改为正文与索引分开：`topicReference()` 只在 `last_active_at` 24 小时内返回正文；上一轮 curator 判 `no_change` 时才追加索引，索引含 `active`/`paused`/`closed`，每条 `title` + 40 字 `summary` + `state`，上限 20 条，单独预算 1200 token 并保留回复预留，回执为 `CHAT_TOPIC mode=topic` 与 `mode=index`。
+
+curator 写路径改为混合：`decisions` 合并，`openQuestions`/`next`/`constraints` 段级替换；`title`/`summary` 任意一段变化即可提交，归一化后相同的标题丢弃。整理器新增整形步骤（字段截断、条目按 `superseded`/最旧裁剪、`update_topic` 新增不超过 3 条、`new_topic` 不受该限制）后再严格校验；`body` 超过 4 KB 记 `PAYLOAD_TOO_LARGE`、`result_json.action='over_limit'`，下一轮输入带 `previousFailure`，提示词要求先合并替代、仍超才用 `new_topic` 分拆。
+
+测试补在 `assistant-topic.spec.ts`、`topic-curator.spec.ts`、`continuous-chat.spec.ts`。本地通过 `apps/api` 类型检查（需先重建 `packages/contracts/dist`）；`vitest` 仍受沙盒 spawn 限制未本地执行，等 CI。
