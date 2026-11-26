@@ -1,7 +1,8 @@
 import { Alert, Button } from "antd";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState, useSyncExternalStore } from "react";
 import type { AssistantTopicIndex } from "@research-agent-platform/contracts";
 import { researchApi } from "./api";
+import { subscribeServiceVersion, supportsClosedTopicResume } from "./service-version";
 import { useResearchRead } from "./useResearchRead";
 import { usePersonalOperation } from "./usePersonalOperation";
 import "./personal-memory.scss";
@@ -11,6 +12,11 @@ const stateLabel = (state: AssistantTopicIndex["state"]) =>
 
 export function TopicPanel({ assistantId }: { assistantId: string }) {
   const operation = usePersonalOperation(true, `assistant-topics:${assistantId}`);
+  const canResumeClosed = useSyncExternalStore(
+    subscribeServiceVersion,
+    supportsClosedTopicResume,
+    supportsClosedTopicResume,
+  );
   const [saving, setSaving] = useState<string>();
   const [notice, setNotice] = useState<{ text: string; error: boolean }>();
   useLayoutEffect(() => {
@@ -54,7 +60,7 @@ export function TopicPanel({ assistantId }: { assistantId: string }) {
         <h3>话题</h3>
       </header>
       <p className="text-xs text-slate-600">
-        助理会在聊天里接着当前话题。你也可以恢复以前暂停的话题。
+        助理会在聊天里接着当前话题。点击「继续这个话题」可以切换。
       </p>
       {error && <Alert type="error" showIcon message={error} />}
       {notice && <Alert type={notice.error ? "error" : "success"} message={notice.text} />}
@@ -72,7 +78,7 @@ export function TopicPanel({ assistantId }: { assistantId: string }) {
             最近活动 {new Date(topic.lastActiveAt).toLocaleString("zh-CN")} · 版本{" "}
             {topic.version}
           </p>
-          {topic.state === "paused" && (
+          {(topic.state === "paused" || (topic.state === "closed" && canResumeClosed)) && (
             <Button size="small" disabled={Boolean(saving)} loading={saving === topic.id} onClick={() => void resume(topic)}>
               继续这个话题
             </Button>

@@ -46,6 +46,9 @@ const bodyBytes = (body: AssistantTopicBody) => Buffer.byteLength(JSON.stringify
 const bodyLimit = 4_000
 const noteLimit = 10
 const key = (text: string) => text.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase()
+/** A title that differs only in spacing, case or punctuation is not a rename. */
+const titleKey = (text: string) => key(text).replace(/[\s\p{P}\p{S}]+/gu, '')
+const sameTitle = (a: string, b: string) => titleKey(a) === titleKey(b)
 const importanceRank = { low: 0, medium: 1, high: 2 } as const
 
 export function agentOwner(s: ChatService, assistantId: string) {
@@ -77,7 +80,7 @@ function view(value: Row): AssistantTopicValue {
     lastActiveAt: value.last_active_at,
     createdAt: value.created_at,
     updatedAt: value.updated_at,
-    allowedActions: state === 'closed' ? [] : state === 'paused' ? ['edit', 'close', 'resume'] : ['edit', 'close'],
+    allowedActions: state === 'closed' ? ['resume'] : state === 'paused' ? ['edit', 'close', 'resume'] : ['edit', 'close'],
   })
 }
 
@@ -124,15 +127,16 @@ function replaceBody(current: AssistantTopicBody, patch: Partial<AssistantTopicB
   })
 }
 
-/** Curator patches merge by text: existing entries survive, unchanged sections stay as they are. */
-function mergeBody(current: AssistantTopicBody, patch: Partial<AssistantTopicBody>): AssistantTopicBody {
+/** Curator patches keep decisions additive (superseded retires them) and replace
+ * the three current-state sections, so an evolving topic can shed stale items. */
+function curatorBody(current: AssistantTopicBody, patch: Partial<AssistantTopicBody>): AssistantTopicBody {
   return AssistantTopicBody.parse({
     context: patch.context ?? current.context,
     decisions: patch.decisions ? mergeDecisions(current.decisions, patch.decisions) : current.decisions,
-    openQuestions: patch.openQuestions ? uniqueTexts([...current.openQuestions, ...patch.openQuestions], 10) : current.openQuestions,
-    next: patch.next ? uniqueTexts([...current.next, ...patch.next], 10) : current.next,
-    constraints: patch.constraints ? uniqueTexts([...current.constraints, ...patch.constraints], 10) : current.constraints,
-    notes: patch.notes ? mergeNotes(current.notes, patch.notes) : current.notes,
+    openQuestions: patch.openQuestions ? uniqueTexts(patch.openQuestions, 10) : current.openQuestions,
+    next: patch.next ? uniqueTexts(patch.next, 10) : current.next,
+    constraints: patch.constraints ? uniqueTexts(patch.constraints, 10) : current.constraints,
+    notes: current.notes,
   })
 }
 
@@ -226,11 +230,12 @@ export function applyTopicPatch(s: ChatService, patch: AssistantTopicPatch, subj
   const current = row(s, patch.topicId)
   if (current.state === 'closed') fail('INVALID_STATE')
   if (patch.baseVersion !== undefined && current.version !== patch.baseVersion) fail('VERSION_CONFLICT')
-  const before = bodyOf(current), body = mergeBody(before, patch.body ?? {})
-  // A single-section edit keeps the old summary and title; two or more substantive
-  // section changes accept the model's rewrite. Owner edits are not gated.
-  const accept = changedSections(before, body) >= 2
-  return write(s, current, { title: accept ? patch.title : undefined, summary: accept ? patch.summary : undefined, body, origin: 'curator' })
+  const before = bodyOf(current), body = curatorBody(before, patch.body ?? {})
+  // Any substantive body change may retitle or resummarize: convergence is the
+  // model's judgment, while the server only drops a title that did not change.
+  const accept = changedSections(before, body) >= 1
+  const title = patch.title && !sameTitle(patch.title, current.title) ? patch.title : undefined
+  return write(s, current, { title: accept ? title : undefined, summary: accept ? patch.summary : undefined, body, origin: 'curator' })
 }
 
 /** Curator switching topics pauses the old active one; closed topics are never injected. */
@@ -287,7 +292,9 @@ export function handleAssistantTopic(s: ChatService, name: string, req: ChatRequ
   }
   if (name === 'resumeAssistantTopic') {
     const current = row(s, req.params.id!), input = req.body as { expectedVersion: number }
-    if (current.state !== 'paused') fail('INVALID_STATE')
+    // A closed topic is finished, not deleted. Resume puts it back into the single
+    // active slot, so a closed topic never stays active alongside another one.
+    if (current.state !== 'paused' && current.state !== 'closed') fail('INVALID_STATE')
     s.c.checkVersion(current.version, input.expectedVersion)
     pauseActiveTopic(s, current.assistant_id, { owner: true }, 'owner')
     return { data: view(write(s, current, { state: 'active', origin: 'owner' })) }

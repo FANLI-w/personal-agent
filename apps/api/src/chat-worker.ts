@@ -20,8 +20,8 @@ import { instant } from './ai.js'
 import type { Config } from './config.js'
 import { ApiError } from './errors.js'
 import { chatModelSystem, chatInputTokenBound, chatReplyTokenReserve, dailyChatSystem } from './chat-model-input.js'
-import { queueTopicCuration } from './topic-curator-queue.js'
-import { topicContext, topicReceipt, topicSystem } from './topic-context.js'
+import { queueTopicCuration, topicIndexWanted } from './topic-curator-queue.js'
+import { fitTopicIndex, topicReference, topicIndexReceipt, topicReceipt, topicSystem } from './topic-context.js'
 import { fileChatSystem,fileReadMetadata,selectFileExcerpts } from './agent-files.js'
 import { AgentCreationOutput, agentCreationSystem, applyAgentCreation, legacyTurnDocument } from './agent-creation.js'
 import { externalForChat } from './agent-connections.js'
@@ -261,13 +261,19 @@ export class ChatWorker {
       // Topic context is optional. Keep existing sources and the reply reserve
       // in place, and never include it in group, remote, tool or scheduled work.
       if(!external && topicMemoryTurn(input)) {
-        const topic=topicContext(s,turn.agentContactId,group.kind)
-        if(topic){
-          const withTopic=JSON.stringify({...JSON.parse(prompt),currentTopic:topic})
+        const indexWanted=topicIndexWanted(this.db,group.id)
+        const reference=topicReference(s,turn.agentContactId,group.kind,{now:this.clock(),includeIndex:indexWanted})
+        if(reference?.topic){
+          const withTopic=JSON.stringify({...JSON.parse(prompt),currentTopic:reference.topic})
           const topicInstructions=system+'\n'+topicSystem
           if(withTopic.length<=100000&&input.budget.maxTokens-chatInputTokenBound(topicInstructions,withTopic)>=chatReplyTokenReserve(system,prompt,input.budget.maxTokens)){
-            prompt=withTopic;system=topicInstructions;console.log(`${topicReceipt(topic)} conversation=${group.id}`)
+            prompt=withTopic;system=topicInstructions;console.log(`${topicReceipt(reference.topic)} index=${indexWanted?'on':'off'} conversation=${group.id}`)
           }
+        }
+        if(reference?.index){
+          const fitted=fitTopicIndex(system,prompt,reference.index,input.budget.maxTokens)
+          if(fitted){prompt=fitted.prompt;system=fitted.system;console.log(`${topicIndexReceipt(fitted)} conversation=${group.id}`)}
+          else console.log(`CHAT_TOPIC mode=index-skip entries=${reference.index.entries.length} budget=${input.budget.maxTokens} conversation=${group.id}`)
         }
       }
       const inputTokenBound=chatInputTokenBound(system,prompt),remainingOutput=input.budget.maxTokens-inputTokenBound

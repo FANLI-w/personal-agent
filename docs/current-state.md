@@ -1,5 +1,17 @@
 # 新 AI 接手：当前项目状态
 
+## 2026-11-26 · DeepChat 0.10.120 话题记忆整合候选
+
+以 main `75ac50e` 为基线，保留 [PR #249](https://github.com/luoyan96/personal-agent/pull/249) 与 [PR #250](https://github.com/luoyan96/personal-agent/pull/250) 的提交历史。沿用整理器先整形再严格校验的写入规则。聊天在 24 小时内使用当前话题正文，上一轮整理结果为 `no_change` 时可附上活跃和暂停话题的标题、短摘要及状态。关闭话题仍在本人话题管理中可读，恢复前从话题正文和索引注入中排除。新话题写入失败会回滚原话题的状态和修订记录，超限原因仍供下一轮整理使用。
+
+桌面「继续这个话题」对暂停话题照常提供。服务契约为 0.52.0 或以上的 0.x 时，已关闭的话题也可恢复，原活跃话题转为暂停。话题列表采用原有响应字段，数据库迁移仍为 041。此条记录源码候选，待发布与后端验收回执。此前公开稳定版为 0.10.119，生产契约为 0.51.0。
+
+## 历史 · 2026-11-24 closed 话题可恢复（本地分支，契约 0.52）
+
+分支 `feat/topic-resume` 基于 main `75ac50e`。`resumeAssistantTopic` 接受 `paused` 与 `closed`，恢复时暂停该助理当前的 `active` 话题，仍只有一个 `active`；`closed` 的 `allowedActions` 从空改为 `['resume']`，仍不可编辑、不进入注入。契约升到 0.52.0，两条规则文本与 `openapi.json`、`examples.json` 同步重新导出；响应形状与 `allowedActions` 枚举不变，无数据库迁移。同时更正 `packages/contracts/README.md` 中 0.51.0 段落的两处笔误：话题路由为七个，且七个路由均已实现。
+
+本地通过 `apps/api` 类型检查（含 `tests`）、契约包编译与 `scripts/export-contracts.mjs --check`。新增用例覆盖 `closed` 恢复、恢复时暂停原 `active`、对 `active` 再恢复返回 409、`paused` 恢复仍可用，以及历史版本序列。vitest 仍受沙盒限制未在本地执行，单测交给 CI；本批未部署，生产仍是契约 0.51 / 迁移 041。
+
 ## 2026-11-19 · DeepChat 0.10.119 正式发布
 
 Windows x64 0.10.119 已公开并设为最新稳定版。改版经 PR #247 合入 main `a29fbee5d0bb7c55419816758ea581f1f4deaa89`，四项远程检查通过。发布附件分别核对了大小和 SHA-256。安装包为 421733662 字节，SHA-256 为 `1795f2346a63d3d1f3583b722813e43dc678401630b1df8230b167f385d3de45`，桌面副本 `C:/Users/luo/Desktop/DeepChat_0.10.119.exe` 校验一致。[正式 Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.119) · [PR #247](https://github.com/luoyan96/personal-agent/pull/247)
@@ -30,7 +42,7 @@ Windows x64 0.10.119 已公开并设为最新稳定版。改版经 PR #247 合�
 
 本地真实 HTTP、SQLite 与两类 worker 使用合成模型通过「创建组会话题 → 切换论文话题 → 恢复组会 → 重启后续聊」用例。确认旧聊天和本人习惯仍可读取，下一轮输入包含恢复话题的决定和下一步。生产恢复副本、正式包与部署有独立回执。
 
-更新日期：2026-11-19（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
+更新日期：2026-11-26（北京时间）。这是快速交接入口；历史报告保留各自受测版本，不能直接当成当前线上状态。
 
 ## 2026-11-18 · DeepChat 0.10.117 正式发布
 
@@ -46,13 +58,19 @@ Windows 候选为 `DeepChat_0.10.117-preview.1.exe`，桌面副本已校验 SHA-
 
 完整 CI 复跑通过，1109 项通过、1 项可选测试跳过，生产入口检查通过。额外 Windows 资料库检查有一项临时文件清理 EBUSY，见[项目日志](project-log.md)。
 
-## 记忆现状（2026-11-16）
+## 记忆现状（2026-11-22）
 
-`assistant_memories` 只承载助理笔记（`scope='agent'`）；本人偏好仍由 `personal_memories` 权威，会话/旧助理记忆仍由 `chat_memories` 权威。自动写入、候选确认、`assistant` 记忆权限和记忆进 `compose()` 未接线；`assistant_memories scope='personal'` 可写但注入不读，待确认无写入后收紧。旧表与旧会话按兼容期保留。压缩入口在助理资料卡 →“管理助理专属记忆”→“助理笔记”→“高级管理”，不在“我的助理”弹窗。0.10.116 的 `assistant_projects`/commitments/events 是持续项目与分工跟踪，不是记忆表。
+`assistant_memories` 只承载助理笔记（`scope='agent'`）；本人偏好仍由 `personal_memories` 权威，会话/旧助理记忆仍由 `chat_memories` 权威；话题记忆由 `assistant_topics` 承载，默认只注入 active 话题。自动写入、候选确认、`assistant` 记忆权限和记忆进 `compose()` 未接线；`assistant_memories scope='personal'` 可写但注入不读，待确认无写入后收紧。旧表与旧会话按兼容期保留。压缩入口在助理资料卡 →“管理助理专属记忆”→“助理笔记”→“高级管理”，不在“我的助理”弹窗。0.10.116 的 `assistant_projects`/commitments/events 是持续项目与分工跟踪，不是记忆表。
 
-## 本地候选 · 话题记忆 v1（未合并、未部署）
+## 历史 · 话题记忆现状（2026-11-22）
 
-分支 `feat/personal-assistant-framework` 上实现：迁移 041（`assistant_topics`、`assistant_topic_revisions`、`assistant_topic_curator_jobs`）、契约 0.51（六个 `/me/assistant-topics` 路由）、`apps/api/src/assistant-topics.ts` handler、异步 `TopicCuratorWorker`、`topic-context.ts` 注入活动话题、`MemoryPanel` 只读「话题」页签（`supports(51)` 门控）。注入只取 `state='active'` 的话题，不做相似度打分；相关判断交给主模型。curator 以 `assistant` 主体授权，actor 仍是 owner。记录判据为四类变更，`notes` 自由段 v1 不开放给 curator；`summary`/`title` 只在 body 至少两段实质变化时接受。本地已过 `apps/api` 类型检查、contracts 快照与 `check-content`，并用合成模型冒烟覆盖创建、版本冲突、4KB 上限、curator 更新与注入。未进 CI、未部署；线上仍为契约 0.50 / 迁移 040。
+0.10.118 起话题记忆随契约 0.51 / 迁移 041 上线：`assistant_topics`、revisions、curator jobs 三张表，七个路由（含 `resume`），异步 curator，active 话题注入，只读「话题」页签。导师合并时增加 `resume` 与 `decisions`/`constraints` 注入，收紧 curator 输入，未升契约版本。
+
+已知问题：`dailyChat` 实际表示「非群发消息」，协调模式因此不注入也不入队；active 缺 24 小时新鲜度与 7 天关闭；没有历史话题目录；`closed` 不能 `resume`；lab-only 用户 curator 强制个人模型而失败；`notes` 未开放；工具检索未做。
+
+拟调整：24 小时新鲜度；无新鲜 active 时注入目录（标题 + 40 字摘要，≤20 条，含 paused/closed）；`body` 上限维持 4 KB，写不下时由 curator 分拆成新话题；分散小话题由压缩入口合并；curator 先按格式整形再校验；`closed` 允许 `resume`；`notes` 收窄后重新开放；标签拆 `entry`/`intent`/`modality`。细节见根目录 `个人助理记忆框架.md` §2.4.1。
+
+本地分支 `feat/topic-memory-fixes` 已实现其中一批（仅在本地分支，未发布、未部署，契约仍 0.51、迁移仍 041）：24 小时新鲜度；上一轮 curator 判 `no_change` 时追加索引（标题 + 40 字摘要，≤20 条，含 paused/closed，1200 token 预算）；curator 写路径改为 `decisions` 合并、另三段替换；`title`/`summary` 门槛降到一段并按归一化去同名；整理器先整形再校验，`body` 超 4 KB 记 `PAYLOAD_TOO_LARGE` 并回传 `previousFailure`。`closed` 的 `resume`、`notes`、lab-only、标签重构仍在后续批次。
 
 ## 2026-11-16 · 0.10.116 发布与项目修复验收
 

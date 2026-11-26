@@ -9,7 +9,8 @@ import { migrate, openDatabase } from '../src/database.js'
 import { createServer } from '../src/server.js'
 import { ChatService } from '../src/chat.js'
 import { serviceFor } from '../src/execution-worker.js'
-import { topicContext } from '../src/topic-context.js'
+import { applyTopicPatch } from '../src/assistant-topics.js'
+import { fitTopicIndex, topicReference } from '../src/topic-context.js'
 
 const cleanup: (() => unknown | Promise<unknown>)[] = []
 afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close() })
@@ -80,7 +81,7 @@ it('creates one active topic, versions edits and keeps closed topics readable', 
 
   const closed = await s.call('closeAssistantTopic', owner, { expectedVersion: 3 }, { id: topic.id })
   expect(closed.status, closed.text).toBe(200)
-  expect(closed.value.data).toMatchObject({ state: 'closed', allowedActions: [] })
+  expect(closed.value.data).toMatchObject({ state: 'closed', allowedActions: ['resume'] })
   expect((await s.call('assistantTopics', owner, null, {}, `?assistantId=${owner.agentId}&state=active`)).value.data).toEqual([])
 
   const editAfterClose = await s.call('updateAssistantTopic', owner, { expectedVersion: 4, summary: '关闭后不应可改' }, { id: topic.id })
@@ -90,6 +91,36 @@ it('creates one active topic, versions edits and keeps closed topics readable', 
   const history = await s.call('assistantTopicHistory', owner, null, { id: topic.id })
   expect(history.status, history.text).toBe(200)
   expect(history.value.data.topic.id).toBe(topic.id)
+  expect(history.value.data.revisions.map((entry: { version: number }) => entry.version)).toEqual([1, 2, 3, 4])
+})
+
+it('resumes a closed topic and keeps a single active topic', { timeout: 30000 }, async () => {
+  const s = await fixture(), owner = await s.member('owner')
+  const first = await s.call('createAssistantTopic', owner, { assistantId: owner.agentId, title: '旧话题', summary: '已经关闭的话题', body: {} })
+  expect(first.status, first.text).toBe(201)
+  const closed = await s.call('closeAssistantTopic', owner, { expectedVersion: 1 }, { id: first.value.data.id })
+  expect(closed.value.data).toMatchObject({ state: 'closed', allowedActions: ['resume'] })
+
+  const second = await s.call('createAssistantTopic', owner, { assistantId: owner.agentId, title: '新话题', summary: '当前活跃的话题', body: {} })
+  expect(second.status, second.text).toBe(201)
+
+  const resumed = await s.call('resumeAssistantTopic', owner, { expectedVersion: 2 }, { id: first.value.data.id })
+  expect(resumed.status, resumed.text).toBe(200)
+  expect(resumed.value.data).toMatchObject({ state: 'active', version: 3, allowedActions: ['edit', 'close'] })
+
+  const paused = await s.call('assistantTopic', owner, null, { id: second.value.data.id })
+  expect(paused.value.data).toMatchObject({ state: 'paused', allowedActions: ['edit', 'close', 'resume'] })
+
+  const active = await s.call('resumeAssistantTopic', owner, { expectedVersion: 3 }, { id: first.value.data.id })
+  expect(active.status, active.text).toBe(409)
+  expect(active.value.error.code).toBe('INVALID_STATE')
+
+  const back = await s.call('resumeAssistantTopic', owner, { expectedVersion: 2 }, { id: second.value.data.id })
+  expect(back.status, back.text).toBe(200)
+  expect(back.value.data).toMatchObject({ state: 'active', version: 3 })
+
+  const history = await s.call('assistantTopicHistory', owner, null, { id: first.value.data.id })
+  expect(history.value.data.revisions.map((entry: { state: string }) => entry.state)).toEqual(['active', 'closed', 'active', 'paused'])
   expect(history.value.data.revisions.map((entry: { version: number }) => entry.version)).toEqual([1, 2, 3, 4])
 })
 
@@ -104,13 +135,73 @@ it('hides another member topic and rejects unknown agents', { timeout: 30000 }, 
   expect((await s.call('createAssistantTopic', owner, { assistantId: 'missing_agent', title: '无效', summary: '无效', body: {} })).status).toBe(404)
 })
 
-it('exposes only the active topic to the chat context', { timeout: 30000 }, async () => {
+it('exposes the fresh active topic and only asks for an index when requested', { timeout: 30000 }, async () => {
   const s = await fixture(), owner = await s.member('owner')
   const created = await s.call('createAssistantTopic', owner, { assistantId: owner.agentId, title: '实验讨论', summary: '结晶条件', body: { next: ['补充对照组'], openQuestions: ['温度上限'] } })
   expect(created.status, created.text).toBe(201)
   const service = new ChatService(serviceFor(s.db, owner.id, s.config).c, s.config)
-  expect(topicContext(service, owner.agentId, 'personal')).toMatchObject({ id: created.value.data.id, next: ['补充对照组'], openQuestions: ['温度上限'] })
-  expect(topicContext(service, owner.agentId, 'group')).toBeUndefined()
+  const reference = topicReference(service, owner.agentId, 'personal')
+  expect(reference?.topic).toMatchObject({ id: created.value.data.id, next: ['补充对照组'], openQuestions: ['温度上限'] })
+  expect(reference?.index).toBeUndefined()
+  expect(topicReference(service, owner.agentId, 'group')).toBeUndefined()
   await s.call('closeAssistantTopic', owner, { expectedVersion: 1 }, { id: created.value.data.id })
-  expect(topicContext(service, owner.agentId, 'personal')).toBeUndefined()
+  expect(topicReference(service, owner.agentId, 'personal', { includeIndex: true })).toBeUndefined()
+})
+
+it('drops the body after a day and excludes closed topics from the index', { timeout: 30000 }, async () => {
+  const s = await fixture(), owner = await s.member('owner')
+  const older = (await s.call('createAssistantTopic', owner, { assistantId: owner.agentId, title: '旧话题', summary: '旧摘要', body: {} })).value.data
+  await s.call('closeAssistantTopic', owner, { expectedVersion: 1 }, { id: older.id })
+  const current = (await s.call('createAssistantTopic', owner, { assistantId: owner.agentId, title: '当前话题', summary: '当前摘要', body: { next: ['下一步'] } })).value.data
+  const service = new ChatService(serviceFor(s.db, owner.id, s.config).c, s.config)
+  const now = Date.now()
+  s.db.prepare('UPDATE assistant_topics SET last_active_at=? WHERE id=?').run(new Date(now - 25 * 60 * 60 * 1000).toISOString(), current.id)
+  s.db.prepare('UPDATE assistant_topics SET last_active_at=? WHERE id=?').run(new Date(now - 30 * 60 * 60 * 1000).toISOString(), older.id)
+  expect(topicReference(service, owner.agentId, 'personal', { now })).toBeUndefined()
+  const index = topicReference(service, owner.agentId, 'personal', { now, includeIndex: true })?.index
+  expect(index?.entries).toEqual([{ id: current.id, title: '当前话题', summary: '当前摘要', state: 'active' }])
+  expect(index?.omitted).toBe(0)
+  const listed = await s.call('assistantTopics', owner, null, {}, `?assistantId=${owner.agentId}&state=all`)
+  expect(listed.status).toBe(200)
+  const closed = listed.value.data.find((entry: { id: string }) => entry.id === older.id)
+  expect(closed).toMatchObject({ id: older.id, state: 'closed' })
+  expect(closed).not.toHaveProperty('allowedActions')
+  expect(closed).not.toHaveProperty('body')
+})
+
+it('replaces current sections, keeps decisions and ignores punctuation-only renames', { timeout: 30000 }, async () => {
+  const s = await fixture(), owner = await s.member('owner')
+  const created = (await s.call('createAssistantTopic', owner, {
+    assistantId: owner.agentId, title: '蛋炒饭', summary: '蛋炒饭的做法',
+    body: { constraints: ['少油'], next: ['先炒蛋'], decisions: [{ text: '用隔夜饭', status: 'confirmed' }] },
+  })).value.data
+  const service = new ChatService(serviceFor(s.db, owner.id, s.config).c, s.config)
+  const curate = (body: Record<string, unknown>, extra: Record<string, unknown>) =>
+    applyTopicPatch(service, { topicId: created.id, baseVersion: 1, body, ...extra } as never, { agent: 'assistant' })
+  curate({ constraints: ['控糖'], next: ['先备菜'] }, { baseVersion: 1, title: '健康午餐', summary: '午餐流程' })
+  let topic = (await s.call('assistantTopic', owner, null, { id: created.id })).value.data
+  expect(topic.body.constraints).toEqual(['控糖'])
+  expect(topic.body.next).toEqual(['先备菜'])
+  expect(topic.body.decisions.map((entry: { text: string }) => entry.text)).toEqual(['用隔夜饭'])
+  expect(topic).toMatchObject({ title: '健康午餐', titleStatus: 'provisional' })
+  curate({ decisions: [{ text: '用隔夜饭', status: 'superseded' }, { text: '用杂粮饭', status: 'confirmed' }] }, { baseVersion: 2 })
+  topic = (await s.call('assistantTopic', owner, null, { id: created.id })).value.data
+  expect(topic.body.decisions).toMatchObject([{ text: '用隔夜饭', status: 'superseded' }, { text: '用杂粮饭', status: 'confirmed' }])
+  expect(topicReference(service, owner.agentId, 'personal')?.topic?.decisions).toEqual(['用杂粮饭'])
+  curate({ context: '健康午餐的流程', next: ['先备菜', '按人份定量'] }, { baseVersion: 3, title: '健康午餐。' })
+  topic = (await s.call('assistantTopic', owner, null, { id: created.id })).value.data
+  expect(topic.title).toBe('健康午餐')
+  expect(topic.titleStatus).toBe('final')
+})
+
+it('fits the topic index under its own budget and the reply reserve', { timeout: 30000 }, async () => {
+  const prompt = JSON.stringify({ currentRequest: { messageIds: ['m1'] } })
+  const entries = Array.from({ length: 20 }, (_, index) => ({ id: `topic_${index}`, title: `话题${index}`, summary: '摘'.repeat(40), state: 'active' as const }))
+  const fitted = fitTopicIndex('system', prompt, { entries, omitted: 0 }, 16000)
+  expect(fitted).toBeDefined()
+  expect(fitted!.entries.length).toBeLessThan(entries.length)
+  expect(fitted!.omitted).toBeGreaterThan(0)
+  expect(JSON.parse(fitted!.prompt).topicIndex.length).toBe(fitted!.entries.length)
+  expect(JSON.parse(fitted!.prompt).currentRequest).toEqual({ messageIds: ['m1'] })
+  expect(fitTopicIndex('system', prompt, { entries, omitted: 0 }, 300)).toBeUndefined()
 })

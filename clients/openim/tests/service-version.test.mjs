@@ -9,6 +9,7 @@ const session={data:{member:{id:'synthetic_A',labId:'synthetic_lab',displayName:
 test('only a successful schema-validated API response can establish the public service version',async t=>{
  const old=globalThis.fetch,window=globalThis.window;t.after(()=>{globalThis.fetch=old;globalThis.window=window});globalThis.window={dispatchEvent(){}};
  assert.equal(api.getServiceVersion(),undefined);
+ assert.equal(api.supportsClosedTopicResume(),false);
  globalThis.fetch=async()=>Response.json({data:{}},{headers:{'X-Contract-Version':'0.49.0'}});
  await assert.rejects(api.researchApi('session'));assert.equal(api.getServiceVersion(),undefined);
  globalThis.fetch=async()=>Response.json(session,{headers:{'X-Contract-Version':'0.45.0'}});
@@ -23,4 +24,27 @@ test('valid version changes notify once, malformed data cannot erase compatibili
  api.observeServiceVersion('0.44.0');api.observeServiceVersion('0.44.0');
  for(const invalid of[null,'unknown','0.044.0','0.44','0.44.0 suffix','1'.repeat(41)])api.observeServiceVersion(invalid);
  assert.deepEqual(seen,['0.44.0']);api.observeServiceVersion('0.45.0');assert.deepEqual(seen,['0.44.0','0.45.0']);off();api.observeServiceVersion('0.43.0');assert.equal(seen.length,2);
+});
+
+test('closed-topic resume follows the service version with the same topic list response', async t => {
+ const oldFetch = globalThis.fetch;
+ t.after(() => { globalThis.fetch = oldFetch; });
+ const topic = {
+  id: 'closed_topic',
+  assistantId: 'test_assistant',
+  title: 'Completed test topic',
+  titleStatus: 'final',
+  summary: 'Synthetic topic',
+  state: 'closed',
+  origin: 'owner',
+  version: 2,
+  lastActiveAt: '2026-11-26T00:00:00.000Z',
+  updatedAt: '2026-11-26T00:00:00.000Z',
+ };
+ const list = { data: [topic], nextCursor: null };
+ for (const [version, expected] of [['0.51.0', false], ['0.52.0', true], ['0.53.0', true], ['0.51.0', false]]) {
+  globalThis.fetch = async () => Response.json(list, { headers: { 'X-Contract-Version': version } });
+  assert.deepEqual(await api.researchApi('assistantTopics', { query: { assistantId: topic.assistantId } }), list);
+  assert.equal(api.supportsClosedTopicResume(), expected, version);
+ }
 });

@@ -2,7 +2,7 @@
 // version and SHA256: the build refuses a download it cannot verify, and an
 // existing verified file is reused so repeat builds stay offline.
 import { createHash } from 'node:crypto';
-import { createWriteStream, existsSync } from 'node:fs';
+import { createWriteStream, existsSync, readdirSync } from 'node:fs';
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { Readable } from 'node:stream';
@@ -90,12 +90,16 @@ async function unpack(entry, archive, destination) {
   const staging = `${destination}.unpack`;
   await rm(staging, { recursive: true, force: true });
   await mkdir(staging, { recursive: true });
-  // PowerShell ships with Windows, which is the only platform this build targets.
-  await run('powershell.exe', [
-    '-NoProfile', '-NonInteractive', '-Command',
-    `Expand-Archive -LiteralPath '${archive}' -DestinationPath '${staging}' -Force`,
-  ]);
-  await copyFile(path.join(staging, entry.member), path.join(destination, entry.member));
+  // bsdtar ships in System32 and exits non-zero when an entry cannot be written.
+  // Expand-Archive can leave the member out and still exit 0, which surfaced later
+  // as an unexplained ENOENT on the copy; the absolute path keeps Git's tar out of
+  // the way, since GNU tar cannot read zip.
+  const tar = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe');
+  await run(tar, ['-xf', archive, '-C', staging]);
+  const extracted = path.join(staging, entry.member);
+  if (!existsSync(extracted))
+    throw Error(`${entry.name} 解包后缺少 ${entry.member}；解出内容：${readdirSync(staging).join(', ') || '空'}`);
+  await copyFile(extracted, path.join(destination, entry.member));
   await rm(staging, { recursive: true, force: true });
 }
 

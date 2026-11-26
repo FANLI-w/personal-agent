@@ -10,7 +10,7 @@ import { provisionTestAccounts } from '../src/auth.js'
 import { ChatService } from '../src/chat.js'
 import { serviceFor, type ModelCall, type ModelResult } from '../src/execution-worker.js'
 import { runPersonalModel } from '../src/personal-models.js'
-import { queueTopicCuration } from '../src/topic-curator-queue.js'
+import { queueTopicCuration, topicIndexWanted } from '../src/topic-curator-queue.js'
 import { TopicCuratorWorker } from '../src/topic-curator-worker.js'
 
 const cleanup: (() => void)[] = []
@@ -93,4 +93,72 @@ it('fails invalid model output and unavailable models without touching the topic
   const g = await fixture(false), otherTurn = g.queue()
   expect(await new TopicCuratorWorker(g.db, g.config).tick()).toBe(true)
   expect(g.job(otherTurn).failure).toBe('MODEL_UNAVAILABLE')
+})
+
+it('shapes over-long output instead of rejecting the patch', { timeout: 30000 }, async () => {
+  const f = await fixture(), turnId = f.queue()
+  const worker = new TopicCuratorWorker(f.db, f.config, Date.now, async () => result({
+    action: 'update_topic', topicId: f.topic.id, baseVersion: 1,
+    title: 't'.repeat(70), summary: 's'.repeat(320),
+    body: { context: 'c'.repeat(1200), decisions: Array.from({ length: 6 }, (_, index) => ({ text: `${index}`.padEnd(320, 'd'), status: 'confirmed' })) },
+  }))
+  expect(await worker.tick()).toBe(true)
+  expect(f.job(turnId)).toMatchObject({ status: 'succeeded' })
+  const saved = f.call('assistantTopic', null, f.topic.id).data
+  expect(saved.title.length).toBe(60)
+  expect(saved.summary.length).toBe(300)
+  expect(saved.body.context.length).toBe(1000)
+  expect(saved.body.decisions.length).toBe(3)
+  expect(JSON.parse(f.job(turnId).result_json!).shaped.trimmed).toBeGreaterThan(0)
+})
+
+it('records an over-cap body and passes the split signal to the next turn', { timeout: 30000 }, async () => {
+  const f = await fixture(), first = f.queue()
+  const worker = new TopicCuratorWorker(f.db, f.config, Date.now, async () => result({
+    action: 'update_topic', topicId: f.topic.id, baseVersion: 1,
+    body: { context: '背景'.repeat(500), constraints: Array.from({ length: 5 }, (_, index) => `${index}`.padEnd(300, '约')) },
+  }))
+  expect(await worker.tick()).toBe(true)
+  expect(f.job(first)).toMatchObject({ status: 'failed', failure: 'PAYLOAD_TOO_LARGE' })
+  expect(JSON.parse(f.job(first).result_json!).action).toBe('over_limit')
+  expect(f.current()).toMatchObject({ version: 1 })
+  const second = f.queue()
+  let prompt = ''
+  const next = new TopicCuratorWorker(f.db, f.config, Date.now, async input => {
+    prompt = input.prompt
+    return result({ action: 'no_change', reason: 'no_increment' })
+  })
+  expect(await next.tick()).toBe(true)
+  expect(JSON.parse(prompt).previousFailure).toBe('over_limit')
+  expect(f.job(second)).toMatchObject({ status: 'succeeded' })
+})
+
+it('rolls back the active topic and its history when a new topic is too large', { timeout: 30000 }, async () => {
+  const f = await fixture(), turnId = f.queue()
+  const before = f.call('assistantTopicHistory', null, f.topic.id).data
+  const worker = new TopicCuratorWorker(f.db, f.config, Date.now, async () => result({
+    action: 'new_topic', title: '另一个话题', summary: '新的话题摘要',
+    body: { context: '背景'.repeat(500), constraints: Array.from({ length: 5 }, (_, index) => `${index}`.padEnd(300, '约')) },
+  }))
+  expect(await worker.tick()).toBe(true)
+  const job = f.job(turnId)
+  expect(job).toMatchObject({ status: 'failed', failure: 'PAYLOAD_TOO_LARGE' })
+  const failure = JSON.parse(job.result_json!)
+  expect(failure.action).toBe('over_limit')
+  expect(failure.bytes).toBeGreaterThan(4000)
+  expect(f.call('assistantTopicHistory', null, f.topic.id).data).toEqual(before)
+  expect(f.db.prepare('SELECT id,state FROM assistant_topics').all()).toEqual([{ id: f.topic.id, state: 'active' }])
+})
+
+it('asks for the topic index only after a no-change curation', { timeout: 30000 }, async () => {
+  const f = await fixture()
+  const settle = (turnId: string, action: string) => f.db.prepare("UPDATE assistant_topic_curator_jobs SET status='succeeded',result_json=? WHERE turn_id=?").run(JSON.stringify({ action }), turnId)
+  const first = f.queue()
+  settle(first, 'update_topic')
+  expect(topicIndexWanted(f.db, f.conversation.id)).toBe(false)
+  const second = f.queue()
+  settle(second, 'no_change')
+  expect(topicIndexWanted(f.db, f.conversation.id)).toBe(true)
+  f.queue()
+  expect(topicIndexWanted(f.db, f.conversation.id)).toBe(true)
 })

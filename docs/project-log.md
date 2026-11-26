@@ -3367,3 +3367,43 @@ Windows x64 `0.10.117-preview.1` 本地构建通过，确认安装器和 EXE 产
 PR #247 合入 main `a29fbee5d0bb7c55419816758ea581f1f4deaa89`，Windows 打包及三项 Foundation 检查通过。Windows x64 正式版发布为最新稳定版，`v0.10.119` 指向该合并提交。[PR #247](https://github.com/luoyan96/personal-agent/pull/247) · [正式 Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.119)
 
 逐一比对公开的安装包、`.exe.blockmap`、`latest.yml` 和 `SHA256SUMS.txt`，四个附件的大小及 SHA-256 均与本地一致。正式安装包为 421733662 字节，SHA-256 为 `1795f2346a63d3d1f3583b722813e43dc678401630b1df8230b167f385d3de45`。桌面副本位于 `C:/Users/luo/Desktop/DeepChat_0.10.119.exe`，校验结果一致。
+
+## 2026-11-22 · 话题记忆框架讨论与修正方向
+
+基于 0.10.118 已上线的话题记忆，重新讨论「当前话题」与「历史检索」的边界。结论：active 只作工作集，默认注入 24 小时内活跃的话题；没有新鲜 active 时注入标题目录（title + 40 字 summary，上限 20 条，含 paused/closed），由主模型判断相关性，不做关键词与打分；`closed` 允许 `resume`。`notes` 自由度收窄为 observation/idea/risk/reference 四类，要求 sourceRefs，单次新增不超过 3 条，importance 只留 low/medium，重新开放前先补话题详情展示。
+
+同时记录导师合并时改动带来的问题：`dailyChat` 实际表示「非群发消息」，协调模式（`assistantMode='coordinate'`）因此既不注入也不入队；active 缺新鲜度与 7 天关闭；没有目录；`closed` 不能 resume；lab-only 用户因强制 `runtime.source='personal'` 而 curator 静默失败；提示词删掉了 sourceRefs 要求。标签问题计划拆 `entry`/`intent`/`modality` 解决，先加分类器保持现有行为，再逐段替换 `chat.ts`。工具检索需要聊天协议支持 tools，本批不做，先做目录。
+
+本次只更新框架文档与记录，没有改代码、没有迁移、没有部署。
+
+## 2026-11-22 · 话题分拆、合并与整理器整形
+
+话题演化分两类形态：主题型的 `title` 与 `summary` 随讨论重写，做法型的内容随实践增补、`title` 基本不变；不把做法型概括成主题型。`body` 上限维持 4 KB，可评估调到 8 KB，约束本身不取消。写不下时不删内容、不放宽上限：curator 输出 `new_topic`，把新增内容放进新话题，旧话题保留可读；同一助理仍只有一个 `active`。分散且关联的小话题由压缩入口合并，保留 revisions、来源话题 id 与来源消息指针；合并由 owner 手动触发，模型只提议分组，合并可回滚。
+
+整理器现状是硬校验：`CuratorOutput` 与 `BodyPatch` 用 `strictObject` 与各字段上限校验，文本超长、条目超限、`body` 超过 4 KB 都导致整条失败（`INVALID_MODEL_OUTPUT` / `PAYLOAD_TOO_LARGE`），失败原因不回传下一轮。拟调整为输出先确定性整形再校验，整形结果记入 job 结果。本次只更新文档，没有改代码、没有迁移、没有部署。
+
+## 2026-11-23 · 话题注入与整理器修正（本地分支）
+
+`feat/topic-memory-fixes` 上完成第一批代码修正，仅本地分支，未发布、未部署，契约仍 0.51、迁移仍 041。注入改为正文与索引分开：`topicReference()` 只在 `last_active_at` 24 小时内返回正文；上一轮 curator 判 `no_change` 时才追加索引，索引含 `active`/`paused`/`closed`，每条 `title` + 40 字 `summary` + `state`，上限 20 条，单独预算 1200 token 并保留回复预留，回执为 `CHAT_TOPIC mode=topic` 与 `mode=index`。
+
+curator 写路径改为混合：`decisions` 合并，`openQuestions`/`next`/`constraints` 段级替换；`title`/`summary` 任意一段变化即可提交，归一化后相同的标题丢弃。整理器新增整形步骤（字段截断、条目按 `superseded`/最旧裁剪、`update_topic` 新增不超过 3 条、`new_topic` 不受该限制）后再严格校验；`body` 超过 4 KB 记 `PAYLOAD_TOO_LARGE`、`result_json.action='over_limit'`，下一轮输入带 `previousFailure`，提示词要求先合并替代、仍超才用 `new_topic` 分拆。
+
+测试补在 `assistant-topic.spec.ts`、`topic-curator.spec.ts`、`continuous-chat.spec.ts`。本地通过 `apps/api` 类型检查（需先重建 `packages/contracts/dist`）；`vitest` 仍受沙盒 spawn 限制未本地执行，等 CI。
+
+## 2026-11-24 · closed 话题可恢复（本地分支，契约 0.52）
+
+`feat/topic-resume` 基于 main `75ac50e`。`assistant-topics.ts` 的 `view()` 把 `closed` 的 `allowedActions` 从空改为 `['resume']`；`resumeAssistantTopic` 的准入从「只接受 `paused`」放宽到「`paused` 或 `closed`」，写入路径不变，先 `pauseActiveTopic` 暂停该助理当前 `active`，再写回 `active`，因此仍只有一个 `active`。`closed` 仍不可编辑，也不进入注入。
+
+契约升到 0.52.0：`closeAssistantTopic` 与 `resumeAssistantTopic` 的规则文本改为「`closed` 可读且可恢复」「恢复 `paused` 或 `closed` 并暂停此前 `active`」；`allowedActions` 枚举与响应形状不变，无数据库迁移。重新导出 `openapi.json` 与 `examples.json`，后者 524 行变动逐行核对后只有版本字符串。同时更正 `packages/contracts/README.md` 中 0.51.0 段落的两处笔误：路由为七个（原写六个），七个路由均已实现（原写未实现）。
+
+测试在 `assistant-topic.spec.ts` 新增 `resumes a closed topic and keeps a single active topic`，覆盖 `closed` 恢复后 `state/version/allowedActions`、恢复时原 `active` 转 `paused`、对 `active` 再恢复返回 409 `INVALID_STATE`、`paused` 恢复仍可用，以及历史版本 `1..4` 的状态序列；原用例中 `closed` 的 `allowedActions` 断言同步更新。`apps/web/tests/contracts.spec.ts` 的版本断言改为 `0.52.0`。
+
+本地通过 `apps/api` 类型检查（`tsconfig.check.json`，含 `tests`）、契约包编译与 `scripts/export-contracts.mjs --check`。vitest 受沙盒限制未在本地执行（Vite 启动时 `spawn EPERM`），单测由 CI 运行；本批未进 CI 通过记录、未部署，生产仍是契约 0.51 / 迁移 041。
+
+同批修正 CI 打包脚本：`scripts/desktop-tools.mjs` 的 zip 解包从 `Expand-Archive` 换成 `%SystemRoot%\System32\tar.exe`，并在缺少指定成员时打印解出内容。原因是 Windows 打包 job 连续两轮报 `ENOENT ... tectonic.unpack\tectonic.exe`，而本机用同一份 zip、同一段 PowerShell 命令可正常解出；`Expand-Archive` 对个别成员写失败只发非终止错误、退出码仍为 0，失败因此延迟到复制阶段。属 CI 基础设施修复，与契约改动无关；本机已用同一命令验证 `tar.exe` 能解出 51,538,432 字节的 `tectonic.exe`，完整脚本因沙盒禁止 Node 起子进程未能本地执行。
+
+## 2026-11-26 · DeepChat 0.10.120 话题记忆整合候选
+
+从 main `75ac50e` 新建 `codex/topic-249-250-release`，以普通合并提交纳入 PR #249（`cb3b555`）与 PR #250（`1ed19d5`）。冲突仅涉及项目日志，保留两批原始记录。候选桌面版本 0.10.120，后端契约 0.52.0，迁移仍为 041。公开稳定版基线为 0.10.119。
+
+关闭话题保留本人管理页的列表、详情和修订历史，恢复前不进入聊天的话题正文或索引。整理器创建新话题失败时回滚原话题的暂停及修订记录，保留超限结果。桌面通过服务契约版本显示已关闭话题的恢复按钮，旧服务仍可恢复暂停话题，列表响应字段沿用原有结构。新增定向回归覆盖实际聊天 worker 的输入、失败事务前后话题和历史、0.51/0.52 的桌面契约兼容。打包、公开发布和生产验证以相应回执为准。
