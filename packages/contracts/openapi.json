@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Research Agent Platform B0 contract",
-    "version": "0.51.0"
+    "version": "0.52.0"
   },
   "paths": {
     "/api/v1/library/repository": {
@@ -36763,7 +36763,7 @@
     "/api/v1/me/assistant-topics/{id}/close": {
       "post": {
         "operationId": "closeAssistantTopic",
-        "description": "Current owner only; exact version. Closes the topic without deleting it; closed topics are never injected.",
+        "description": "Current owner only; exact version. Closes the topic without deleting it; closed topics are never injected and stay readable and resumable.",
         "x-stage": "CHAT1",
         "x-implemented": true,
         "security": [
@@ -37234,7 +37234,7 @@
     "/api/v1/me/assistant-topics/{id}/resume": {
       "post": {
         "operationId": "resumeAssistantTopic",
-        "description": "Current owner only; exact version. Resumes a paused topic and pauses the previous active topic for this assistant.",
+        "description": "Current owner only; exact version. Resumes a paused or closed topic and pauses the previous active topic for this assistant.",
         "x-stage": "CHAT1",
         "x-implemented": true,
         "security": [
@@ -84884,7 +84884,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.51.0"
+                          "const": "0.52.0"
                         },
                         "checks": {
                           "type": "object",
@@ -84943,7 +84943,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.51.0",
+                    "contractVersion": "0.52.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -85117,7 +85117,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.51.0"
+                          "const": "0.52.0"
                         },
                         "checks": {
                           "type": "object",
@@ -85176,7 +85176,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.51.0",
+                    "contractVersion": "0.52.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",
@@ -85328,7 +85328,7 @@
                         },
                         "contractVersion": {
                           "type": "string",
-                          "const": "0.51.0"
+                          "const": "0.52.0"
                         },
                         "checks": {
                           "type": "object",
@@ -85387,7 +85387,7 @@
                 "example": {
                   "data": {
                     "status": "ok",
-                    "contractVersion": "0.51.0",
+                    "contractVersion": "0.52.0",
                     "checks": {
                       "database": "ok",
                       "storage": "ok",

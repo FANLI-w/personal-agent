@@ -3389,3 +3389,15 @@ PR #247 合入 main `a29fbee5d0bb7c55419816758ea581f1f4deaa89`，Windows 打包�
 curator 写路径改为混合：`decisions` 合并，`openQuestions`/`next`/`constraints` 段级替换；`title`/`summary` 任意一段变化即可提交，归一化后相同的标题丢弃。整理器新增整形步骤（字段截断、条目按 `superseded`/最旧裁剪、`update_topic` 新增不超过 3 条、`new_topic` 不受该限制）后再严格校验；`body` 超过 4 KB 记 `PAYLOAD_TOO_LARGE`、`result_json.action='over_limit'`，下一轮输入带 `previousFailure`，提示词要求先合并替代、仍超才用 `new_topic` 分拆。
 
 测试补在 `assistant-topic.spec.ts`、`topic-curator.spec.ts`、`continuous-chat.spec.ts`。本地通过 `apps/api` 类型检查（需先重建 `packages/contracts/dist`）；`vitest` 仍受沙盒 spawn 限制未本地执行，等 CI。
+
+## 2026-11-24 · closed 话题可恢复（本地分支，契约 0.52）
+
+`feat/topic-resume` 基于 main `75ac50e`。`assistant-topics.ts` 的 `view()` 把 `closed` 的 `allowedActions` 从空改为 `['resume']`；`resumeAssistantTopic` 的准入从「只接受 `paused`」放宽到「`paused` 或 `closed`」，写入路径不变，先 `pauseActiveTopic` 暂停该助理当前 `active`，再写回 `active`，因此仍只有一个 `active`。`closed` 仍不可编辑，也不进入注入。
+
+契约升到 0.52.0：`closeAssistantTopic` 与 `resumeAssistantTopic` 的规则文本改为「`closed` 可读且可恢复」「恢复 `paused` 或 `closed` 并暂停此前 `active`」；`allowedActions` 枚举与响应形状不变，无数据库迁移。重新导出 `openapi.json` 与 `examples.json`，后者 524 行变动逐行核对后只有版本字符串。同时更正 `packages/contracts/README.md` 中 0.51.0 段落的两处笔误：路由为七个（原写六个），七个路由均已实现（原写未实现）。
+
+测试在 `assistant-topic.spec.ts` 新增 `resumes a closed topic and keeps a single active topic`，覆盖 `closed` 恢复后 `state/version/allowedActions`、恢复时原 `active` 转 `paused`、对 `active` 再恢复返回 409 `INVALID_STATE`、`paused` 恢复仍可用，以及历史版本 `1..4` 的状态序列；原用例中 `closed` 的 `allowedActions` 断言同步更新。`apps/web/tests/contracts.spec.ts` 的版本断言改为 `0.52.0`。
+
+本地通过 `apps/api` 类型检查（`tsconfig.check.json`，含 `tests`）、契约包编译与 `scripts/export-contracts.mjs --check`。vitest 受沙盒限制未在本地执行（Vite 启动时 `spawn EPERM`），单测由 CI 运行；本批未进 CI 通过记录、未部署，生产仍是契约 0.51 / 迁移 041。
+
+同批修正 CI 打包脚本：`scripts/desktop-tools.mjs` 的 zip 解包从 `Expand-Archive` 换成 `%SystemRoot%\System32\tar.exe`，并在缺少指定成员时打印解出内容。原因是 Windows 打包 job 连续两轮报 `ENOENT ... tectonic.unpack\tectonic.exe`，而本机用同一份 zip、同一段 PowerShell 命令可正常解出；`Expand-Archive` 对个别成员写失败只发非终止错误、退出码仍为 0，失败因此延迟到复制阶段。属 CI 基础设施修复，与契约改动无关；本机已用同一命令验证 `tar.exe` 能解出 51,538,432 字节的 `tectonic.exe`，完整脚本因沙盒禁止 Node 起子进程未能本地执行。

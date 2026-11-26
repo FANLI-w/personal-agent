@@ -81,7 +81,7 @@ it('creates one active topic, versions edits and keeps closed topics readable', 
 
   const closed = await s.call('closeAssistantTopic', owner, { expectedVersion: 3 }, { id: topic.id })
   expect(closed.status, closed.text).toBe(200)
-  expect(closed.value.data).toMatchObject({ state: 'closed', allowedActions: [] })
+  expect(closed.value.data).toMatchObject({ state: 'closed', allowedActions: ['resume'] })
   expect((await s.call('assistantTopics', owner, null, {}, `?assistantId=${owner.agentId}&state=active`)).value.data).toEqual([])
 
   const editAfterClose = await s.call('updateAssistantTopic', owner, { expectedVersion: 4, summary: '关闭后不应可改' }, { id: topic.id })
@@ -91,6 +91,36 @@ it('creates one active topic, versions edits and keeps closed topics readable', 
   const history = await s.call('assistantTopicHistory', owner, null, { id: topic.id })
   expect(history.status, history.text).toBe(200)
   expect(history.value.data.topic.id).toBe(topic.id)
+  expect(history.value.data.revisions.map((entry: { version: number }) => entry.version)).toEqual([1, 2, 3, 4])
+})
+
+it('resumes a closed topic and keeps a single active topic', { timeout: 30000 }, async () => {
+  const s = await fixture(), owner = await s.member('owner')
+  const first = await s.call('createAssistantTopic', owner, { assistantId: owner.agentId, title: '旧话题', summary: '已经关闭的话题', body: {} })
+  expect(first.status, first.text).toBe(201)
+  const closed = await s.call('closeAssistantTopic', owner, { expectedVersion: 1 }, { id: first.value.data.id })
+  expect(closed.value.data).toMatchObject({ state: 'closed', allowedActions: ['resume'] })
+
+  const second = await s.call('createAssistantTopic', owner, { assistantId: owner.agentId, title: '新话题', summary: '当前活跃的话题', body: {} })
+  expect(second.status, second.text).toBe(201)
+
+  const resumed = await s.call('resumeAssistantTopic', owner, { expectedVersion: 2 }, { id: first.value.data.id })
+  expect(resumed.status, resumed.text).toBe(200)
+  expect(resumed.value.data).toMatchObject({ state: 'active', version: 3, allowedActions: ['edit', 'close'] })
+
+  const paused = await s.call('assistantTopic', owner, null, { id: second.value.data.id })
+  expect(paused.value.data).toMatchObject({ state: 'paused', allowedActions: ['edit', 'close', 'resume'] })
+
+  const active = await s.call('resumeAssistantTopic', owner, { expectedVersion: 3 }, { id: first.value.data.id })
+  expect(active.status, active.text).toBe(409)
+  expect(active.value.error.code).toBe('INVALID_STATE')
+
+  const back = await s.call('resumeAssistantTopic', owner, { expectedVersion: 2 }, { id: second.value.data.id })
+  expect(back.status, back.text).toBe(200)
+  expect(back.value.data).toMatchObject({ state: 'active', version: 3 })
+
+  const history = await s.call('assistantTopicHistory', owner, null, { id: first.value.data.id })
+  expect(history.value.data.revisions.map((entry: { state: string }) => entry.state)).toEqual(['active', 'closed', 'active', 'paused'])
   expect(history.value.data.revisions.map((entry: { version: number }) => entry.version)).toEqual([1, 2, 3, 4])
 })
 
