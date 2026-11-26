@@ -12,6 +12,7 @@ import { useChatOutbox, reconcileAcknowledgedMessages } from "./chat-outbox";
 import { progressNeedsRead } from "./agent-progress-state";
 import { useResearchRead } from "./useResearchRead";
 import { ResearchTurnStatus } from "./ResearchTurnStatus";
+import { coordinatorChatText } from "./chat-reply";
 
 type Entry = {
   generation: number;
@@ -254,6 +255,7 @@ export function AgentReplyProgress({ onResize }: { onResize?: () => void }) {
         const contact = contacts.find(c => c.contact.id === agentContactId);
         const groupContact = roster.data?.data.find(c => c.id === agentContactId);
         const name = groupContact?.displayName || displayName || contact?.contact.displayName || (mapping?.kind === "group" ? "助手" : conversation?.showName);
+        const text = p?.phase === "final" ? coordinatorChatText(p.text, agentContactId) : p?.text;
         return (
         <div
           key={turnId}
@@ -295,7 +297,7 @@ export function AgentReplyProgress({ onResize }: { onResize?: () => void }) {
                   ? "回复已生成 · 等待消息同步"
                   : "本次回复已停止"}
               </p>
-              {p!.text && <SafeMessageMarkdown text={p!.text} />}
+              {text && <SafeMessageMarkdown text={text} />}
               {p!.phase === "stopped" && <StoppedReplyRecovery entry={entry} />}
             </>
           )}

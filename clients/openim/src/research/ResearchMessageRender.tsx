@@ -1,4 +1,5 @@
 import { Alert, Button } from "antd";
+import clsx from "clsx";
 import { ChatSourceQuote } from "./ChatSourceQuote";
 import {GroupNoticeCard} from './GroupNoticeCard';
 import { OpenImResearchPointer } from "@research-agent-platform/contracts";
@@ -26,8 +27,9 @@ import type { AgentTurn } from "@research-agent-platform/contracts";
 import styles from "@/pages/chat/queryChat/MessageItem/message-item.module.scss";
 import { CreatedAgentChatButton } from "./CreatedAgentChatButton";
 import { AgentFileReadSummary, agentFileReadCoverage } from "./AgentFileReadSummary";
-import { PersonalReceiptCard, WorkTaskReceipt } from "./PersonalReceiptCard";
+import { PersonalReceiptCard } from "./PersonalReceiptCard";
 import { ChatProjectDelivery } from "./ChatProjectDelivery";
+import { canonicalChatText, coordinatorChatText, isCoordinatorChatContact } from "./chat-reply";
 import { createProjectNoticeReader, isProjectNoticeCandidate } from './project-message-notice';
 import { ContinueAgentFileReadingButton } from "./ContinueAgentFileReadingButton";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
@@ -36,7 +38,7 @@ import { GroupMessageStatuses } from "./GroupMessageStatuses";
 import { readChatMessage, readChatTurn, activeChatTurn } from "./chat-message-read";
 import { useChatRecordChanges } from './useChatRecordChanges';
 import { watchTranscriptMessage } from './chat-transcript-sync';
-import { locateMessage, timelineScope } from "./chat-timeline";
+import { locateMessage, researchPointer, timelineScope } from "./chat-timeline";
 
 const readProjectNotice=createProjectNoticeReader(async(conversationId,messageId)=>
   (await researchApi('chatProjectNotice',{params:{id:conversationId,messageId}})).data,
@@ -44,6 +46,7 @@ const readProjectNotice=createProjectNoticeReader(async(conversationId,messageId
 
 export default function ResearchMessageRender({
   message,
+  previousMessage,
   onReadableText,
   onReplyAgent,
   onDetails,
@@ -113,13 +116,13 @@ export default function ResearchMessageRender({
     read.data?.fact.resources || [],
   );
   const taskNotice = isTaskNotice(read.data?.fact);
-  const coordinatorNotice=useResearchStore(state=>state.contacts.some(item=>
-    item.contact.id===read.data?.fact.senderContactId && item.contact.profile.role==='coordinator',
-  ));
+  const coordinatorSender = useResearchStore((state) =>
+    isCoordinatorChatContact(read.data?.fact.senderContactId, state),
+  );
   const projectNotice=useResearchRead(
     ()=>readProjectNotice(actorGeneration,pointer!.conversationId,pointer!.messageId),
     `project-message:${pointer?.conversationId}:${pointer?.messageId}`,
-    !!pointer && isProjectNoticeCandidate(read.data?.fact,read.data?.details?.replyTo,coordinatorNotice),
+    !!pointer && isProjectNoticeCandidate(read.data?.fact, read.data?.details?.replyTo, coordinatorSender),
     {poll:false},
   );
   // A server that predates task references still sends the invitation as text.
@@ -135,9 +138,10 @@ export default function ResearchMessageRender({
       read.data?.fact.turnId === retried.turn.id)
       ? retried.turn
       : undefined;
+  const text = read.data ? canonicalChatText(read.data.fact, coordinatorSender) : "";
   useEffect(() => {
-    onReadableText?.(read.data?.fact.text || "");
-  }, [read.data?.fact.text, onReadableText]);
+    onReadableText?.(text);
+  }, [text, onReadableText]);
   useEffect(() => onDetails?.(read.data?.details), [read.data?.details, onDetails]);
   useEffect(() => {
     const fact = read.data?.fact;
@@ -224,9 +228,18 @@ export default function ResearchMessageRender({
     currentTurn?.outputMessageId,
     history,
   ]);
-  const delivery = projectNotice.data?.kind === "result" ? projectNotice.data : undefined;
   const source = read.data?.details?.replyTo;
-  if (delivery && read.data && !read.error && !read.data.details?.withdrawn) {
+  const sourceCoordinator = useResearchStore((state) =>
+    isCoordinatorChatContact(source?.senderContactId, state),
+  );
+  const taskReceipt = ownReceipt?.assistantReceipt;
+  const plainTaskReceipt = taskReceipt?.kind === "work_task" &&
+    ownReceipt?.status === "succeeded" && !turn.error &&
+    !taskNotice && !taskResources.length && !otherResources.length && !actionIds.length &&
+    !read.data?.fact.noticeId && !read.data?.fact.files?.length && !fileRead &&
+    !ownReceipt.libraryRead && !ownReceipt.memoryReceipt && !ownReceipt.followupReceipt;
+  const taskId = projectNotice.data?.taskId || (plainTaskReceipt ? taskReceipt.taskId : undefined);
+  if (taskId && read.data && !read.error && !read.data.details?.withdrawn) {
     const { fact } = read.data;
     return (
       <div
@@ -234,9 +247,10 @@ export default function ResearchMessageRender({
         className={`${styles.bubble} chat-project-delivery-bubble`}
       >
         <ChatProjectDelivery
-          taskId={delivery.taskId}
+          taskId={taskId}
           messageId={fact.id}
-          text={fact.text || ""}
+          kind={projectNotice.data?.kind || "receipt"}
+          text={text}
           source={source || undefined}
           onLocateSource={(locator) =>
             locateMessage(timelineScope(actorGeneration, imID || ""), locator)
@@ -245,8 +259,22 @@ export default function ResearchMessageRender({
       </div>
     );
   }
+  const plainMessage = read.data?.fact.origin !== "service" && !!text &&
+    !hasTaskReceipt && !taskNotice && !taskResources.length && !otherResources.length &&
+    !actionIds.length && !read.data?.fact.files?.length && !fileRead && !ownReceipt?.libraryRead;
+  const plainAssistantReply = plainMessage && !isGroup && read.data?.fact.origin === "model";
+  const previousPointer = source && plainAssistantReply && previousMessage
+    ? researchPointer(previousMessage)
+    : undefined;
+  const adjacentSource = !!previousPointer && source?.messageId === previousPointer.messageId &&
+    source.sequence === previousPointer.sequence &&
+    source.sequence + 1 === read.data?.fact.sequence &&
+    previousPointer.conversationId === read.data.fact.conversationId;
   return (
-    <div data-canonical-message={read.data?.fact.id} className={styles.bubble}>
+    <div
+      data-canonical-message={read.data?.fact.id}
+      className={clsx(styles.bubble, plainMessage && "chat-plain-message", plainAssistantReply && "chat-assistant-reply")}
+    >
       {!pointer && <Alert type="warning" message="这条消息暂无法显示" />}
       {read.error && (
         <Alert
@@ -286,7 +314,6 @@ export default function ResearchMessageRender({
           )}
           {!taskNotice && (
             <>
-              {projectNotice.data && <WorkTaskReceipt taskId={projectNotice.data.taskId} poll={false} />}
               {!!taskResources.length && (
                 <div className="space-y-2">
                   {taskResources.map((resource) => (
@@ -317,20 +344,20 @@ export default function ResearchMessageRender({
                       <summary title={serviceNoticePreview(read.data.fact.text)}>{serviceNoticePreview(read.data.fact.text)}</summary>
                       <SafeMessageMarkdown text={read.data.fact.text} />
                     </details>
-                  ) : <SafeMessageMarkdown text={read.data.fact.text} />
+                  ) : <SafeMessageMarkdown text={text} />
                 )
               )}
             </>
           )}
-          {read.data.details?.replyTo && (
+          {source && !source.withdrawn && !adjacentSource && (
             <ChatSourceQuote
-              key={read.data.details.replyTo.messageId}
+              key={source.messageId}
               label={read.data.fact.origin === "human" ? "引用" : "回复的问题"}
-              text={read.data.details.replyTo.text}
+              text={coordinatorChatText(source.text, source.senderContactId, sourceCoordinator)}
               onLocate={() =>
                 locateMessage(timelineScope(actorGeneration, imID || ""), {
-                  messageId: read.data!.details!.replyTo!.messageId,
-                  sequence: read.data!.details!.replyTo!.sequence,
+                  messageId: source.messageId,
+                  sequence: source.sequence,
                 })
               }
             />

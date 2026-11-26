@@ -1,5 +1,5 @@
 import { RollbackOutlined } from "@ant-design/icons";
-import type { ChatMessageDetails } from "@research-agent-platform/contracts";
+import type { ChatMessageDetails, ProjectMessageNotice } from "@research-agent-platform/contracts";
 import { Button } from "antd";
 import { useNavigate } from "react-router-dom";
 
@@ -13,12 +13,14 @@ import "./chat-project-delivery.scss";
 export function ChatProjectDelivery({
   taskId,
   messageId,
+  kind,
   text,
   source,
   onLocateSource,
 }: {
   taskId: string;
   messageId: string;
+  kind: ProjectMessageNotice["kind"] | "receipt";
   text: string;
   source?: NonNullable<ChatMessageDetails["replyTo"]>;
   onLocateSource: (source: { messageId: string; sequence: number }) => void;
@@ -33,6 +35,7 @@ export function ChatProjectDelivery({
   const task = read.data?.data.id === taskId ? read.data.data : undefined;
   const result = task?.result?.messageId === messageId ? task.result : undefined;
   const canReview =
+    (kind === "result" || kind === "receipt") &&
     task &&
     !task.summaryOnly &&
     result &&
@@ -42,11 +45,16 @@ export function ChatProjectDelivery({
   const sourceText =
     source && !source.withdrawn ? source.text.trim().replace(/\s+/g, " ") : "";
   // The project worker prefixes its canonical result with this fixed introduction.
-  const body = text.replace(/^整理好了，你看一下。\r?\n\r?\n/, "");
+  const body = kind === "result"
+    ? text.replace(/^整理好了，你看一下。\r?\n\r?\n/, "")
+    : text;
+  const label = kind === "update" ? "任务进展"
+    : kind === "result" || (kind === "receipt" && result) ? "任务交付"
+    : "任务安排";
 
   return (
-    <article className="chat-project-delivery" aria-label="任务交付">
-      <h3>{task?.title || "任务交付"}</h3>
+    <article className="chat-project-delivery" aria-label={label}>
+      <h3>{task?.title || label}</h3>
       {body.trim() && <SafeMessageMarkdown text={body} />}
       {source && !source.withdrawn && (
         <button
@@ -58,10 +66,11 @@ export function ChatProjectDelivery({
             onLocateSource({ messageId: source.messageId, sequence: source.sequence })
           }
         >
-          <RollbackOutlined />
+          <RollbackOutlined aria-hidden />
           <span>{sourceText || "查看原消息"}</span>
         </button>
       )}
+      {read.error && <p className="chat-project-delivery-error" role="status">任务状态暂时无法读取</p>}
       <div className="chat-project-delivery-actions">
         <Button
           type={canReview ? "primary" : "default"}

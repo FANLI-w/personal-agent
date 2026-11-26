@@ -1,6 +1,27 @@
 import { z } from 'zod'
 import { Id,Title,Text,Version,Instant,Timezone,ObjectRef,ErrorResponse,errorStatus,data,page } from './models.js'
 
+/** Read the legacy coordinator envelope only after identifying an assistant reply. */
+export function assistantReplyText(text: string): string {
+  if (!text.trimStart().startsWith('{')) return text
+  try {
+    const value: unknown = JSON.parse(text)
+    if (!value || typeof value !== 'object') return text
+    const reply = value as { plan?: unknown; reply?: unknown }
+    if (
+      Object.keys(reply).length === 2 &&
+      Object.hasOwn(reply, 'plan') &&
+      Object.hasOwn(reply, 'reply') &&
+      reply.plan === null &&
+      typeof reply.reply === 'string' &&
+      reply.reply.trim()
+    ) return reply.reply
+  } catch {
+    // Malformed JSON is still message text.
+  }
+  return text
+}
+
 export const PersonalMemoryStatus=z.enum(['confirmed','candidate','revoked'])
 export const PersonalMemoryInput=z.strictObject({topic:z.string().trim().min(1).max(80),content:z.string().trim().min(1).max(1000),scope:z.enum(['general','topic']).default('general')})
 export const PersonalMemory=z.strictObject({id:Id,topic:z.string().min(1).max(80),content:z.string().min(1).max(1000),scope:z.enum(['general','topic']),status:PersonalMemoryStatus,origin:z.enum(['explicit','feedback','inferred']),sourceMessageId:Id.nullable(),version:Version,createdAt:Instant,updatedAt:Instant,allowedActions:z.array(z.enum(['edit','confirm','revoke'])).max(3)})

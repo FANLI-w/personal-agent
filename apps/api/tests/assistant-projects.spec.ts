@@ -41,6 +41,16 @@ async function fixture(){
 }
 
 describe('durable assistant project coordination; synthetic local inputs',()=>{
+ it('writes the natural reply from a null-plan envelope without creating work',async()=>{
+  const t=await fixture(),answer='我是你的个人助理，负责跟进科研任务。'
+  const sent=(await t.call('agentChatMessage',{text:'你是谁？'},{id:t.own.conversation.id})).value.data
+  await new ChatWorker(t.db,t.config,async()=>({text:JSON.stringify({plan:null,reply:answer}),failure:null,inputTokens:100,outputTokens:100,elapsedMs:10})).tick()
+  const turn=t.s.turn(sent.turn.id)
+  expect(turn.status).toBe('succeeded')
+  expect(t.s.projectedMessage(turn.outputMessageId!).text).toBe(answer)
+  expect(t.db.prepare('SELECT count(*) n FROM assistant_projects').get()!.n).toBe(0)
+  expect(t.db.prepare('SELECT count(*) n FROM personal_work_tasks').get()!.n).toBe(0)
+ })
  it('corrects a model-proposed this-Friday date using the owner timestamp before future-date validation',async()=>{
   const t=await fixture(),row=t.db.prepare('SELECT document FROM chat_messages WHERE id=?').get(t.source.message.id)!,source=JSON.parse(String(row.document))
   source.text='请持续跟进这次计划，下周五组会还要汇报合成项目。';source.createdAt='2026-11-16T01:00:00.000Z'

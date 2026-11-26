@@ -1,9 +1,9 @@
 import {
   BookOutlined,
-  CodeOutlined,
+  CheckSquareOutlined,
   CompassOutlined,
   ContactsOutlined,
-  FolderOpenOutlined,
+  DesktopOutlined,
   MessageOutlined,
   RightOutlined,
   UserOutlined,
@@ -165,9 +165,9 @@ const NavItem = ({
           ) : path === "/contact" ? (
             <ContactsOutlined />
           ) : path === "/dsh" ? (
-            <CodeOutlined />
+            <DesktopOutlined />
           ) : path === "/workbench" ? (
-            <FolderOpenOutlined />
+            <CheckSquareOutlined />
           ) : path === "/library" ? (
             <BookOutlined />
           ) : path === "/me" ? (
@@ -232,7 +232,7 @@ function ResearchLeftNav() {
         <button
           type="button"
           aria-label="前往我的"
-          className="mb-6 rounded-full border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-blue-500"
+          className="desktop-profile-shortcut mb-6 rounded-full border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-blue-500"
           onClick={() => navigate("/me")}
         >
           <OIMAvatar src={selfInfo.faceURL} text={selfInfo.nickname} />

@@ -1,15 +1,51 @@
 import { create } from "zustand";
 import { MessageType, type MessageItem } from "@openim/wasm-client-sdk";
+import { assistantReplyText, type ChatMessage } from "@research-agent-platform/contracts";
 import { useConversationStore } from "@/store";
 import { useResearchStore } from "./store";
 
-export function readableMessage(message: MessageItem): string {
-  if (message.contentType === MessageType.TextMessage)
-    return message.textElem?.content || "";
-  if (message.contentType === MessageType.AtTextMessage)
-    return message.atTextElem?.text || "";
-  if (message.contentType === MessageType.QuoteMessage)
-    return message.quoteElem?.text || "";
+type CoordinatorDirectory = Pick<ReturnType<typeof useResearchStore.getState>, "session" | "contacts">;
+
+function isCoordinatorSdkSender(sendID: string | undefined, { session, contacts }: CoordinatorDirectory) {
+  return !!sendID && (session?.coordinator?.peerUserID === sendID ||
+    contacts.some(({ userID, contact }) => userID === sendID && contact.profile.role === "coordinator"));
+}
+
+export function useCoordinatorSdkSender(sendID?: string) {
+  return useResearchStore((state) => isCoordinatorSdkSender(sendID, state));
+}
+
+export function isCoordinatorChatContact(senderContactId: string | null | undefined, { contacts }: CoordinatorDirectory) {
+  return !!senderContactId && contacts.some(({ contact }) =>
+    contact.id === senderContactId && contact.profile.role === "coordinator",
+  );
+}
+
+export function canonicalChatText(
+  message: Pick<ChatMessage, "text" | "origin" | "senderContactId">,
+  coordinator?: boolean,
+) {
+  const text = message.text || "";
+  return message.origin === "model"
+    ? coordinatorChatText(text, message.senderContactId, coordinator)
+    : text;
+}
+
+export function coordinatorChatText(text: string, senderContactId?: string | null, coordinator?: boolean) {
+  return (coordinator ?? isCoordinatorChatContact(senderContactId, useResearchStore.getState()))
+    ? assistantReplyText(text)
+    : text;
+}
+
+export function readableMessage(message: MessageItem, coordinator?: boolean): string {
+  let text: string | undefined;
+  if (message.contentType === MessageType.TextMessage || message.contentType === MessageType.AtTextMessage)
+    text = message.textElem?.content ?? message.atTextElem?.text;
+  if (message.contentType === MessageType.QuoteMessage) text = message.quoteElem?.text;
+  if (text !== undefined)
+    return (coordinator ?? isCoordinatorSdkSender(message.sendID, useResearchStore.getState()))
+      ? assistantReplyText(text)
+      : text;
   if (message.contentType === MessageType.FileMessage)
     return `[文件] ${message.fileElem?.fileName || "文件"}`;
   if (message.contentType === MessageType.PictureMessage) return "[图片]";

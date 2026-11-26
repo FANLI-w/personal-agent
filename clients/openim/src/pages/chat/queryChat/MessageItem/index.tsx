@@ -26,6 +26,7 @@ import {
 import {
   selectChatReply,
   readableMessage,
+  useCoordinatorSdkSender,
   type ReplyAgent,
 } from "@/research/chat-reply";
 import { feedbackToast } from "@/utils/common";
@@ -53,6 +54,7 @@ import {
 
 export interface IMessageItemProps {
   message: MessageItemType;
+  previousMessage?: MessageItemType;
   isSender: boolean;
   disabled?: boolean;
   conversationID?: string;
@@ -76,6 +78,7 @@ const components: Record<number, FC<IMessageItemProps>> = {
 
 const MessageItem: FC<IMessageItemProps> = ({
   message,
+  previousMessage,
   disabled,
   isSender,
   conversationID,
@@ -86,14 +89,15 @@ const MessageItem: FC<IMessageItemProps> = ({
   const [details, setDetails] = useState<ChatMessageDetails>();
   const [selectionText, setSelectionText] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
-  const text = readableMessage(message) || canonicalText;
+  const coordinator = useCoordinatorSdkSender(message.sendID);
+  const text = readableMessage(message, coordinator) || canonicalText;
   const copyText = [
     MessageType.TextMessage,
     MessageType.AtTextMessage,
     MessageType.QuoteMessage,
     MessageType.CustomMessage,
   ].includes(message.contentType)
-    ? readableMessage(message) || canonicalText
+    ? text
     : "";
   const generation = useResearchStore((s) => s.generation);
   const actor = useResearchStore((s) => s.actor?.member.id);
@@ -286,6 +290,7 @@ const MessageItem: FC<IMessageItemProps> = ({
                 <MessageItemErrorBoundary message={message}>
                   <MessageRenderComponent
                     message={message}
+                    previousMessage={previousMessage}
                     isSender={isSender}
                     disabled={disabled}
                     onReadableText={setCanonicalText}

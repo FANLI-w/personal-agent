@@ -1,5 +1,7 @@
 import { roster, useResearchStore } from "./mock-state";
 export const researchMode = true;
+export const supportsTaskHandoffs = () => false;
+export const supportsTranscriptSync = () => false;
 export class ResearchApiError extends Error {
   status = 404;
 }
