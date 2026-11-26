@@ -3407,3 +3407,12 @@ curator 写路径改为混合：`decisions` 合并，`openQuestions`/`next`/`con
 从 main `75ac50e` 新建 `codex/topic-249-250-release`，以普通合并提交纳入 PR #249（`cb3b555`）与 PR #250（`1ed19d5`）。冲突仅涉及项目日志，保留两批原始记录。候选桌面版本 0.10.120，后端契约 0.52.0，迁移仍为 041。公开稳定版基线为 0.10.119。
 
 关闭话题保留本人管理页的列表、详情和修订历史，恢复前不进入聊天的话题正文或索引。整理器创建新话题失败时回滚原话题的暂停及修订记录，保留超限结果。桌面通过服务契约版本显示已关闭话题的恢复按钮，旧服务仍可恢复暂停话题，列表响应字段沿用原有结构。新增定向回归覆盖实际聊天 worker 的输入、失败事务前后话题和历史、0.51/0.52 的桌面契约兼容。打包、公开发布和生产验证以相应回执为准。
+
+
+## 2026-11-26 · DeepChat 0.10.120 正式发布与后端升级
+
+PR #251 合入 main `7ee71938c27697127794d3d3bc110e03e7b3f141`，保留 PR #249 和 #250 的提交历史。完整本地 CI 为 1133 项通过、1 项跳过，话题定向回归 29 项通过。三项 Foundation 与 Windows 打包检查通过。Edge 使用隔离 HTTP API 和 SQLite 点选恢复已关闭的话题，验证成功提示及话题状态更新。[PR #251](https://github.com/luoyan96/personal-agent/pull/251)
+
+生产 API 和 worker 于 2026-11-26 03:30:13 UTC 经阿里云 Workbench 升至契约 0.52.0，数据库仍为迁移 041。部署前备份为 `/srv/research-openim-backups/topic-release-120-20261126T033001Z-f5de517e9bd3`。数据库核对 130 张表，完整性和外键检查通过。其余六项服务未改动。
+
+Windows x64 正式版于 03:30:47 UTC 设为最新稳定版，标签 `v0.10.120` 指向该合并提交。公开安装包、blockmap、`latest.yml` 和 `SHA256SUMS.txt` 的大小与 SHA-256 均与本地一致，公开更新清单校验通过。桌面副本 `C:/Users/luo/Desktop/DeepChat_0.10.120.exe` 为 421734724 字节，SHA-256 为 `cb07c62b3b86e7116c40b86c021838e824af350ab62a79db65593176c25b6e3f`。[正式 Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.120)
