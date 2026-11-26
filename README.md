@@ -8,9 +8,9 @@
 <p align="center">老师在群里交代的事，学生点开就能接着做。交上来的文件、老师的意见和下一版修改，都留在同一项任务里。</p>
 
 <p align="center">
-  <a href="https://github.com/luoyan96/personal-agent/releases/download/v0.10.119/DeepChat_0.10.119.exe">下载 Windows 版 · 0.10.119</a>
+  <a href="https://github.com/luoyan96/personal-agent/releases/download/v0.10.120/DeepChat_0.10.120.exe">下载 Windows 版 · 0.10.120</a>
   · <a href="#第一次使用">第一次使用</a>
-  · <a href="https://github.com/luoyan96/personal-agent/releases/tag/v0.10.119">发布说明</a>
+  · <a href="https://github.com/luoyan96/personal-agent/releases/tag/v0.10.120">发布说明</a>
 </p>
 
 ## 下周组会，汇报一下项目进展
@@ -37,7 +37,7 @@
 
 下载 Windows x64 客户端，登录后在「我的 → 模型设置」配置自己的模型。第一次试用，可以拿一份可分享的组会材料走一遍：一人在群里发任务邀请，另一人接下任务、交一份文件，再把修改意见回到这份交付上。
 
-工作台随客户端安装，在本机处理文件；编辑 Office 文件需要本机安装 WPS 或 Microsoft Office。当前以 Windows 小范围试用为主。已有账号可在「我的 → 版本与帮助」检查更新。[当前版本与试用范围](docs/product-status.md) · [下载历史版本](https://github.com/luoyan96/personal-agent/releases)
+工作台随客户端安装，在本机处理文件；编辑 Office 文件需要本机安装 WPS 或 Microsoft Office。当前以 Windows 小范围试用为主。已有账号可在「我的 → 版本与帮助」检查更新。[当前版本](docs/current-state.md) · [下载历史版本](https://github.com/luoyan96/personal-agent/releases)
 
 ## 开发与参与
 
