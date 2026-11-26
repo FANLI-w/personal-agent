@@ -10,13 +10,17 @@ import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import { useResearchStore } from "./store";
 import { workspaceStatusLabel } from "./workspace-labels";
-import { workbenchTaskPath } from "./workbench-links";
+import { nativeWorkbenchTaskPath, workbenchTaskPath } from "./workbench-links";
 import "./workspace.scss";
 
 export function WorkbenchTaskInbox({
   presentation = "panel",
+  resume = false,
+  onNavigate,
 }: {
   presentation?: "panel" | "overview";
+  resume?: boolean;
+  onNavigate?: () => void;
 }) {
   const navigate = useNavigate();
   const overview = presentation === "overview";
@@ -41,7 +45,10 @@ export function WorkbenchTaskInbox({
         </div>
         <Button
           type={overview ? "link" : "default"}
-          onClick={() => navigate(`/workbench?view=tasks&category=${category}`)}
+          onClick={() => {
+            onNavigate?.();
+            navigate(`/workbench?view=tasks&category=${category}`);
+          }}
         >
           查看全部任务 {overview && <ArrowRightOutlined />}
         </Button>
@@ -88,15 +95,14 @@ export function WorkbenchTaskInbox({
               className="workbench-inbox-row"
               key={card.id}
               onClick={() => {
-                if (card.taskId)
-                  navigate(
-                    workbenchTaskPath(
-                      card.taskId,
-                      card.source === "research_task" ? "research" : "personal",
-                    ),
-                  );
+                if (!card.taskId || card.source === "followup") return;
+                const kind = card.source === "research_task" ? "research" : "personal";
+                const canResume = resume && !card.summaryOnly &&
+                  card.allowedActions.some((action) => action === "submit" || action === "run");
+                onNavigate?.();
+                navigate((canResume ? nativeWorkbenchTaskPath : workbenchTaskPath)(card.taskId, kind));
               }}
-              disabled={!card.taskId}
+              disabled={!card.taskId || card.source === "followup"}
             >
               {overview && (
                 <FileTextOutlined aria-hidden="true" className="workbench-inbox-icon" />

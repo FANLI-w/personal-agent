@@ -1,4 +1,5 @@
 import { Button } from "antd";
+import { ExportOutlined } from "@ant-design/icons";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { researchApi } from "./api";
@@ -16,10 +17,12 @@ export function NativeWorkbenchTaskButton({
   target,
   source,
   primary = false,
+  revision = false,
 }: {
   target: WorkbenchTarget;
   source?: WorkbenchMessageSource;
   primary?: boolean;
+  revision?: boolean;
 }) {
   const navigate = useNavigate();
   const operation = usePersonalOperation(
@@ -38,7 +41,7 @@ export function NativeWorkbenchTaskButton({
     };
   }, [operation.scope]);
   return (
-    <span className="inline-flex flex-col items-start gap-1">
+    <span className={revision ? "blue-task-revision-handoff" : "inline-flex flex-col items-start gap-1"}>
       <Button
         size={primary ? "middle" : "small"}
         type={primary ? "primary" : "default"}
@@ -71,7 +74,7 @@ export function NativeWorkbenchTaskButton({
             if ((await readWorkbenchServiceOrigin()) !== serviceOrigin)
               throw Error("科研服务已切换，请重新打开任务。");
             if (!isCurrent()) return;
-            navigate(storeNativeWorkbenchHandoff(scope, target, chat).path);
+            navigate(storeNativeWorkbenchHandoff(scope, target, chat, undefined, revision ? "assistant" : undefined).path);
           } catch (failure) {
             if (isCurrent())
               setError(
@@ -85,7 +88,7 @@ export function NativeWorkbenchTaskButton({
           }
         }}
       >
-        在工作台继续
+        {revision ? <>在 DSH 中改稿 <ExportOutlined aria-hidden /></> : "在工作台继续"}
       </Button>
       {error && (
         <span role="alert" className="text-xs text-amber-800">

@@ -46,7 +46,7 @@ test('a whole page of eligible legacy history performs only one capability404',a
 });
 
 async function renderMessage(projectNotice){
- const jsx=(type,props)=>({type,props}),queries=[];
+ const jsx=(type,props)=>({type,props}),queries=[],locations=[];
  const store={generation:1,contacts:[{contact:{id:'coordinator',profile:{role:'coordinator'}}}],mappings:[{imConversationID:'im',kind:'personal'}]};
  const imports={
   react:{useContext:()=>({messageIds:new Set()}),useEffect(){},useState:()=>[undefined,()=>{}]},
@@ -64,18 +64,20 @@ async function renderMessage(projectNotice){
   './agent-progress':{AgentProgressHistory:'History'},
   './task-notice':{isTaskNotice:()=>false,legacyTaskInvitation:()=>undefined,serviceNoticePreview:text=>text,splitTaskResources:()=>({tasks:[],others:[]})},
   './project-message-notice':{createProjectNoticeReader,isProjectNoticeCandidate},
-  './chat-message-read':{},'./useChatRecordChanges':{useChatRecordChanges(){}},'./chat-transcript-sync':{},'./chat-timeline':{},
+  './chat-message-read':{},'./useChatRecordChanges':{useChatRecordChanges(){}},'./chat-transcript-sync':{},
+  './chat-timeline':{timelineScope:(generation,imId)=>`${generation}:${imId}`,locateMessage:(scope,locator)=>locations.push({scope,locator})},
   '@/pages/chat/queryChat/MessageItem/message-item.module.scss':{__esModule:true,default:{bubble:'bubble'}},
   './PersonalReceiptCard':{PersonalReceiptCard:'PersonalReceiptCard',WorkTaskReceipt:'WorkTaskReceipt'},
+  './ChatProjectDelivery':{ChatProjectDelivery:'ChatProjectDelivery'},
   './SafeMessageMarkdown':{__esModule:true,default:'SafeMessageMarkdown'},
  };
  for(const name of ['./GroupNoticeCard','./ResearchActionCard','./ResearchTaskCard','./ResearchTurnStatus','./CreatedAgentChatButton','./AgentFileReadSummary','./ContinueAgentFileReadingButton','./ResearchReadSummary','./GroupMessageStatuses'])imports[name]={};
  const component=(await load('../src/research/ResearchMessageRender.tsx',imports)).default;
- return {tree:component({message:{clientMsgID:'sdk-decision',customElem:{data:'{}'}}}),queries};
+ return {tree:component({message:{clientMsgID:'sdk-decision',customElem:{data:'{}'}}}),queries,locations};
 }
 
-test('real message renderer expands host project questions/results with the corresponding task link',async()=>{
- for(const kind of ['decision','result']){
+test('real message renderer keeps host project questions and updates with the corresponding task link',async()=>{
+ for(const kind of ['decision','update']){
   const {tree,queries}=await renderMessage({...notice,kind}),all=nodes(tree);
   assert.equal(all.some(node=>node.type==='details'&&node.props.className==='chat-system-notice'),false);
   assert.ok(all.some(node=>node.type==='SafeMessageMarkdown'&&node.props.text===fact.text));
@@ -87,10 +89,26 @@ test('real message renderer expands host project questions/results with the corr
  }
 });
 
+test('the verified project result owns a single card using the exact canonical message and quote',async()=>{
+ const {tree,queries,locations}=await renderMessage({...notice,kind:'result'}),all=nodes(tree);
+ const card=all.find(node=>node.type==='ChatProjectDelivery');
+ assert.equal(card.props.taskId,'work');
+ assert.equal(card.props.messageId,fact.id);
+ assert.equal(card.props.text,fact.text);
+ assert.equal(card.props.source,reply);
+ const locator={messageId:reply.messageId,sequence:reply.sequence};
+ card.props.onLocateSource(locator);
+ assert.deepEqual(locations,[{scope:'1:im',locator}]);
+ assert.ok(!all.some(node=>['ChatSourceQuote','SafeMessageMarkdown','WorkTaskReceipt'].includes(node.type)));
+ assert.equal(tree.props['data-canonical-message'],fact.id);
+ assert.equal(queries.find(query=>query.identity.startsWith('project-message:')).options.poll,false);
+});
+
 test('an ordinary system notice keeps its existing folded presentation',async()=>{
  const {tree}=await renderMessage(null),all=nodes(tree);
  assert.equal(all.some(node=>node.type==='details'&&node.props.className==='chat-system-notice'),true);
  assert.equal(all.some(node=>node.type==='WorkTaskReceipt'),false);
+ assert.equal(all.some(node=>node.type==='ChatProjectDelivery'),false);
 });
 
 test('actual task receipt opens its exact personal task without pretending model completion',async()=>{
@@ -103,4 +121,56 @@ test('actual task receipt opens its exact personal task without pretending model
  all.find(node=>node.type==='Button').props.onClick();
  assert.deepEqual(navigations,['/workbench/personal/exact-work']);
  assert.ok(all.some(node=>node.type==='p'&&node.props.children==='需要处理的问题'));
+});
+
+test('delivery card uses its historical text and only offers review for the current eligible result',async()=>{
+ const navigations=[],located=[],jsx=(type,props)=>({type,props});
+ const task={id:'work',title:'Synthetic report',status:'awaiting_review',summaryOnly:false,allowedActions:['review'],result:{messageId:'delivery',summary:'newer content'}};
+ const imports={
+  'react/jsx-runtime':{jsx,jsxs:jsx},antd:{Button:'Button'},'@ant-design/icons':{RollbackOutlined:'RollbackOutlined'},
+  'react-router-dom':{useNavigate:()=>path=>navigations.push(path)},'./api':{},
+  './NativeWorkbenchTaskButton':{NativeWorkbenchTaskButton:'NativeWorkbenchTaskButton'},
+  './SafeMessageMarkdown':{__esModule:true,default:'SafeMessageMarkdown'},
+  './useResearchRead':{useResearchRead:(_reader,_identity,_enabled,options)=>{
+   assert.equal(options.poll,false);
+   return {data:{data:task}};
+  }},
+  './chat-project-delivery.scss':{},'./workbench-links':{workbenchTaskPath:id=>'/workbench/personal/'+id},
+ };
+ const {ChatProjectDelivery}=await load('../src/research/ChatProjectDelivery.tsx',imports);
+ const props={taskId:task.id,messageId:'delivery',text:'整理好了，你看一下。\n\n原版交付',source:reply,onLocateSource:location=>located.push(location)};
+ const all=nodes(ChatProjectDelivery(props));
+ assert.equal(all.find(node=>node.type==='h3').props.children,task.title);
+ assert.equal(all.find(node=>node.type==='SafeMessageMarkdown').props.text,'原版交付');
+ const review=all.find(node=>node.type==='Button');
+ assert.equal(review.props.children,'查看并验收');
+ assert.equal(review.props.type,'primary');
+ review.props.onClick();
+ assert.deepEqual(navigations,['/workbench/personal/work']);
+ all.find(node=>node.type==='button').props.onClick();
+ assert.equal(located[0].messageId,reply.messageId);
+ assert.equal(located[0].sequence,reply.sequence);
+ assert.equal(all.find(node=>node.type==='NativeWorkbenchTaskButton').props.target.taskId,'work');
+
+ const historical=nodes(ChatProjectDelivery({...props,messageId:'previous',source:{...reply,withdrawn:true}}));
+ assert.equal(historical.find(node=>node.type==='Button').props.children,'查看任务');
+ assert.equal(historical.find(node=>node.type==='SafeMessageMarkdown').props.text,'原版交付');
+ assert.equal(historical.some(node=>node.type==='button'),false);
+ for(const result of [{accepted:true,changesRequested:false},{accepted:false,changesRequested:true}]){
+  Object.assign(task.result,result);
+  assert.equal(nodes(ChatProjectDelivery(props)).find(node=>node.type==='Button').props.children,'查看任务');
+ }
+ Object.assign(task.result,{accepted:false,changesRequested:false});
+ for(const status of ['awaiting_review','running','blocked']){
+  task.status=status;
+  task.allowedActions=['review'];
+  assert.equal(nodes(ChatProjectDelivery(props)).find(node=>node.type==='Button').props.children,'查看并验收');
+  task.allowedActions=[];
+  assert.equal(nodes(ChatProjectDelivery(props)).find(node=>node.type==='Button').props.children,'查看任务');
+ }
+ task.allowedActions=['review'];
+ task.summaryOnly=true;
+ const restricted=nodes(ChatProjectDelivery(props));
+ assert.equal(restricted.find(node=>node.type==='Button').props.children,'查看任务');
+ assert.equal(restricted.some(node=>node.type==='NativeWorkbenchTaskButton'),false);
 });

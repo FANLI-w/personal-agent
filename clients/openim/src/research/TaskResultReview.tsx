@@ -1,4 +1,4 @@
-import { App, Button, Input } from "antd";
+import { Button, Input, Modal } from "antd";
 import { useRef, useState } from "react";
 import { researchApi } from "./api";
 import { usePersonalOperation } from "./usePersonalOperation";
@@ -20,7 +20,7 @@ export function TaskResultReview({
   onChanged: () => Promise<void>;
   supportsComment?: boolean;
 }) {
-  const { modal } = App.useApp();
+  const [decision, setDecision] = useState<"accept" | "request_changes">();
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -31,86 +31,104 @@ export function TaskResultReview({
       messageId || delivery?.id
     }:${taskVersion}`,
   );
-  const review = (accept: boolean) => {
+  const requiresComment = target.kind === "research";
+  const accept = decision === "accept";
+  const actionLabel = accept ? "确认验收" : "退回修改";
+  const openReview = (next: NonNullable<typeof decision>) => {
+    setError("");
+    setDecision(next);
+  };
+  const review = async () => {
+    if (!decision || flight.current || (requiresComment && !comment.trim())) return;
     const { isCurrent } = operation.capture();
-    modal.confirm({
-      title: accept ? "验收当前结果？" : "要求修改当前结果？",
-      content: comment || "核对当前展示的这一版结果。",
-      onOk: async () => {
-        if (!isCurrent() || flight.current) return;
-        flight.current = true;
-        setBusy(true);
-        setError("");
-        try {
-          if (target.kind === "personal" && messageId)
-            await researchApi("reviewPersonalWorkResult", {
-              params: { id: target.taskId },
-              body: {
-                expectedVersion: taskVersion,
-                messageId,
-                decision: accept ? "accept" : "request_changes",
-                ...(supportsComment && comment.trim()
-                  ? { comment: comment.trim() }
-                  : {}),
-              },
-            });
-          else if (delivery)
-            await researchApi("review", {
-              params: { id: delivery.id },
-              body: {
-                expectedVersion: delivery.version,
-                expectedTaskVersion: taskVersion,
-                revision: delivery.revision,
-                decision: accept ? "accepted" : "changes_requested",
-                comment: comment.trim(),
-              },
-            });
-          if (isCurrent()) {
-            setComment("");
-            await onChanged();
-          }
-        } catch (failure) {
-          if (isCurrent())
-            setError(
-              failure instanceof Error ? failure.message : "审阅未完成，请重试。",
-            );
-        } finally {
-          if (isCurrent()) {
-            flight.current = false;
-            setBusy(false);
-          }
-        }
-      },
-    });
+    if (!isCurrent()) return;
+    flight.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      if (target.kind === "personal" && messageId)
+        await researchApi("reviewPersonalWorkResult", {
+          params: { id: target.taskId },
+          body: {
+            expectedVersion: taskVersion,
+            messageId,
+            decision,
+            ...(supportsComment && comment.trim() ? { comment: comment.trim() } : {}),
+          },
+        });
+      else if (delivery)
+        await researchApi("review", {
+          params: { id: delivery.id },
+          body: {
+            expectedVersion: delivery.version,
+            expectedTaskVersion: taskVersion,
+            revision: delivery.revision,
+            decision: accept ? "accepted" : "changes_requested",
+            comment: comment.trim(),
+          },
+        });
+      if (isCurrent()) await onChanged();
+      if (isCurrent()) {
+        setComment("");
+        setDecision(undefined);
+      }
+    } catch (failure) {
+      if (isCurrent())
+        setError(failure instanceof Error ? failure.message : "审阅未完成，请重试。");
+    } finally {
+      flight.current = false;
+      if (isCurrent()) setBusy(false);
+    }
   };
   return (
     <section className="task-result-review" aria-label="验收当前结果">
-      <h3>核对当前结果</h3>
-      {supportsComment && (
-        <Input.TextArea
-          aria-label="验收意见"
-          placeholder="达到要求的地方，或需要修改的具体问题"
-          value={comment}
-          onChange={(event) => setComment(event.target.value)}
-          disabled={busy}
-          rows={3}
-        />
-      )}
       <Button
         type="primary"
-        disabled={busy || (target.kind === "research" && !comment.trim())}
-        loading={busy}
-        onClick={() => review(true)}
+        disabled={busy}
+        onClick={() => openReview("accept")}
       >
-        确认验收
+        验收通过
       </Button>
       <Button
-        disabled={busy || (target.kind === "research" && !comment.trim())}
-        onClick={() => review(false)}
+        disabled={busy}
+        onClick={() => openReview("request_changes")}
       >
-        要求修改
+        退回修改
       </Button>
-      {error && <p role="alert">{error}</p>}
+      <Modal
+        title={accept ? "验收当前版本" : "退回当前版本"}
+        open={Boolean(decision)}
+        okText={actionLabel}
+        cancelText="取消"
+        onOk={review}
+        onCancel={() => { if (!flight.current) setDecision(undefined); }}
+        confirmLoading={busy}
+        closable={!busy}
+        keyboard={!busy}
+        maskClosable={false}
+        okButtonProps={{ disabled: requiresComment && !comment.trim() }}
+        cancelButtonProps={{ disabled: busy }}
+        destroyOnClose
+      >
+        {supportsComment ? (
+          <label className="task-review-comment">
+            {accept ? "验收意见" : "修改意见"}
+            {!requiresComment && "（选填）"}
+            <Input.TextArea
+              value={comment}
+              placeholder={accept ? "哪些内容达到了验收要求？" : "请说明需要修改的具体问题"}
+              onChange={(event) => setComment(event.target.value)}
+              disabled={busy}
+              required={requiresComment}
+              rows={3}
+              maxLength={8000}
+            />
+          </label>
+        ) : (
+          <p>{accept ? "确认验收当前展示的成果。" : "退回后可以在任务聊天里补充修改意见。"}</p>
+        )}
+        {error && <p className="task-review-error" role="alert">{error}</p>}
+      </Modal>
     </section>
   );
 }

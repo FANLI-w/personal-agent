@@ -32,10 +32,10 @@
 }
 .personal-agent-desktop .desktop-chat-footer.is-native-desktop {
   flex: 0 1 auto; min-height: 90px; max-height: 50%; overflow-y: auto;
-  width: calc(100% - 16px); max-width: none; margin: 8px 8px 10px;
+  width: calc(100% - 32px); max-width: none; margin: 8px 16px 16px;
   padding: 0; background: transparent;
   .desktop-composer-surface {
-    height: auto; border: 1px solid #dedfe0; border-radius: 8px; background: #fff;
+    height: auto; border: 1px solid #d4d9df; border-radius: 10px; background: #fff;
     box-shadow: none; padding: 8px 4px 4px;
   }
   [role="toolbar"] { display: flex !important; flex-wrap: nowrap; min-height: 32px; gap: 4px; padding: 0; }
@@ -50,9 +50,9 @@
   .ck-content > p { margin: 5px 0 !important; }
   .desktop-composer-bottom { gap: 12px; justify-content: space-between; padding: 4px 10px 3px !important; }
   .desktop-composer-bottom > div { flex: 1; min-width: 0; padding: 0; }
-  .desktop-composer-bottom > button { padding: 0 16px; width: auto; height: 30px; min-width: 64px; border-radius: 5px; border: 0; background: #edf4fc; color: #1677ff; font-size: 14px; box-shadow: none; }
-  .desktop-composer-bottom > button:hover:enabled { background: #dcecff; color: #0958d9; }
-  .desktop-composer-bottom > button:disabled { background: #eeeeef; color: #acafb3; }
+  .desktop-composer-bottom > .desktop-chat-send { display: grid; place-items: center; width: 44px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: #236e68; color: #fff; font-size: 17px; box-shadow: none; }
+  .desktop-composer-bottom > .desktop-chat-send:hover:enabled { background: #1a5a55; color: #fff; }
+  .desktop-composer-bottom > .desktop-chat-send:disabled { background: #eaf1f0; color: #78928f; }
   .desktop-send-record { margin: 7px 12px; padding: 10px 12px; max-height: 170px; overflow: auto; background: #f1f2f3; border: 0; border-radius: 16px; flex-shrink: 0; }
   .desktop-composer-quote { display: flex; gap: 8px; align-items: center; margin: 7px 12px; background: #edf7fd; border-radius: 14px; padding: 9px 12px; font-size: 12px; color: #697176; }
   .desktop-composer-quote > div { flex: 1; min-width: 0; }
@@ -80,8 +80,8 @@ body:has(.personal-agent-desktop) .desktop-chat-drawer { top: 36px; }
   > button:hover { background: #f1f5f9; }
   > button .anticon { font-size: 18px; }
 }
-@media (max-width: 1100px) {
-  .personal-agent-desktop .desktop-chat-footer.is-native-desktop { width: calc(100% - 16px); margin-bottom: 10px; }
+@media (max-width: 600px) {
+  .personal-agent-desktop .desktop-chat-footer.is-native-desktop { width: calc(100% - 16px); margin: 8px 8px 10px; }
 }
 .chat-tool-button { display: flex; flex: 0 0 auto; width: 32px; height: 32px; align-items: center; justify-content: center; border-radius: 4px; color: #60666b; font-size: 19px; }
 .chat-tool-button:hover { background: #f1f2f3; color: #11191c; }

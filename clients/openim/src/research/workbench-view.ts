@@ -7,6 +7,7 @@ export type WorkbenchFilter = "all" | "completed";
 
 export type WorkbenchView = {
   tab: WorkbenchTab;
+  layout: "list" | "week";
   /** A saved planning link should open the assistant, not a separate page. */
   planning: boolean;
   planId?: string;
@@ -28,6 +29,7 @@ export function workbenchView(params: URLSearchParams): WorkbenchView {
     draft = params.get("draft")?.trim();
   return {
     tab,
+    layout: params.get("layout") === "week" ? "week" : "list",
     // Older links pointed at a planning tab; keep them landing on the assistant.
     planning:
       tab === "tasks" &&

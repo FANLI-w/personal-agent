@@ -3,7 +3,7 @@ import { Button } from "antd";
 import { t } from "i18next";
 import { memo, useEffect, useRef, useState } from "react";
 import { MessageType } from "@openim/wasm-client-sdk";
-import { CloseOutlined } from "@ant-design/icons";
+import { CloseOutlined, SendOutlined } from "@ant-design/icons";
 import {
   useChatReply,
   replyKey,
@@ -779,7 +779,7 @@ const ChatFooter = () => {
               pasteImages={() => imageTray.current?.readClipboard()}
             />
             <Button
-              className="w-fit px-6 py-1"
+              className="desktop-chat-send w-fit px-6 py-1"
               type="primary"
               aria-label="发送消息"
               title="发送消息（Enter）；Shift+Enter 换行"
@@ -790,7 +790,7 @@ const ChatFooter = () => {
               }
               onClick={() => void enterToSend()}
             >
-              {t("placeholder.send")}
+              {window.electronAPI ? <SendOutlined /> : t("placeholder.send")}
             </Button>
           </div>
         </div>

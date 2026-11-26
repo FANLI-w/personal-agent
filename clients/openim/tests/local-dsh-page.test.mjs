@@ -107,6 +107,8 @@ function host({
   openWait,
   initialPhase = "ready",
   promptFailOnce = false,
+  withDocuments = false,
+  returned = false,
 } = {}) {
   let index = 0,
     tree;
@@ -156,6 +158,8 @@ function host({
       return ["delivery-savedhash/edited-result.pptx"];
     },
     taskReveal: async (...args) => calls.push(["reveal", ...args]),
+    ...(withDocuments ? { taskReadDocument: async () => ({}) } : {}),
+    taskRestoreRevision: async (...args) => { calls.push(["restore", ...args]); return "prior.md"; },
   };
   const react = {
     lazy: () => "TaskInbox",
@@ -204,6 +208,7 @@ function host({
       useNavigate: () => navigate,
       useSearchParams: () => [values],
     },
+    "./TaskRevisionWorkbench": { TaskRevisionWorkbench: "TaskRevisionWorkbench" },
     "./workbench-links": {
       workbenchTaskTarget: () => ({
         id: values.get("task"),
@@ -221,7 +226,15 @@ function host({
             title: "Synthetic task",
             goal: "Test evidence",
             allowedActions: ["submit"],
+            ...(returned ? { status: "changes_requested" } : {}),
           },
+          ...(returned ? {
+            deliverables: [{
+              revision: 2,
+              review: { decision: "changes_requested", comment: "Add the raw data source", at: "2026-11-26T09:00:00Z", revision: 2 },
+              sources: [{ label: "prior.md", locator: "research-library:prior:v1:" + "a".repeat(64) }],
+            }],
+          } : {}),
         },
       }),
     },
@@ -412,6 +425,22 @@ test("recent pointers are isolated by service, account and lab, and output candi
   );
 });
 
+test("returned results open the native assistant and can explicitly restore the reviewed file", async () => {
+  const page = host({ params: "task=task_1&taskKind=research&mode=assistant", withDocuments: true, returned: true });
+  page.render();
+  await page.settle();
+  assert.equal(find(page.tree, (node) => node.type === "TaskRevisionWorkbench").length, 0);
+  assert.ok(find(page.tree, (node) => node.props.className === "local-dsh-seat").length);
+  assert.match(text(page.tree), /Add the raw data source/);
+  const restore = find(page.tree, (node) => node.type === "Button" && text(node) === "取回工作副本")[0];
+  restore.props.onClick();
+  await page.settle();
+  const call = page.calls.find((call) => call[0] === "restore");
+  assert.equal(call[1].taskId, "task_1");
+  assert.match(call[2], /^research-library:prior:v1:/);
+  assert.equal(page.calls.some((call) => call[0] === "prompt"), false);
+});
+
 test("saved plugin results use explicit native file selection before returning to the exact task", async () => {
   const page = host();
   page.render();
@@ -436,7 +465,7 @@ test("saved plugin results use explicit native file selection before returning t
   );
   assert.equal(
     page.calls.find((call) => call[0] === "navigate")[1],
-    "/workbench?task=task_1&taskKind=research",
+    "/workbench?task=task_1&taskKind=research&delivery=1",
   );
   assert.match(text(page.tree), /保存并下载「工作副本」/);
 });
