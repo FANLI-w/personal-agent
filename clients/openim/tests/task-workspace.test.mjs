@@ -19,7 +19,7 @@ vm.runInNewContext(
     exports: module.exports,
     require,
     process,
-    Buffer,TextEncoder,
+    Buffer, TextDecoder, TextEncoder,
     URL,
     setTimeout,
     clearTimeout,
@@ -82,6 +82,50 @@ test("concurrent open and restart recover the exact task session; another task h
   const c = await f.store.open({ ...context, taskId: "other" });
   assert.notEqual(a.directory, c.directory);
   assert.notEqual(a.sessionId, c.sessionId);
+});
+
+test("workbench saves UTF-8 drafts without replacing a newer file or opening staged copies for edit", async (t) => {
+  const { store } = await fixture(t);
+  const binding = await store.open(context);
+  const filename = "组会短稿.md";
+  const file = path.join(binding.directory, filename);
+  await fs.writeFile(file, "\uFEFF# 第一版\r\n\r\n原始内容\r\n");
+  const first = await store.readDocument(context, filename);
+  assert.equal(first.text, "# 第一版\n\n原始内容\n");
+  assert.equal(first.editable, true);
+  const edited = await store.saveDocument(context, filename, "# 第二版\n\n补充说明\n", first.digest);
+  assert.notEqual(edited.digest, first.digest);
+  assert.equal(await fs.readFile(file, "utf8"), "\uFEFF# 第二版\r\n\r\n补充说明\r\n");
+  await assert.rejects(store.saveDocument(context, filename, "过期修改", first.digest), /已在别处修改/);
+  const [staged] = await store.stageDelivery(context, [file]);
+  const snapshot = await store.readDocument(context, staged);
+  assert.equal(snapshot.editable, false);
+  await assert.rejects(store.saveDocument(context, staged, "覆盖快照", snapshot.digest), /只能查看/);
+  await assert.rejects(store.readDocument(context, "../组会短稿.md"), /可见的文件/);
+});
+
+test("workbench restores an exact revision once and reopens the same edited working copy", async (t) => {
+  const { root, store } = await fixture(t);
+  await store.open(context);
+  const downloaded = path.join(root, "verified-download");
+  const content = "# 原交付\n";
+  await fs.writeFile(downloaded, content);
+  const source = { id: "source_id", version: 2, filename: "组会短稿.md", sha256: createHash("sha256").update(content).digest("hex") };
+  let downloads = 0;
+  const download = async () => { downloads++; return downloaded; };
+  const name = await store.restoreRevision(context, source, download);
+  const initial = await store.readDocument(context, name);
+  assert.equal(initial.text, content);
+  await store.saveDocument(context, name, "# 已修订\n", initial.digest);
+  assert.equal(await store.restoreRevision(context, source, download), name);
+  assert.equal(downloads, 1);
+  assert.equal((await store.readDocument(context, name)).text, "# 已修订\n");
+  const original = path.join(root, "other.md");
+  await fs.writeFile(original, "其他资料\n");
+  const copied = await store.copyWorkingDocument(context, original);
+  const draft = await store.readDocument(context, copied);
+  await store.saveDocument(context, copied, "本机工作副本\n", draft.digest);
+  assert.equal(await fs.readFile(original, "utf8"), "其他资料\n");
 });
 test("a default work folder is readable, stays under the account root, and never carries a bare task id", async (t) => {
   const f = await fixture(t);

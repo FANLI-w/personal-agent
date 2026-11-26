@@ -133,10 +133,11 @@ export function registerTaskDshBridge(
     // The task page and the workbench are two routes; both may work on the same task.
     const hash = new URL(auth.contents.getURL()).hash,
       [route, query = ""] = hash.replace(/^#/, "").split("?"),
-      page = route.replace(/\/+$/, "");
+      page = route.replace(/\/+$/, ""),
+      params = new URLSearchParams(query);
     if (
       !native && (!["/workbench", "/dsh"].includes(page) ||
-      new URLSearchParams(query).get("task") !== target.taskId)
+      params.get("task") !== target.taskId || (params.get("taskKind") || "personal") !== target.kind)
     )
       throw Error("请在对应任务工作页操作。");
     const c = await connect(event);
@@ -368,6 +369,22 @@ export function registerTaskDshBridge(
     const work=await workInputs(a,a.context.title+' '+a.context.goal,false,true);
     const discussion=await verifiedTaskDiscussion(a.context,a.task,work.execution.team,url=>business(a.c,url),chat,b?.discussionRefs);
     work.inputs.entries.push(...discussion.entries);
+    const latest = a.context.kind === "research"
+      ? (a.data.deliverables || []).reduce((current: any, item: any) => !current || item.revision > current.revision ? item : current, undefined)
+      : a.task.result;
+    const returned = a.context.kind === "research"
+      ? a.task.status === "changes_requested" && latest?.review?.decision === "changes_requested"
+      : latest?.changesRequested;
+    if (returned) {
+      const revision = { comment: latest.review?.comment || latest.reviewComment || "", revision: latest.revision };
+      work.inputs.entries.push({
+        id: digestContext({ taskId: a.context.taskId, revision }),
+        version: a.context.version,
+        kind: "source",
+        title: "当前退回修改意见",
+        content: JSON.stringify(revision),
+      });
+    }
     for(const receipt of b?.teamMaterialReceipts||[])work.inputs.entries.push({id:digestContext(receipt),version:receipt.revision,kind:'source',title:'团队资料 · '+receipt.revision,content:JSON.stringify({...receipt,note:'这是选入时核验的固定版本，本机文件须读取后核对。'})});
     work.inputs.fingerprint=digestContext({base:work.inputs.fingerprint,taskVersion:a.context.version,discussion:discussion.entries,materials:b?.sources,local:b?.localMaterials});
     return {...work,discussion};
@@ -565,6 +582,78 @@ export function registerTaskDshBridge(
     await a.store.rebaseDelivery(a.context);
   });
   ipcMain.handle("task-dsh-import", importVerifiedSource);
+  async function authorizeDocument(event: Electron.IpcMainInvokeEvent, target: TaskTarget, name: string, write = false) {
+    if (typeof name !== "string") throw Error("文件路径无效。");
+    const a = await authorized(event, target, write);
+    const binding = await a.store.load(target);
+    if (!binding) throw Error("请先打开任务工作区。");
+    const selected = binding.sources.find(item => path.normalize(item.localName).toLowerCase() === path.normalize(name).toLowerCase());
+    if (selected) await source(a.c, selected, target);
+    return { ...a, binding, selected };
+  }
+  ipcMain.handle("task-dsh-read-document", async (event, target: TaskTarget, name: string) => {
+    const a = await authorizeDocument(event, target, name);
+    return a.store.readDocument(target, name);
+  });
+  ipcMain.handle("task-dsh-save-document", async (event, target: TaskTarget, name: string, text: string, digest: string) => {
+    const a = await authorizeDocument(event, target, name, true);
+    await a.coordinator.idle(target);
+    await authorized(event, target, true);
+    return a.store.saveDocument(target, name, text, digest);
+  });
+  ipcMain.handle("task-dsh-open-document", async (event, target: TaskTarget, name: string) => {
+    if (typeof name !== "string" || !/\.(md|markdown|txt|csv|tsv|json|docx|xlsx|pptx|pdf|png|jpe?g|webp|gif)$/i.test(name))
+      throw Error("此格式请在文件夹中查看。");
+    const a = await authorizeDocument(event, target, name);
+    const { file } = await a.store.workbenchDocumentPath(a.binding, name);
+    await a.c.account.valid();
+    const relative = path.relative(a.binding.directory, file).toLowerCase();
+    if (a.selected || /^delivery-[a-f0-9]{64}[\\/]/.test(relative) ||
+        a.binding.localMaterials?.some(item => path.normalize(item.localName).toLowerCase() === relative)) {
+      shell.showItemInFolder(file);
+      return;
+    }
+    const failure = await shell.openPath(file);
+    if (failure) throw Error("打开失败，请检查本机是否安装了此格式的应用。");
+  });
+  ipcMain.handle("task-dsh-copy-working-document", async (event, target: TaskTarget) => {
+    const a = await authorized(event, target, true);
+    await a.coordinator.idle(target);
+    const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
+      title: "添加文件的本机工作副本", properties: ["openFile"],
+    });
+    if (result.canceled || !result.filePaths[0]) return;
+    await authorized(event, target, true);
+    await a.coordinator.idle(target);
+    return a.store.copyWorkingDocument(target, result.filePaths[0]);
+  });
+  ipcMain.handle("task-dsh-restore-revision", async (event, target: TaskTarget, locator: string) => {
+    const a = await authorized(event, target, true);
+    const match = typeof locator === "string" && /^research-library:([A-Za-z0-9_-]+):v([1-9][0-9]*):([a-f0-9]{64})$/.exec(locator);
+    const latest = target.kind === "research" ? (a.data.deliverables || []).reduce((current: any, item: any) => !current || item.revision > current.revision ? item : current, undefined) : a.task.result;
+    const returned = target.kind === "research" ? latest?.review?.decision === "changes_requested" && a.task.status === "changes_requested" : latest?.changesRequested;
+    if (!match || !Number.isSafeInteger(Number(match[2])) || !returned || !latest?.sources?.some((item: any) => item.locator === locator))
+      throw Error("这份文件不属于本轮退回的交付，请刷新任务。");
+    const selected = { kind: "library" as const, id: match[1], version: Number(match[2]) };
+    const original = await source(a.c, selected, target);
+    if (original.metadata.sha256 !== match[3]) throw Error("上一版文件的校验值不一致。");
+    await a.coordinator.idle(target);
+    const temporary = path.join(a.store.root, ".acceptcat-" + randomUUID() + ".download");
+    try {
+      return await a.store.restoreRevision(target, {
+        ...selected, filename: original.metadata.filename, sha256: match[3],
+      }, async () => {
+        await downloadOriginal(a.c, original.url, temporary, original.metadata.byteLength);
+        const current = await authorized(event, target, true);
+        if (current.task.version !== a.task.version) throw Error("任务已更新，请刷新后取回文件。");
+        await source(a.c, selected, target);
+        await a.coordinator.idle(target);
+        return temporary;
+      });
+    } finally {
+      await unlink(temporary).catch(() => {});
+    }
+  });
   ipcMain.handle("task-dsh-output", async (event, target: TaskTarget, name: string) => {
     const a = await authorized(event, target),
       bytes = await a.store.readOutput(target, name);
@@ -584,7 +673,10 @@ export function registerTaskDshBridge(
     };
   });
   const deliveryFlights = new Set<string>();
-  async function submitSelected(event: Electron.IpcMainInvokeEvent, target: TaskTarget, summary: string, names: string[]) {
+  async function submitSelected(event: Electron.IpcMainInvokeEvent, target: TaskTarget, summary: string, names: string[], expectedDigest?: string) {
+    if (expectedDigest !== undefined && (typeof expectedDigest !== "string" ||
+        !/^[a-f0-9]{64}$/.test(expectedDigest) || !Array.isArray(names) || names.length !== 1))
+      throw Error("待交文稿版本无效，请刷新后重新提交。");
     const a = await authorized(event, target);
     const b = target.kind === "personal" && a.task.allowedActions.includes("submit")
       ? await a.store.prepareDelivery(a.context) : await a.store.load(target);
@@ -608,6 +700,8 @@ export function registerTaskDshBridge(
         for await (const chunk of createReadStream(await a.store.filePath(b, name))) hash.update(chunk);
         selectedHashes[name] = hash.digest("hex");
         if (stagedHash && selectedHashes[name] !== stagedHash) throw Error("待交文件已经变化，请重新选择后确认提交。");
+        if (expectedDigest && selectedHashes[name] !== expectedDigest)
+          throw Error("待交文稿已在别处修改，请重新读取后确认提交。");
       }
       const created = await business(a.c, "/api/v1/research-library/collections", {
         name: "任务交付 · " + target.taskId, description: "此任务明确提交的文件", scope: "task_scoped", taskIds: [target.taskId],

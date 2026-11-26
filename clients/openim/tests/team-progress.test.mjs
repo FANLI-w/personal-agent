@@ -36,7 +36,7 @@ const page = (data, nextCursor = null) => ({
   summary: { total: 201 },
 });
 
-test("team auto-selection establishes the controlled task route before mounting native task effects", async () => {
+test("team rows expand first and establish the exact controlled route before mounting task actions", async () => {
   const source = await readFile(new URL("../src/research/ResearchTeamWorkbench.tsx", import.meta.url), "utf8");
   const effects = [], states = [];
   let cursor = 0;
@@ -45,7 +45,7 @@ test("team auto-selection establishes the controlled task route before mounting 
   const jsx = (type, props) => ({ type, props });
   const imports = {
     react: {
-      useState(initial) { const at = cursor++; if (!(at in states)) states[at] = initial; return [states[at], next => { states[at] = typeof next === "function" ? next(states[at]) : next; }]; },
+      useState(initial) { const at = cursor++; if (!(at in states)) states[at] = typeof initial === "function" ? initial() : initial; return [states[at], next => { states[at] = typeof next === "function" ? next(states[at]) : next; }]; },
       useEffect(effect) { effects.push(effect); }, useLayoutEffect() {}, useMemo: compute => compute(),
     },
     "react/jsx-runtime": { jsx, jsxs: jsx },
@@ -55,26 +55,32 @@ test("team auto-selection establishes the controlled task route before mounting 
     "./research-team": team,
     "./team-progress": mod.exports,
     "./workspace-labels": { workspaceStatusLabel: { in_progress: "进行中" } },
-    "./TaskWorkspace": { TaskWorkspace: "TaskWorkspace", TaskListRow: "TaskListRow", TaskReadNotice: "TaskReadNotice", WorkspaceTaskDetail: "WorkspaceTaskDetail" },
+    "./TaskWorkspace": { TaskWorkspace: "TaskWorkspace", TaskReadNotice: "TaskReadNotice", WorkspaceTaskDetail: "WorkspaceTaskDetail" },
+    "./TaskWeekSchedule": { taskDate: () => "2026-11-26", taskDeadline: () => undefined },
   };
   const module = { exports: {} };
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText, {
     module, exports: module.exports, require: name => imports[name] || {},
   });
   const requests = [];
-  const props = { onPlan() {}, onSelectTask: id => requests.push(id) };
+  const props = { layout: "list", detailOpen: false, onPlan() {}, onSelectTask: (...args) => requests.push(args) };
   const render = () => { cursor = 0; return module.exports.ResearchTeamWorkbench(props); };
   const find = node => Array.isArray(node) ? node.flatMap(find) : node && typeof node === "object" ? [node, ...find(node.props?.children)] : [];
-  const initial = render();
-  assert.equal(find(initial).some(node => node.type === "WorkspaceTaskDetail"), false);
+  const initial = find(render());
+  assert.equal(initial.some(node => node.type === "WorkspaceTaskDetail"), false);
   while (effects.length) effects.shift()();
-  assert.deepEqual(requests, ["selected_team_task"]);
-  props.selectedTask = requests[0];
+  assert.equal(requests.length, 0);
+  initial.find(node => node.props?.className === "blue-team-columns blue-team-task-row").props.onClick();
+  assert.deepEqual(requests, [["selected_team_task"]]);
+  props.selectedTask = requests[0][0];
+  const expanded = find(render());
+  assert.equal(expanded.some(node => node.type === "WorkspaceTaskDetail"), false);
+  expanded.find(node => node.type === "Button" && node.props.children === "查看任务").props.onClick();
+  assert.deepEqual(requests[1], ["selected_team_task", true]);
+  props.detailOpen = true;
   const detail = find(render()).find(node => node.type === "WorkspaceTaskDetail");
   assert.equal(detail.props.taskId, "selected_team_task");
   assert.equal(detail.props.kind, "research");
-  while (effects.length) effects.shift()();
-  assert.equal(requests.length, 1);
 });
 
 test("directions use persisted plan IDs and never merge summary projections or matching titles", () => {

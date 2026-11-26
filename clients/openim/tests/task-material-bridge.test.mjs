@@ -22,7 +22,7 @@ async function fixture(t, library, kind = "research") {
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.mkdir(path.join(root, 'work'));
   const target = {kind,taskId:'synthetic-task'}, handlers = new Map(), timers=[];
-  let hash = '#/workbench?task=synthetic-task', picker = {canceled:false,filePaths:[path.join(root,'work')]};
+  let hash = `#/workbench?task=synthetic-task&taskKind=${kind}`, picker = {canceled:false,filePaths:[path.join(root,'work')]};
   let valid = true, owned = true, scope = 'lab_shared', running = false, sessionId;
   let duringPicker = () => {}, uploads = 0, original;
   const downloadSizes=[], submissions=[];
@@ -84,7 +84,7 @@ test('native material picker cancels without reading, rechecks navigation after 
   f.set({picker:{canceled:false,filePaths:[input]},duringPicker:()=>f.set({hash:'#/chat'})});
   await assert.rejects(f.call('task-dsh-add-local'),/任务工作页/);
   assert.deepEqual(await fs.readdir(path.join(f.root,'work')),[]);
-  f.set({hash:'#/workbench?task=synthetic-task',duringPicker:()=>{}});
+  f.set({hash:'#/workbench?task=synthetic-task&taskKind=research',duringPicker:()=>{}});
   assert.equal(await f.call('task-dsh-add-local'),true);assert.equal(f.uploads(),0);
   await f.call('task-dsh-reveal');assert.equal(await fs.realpath(f.revealed[0]),await fs.realpath(path.join(f.root,'work')));
   await assert.rejects(f.call('task-dsh-reveal','../input.txt'),/路径/);
@@ -116,7 +116,9 @@ test('the task page and the workbench route may both work on the same task, and 
   f.set({hash:'#/workbench?view=team&task=synthetic-task&taskKind=research'});
   assert.equal((await f.call('task-dsh-open',false)).binding.taskId,'synthetic-task');
   assert.equal((await f.call('task-dsh-status')).binding.taskId,'synthetic-task');
-  f.set({hash:'#/dsh?task=synthetic-task'});
+  f.set({hash:'#/dsh?task=synthetic-task&taskKind=personal'});
+  await assert.rejects(f.call('task-dsh-status'),/任务工作页/);
+  f.set({hash:'#/dsh?task=synthetic-task&taskKind=research&mode=assistant'});
   assert.equal((await f.call('task-dsh-open',false)).binding.taskId,'synthetic-task');
   assert.equal((await f.call('task-dsh-status')).binding.taskId,'synthetic-task');
   f.set({hash:'#/dsh?task=another-task'});
@@ -173,7 +175,7 @@ test('direct task delivery stages picker or drop, uploads task-scoped original a
   assert.deepEqual(Array.from(await f.call('task-dsh-stage-delivery')),[]);
   f.set({picker:{canceled:false,filePaths:[input]},duringPicker:()=>f.set({hash:'#/chat'})});
   await assert.rejects(f.call('task-dsh-stage-delivery'),/任务工作页/);
-  f.set({hash:'#/workbench?task=synthetic-task',duringPicker:()=>{}});
+  f.set({hash:'#/workbench?task=synthetic-task&taskKind=research',duringPicker:()=>{}});
   const names=await f.call('task-dsh-stage-delivery',[input]);
   const state=await f.call('task-dsh-status');
   assert.equal(state.binding.submissionOnly,true);

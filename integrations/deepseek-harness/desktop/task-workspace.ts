@@ -9,6 +9,7 @@ import {
   realpath,
   lstat,
   readdir,
+  unlink,
 } from "node:fs/promises";
 import path from "node:path";
 import { archiveTaskFiles, type ArchiveReceipt, type ArchiveSelection } from './material-archive';
@@ -75,6 +76,10 @@ export type DshTaskState = {
   needsApproval: boolean;
   files: { name: string; size: number }[];
 };
+export type TaskDocument = { text: string; digest: string; editable: boolean };
+const documentLimit = 512 * 1024;
+const textDocument = /\.(md|markdown|txt|csv|tsv|json)$/i;
+const stagedDocument = /^delivery-[a-f0-9]{64}[\\/]/;
 export type TaskRpc = (
   method: string,
   request: Record<string, unknown>
@@ -683,6 +688,117 @@ export class DshTaskWorkspace {
     await this.valid();
     if (bytes.length > 10485760) throw Error("成果文件超过 10 MiB。");
     return bytes;
+  }
+  async workbenchDocumentPath(binding: TaskBinding, name: string) {
+    if (typeof name !== "string" || name.split(/[\\/]/).some(part => part.startsWith(".")))
+      throw Error("请选择任务文件区中可见的文件。");
+    const file = await this.filePath(binding, name);
+    const stat = await lstat(file);
+    if (!stat.isFile()) throw Error("请选择普通任务文件。");
+    return { file, stat };
+  }
+  private async readDocumentBytes(binding: TaskBinding, name: string) {
+    if (typeof name !== "string" || !textDocument.test(name)) throw Error("此文件请在本机应用中打开。");
+    const { file, stat } = await this.workbenchDocumentPath(binding, name);
+    if (stat.size > documentLimit) throw Error("超过 512 KiB，请在本机应用中打开。");
+    const bytes = await readFile(file);
+    if (bytes.length > documentLimit || bytes.includes(0)) throw Error("此文件无法在工作台编辑。");
+    let text: string;
+    try {
+      text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    } catch {
+      throw Error("此文件不是 UTF-8，请在本机应用中打开。");
+    }
+    const relative = path.relative(binding.directory, file).toLowerCase();
+    const editable = !stagedDocument.test(relative) &&
+      ![...binding.sources, ...(binding.localMaterials || [])].some(source =>
+        path.normalize(source.localName).toLowerCase() === relative,
+      );
+    await this.valid();
+    return { file, stat, bytes, document: {
+      text: text.replace(/\r\n?/g, "\n"),
+      digest: createHash("sha256").update(bytes).digest("hex"), editable,
+    } };
+  }
+  async readDocument(target: TaskTarget, name: string): Promise<TaskDocument> {
+    const binding = await this.load(target);
+    if (!binding) throw Error("请先打开任务工作区。");
+    return (await this.readDocumentBytes(binding, name)).document;
+  }
+  async saveDocument(target: TaskTarget, name: string, text: string, digest: string): Promise<TaskDocument> {
+    if (typeof text !== "string" || text.includes("\0") || Buffer.byteLength(text) > documentLimit)
+      throw Error("工作台可保存 512 KiB 以内的 UTF-8 文本。");
+    return this.exclusive(target, async () => {
+      const state = await this.status(target);
+      if (!state) throw Error("请先打开任务工作区。");
+      if (state.phase === "running" || state.binding.pending || state.binding.delivery?.status === "pending")
+        throw Error("请等本轮结束或核对待处理回执后再保存。");
+      const current = await this.readDocumentBytes(state.binding, name);
+      if (!current.document.editable) throw Error("来源和已暂存的交付文件只能查看，请新建工作副本后修改。");
+      if (current.document.digest !== digest) throw Error("文件已在别处修改。请保留编辑内容，刷新文件后再合并。");
+      if (current.document.text === text) return current.document;
+      const original = current.bytes.toString("utf8");
+      const eol = /\r\n|\r|\n/.exec(original)?.[0] || "\n";
+      const bytes = Buffer.from((original.startsWith("\uFEFF") ? "\uFEFF" : "") + text.replace(/\r\n?|\n/g, eol));
+      if (bytes.length > documentLimit) throw Error("工作台可保存 512 KiB 以内的 UTF-8 文本。");
+      const temporary = path.join(path.dirname(current.file), `.acceptcat-edit-${randomUUID()}.tmp`);
+      try {
+        await writeFile(temporary, bytes, { mode: current.stat.mode, flag: "wx" });
+        if ((await this.readDocumentBytes(state.binding, name)).document.digest !== digest)
+          throw Error("文件已在别处修改。请保留编辑内容，刷新文件后再合并。");
+        await rename(temporary, current.file);
+      } finally {
+        await unlink(temporary).catch(() => {});
+      }
+      return { text: text.replace(/\r\n?/g, "\n"), digest: createHash("sha256").update(bytes).digest("hex"), editable: true };
+    });
+  }
+  async restoreRevision(target: TaskTarget, source: { id: string; version: number; filename: string; sha256: string }, download: () => Promise<string>) {
+    return this.exclusive(target, async () => {
+      const state = await this.status(target), binding = state?.binding;
+      if (!binding) throw Error("请先打开任务工作区。");
+      if (state.phase === "running" || binding.pending || binding.delivery?.status === "pending")
+        throw Error("请等本轮结束或核对待处理回执后再取回上一版。");
+      const folder = `revision-${source.id}-v${source.version}`;
+      const name = path.join(folder, path.basename(source.filename));
+      await mkdir(await this.filePath(binding, folder, true)).catch(error => {
+        if (error.code !== "EEXIST") throw error;
+      });
+      const destination = await this.filePath(binding, name, true);
+      try {
+        if ((await lstat(destination)).isFile()) return name;
+        throw Error("工作副本路径已被占用。");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+      const temporary = await download();
+      await this.valid();
+      const copied = await copyLocalMaterial(temporary, destination, 512 * 1048576);
+      if (copied.sha256 !== source.sha256) {
+        await unlink(destination).catch(() => {});
+        throw Error("上一版文件校验失败，请重试。");
+      }
+      return name;
+    });
+  }
+  async copyWorkingDocument(target: TaskTarget, selected: string) {
+    return this.exclusive(target, async () => {
+      const state = await this.status(target);
+      if (!state) throw Error("请先打开任务工作区。");
+      if (state.phase === "running" || state.binding.pending || state.binding.delivery?.status === "pending")
+        throw Error("请等本轮结束或核对待处理回执后再添加文件。");
+      const filename = path.basename(selected);
+      const info = await lstat(selected);
+      if (!info.isFile() || info.isSymbolicLink() || filename.startsWith(".") || info.size > 512 * 1048576)
+        throw Error("请选择普通文件，单份最大 512 MiB。");
+      const folder = `work-${randomUUID()}`;
+      const name = path.join(folder, filename);
+      const directory = await this.filePath(state.binding, folder, true);
+      await this.valid();
+      await mkdir(directory);
+      await copyLocalMaterial(selected, await this.filePath(state.binding, name, true), 512 * 1048576);
+      return name;
+    });
   }
   /** Persist exact write intents before dispatch. Lost responses reuse the same server dedup keys and bytes. */
   async deliver(

@@ -451,12 +451,6 @@
   flex-wrap: wrap;
   gap: 8px;
 }
-.task-work-review-target:focus-visible {
-  outline: 2px solid #1473c8;
-  outline-offset: 4px;
-  border-radius: 6px;
-}
-
 .personal-agent-desktop .workspace-workbench .task-work-page {
   padding: 22px 26px;
   gap: 14px;
@@ -607,11 +601,199 @@
   }
 }
 
-.task-result-review {
+.task-delivery-note,
+.task-review-comment {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  color: #414b51;
+}
+
+.task-review-error {
+  color: #9d2424;
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.task-work-review-page {
+  --review-ink: #1e2322;
+  --review-accent: #275e56;
+  --review-line: #d9dcda;
+  --review-gutter: clamp(22px, 3.5vw, 52px);
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: var(--review-ink);
+}
+
+.task-review-document {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px var(--review-gutter) 30px;
+}
+
+.task-review-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: clamp(22px, 3vw, 42px);
+  color: #535957;
+  font-size: clamp(13px, 1.4vw, 20px);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    flex: none;
+    padding: 3px 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    &:hover { color: var(--review-accent); }
+  }
+
+  > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.task-review-manuscript {
+  > header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+    border-bottom: 1px solid var(--review-line);
+    padding-bottom: 17px;
+    margin-bottom: clamp(22px, 2.8vw, 40px);
+    h2 {
+      margin: 0;
+      color: var(--review-ink);
+      font-family: "Noto Serif CJK SC", "Songti SC", SimSun, serif;
+      font-size: clamp(26px, 3vw, 44px);
+      font-weight: 800;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    > span {
+      flex: none;
+      border-left: 1px solid #c6ccca;
+      padding-left: 22px;
+      color: #515755;
+      font-size: clamp(13px, 1.2vw, 18px);
+      line-height: 1.4;
+    }
+  }
+
+  .task-review-prose {
+    font-family: "Noto Serif CJK SC", "Songti SC", SimSun, serif;
+    font-size: clamp(17px, 1.95vw, 28px);
+    line-height: 1.65;
+    color: var(--review-ink);
+    .message-table {
+      margin: 1.3em 0;
+    }
+    table {
+      width: 100%;
+      font-size: .94em;
+    }
+    th,
+    td {
+      border-color: #cfd3d1;
+      padding: .37em .85em;
+      line-height: 1.5;
+    }
+    th { background: #f1f2f1; }
+    a { color: var(--review-accent); }
+  }
+}
+
+.task-review-sources {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 4px 12px;
+  margin-top: 24px;
+  align-items: baseline;
+  font-size: clamp(14px, 1.55vw, 20px);
+  > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  ul {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    list-style: none;
+  }
+  li { overflow-wrap: anywhere; }
+}
 
-  h3, textarea, [role="alert"] { flex-basis: 100%; }
+.task-work-review-page .task-review-download {
+  font-size: inherit;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  white-space: normal;
+  text-align: left;
+  color: var(--review-accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  &:hover { color: #193e38; }
+}
+
+.task-review-artifacts {
+  color: #535957;
+  font-size: 14px;
+  margin: 12px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.workspace-workbench .task-work-review-page > .task-result-review {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: clamp(12px, 1.55vw, 23px) clamp(16px, 2.4vw, 36px);
+  border-top: 1px solid var(--review-line);
+  background: #fff;
+
+  .ant-btn {
+    height: clamp(40px, 4.1vw, 60px);
+    min-width: clamp(104px, 11.4vw, 169px);
+    padding: 0 16px;
+    border-radius: 8px;
+    font-size: clamp(14px, 1.6vw, 23px);
+    color: var(--review-ink);
+    border-color: #b9bfbc;
+  }
+  .ant-btn-primary,
+  .ant-btn-primary:disabled {
+    min-width: clamp(108px, 12vw, 180px);
+    background: var(--review-accent);
+    border-color: transparent;
+    color: #fff;
+  }
+  .ant-btn-primary:hover:enabled {
+    background: #204d47;
+    color: #fff;
+  }
+  .ant-btn-default:hover:enabled {
+    border-color: var(--review-accent);
+    color: var(--review-accent);
+  }
+  .ant-btn:disabled { opacity: .64; }
 }

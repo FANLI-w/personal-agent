@@ -33,7 +33,7 @@ export async function collectTaskInbox(
   };
   const [all, mine] = await Promise.all([cards(), readMine?.(signal)]);
   signal.throwIfAborted();
-  const own = new Set(mine?.data.map((row) => row.task.id));
+  const own = new Map(mine?.data.map((row) => [row.task.id, row.planGoal]));
   return {
     data: all.data.filter(
       (card) =>
@@ -41,6 +41,8 @@ export async function collectTaskInbox(
         !readMine ||
         (!!card.taskId && own.has(card.taskId)),
     ),
+    planGoals: own,
+    researchRows: new Map(mine?.data.map((row) => [row.task.id, row])),
     truncated: all.truncated || !!mine?.truncated,
   };
 }

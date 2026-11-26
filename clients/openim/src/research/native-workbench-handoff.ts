@@ -75,6 +75,7 @@ export function storeNativeWorkbenchHandoff(
   target: WorkbenchTarget,
   chat?: WorkbenchChatContext,
   storage: HandoffStorage = sessionStorage,
+  mode?: "assistant",
 ) {
   if (!validActor(actor) || !validTarget(target) || !validChat(chat))
     throw Error("工作台上下文无效，请重新打开任务。");
@@ -90,7 +91,7 @@ export function storeNativeWorkbenchHandoff(
   return {
     nonce,
     path:
-      nativeWorkbenchTaskPath(target.taskId, target.kind) +
+      nativeWorkbenchTaskPath(target.taskId, target.kind, mode) +
       "&handoff=" +
       encodeURIComponent(nonce),
   };

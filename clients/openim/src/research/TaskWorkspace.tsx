@@ -52,12 +52,14 @@ export function TaskReadNotice({
 export function TaskWorkspace({
   list,
   children,
+  weekly,
 }: {
   list: ReactNode;
+  weekly?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className="workspace-task-body">
+    <div className={`workspace-task-body${weekly ? " is-weekly" : ""}`}>
       <aside className="workspace-task-list" aria-label="任务列表">
         {list}
       </aside>
@@ -68,45 +70,24 @@ export function TaskWorkspace({
   );
 }
 
-export function TaskListRow({
-  title,
-  status,
-  meta,
-  hint,
-  selected,
-  onSelect,
-}: {
-  title: string;
-  status: string;
-  meta: string;
-  hint?: string;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button className="workspace-task-row" aria-pressed={selected} onClick={onSelect}>
-      <span className="workspace-task-row-heading">
-        <span className="workspace-task-row-title">{title}</span>
-        <span className="workspace-status">{status}</span>
-      </span>
-      {meta && <footer>{meta}</footer>}
-      {hint && <small className="workspace-task-row-hint">{hint}</small>}
-    </button>
-  );
-}
-
 /** Both list views open the same task work page and the same authorized actions. */
 export function WorkspaceTaskDetail({
   taskId,
   kind,
   onChanged,
+  reviewContext,
+  memberNames,
+  deliveryOpen,
 }: {
   taskId: string;
   kind: "personal" | "research";
   onChanged: () => Promise<void>;
+  reviewContext?: string;
+  memberNames?: Map<string, string>;
+  deliveryOpen?: boolean;
 }) {
   return (
-    <TaskWorkPage taskId={taskId} kind={kind} onChanged={onChanged}>
+    <TaskWorkPage taskId={taskId} kind={kind} onChanged={onChanged} reviewContext={reviewContext} memberNames={memberNames} deliveryOpen={deliveryOpen}>
       {(refresh) =>
         kind === "research" ? (
           <div className="workspace-task-detail">

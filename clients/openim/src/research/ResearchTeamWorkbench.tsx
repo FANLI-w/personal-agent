@@ -1,4 +1,5 @@
 import { Alert, Button, Drawer, Input, Segmented, Select } from "antd";
+import { DownOutlined, FilterOutlined, RightOutlined } from "@ant-design/icons";
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { researchApi } from "./api";
 import { useResearchStore } from "./store";
@@ -14,11 +15,13 @@ import { ResearchTeamAccountHint } from "./ResearchTeamAccountHint";
 import { collectTeamWorkspace, teamDirections } from "./team-progress";
 import {
   TaskWorkspace,
-  TaskListRow,
   TaskReadNotice,
   WorkspaceTaskDetail,
 } from "./TaskWorkspace";
 import { transientReadFailure } from "./read-errors";
+import { TaskWeekSchedule, taskDate, taskDeadline, taskSchedule } from "./TaskWeekSchedule";
+import { TaskDeliveryDownload } from "./TaskDeliveryDownload";
+import { deliveryDisplaySummary } from "./task-delivery-command";
 
 type Filter = "all" | "review" | "deadline";
 
@@ -27,11 +30,15 @@ export function ResearchTeamWorkbench({
   refresh,
   selectedTask,
   onSelectTask,
+  layout,
+  detailOpen,
 }: {
   onPlan: () => void;
   refresh?: number;
   selectedTask?: string;
-  onSelectTask: (id: string) => void;
+  onSelectTask: (id?: string, detail?: boolean) => void;
+  layout: "list" | "week";
+  detailOpen: boolean;
 }) {
   const actor = useResearchStore((s) => s.actor),
     generation = useResearchStore((s) => s.generation);
@@ -43,6 +50,8 @@ export function ResearchTeamWorkbench({
   const [direction, setDirection] = useState<string>();
   const [page, setPage] = useState(1);
   const [membersOpen, setMembersOpen] = useState(false);
+  const [closed, setClosed] = useState<Set<string>>(() => new Set());
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const read = useResearchRead(
     (signal) =>
       collectTeamWorkspace(
@@ -80,12 +89,13 @@ export function ResearchTeamWorkbench({
     setDirection(undefined);
     setPage(1);
     setMembersOpen(false);
+    setClosed(new Set());
+    setFiltersOpen(false);
   }, [generation]);
-  const people = Object.fromEntries(
-    (members.data?.data || []).map((m) => [m.id, m.displayName]),
-  );
+  const people = new Map(members.data?.data.map((m) => [m.id, m.displayName]));
+  if (actor) people.set(actor.member.id, actor.member.displayName);
   const name = (id: string | null) =>
-    id ? people[id] || "成员姓名待读取" : "未指定成员";
+    id ? people.get(id) || "成员姓名待读取" : "未指定成员";
   const rows = read.data?.data || [];
   const directions = useMemo(() => teamDirections(rows), [read.data]);
   const assignments = useMemo(() => {
@@ -143,10 +153,6 @@ export function ResearchTeamWorkbench({
     });
     return matches.length ? [{ ...group, matches }] : [];
   });
-  const displayTask = selectedTask || visible[0]?.matches[0]?.task.id;
-  useEffect(() => {
-    if (!selectedTask && displayTask) onSelectTask(displayTask);
-  }, [selectedTask, displayTask, onSelectTask]);
   const pageCount = Math.max(1, Math.ceil(visible.length / 8)),
     currentPage = Math.min(page, pageCount);
   if (!actor) return <p role="status">正在确认课题组身份…</p>;
@@ -158,262 +164,221 @@ export function ResearchTeamWorkbench({
         <ResearchTeamAccountHint />
       </div>
     );
+  const selectedRow = rows.find((row) => row.task.id === selectedTask);
+  const detail = selectedTask && (
+    <WorkspaceTaskDetail
+      key={`${generation}:research:${selectedTask}`}
+      taskId={selectedTask}
+      kind="research"
+      reviewContext={selectedRow?.planGoal || "团队任务"}
+      memberNames={people}
+      onChanged={async () => {
+        read.invalidate();
+        await read.refresh();
+      }}
+    />
+  );
+  const notices = (
+    <>
+      <TaskReadNotice error={read.error} stale={!!read.data} loading={read.loading} onRetry={read.refresh} />
+      {!read.data && !read.error && (
+        <p className="workspace-task-list-note" role="status">正在读取课题组任务…</p>
+      )}
+      {read.data?.truncated && (
+        <Alert type="warning"
+          message={`当前仅读取 ${rows.length} / ${read.data.summary.total} 项，进度仅统计已读取任务。`} />
+      )}
+      {members.error && <Alert type="warning" message="成员姓名暂不可用" action={<Button onClick={members.refresh}>重试</Button>} />}
+    </>
+  );
+  const empty = read.data && !visible.length && (
+    <div className="workspace-task-list-note">
+      <p>{rows.length ? "没有符合当前筛选的任务。" : scope === "mine" ? "还没有你参与的课题组任务。" : "还没有课题组任务。"}</p>
+      {!rows.length && (
+        <Button onClick={scope === "mine" ? () => setScope("lab") : onPlan}>
+          {scope === "mine" ? "查看课题组可见任务" : "新建课题组任务"}
+        </Button>
+      )}
+    </div>
+  );
+  const toolbar = (
+    <div className="blue-team-tools">
+      <Button type="text" icon={<FilterOutlined />} aria-expanded={filtersOpen}
+        onClick={() => setFiltersOpen(!filtersOpen)}>筛选{scope === "mine" || stage !== "all" || direction || filter !== "all" || query ? "（已启用）" : ""}</Button>
+      <Button type="text" loading={read.loading} onClick={() => void read.refresh()}>刷新</Button>
+      {read.data && <Button type="text" onClick={() => setMembersOpen(true)}>成员分工</Button>}
+      <time dateTime={taskDate(new Date())}>{taskDate(new Date())}</time>
+    </div>
+  );
+  const filters = filtersOpen && (
+    <div className="blue-team-filters">
+      <Segmented aria-label="科研任务范围" value={scope}
+        options={[{ label: "课题组可见", value: "lab" }, { label: "我参与的", value: "mine" }]}
+        onChange={(value) => {
+          setScope(value as typeof scope);
+          setDirection(undefined);
+          setPage(1);
+          onSelectTask();
+        }} />
+      <Input aria-label="查找课题组任务" placeholder="搜索目标、任务或成果" value={search} allowClear
+        onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
+      <Select aria-label="计划阶段" value={stage}
+        options={[
+          { value: "all", label: "全部阶段" },
+          { value: "active", label: "正在推进" },
+          { value: "planned", label: "准备开展" },
+          { value: "closed", label: "已结束" },
+        ]}
+        onChange={(value) => { setStage(value); setPage(1); }} />
+      <Select aria-label="按计划筛选" placeholder="全部计划" value={direction} allowClear
+        onChange={(value) => { setDirection(value); setPage(1); }}
+        options={directions.map((group) => ({ value: group.id, label: group.title }))} />
+      <Segmented aria-label="进度筛选" value={filter}
+        options={[{ label: "全部", value: "all" }, { label: "待验收", value: "review" }, { label: "临近截止", value: "deadline" }]}
+        onChange={(value) => { setFilter(value as Filter); setPage(1); }} />
+    </div>
+  );
+  const groups = visible.slice((currentPage - 1) * 8, currentPage * 8);
   return (
-    <TaskWorkspace
-      list={
-        <>
-          <div className="workspace-task-list-tools">
-            <div>
-              <strong>团队任务</strong>
-              <Button
-                size="small"
-                loading={read.loading}
-                onClick={() => void read.refresh()}
-              >
-                刷新
-              </Button>
+    <>
+      {layout === "week" ? (
+        <TaskWorkspace weekly list={
+          <>
+            {toolbar}{filters}
+            <TaskWeekSchedule onClearSelection={() => onSelectTask()} items={visible.flatMap((group) => group.matches.map((row) => ({
+              id: row.task.id,
+              title: row.task.title,
+              note: isFullTask(row.task) ? row.task.goal : row.task.summary,
+              when: taskSchedule(row.task.schedule),
+              selected: selectedTask === row.task.id,
+              onSelect: () => onSelectTask(row.task.id),
+            })))} notices={notices} />
+          </>
+        }>
+          {detail || <div className="workspace-empty"><h2>选择一项团队任务</h2></div>}
+        </TaskWorkspace>
+      ) : (
+        <section className="blue-team-list" aria-label="课题组任务列表">
+          {toolbar}{filters}{notices}
+          {visible.length > 0 && (
+            <div className="blue-team-columns blue-team-column-labels" aria-hidden>
+              <span>任务</span><span>负责人</span><span>状态</span><span>截止日期</span>
             </div>
-            <Segmented
-              block
-              aria-label="科研任务范围"
-              value={scope}
-              options={[
-                { label: "课题组可见", value: "lab" },
-                { label: "我参与的", value: "mine" },
-              ]}
-              onChange={(v) => {
-                setScope(v as "lab" | "mine");
-                setPage(1);
-                setDirection(undefined);
-              }}
-            />
-            <Input.Search
-              aria-label="查找课题组任务"
-              placeholder="搜索目标、任务或成果"
-              allowClear
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-            />
-            <details className="workspace-task-filters">
-              <summary>
-                更多筛选
-                {stage !== "all" || direction || filter !== "all" ? " · 已启用" : ""}
-              </summary>
-              <Select
-                aria-label="计划阶段"
-                value={stage}
-                options={[
-                  { value: "all", label: "全部阶段" },
-                  { value: "active", label: "正在推进" },
-                  { value: "planned", label: "准备开展" },
-                  { value: "closed", label: "已结束" },
-                ]}
-                onChange={(value) => {
-                  setStage(value);
-                  setPage(1);
-                }}
-              />
-              <Select
-                aria-label="按计划筛选"
-                placeholder="全部计划"
-                value={direction}
-                allowClear
-                onChange={(id) => {
-                  setDirection(id);
-                  setPage(1);
-                }}
-                options={directions.map((group) => ({
-                  value: group.id,
-                  label: group.title,
-                }))}
-              />
-              <Segmented
-                block
-                aria-label="进度筛选"
-                value={filter}
-                options={[
-                  { label: "全部", value: "all" },
-                  { label: "待审", value: "review" },
-                  { label: "临近截止", value: "deadline" },
-                ]}
-                onChange={(v) => {
-                  setFilter(v as Filter);
-                  setPage(1);
-                }}
-              />
-            </details>
-            {read.data && (
-              <div className="workspace-task-statistics" aria-label="课题组任务统计">
-                <span>
-                  {read.data.summary.total} 项任务 · {read.data.summary.awaitingReview}{" "}
-                  项待审 · {read.data.summary.accepted} 项已验收
-                </span>
-                <Button type="link" size="small" onClick={() => setMembersOpen(true)}>
-                  分工
-                </Button>
-              </div>
-            )}
-          </div>
-          <TaskReadNotice
-            error={read.error}
-            stale={!!read.data}
-            loading={read.loading}
-            onRetry={read.refresh}
-          />
-          {!read.data && !read.error && (
-            <p className="workspace-task-list-note" role="status">
-              正在读取课题组任务…
-            </p>
           )}
-          {read.data?.truncated && (
-            <Alert
-              type="warning"
-              message={`任务较多，当前仅读取 ${rows.length} / ${read.data.summary.total} 项；分组与进度仅统计已读取任务。`}
-            />
-          )}
-          {members.error && (
-            <Alert
-              type="warning"
-              message="成员姓名暂不可用"
-              action={<Button onClick={members.refresh}>重试</Button>}
-            />
-          )}
-          {visible.slice((currentPage - 1) * 8, currentPage * 8).map((group) => {
-            const taskRows = group.matches.map((row) => {
-              const task = row.task,
-                status = teamTaskStatus(task),
-                deadline = teamDeadline(task);
-              const claimable = task.allowedActions.includes("claim");
-              const assignee = row.acceptedAssignment || row.pendingInvitation;
-              const meta = [
-                assignee && name(assignee.memberId),
-                deadline.label === "未设置截止" ? undefined : deadline.label,
-              ].filter(Boolean).join(" · ");
-              const next =
-                ["completed", "cancelled", "unassigned", "awaiting_acceptance", "ready"].includes(status)
-                  ? undefined
-                  : teamNextStep(task, actor.member.id);
-              return (
-                <TaskListRow
-                  key={task.id}
-                  title={task.title}
-                  status={
-                    claimable
-                      ? "待认领"
-                      : status === "ready"
-                      ? "待开始"
-                      : workspaceStatusLabel[status] || status
-                  }
-                  meta={meta}
-                  hint={next}
-                  selected={displayTask === task.id}
-                  onSelect={() => onSelectTask(task.id)}
-                />
-              );
-            });
-            if (group.rows.length === 1) return taskRows;
+          {groups.map((group) => {
+            const open = !closed.has(group.id);
             return (
-              <details className="workspace-task-plan" key={group.id} open>
-                <summary>
-                  <strong>{group.title}</strong>
-                  <small>
-                    {group.progressVisible
-                      ? `已验收 ${group.accepted}/${group.total} 项`
-                      : `${group.matches.length} 项可见任务`}
-                  </small>
-                </summary>
-                {taskRows}
-              </details>
+              <section className="blue-team-project" key={group.id} aria-label={group.title}>
+                <h2>
+                  <button type="button" aria-expanded={open} aria-label={group.title}
+                    title={group.title} onClick={() => setClosed((previous) => {
+                      const next = new Set(previous);
+                      if (open) next.add(group.id);
+                      else next.delete(group.id);
+                      return next;
+                    })}>
+                    {open ? <DownOutlined aria-hidden /> : <RightOutlined aria-hidden />}
+                    <strong>{group.title}</strong>
+                    {group.progressVisible && group.total > 0 && (
+                      <span className="blue-team-progress">
+                        <span>{read.data?.truncated && "已读取 · "}已完成 {group.accepted}/{group.total}</span>
+                        <progress max={group.total} value={group.accepted} aria-label={`${group.title}验收进度`} />
+                      </span>
+                    )}
+                  </button>
+                </h2>
+                {open && group.matches.map((row) => {
+                  const task = row.task;
+                  const status = teamTaskStatus(task);
+                  const deadline = taskDeadline(task.schedule);
+                  const dateNote = teamDeadline(task).label;
+                  const expanded = selectedTask === task.id;
+                  const assignee = row.acceptedAssignment?.memberId || row.pendingInvitation?.memberId ||
+                    (isFullTask(task) ? task.leadId : null);
+                  const delivery = row.latestDeliverable;
+                  const textPreview = delivery && !delivery.sources.length
+                    ? deliveryDisplaySummary(delivery.summary).trim().split(/\r?\n/, 1)[0]
+                        .replace(/^#{1,6}\s+/, "")
+                    : "";
+                  const canReview = isFullTask(task) && status === "in_review" &&
+                    task.allowedActions.includes("review") && delivery && !delivery.review;
+                  const statusText = task.allowedActions.includes("claim") ? "待认领" : ({
+                    ready: "待开始",
+                    in_review: "待验收",
+                    changes_requested: "待修改",
+                  } as Record<string, string>)[status] || workspaceStatusLabel[status] || status;
+                  return (
+                    <div className="blue-team-task" key={task.id}>
+                      <button type="button" className="blue-team-columns blue-team-task-row" aria-expanded={expanded}
+                        onClick={() => onSelectTask(expanded ? undefined : task.id)}>
+                        <span>
+                          {expanded ? <DownOutlined aria-hidden /> : <RightOutlined aria-hidden />}
+                          <strong>{task.title}</strong>
+                        </span>
+                        <span>{name(assignee)}</span>
+                        <span data-status={status}>{statusText}</span>
+                        <span title={dateNote}>{deadline ? <time dateTime={deadline}>{deadline}</time> : "—"}</span>
+                      </button>
+                      {expanded && (
+                        <div className="blue-team-task-preview">
+                          {delivery ? (
+                            <>
+                              <p>{name(delivery.submittedBy)}提交了第 {delivery.revision} 版。</p>
+                              {textPreview && <p className="blue-team-preview-text">{textPreview}</p>}
+                              {delivery.review && <p className="blue-team-feedback">审阅意见：{delivery.review.comment}</p>}
+                              <div className="blue-team-preview-actions">
+                                {delivery.sources.map((source, index) => (
+                                  <TaskDeliveryDownload key={`${source.locator}:${index}`}
+                                    target={{ kind: "research", taskId: task.id }} locator={source.locator}
+                                    label={source.label} appearance="link" />
+                                ))}
+                                <Button type="link" onClick={() => onSelectTask(task.id, true)}>
+                                  {canReview ? `审阅第 ${delivery.revision} 版` : "查看交付"}
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <p>{teamNextStep(task, actor.member.id)}</p>
+                              <Button type="link" onClick={() => onSelectTask(task.id, true)}>查看任务</Button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </section>
             );
           })}
-          {read.data && !visible.length && (
-            <div className="workspace-task-list-note">
-              <p>
-                {rows.length
-                  ? "没有符合当前筛选的任务"
-                  : scope === "mine"
-                  ? "还没有你参与的课题组任务"
-                  : "还没有课题组任务"}
-              </p>
-              {!rows.length && (
-                <Button onClick={scope === "mine" ? () => setScope("lab") : onPlan}>
-                  {scope === "mine" ? "查看课题组可见任务" : "新建课题组任务"}
-                </Button>
-              )}
-            </div>
-          )}
+          {empty}
           {pageCount > 1 && (
             <div className="workspace-pages">
-              <span>
-                第 {currentPage}/{pageCount} 页
-              </span>
-              <Button
-                size="small"
-                disabled={currentPage <= 1}
-                onClick={() => setPage(currentPage - 1)}
-              >
-                上一页
-              </Button>
-              <Button
-                size="small"
-                disabled={currentPage >= pageCount}
-                onClick={() => setPage(currentPage + 1)}
-              >
-                下一页
-              </Button>
+              <span>第 {currentPage}/{pageCount} 页</span>
+              <Button size="small" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>上一页</Button>
+              <Button size="small" disabled={currentPage >= pageCount} onClick={() => setPage(currentPage + 1)}>下一页</Button>
             </div>
           )}
-        </>
-      }
-    >
-      <>
-        {selectedTask ? (
-          <WorkspaceTaskDetail
-            key={`${generation}:research:${selectedTask}`}
-            taskId={selectedTask}
-            kind="research"
-            onChanged={read.refresh}
-          />
-        ) : displayTask ? (
-          // First establish the canonical URL. Native IPC checks that exact
-          // task, and child effects run before this panel's selection effect.
-          <p className="workspace-task-list-note" role="status">正在打开任务…</p>
-        ) : (
-          <div className="workspace-empty">
-            <h2>选择一项团队任务</h2>
-            <p>
-              左侧按计划整理课题组可见任务。选择后查看目标、分工、验收和成果；任务操作与「我的待办」保持一致。
-            </p>
-          </div>
-        )}
-        <Drawer
-          title="成员分工"
-          open={membersOpen}
-          width={420}
-          onClose={() => setMembersOpen(false)}
-        >
-          <p className="workspace-muted">根据当前范围内已读取的任务统计。</p>
-          {read.data?.truncated && (
-            <Alert type="warning" message="当前仅统计已读取任务，不能代表全部分工。" />
-          )}
-          {members.error && (
-            <Alert type="warning" message="成员姓名暂不可用，可刷新后查看。" />
-          )}
-          {Array.from(assignments, ([id, count]) => (
-            <section className="workspace-task-member" key={id}>
-              <strong>{name(id)}</strong>
-              <p>
-                已承接 {count.working} 项 · 待审阅 {count.review} 项 · 邀请待接受{" "}
-                {count.invited} 项
-              </p>
-            </section>
-          ))}
-          {!assignments.size && <p>当前没有已承接、待审阅或待接受的分工。</p>}
+        </section>
+      )}
+      {layout === "list" && (
+        <Drawer title={selectedRow?.task.title || "团队任务"} open={detailOpen && !!selectedTask}
+          width="min(780px, 100vw)" onClose={() => onSelectTask(selectedTask)} destroyOnClose
+          rootClassName="blue-team-detail-drawer" bodyStyle={{ padding: 0 }}>
+          {detailOpen && detail}
         </Drawer>
-      </>
-    </TaskWorkspace>
+      )}
+      <Drawer title="成员分工" open={membersOpen} width={420} onClose={() => setMembersOpen(false)}>
+        {read.data?.truncated && <Alert type="warning" message="当前仅统计已读取的任务。" />}
+        {members.error && <Alert type="warning" message="成员姓名暂不可用，可刷新后查看。" />}
+        {Array.from(assignments, ([id, count]) => (
+          <section className="workspace-task-member" key={id}>
+            <strong>{name(id)}</strong>
+            <p>已承接 {count.working} 项 · 待审阅 {count.review} 项 · 邀请待接受 {count.invited} 项</p>
+          </section>
+        ))}
+        {!assignments.size && <p>当前没有已承接、待审阅或待接受的分工。</p>}
+      </Drawer>
+    </>
   );
 }

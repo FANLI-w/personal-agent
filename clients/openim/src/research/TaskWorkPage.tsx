@@ -1,5 +1,6 @@
 import "./task-work-page.scss";
 
+import { CommentOutlined, PaperClipOutlined, ProfileOutlined, UserOutlined } from "@ant-design/icons";
 import { Alert, Button, Checkbox, Input, Select } from "antd";
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -27,6 +28,7 @@ import { useResearchRead } from "./useResearchRead";
 import { nativeWorkbenchTaskPath } from "./workbench-links";
 import { NativeWorkbenchTaskButton } from "./NativeWorkbenchTaskButton";
 import { taskStatusFailure, taskStatusRouteMatches } from "./task-status-read";
+import { taskDate } from "./TaskWeekSchedule";
 
 const phases = {
   ready: "可以开始",
@@ -172,9 +174,15 @@ export function TaskWorkPage({
   kind,
   children,
   onChanged,
+  reviewContext,
+  memberNames,
+  deliveryOpen,
 }: TaskTarget & {
   children: (refresh: () => Promise<void>) => ReactNode;
   onChanged: () => Promise<void>;
+  reviewContext?: string;
+  memberNames?: Map<string, string>;
+  deliveryOpen?: boolean;
 }) {
   const bridge = window.electronAPI?.localDsh;
   const navigate = useNavigate();
@@ -189,6 +197,7 @@ export function TaskWorkPage({
     [noteText, setNoteText] = useState(""),
     [preview, setPreview] = useState("");
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [showTaskDetails, setShowTaskDetails] = useState(Boolean(deliveryOpen));
   const [collection, setCollection] = useState(""),
     [notice, setNotice] = useState("");
   const flight = useRef(false),
@@ -196,7 +205,6 @@ export function TaskWorkPage({
   const transcript = useRef<HTMLDivElement>(null),
     materialsRef = useRef<HTMLElement>(null),
     planRef = useRef<HTMLElement>(null),
-    reviewRef = useRef<HTMLDivElement>(null),
     follow = useRef(true);
   useEffect(() => {
     flight.current = false;
@@ -210,6 +218,7 @@ export function TaskWorkPage({
     setNotice("");
     setError("");
     setConnectionError("");
+    setShowTaskDetails(Boolean(deliveryOpen));
     noteLoaded.current = false;
   }, [operation.scope]);
   const detail = useResearchRead(async (signal) => {
@@ -387,19 +396,11 @@ export function TaskWorkPage({
     if (version === undefined) throw new Error("任务版本尚未读取，请刷新后重试。");
     return version;
   };
-  const reviewShortcut = (summary: string) =>
-    (summary.length > 450 || summary.split("\n").length > 7) && (
-      <Button
-        size="small"
-        type="primary"
-        onClick={() => {
-          reviewRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
-          reviewRef.current?.focus({ preventScroll: true });
-        }}
-      >
-        去验收
-      </Button>
-    );
+  const reviewShortcut = (
+    <Button size="small" type="primary" onClick={() => setShowTaskDetails(false)}>
+      查看成果并验收
+    </Button>
+  );
   const start = () =>
     command(() =>
       researchApi(kind === "personal" ? "activatePersonalWorkTask" : "start", {
@@ -465,6 +466,10 @@ export function TaskWorkPage({
     actions.includes("review") && !personalResult?.changesRequested
       ? personalResult?.messageId
       : undefined;
+  const reviewDelivery =
+    awaitingReview && actions.includes("review") && !latestDelivery?.review
+      ? latestDelivery
+      : undefined;
   const submit = (selectedNames?: string[], summaryText?: string) =>
     command(async () => {
       const { isCurrent } = operation.capture();
@@ -473,23 +478,131 @@ export function TaskWorkPage({
         (state?.binding.delivery?.status === "pending"
           ? state.binding.delivery.names
           : outputs.map((file) => file.name));
-      // The reviewer needs the file list, not a second essay.
       const summary =
         summaryText ||
-        [
-          names.length
-            ? `提交 ${names.length} 个文件：${names.map(deliveryFilename).join("、")}`
-            : "提交本任务成果",
-          noteText.trim(),
-        ]
-          .filter(Boolean)
-          .join("\n\n");
+        noteText.trim() ||
+        (names.length
+          ? `提交 ${names.length} 个文件：${names.map(deliveryFilename).join("、")}`
+          : "提交本任务成果");
       await bridge!.taskSubmit(target, summary, names);
       if (isCurrent()) {
+        setNoteText("");
         setNotice("提交回执已确认。");
         setSection((value) => ({ ...value, plan: true, materials: false }));
       }
     }, true);
+  const currentResult = reviewDelivery || (reviewMessageId ? personalResult : undefined);
+  const returnedDelivery = serviceStatus === "changes_requested" &&
+    latestDelivery?.review?.decision === "changes_requested" ? latestDelivery : undefined;
+  const returnedResult = returnedDelivery || (personalResult?.changesRequested ? personalResult : undefined);
+  const submittedBy = memberNames?.get(latestDelivery?.submittedBy || "");
+  const feedbackBy = returnedDelivery?.review
+    ? memberNames?.get(returnedDelivery.review.reviewerId)
+    : task && "owner" in task ? task.owner.displayName : undefined;
+
+  if (task && version !== undefined && currentResult && !showTaskDetails) {
+    const sources = currentResult.sources || [];
+    const submittedAt = reviewDelivery?.submittedAt;
+    return (
+      <section className="task-work-review-page" aria-label="稿件审阅">
+        <div className="task-review-document">
+          <article className="task-review-manuscript">
+            <header>
+              <h2>{task.title}</h2>
+              <div className="blue-task-review-meta">
+                <span>{[submittedBy && `${submittedBy} 提交`,
+                  reviewDelivery ? `第 ${reviewDelivery.revision} 版` : "当前版本"].filter(Boolean).join(" · ")}</span>
+                {submittedAt && <time dateTime={submittedAt}>{taskDate(submittedAt)}</time>}
+              </div>
+            </header>
+            <SafeMessageMarkdown className="task-review-prose" text={deliveryDisplaySummary(currentResult.summary)} />
+            {sources.length > 0 && (
+              <div className="task-review-sources">
+                <span><PaperClipOutlined aria-hidden /> 附件（{sources.length}）</span>
+                <ul>
+                  {sources.map((source, index) => (
+                    <li key={`${source.locator}:${index}`}>
+                      <TaskDeliveryDownload appearance="attachment" target={target}
+                        locator={source.locator} label={source.label} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {reviewDelivery && reviewDelivery.artifactRefs.length > 0 && (
+              <p className="task-review-artifacts">关联材料：{reviewDelivery.artifactRefs.join("、")}</p>
+            )}
+            <div className="task-review-breadcrumb">
+              <button type="button" onClick={() => setShowTaskDetails(true)}>任务详情</button>
+              {reviewContext && <span title={reviewContext}>/　{reviewContext}</span>}
+            </div>
+          </article>
+        </div>
+        <TaskResultReview
+          key={`${taskId}:${version}:${reviewDelivery?.id || reviewMessageId}:${reviewDelivery?.version || ""}`}
+          target={target}
+          taskVersion={version}
+          messageId={reviewMessageId}
+          delivery={reviewDelivery}
+          supportsComment={kind === "research" || Boolean(
+            "fileDeliverySupported" in task && task.fileDeliverySupported,
+          )}
+          onChanged={async () => {
+            // A read started before the write cannot keep old review controls alive.
+            detail.invalidate(true);
+            await detail.refresh();
+            await onChanged();
+          }}
+        />
+      </section>
+    );
+  }
+  if (task && returnedResult && canWork && !showTaskDetails) {
+    const sources = returnedResult.sources || [];
+    const date = returnedDelivery?.review?.at;
+    const feedback = returnedDelivery?.review?.comment || personalResult?.reviewComment;
+    return (
+      <section className="task-work-review-page blue-task-returned" aria-label="退回修改详情">
+        <div className="task-review-document">
+          <article className="task-review-manuscript">
+            <header>
+              <div className="blue-task-returned-title"><h2>{task.title}</h2><span>退回修改</span></div>
+              <div className="blue-task-review-meta">
+                <span>{[submittedBy, returnedDelivery ? `第 ${returnedDelivery.revision} 版` : "上一版"].filter(Boolean).join(" · ")}</span>
+                {date && <time dateTime={date}>{taskDate(date)}</time>}
+              </div>
+            </header>
+            <dl className="blue-task-feedback">
+              {submittedBy && <div><dt><UserOutlined aria-hidden /> 提交人</dt><dd>{submittedBy}</dd></div>}
+              <div><dt><ProfileOutlined aria-hidden /> 状态</dt><dd><span>待修改</span></dd></div>
+              <div>
+                <dt><CommentOutlined aria-hidden /> 审阅反馈</dt>
+                <dd>{feedbackBy}{feedback && <blockquote>{feedback}</blockquote>}</dd>
+              </div>
+            </dl>
+            {sources.length > 0 && (
+              <div className="task-review-sources">
+                <span><PaperClipOutlined aria-hidden /> 上一版附件</span>
+                <ul>{sources.map((source, index) => (
+                  <li key={`${source.locator}:${index}`}>
+                    <TaskDeliveryDownload appearance="attachment" target={target} locator={source.locator} label={source.label} />
+                  </li>
+                ))}</ul>
+              </div>
+            )}
+            {bridge?.taskAttachContext && <NativeWorkbenchTaskButton target={target} primary revision />}
+            <div className="task-review-breadcrumb">
+              <button type="button" onClick={() => setShowTaskDetails(true)}>任务详情与重新提交</button>
+            </div>
+            <details className="blue-task-returned-summary" open={!sources.length || undefined}>
+              <summary>上一版交付说明</summary>
+              <SafeMessageMarkdown text={deliveryDisplaySummary(returnedResult.summary)} />
+            </details>
+          </article>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="task-work-page" aria-label="任务工作页">
       <header className="task-work-heading">
@@ -513,6 +626,12 @@ export function TaskWorkPage({
           <span>{connectionError ? "本机进度待核对" : phases[state!.phase]}</span>
         )}
       </header>
+      {returnedResult && canWork && (
+        <div className="task-work-handoff">
+          {bridge?.taskAttachContext && <NativeWorkbenchTaskButton target={target} primary revision />}
+          <Button onClick={() => setShowTaskDetails(false)}>查看修改意见</Button>
+        </div>
+      )}
       {!completed && !awaitingReview && <TaskExecutionStatus target={target} />}
       {!state && (canStart || canClaim || canActivate) && (
         <div className="task-work-start" role="status">
@@ -564,7 +683,7 @@ export function TaskWorkPage({
                   ? "待验收结果"
                   : "待核对结果"}
               </strong>
-              {reviewMessageId && reviewShortcut(personalResult.summary)}
+              {reviewMessageId && reviewShortcut}
             </div>
             <SafeMessageMarkdown
               text={deliveryDisplaySummary(personalResult.summary)}
@@ -580,25 +699,6 @@ export function TaskWorkPage({
                 label={source.label}
               />
             ))}
-            {reviewMessageId && (
-              <div ref={reviewRef} tabIndex={-1} className="task-work-review-target">
-                <TaskResultReview
-                  key={`${taskId}:${version}:${reviewMessageId}`}
-                  target={target}
-                  taskVersion={currentVersion()}
-                  messageId={reviewMessageId}
-                  supportsComment={Boolean(
-                    task &&
-                      "fileDeliverySupported" in task &&
-                      task.fileDeliverySupported,
-                  )}
-                  onChanged={async () => {
-                    await detail.refresh();
-                    await onChanged();
-                  }}
-                />
-              </div>
-            )}
           </div>
         )}
         {deliveries.length > 0 && (
@@ -618,8 +718,7 @@ export function TaskWorkPage({
                       ? "要求修改"
                       : "等待验收"}
                   </summary>
-                  {delivery.id === latestDelivery?.id && actions.includes("review") &&
-                    reviewShortcut(delivery.summary)}
+                  {delivery.id === reviewDelivery?.id && reviewShortcut}
                   <SafeMessageMarkdown
                     text={deliveryDisplaySummary(delivery.summary)}
                   />
@@ -639,33 +738,22 @@ export function TaskWorkPage({
                       label={source.label}
                     />
                   ))}
-                  {delivery.id === latestDelivery?.id && actions.includes("review") && (
-                    <div ref={reviewRef} tabIndex={-1} className="task-work-review-target">
-                      <TaskResultReview
-                        key={`${taskId}:${version}:${delivery.id}`}
-                        target={target}
-                        taskVersion={currentVersion()}
-                        delivery={delivery}
-                        onChanged={async () => {
-                          await detail.refresh();
-                          await onChanged();
-                        }}
-                      />
-                    </div>
-                  )}
                 </details>
               ))}
           </div>
         )}
-        {actions.includes("submit") && noteText && (
-          <Input.TextArea
-            aria-label="补充说明"
-            value={noteText}
-            rows={2}
-            maxLength={500}
-            disabled={busy}
-            onChange={(event) => setNoteText(event.target.value)}
-          />
+        {actions.includes("submit") && bridge?.taskStageDelivery && (
+          <label className="task-delivery-note">
+            交付说明（选填）
+            <Input.TextArea
+              value={noteText}
+              rows={2}
+              maxLength={5000}
+              disabled={busy}
+              placeholder="补充本版成果、数据或修改内容，支持 Markdown"
+              onChange={(event) => setNoteText(event.target.value)}
+            />
+          </label>
         )}
         {(actions.includes("submit") ||
           state?.binding.delivery?.status === "pending" ||

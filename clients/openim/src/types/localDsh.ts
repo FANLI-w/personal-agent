@@ -1,3 +1,5 @@
+import type { TaskDocument, TaskTarget } from "../../../../integrations/deepseek-harness/desktop/task-workspace";
+
 export type LocalDshSnapshot = {
   phase: "stopped" | "starting" | "running" | "stopping" | "error";
   directory: string;
@@ -11,6 +13,11 @@ export type LocalDshSnapshot = {
 };
 export type DshBounds = { x: number; y: number; width: number; height: number };
 export type LocalDshBridge = {
+  taskReadDocument?: (target: TaskTarget, name: string) => Promise<TaskDocument>;
+  taskSaveDocument: (target: TaskTarget, name: string, text: string, digest: string) => Promise<TaskDocument>;
+  taskOpenDocument: (target: TaskTarget, name: string) => Promise<void>;
+  taskRestoreRevision: (target: TaskTarget, locator: string) => Promise<string>;
+  taskCopyWorkingDocument: (target: TaskTarget) => Promise<string | undefined>;
   taskAttachContext: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget, chat?: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskChatContext) => Promise<import('../../../../integrations/deepseek-harness/desktop/task-workspace').DshTaskState | undefined>;
   taskAddLocal: (target: import('../../../../integrations/deepseek-harness/desktop/task-workspace').TaskTarget) => Promise<boolean>;
   /** Copies files from the registered local library into the task's work folder. */
@@ -65,6 +72,7 @@ export type LocalDshBridge = {
     target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,
     summary: string,
     names: string[],
+    expectedDigest?: string,
   ) => Promise<unknown>;
   taskImport: (
     target: import("../../../../integrations/deepseek-harness/desktop/task-workspace").TaskTarget,

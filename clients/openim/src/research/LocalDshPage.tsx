@@ -3,6 +3,7 @@ import { Alert, Button, Drawer, Input, Spin } from "antd";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ExportOutlined } from "@ant-design/icons";
+import { TaskRevisionWorkbench, type WorkbenchRevision } from "./TaskRevisionWorkbench";
 import { taskStatusFailure, taskStatusRouteMatches } from "./task-status-read";
 import {
   nativeWorkbenchTaskPath,
@@ -41,7 +42,65 @@ const labels = {
   stopping: "正在停止",
   error: "启动异常",
 };
-type TaskBrief = { title: string; goal: string };
+type TaskBrief = {
+  title: string;
+  goal: string;
+  canWork: boolean;
+  canSubmit: boolean;
+  filesSupported: boolean;
+  version: number;
+  status: string;
+  revision?: WorkbenchRevision & { reviewerId?: string };
+};
+
+async function readTaskBrief(target: TaskTarget, signal?: AbortSignal): Promise<TaskBrief> {
+  const params = { id: target.taskId };
+  if (target.kind === "personal") {
+    const { data: task } = await researchApi("personalWorkTask", { params, signal });
+    if (task.id !== target.taskId || task.summaryOnly)
+      throw Error("当前账号无法读取这项任务的工作背景。");
+    return {
+      title: task.title,
+      goal: task.goal || "",
+      canWork: task.allowedActions.some((action) => action === "run" || action === "submit"),
+      canSubmit: task.allowedActions.includes("submit"),
+      filesSupported: task.fileDeliverySupported,
+      version: task.version,
+      status: task.status,
+      revision: task.result?.changesRequested ? {
+        reviewer: task.owner.displayName,
+        comment: task.result.reviewComment || "",
+        sources: task.result.sources,
+      } : undefined,
+    };
+  }
+  const { data } = await researchApi("task", { params, signal });
+  const task = "task" in data ? data.task : data;
+  if (task.id !== target.taskId || "projection" in task)
+    throw Error("当前账号无法读取这项任务的工作背景。");
+  const deliveries = "deliverables" in data ? data.deliverables || [] : [];
+  const latest = deliveries.reduce<(typeof deliveries)[number] | undefined>(
+    (previous, next) => !previous || next.revision > previous.revision ? next : previous,
+    undefined,
+  );
+  const review = latest?.review;
+  return {
+    title: task.title,
+    goal: task.goal,
+    canWork: task.allowedActions.includes("submit"),
+    canSubmit: task.allowedActions.includes("submit"),
+    filesSupported: true,
+    version: task.version,
+    status: task.status,
+    revision: task.status === "changes_requested" && review?.decision === "changes_requested" ? {
+      reviewerId: review.reviewerId,
+      at: review.at,
+      comment: review.comment,
+      version: review.revision,
+      sources: (latest?.sources || []).filter((source) => source.locator.startsWith("research-library:")),
+    } : undefined,
+  };
+}
 
 export function LocalDshPage() {
   const [params] = useSearchParams();
@@ -49,6 +108,7 @@ export function LocalDshPage() {
   const task = workbenchTaskTarget(params);
   const bridge = window.electronAPI?.localDsh;
   const actor = useResearchStore((s) => s.actor);
+  const contacts = useResearchStore((s) => s.contacts);
   const generation = useResearchStore((s) => s.generation);
   const memberId = actor?.member.id,
     labId = actor?.member.labId;
@@ -65,6 +125,7 @@ export function LocalDshPage() {
   const [attachedScope, setAttachedScope] = useState("");
   const [connectedScope, setConnectedScope] = useState("");
   const [canStage, setCanStage] = useState(false);
+  const [view, setView] = useState<{ scope: string; mode: "assistant" | "files" }>();
   const [instructionRecord, setInstruction] = useState<{
     key: string;
     text: string;
@@ -212,7 +273,8 @@ export function LocalDshPage() {
       }
       return current();
     };
-    let polling = false,
+    let lastBriefRead = Date.now(),
+      polling = false,
       initializing = true,
       resumedRunning = false;
     const refresh = async () => {
@@ -228,6 +290,14 @@ export function LocalDshPage() {
             setAttempt((value) => value + 1);
           }
         }
+        if (bridge.taskReadDocument && current() && Date.now() - lastBriefRead >= 15000) {
+          lastBriefRead = Date.now();
+          const details = await readTaskBrief(target, controller.signal);
+          if (current()) {
+            setBrief({ ...details, scope: routeScope });
+            setCanStage(details.canSubmit);
+          }
+        }
       } catch (failure) {
         if (current()) {
           const reason = taskStatusFailure(failure);
@@ -241,32 +311,18 @@ export function LocalDshPage() {
     setBusy(true);
     void (async () => {
       try {
-        const response =
-          target.kind === "research"
-            ? await researchApi("task", {
-                params: { id: target.taskId },
-                signal: controller.signal,
-              })
-            : await researchApi("personalWorkTask", {
-                params: { id: target.taskId },
-                signal: controller.signal,
-              });
+        const details = await readTaskBrief(target, controller.signal);
         if (!current()) return;
-        const value = "task" in response.data ? response.data.task : response.data;
-        if (value.id !== target.taskId || ("summaryOnly" in value && value.summaryOnly))
-          throw Error("当前账号无法读取这项任务的工作背景。");
-        setCanStage(
-          value.allowedActions.some((action) => action === "submit"),
-        );
-        setBrief({
-          scope: routeScope,
-          title: value.title,
-          goal:
-            ("goal" in value && value.goal) ||
-            ("summary" in value && value.summary) ||
-            "",
-        });
+        setCanStage(details.canSubmit);
+        setBrief({ ...details, scope: routeScope });
         if (!(await verifyService())) return;
+        if (bridge.taskReadDocument && !details.canWork) {
+          const existing = await bridge.taskStatus(target);
+          if (!(await verifyService())) return;
+          setWorkspace(existing);
+          if (existing) setConnectedScope(routeScope);
+          return;
+        }
         const bound = await bridge.taskOpen(target, false);
         if (!(await verifyService())) return;
         if (!bound) throw Error("任务工作区尚未连接，请重试。");
@@ -374,6 +430,17 @@ export function LocalDshPage() {
     };
   }, [bridge]);
 
+  const connected = connectedScope === routeScope && brief ? workspace : undefined;
+  const viewScope = `${accountScope}:${serviceOrigin}:${target?.kind}:${target?.taskId}`;
+  const selectedView = view?.scope === viewScope ? view.mode : undefined;
+  const fileView = !!bridge?.taskReadDocument && !!connected && !!target &&
+    (selectedView === "files" || selectedView !== "assistant" && params.get("mode") !== "assistant" &&
+      !instruction && (!brief?.revision || !brief.canWork) && connected.phase !== "running" &&
+      (connected.files.length > 0 || !brief?.canWork));
+  useEffect(() => {
+    if (fileView && !selectedView) setView({ scope: viewScope, mode: "files" });
+  }, [fileView, selectedView, viewScope]);
+
   useEffect(() => {
     if (!bridge || !state?.pageReady || !seat.current) return;
     if (target && connectedScope !== routeScope) {
@@ -415,7 +482,7 @@ export function LocalDshPage() {
       window.removeEventListener("resize", resize);
       void bridge.show(null).catch(() => {});
     };
-  }, [bridge, state?.pageReady, connectedScope, routeScope, target?.taskId]);
+  }, [bridge, state?.pageReady, connectedScope, routeScope, target?.taskId, fileView]);
 
   const reconnect = async () => {
     if (!bridge) return;
@@ -458,7 +525,7 @@ export function LocalDshPage() {
         return;
       const names = await bridge.taskStageDelivery(target);
       if (visibleScope.current === scope && names.length)
-        navigate(workbenchTaskPath(target.taskId, target.kind));
+        navigate(workbenchTaskPath(target.taskId, target.kind) + "&delivery=1");
     } catch (failure) {
       if (visibleScope.current === scope)
         setError(
@@ -514,6 +581,51 @@ export function LocalDshPage() {
       ? workspace?.binding.contextAttachment
       : undefined;
   const attachedWorkspace = connectedScope === routeScope && brief ? workspace : undefined;
+  const verifyWorkspace = async () => {
+    if (!alive.current || visibleScope.current !== routeScope || !target ||
+        !taskStatusRouteMatches(window.location.hash, target)) return false;
+    if ((await readWorkbenchServiceOrigin()) !== serviceOrigin)
+      throw Error("科研服务已切换，请从当前服务的任务重新打开工作台。");
+    return alive.current && visibleScope.current === routeScope;
+  };
+  const refreshWorkspace = async (details = false) => {
+    if (!target || !bridge || !(await verifyWorkspace())) return;
+    const [next, nextBrief] = await Promise.all([
+      bridge.taskStatus(target),
+      details ? readTaskBrief(target) : Promise.resolve(undefined),
+    ]);
+    if (!(await verifyWorkspace())) return;
+    setWorkspace(next);
+    if (nextBrief) {
+      setBrief({ ...nextBrief, scope: routeScope });
+      setCanStage(nextBrief.canSubmit);
+    }
+  };
+  const revision = brief?.revision && {
+    ...brief.revision,
+    reviewer: brief.revision.reviewer || (brief.revision.reviewerId === memberId
+      ? actor?.member.displayName
+      : contacts?.find(({ contact }) => contact.identity.kind === "human" &&
+        contact.identity.memberId === brief.revision?.reviewerId)?.contact.displayName),
+  };
+  const restoreRevision = async (locator: string) => {
+    if (!target || !bridge?.taskRestoreRevision || !brief?.canSubmit || busy) return;
+    const scope = routeScope;
+    setBusy(true);
+    setError("");
+    try {
+      if (!(await verifyWorkspace())) return;
+      const filename = await bridge.taskRestoreRevision(target, locator);
+      if (await verifyWorkspace()) {
+        await refreshWorkspace();
+        setMaterialReceipt(`已取回工作副本 · ${filename}`);
+      }
+    } catch (failure) {
+      if (visibleScope.current === scope) setError(taskStatusFailure(failure, "无法取回上一版文件。"));
+    } finally {
+      if (visibleScope.current === scope) setBusy(false);
+    }
+  };
   const outputs = workbenchOutputs(attachedWorkspace);
   const directory = attachedWorkspace?.binding.directory;
   const folder = directory?.split(/[\\/]/).filter(Boolean).at(-1);
@@ -537,11 +649,20 @@ export function LocalDshPage() {
     .join(" · ");
   return (
     <section className="local-dsh-page" aria-label="工作台">
+      {fileView && bridge && target && connected && brief ? (
+        <TaskRevisionWorkbench key={viewScope} bridge={bridge} target={target} title={brief.title}
+          revision={revision} workspace={connected} version={brief.version} status={brief.status}
+          canSubmit={brief.canSubmit} filesSupported={brief.filesSupported}
+          verified={verifyWorkspace} refresh={() => refreshWorkspace()} onResult={() => refreshWorkspace(true)}
+          onTasks={() => setTasksOpen(true)}
+          onTaskDetail={() => navigate(workbenchTaskPath(target.taskId, target.kind))}
+          onAssistant={brief.canWork ? () => setView({ scope: viewScope, mode: "assistant" }) : undefined} />
+      ) : <>
       <header className="local-dsh-header">
         <h1 className="deepchat-brand"><img src={deepchatAvatar} alt="" />DeepChat</h1>
         <nav aria-label="科研工作入口">
           {target && brief && (
-            <Link to={workbenchTaskPath(target.taskId, target.kind)}>
+            <Link to={workbenchTaskPath(target.taskId, target.kind) + (outputs.length ? "&delivery=1" : "")}>
               {outputs.length ? `带 ${outputs.length} 份成果回任务` : "返回当前任务"}
             </Link>
           )}
@@ -552,6 +673,9 @@ export function LocalDshPage() {
             >
               取回已保存文件
             </Button>
+          )}
+          {attachedWorkspace && bridge?.taskReadDocument && (
+            <Button onClick={() => setView({ scope: viewScope, mode: "files" })}>任务文件</Button>
           )}
           <Button onClick={() => setTasksOpen(true)}>任务与交付</Button>
           <Link to="/library" aria-label="前往共享资料">共享资料 <ExportOutlined aria-hidden /></Link>
@@ -614,7 +738,7 @@ export function LocalDshPage() {
             disabled={!attachedWorkspace && !instruction}
             onClick={() => setSourcesOpen(true)}
           >
-            {instruction ? "查看指令草稿与来源" : "查看来源"}
+            {instruction ? "查看指令草稿与来源" : revision ? "查看修改意见" : "查看来源"}
           </Button>
         </div>
       )}
@@ -671,6 +795,7 @@ export function LocalDshPage() {
           </div>
         )}
       </div>
+      </>}
       <Drawer
         title="已接入的背景与来源"
         open={sourcesOpen}
@@ -709,6 +834,24 @@ export function LocalDshPage() {
               <h3>{brief.title}</h3>
               <p>{brief.goal}</p>
             </>
+          )}
+          {revision && (
+            <section aria-label="退回修改意见">
+              <h4>退回修改{revision.version ? ` · 第 ${revision.version} 版` : ""}</h4>
+              {revision.reviewer && <strong>{revision.reviewer}</strong>}
+              {revision.comment && <p>{revision.comment}</p>}
+              {revision.sources.map((source) => (
+                <article key={source.locator}>
+                  <strong>{source.label}</strong>
+                  {brief?.canSubmit && bridge?.taskRestoreRevision && (
+                    <Button disabled={busy || workspace?.phase === "running"} onClick={() => void restoreRevision(source.locator)}>
+                      取回工作副本
+                    </Button>
+                  )}
+                </article>
+              ))}
+              {error && <Alert type="warning" message={error} />}
+            </section>
           )}
           {attachedWorkspace && (
             <>
@@ -794,7 +937,7 @@ export function LocalDshPage() {
                   </Button>
                 </article>
               ))}
-              <Link to={workbenchTaskPath(target!.taskId, target!.kind)}>
+              <Link to={workbenchTaskPath(target!.taskId, target!.kind) + "&delivery=1"}>
                 回任务核对并交付
               </Link>
             </>
@@ -814,7 +957,7 @@ export function LocalDshPage() {
         <p>查看安排和成果，进入任务后继续工作、提交或验收。</p>
         {tasksOpen && (
           <Suspense fallback={<Spin tip="正在读取任务" />}>
-            <TaskInbox presentation="overview" />
+            <TaskInbox presentation="overview" resume={fileView} onNavigate={() => setTasksOpen(false)} />
           </Suspense>
         )}
       </Drawer>

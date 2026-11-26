@@ -3416,3 +3416,10 @@ PR #251 合入 main `7ee71938c27697127794d3d3bc110e03e7b3f141`，保留 PR #249 
 生产 API 和 worker 于 2026-11-26 03:30:13 UTC 经阿里云 Workbench 升至契约 0.52.0，数据库仍为迁移 041。部署前备份为 `/srv/research-openim-backups/topic-release-120-20261126T033001Z-f5de517e9bd3`。数据库核对 130 张表，完整性和外键检查通过。其余六项服务未改动。
 
 Windows x64 正式版于 03:30:47 UTC 设为最新稳定版，标签 `v0.10.120` 指向该合并提交。公开安装包、blockmap、`latest.yml` 和 `SHA256SUMS.txt` 的大小与 SHA-256 均与本地一致，公开更新清单校验通过。桌面副本 `C:/Users/luo/Desktop/DeepChat_0.10.120.exe` 为 421734724 字节，SHA-256 为 `cb07c62b3b86e7116c40b86c021838e824af350ab62a79db65593176c25b6e3f`。[正式 Release](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.120)
+
+## 2026-11-26 · DeepChat 淡蓝任务页
+
+- 参考我的待办、团队任务和周安排三张稿，在 `feat/deepchat-blue-task-page` 延续本机已有交付和退回实现。个人详情采用当前版本和已有的原件下载。团队任务展开显示交付，并沿用任务详情中的授权动作。进度根据当前获准读取的科研任务及最新验收计算。列表和周安排可在两个范围中切换，切换日期时清除已不在当天的选中任务。
+- 改稿按钮进入真实 DSH 会话。原件恢复与交付经过同一任务授权和版本检查，保留上一版附件及反馈。DSH 中选择已保存的成果后回到原任务交付。
+- 客户端 `test:task-views` 97 项、`test:local-dsh` 78 项、`test:desktop-work` 3 项，renderer 与 Electron 类型检查均通过。首轮 DSH 材料测试的夹具漏传科研任务种类，按已有权限校验改为显式种类并补上错种类拒绝断言后通过。Git 外日志位于 `D:/deepseek-agent/.runtime/deepchat-blue-task-views.log`、`D:/deepseek-agent/.runtime/deepchat-blue-task-dsh.log` 和 `D:/deepseek-agent/.runtime/deepchat-blue-task-desktop.log`。本轮为本地源码，尚未发布或部署。
+复核补记（2026-11-26）：两个本地 Electron 账号完成提交、退回、在原生 DSH 取回并改稿、重新提交和验收。第一版与第二版独立留存，课题进度 1/3 → 2/3。737 项桌面回归通过。视觉对照与限制见本仓库 design-qa.md 及桌面《DeepChat 淡蓝任务页实测》。

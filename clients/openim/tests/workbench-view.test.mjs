@@ -39,6 +39,8 @@ test("the workbench defaults to tasks and supports the full history page", () =>
   assert.equal(initial.planId, undefined);
   assert.equal(initial.requestId, undefined);
   assert.equal(initial.filter, "all");
+  assert.equal(initial.layout, "list");
+  assert.equal(workbenchView(new URLSearchParams("view=team&layout=week")).layout, "week");
   assert.equal(workbenchView(new URLSearchParams("view=team")).tab, "team");
   const history = workbenchView(new URLSearchParams("view=history&plan=plan_demo"));
   assert.equal(history.tab, "history");
@@ -95,7 +97,7 @@ test("task navigation includes full history and names the two kinds of task", as
   assert.match(page, /setPlanningLaunch\(\(value\) => value \+ 1\)/);
   assert.match(page, /disabled: !assistantReady/);
   // Personal tasks ask for one sentence only.
-  assert.match(page, /key === "personal" \? startPersonalTask\(\) : startTask\(\)/);
+  assert.match(page, /if \(key === "personal"\) startPersonalTask\(\);\s*else startTask\(\)/);
   assert.match(page, /aria-label="任务目标"/);
   assert.doesNotMatch(page, /aria-label="任务名称"/);
 });

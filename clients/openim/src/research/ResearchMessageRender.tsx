@@ -27,6 +27,7 @@ import styles from "@/pages/chat/queryChat/MessageItem/message-item.module.scss"
 import { CreatedAgentChatButton } from "./CreatedAgentChatButton";
 import { AgentFileReadSummary, agentFileReadCoverage } from "./AgentFileReadSummary";
 import { PersonalReceiptCard, WorkTaskReceipt } from "./PersonalReceiptCard";
+import { ChatProjectDelivery } from "./ChatProjectDelivery";
 import { createProjectNoticeReader, isProjectNoticeCandidate } from './project-message-notice';
 import { ContinueAgentFileReadingButton } from "./ContinueAgentFileReadingButton";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
@@ -223,6 +224,27 @@ export default function ResearchMessageRender({
     currentTurn?.outputMessageId,
     history,
   ]);
+  const delivery = projectNotice.data?.kind === "result" ? projectNotice.data : undefined;
+  const source = read.data?.details?.replyTo;
+  if (delivery && read.data && !read.error && !read.data.details?.withdrawn) {
+    const { fact } = read.data;
+    return (
+      <div
+        data-canonical-message={fact.id}
+        className={`${styles.bubble} chat-project-delivery-bubble`}
+      >
+        <ChatProjectDelivery
+          taskId={delivery.taskId}
+          messageId={fact.id}
+          text={fact.text || ""}
+          source={source || undefined}
+          onLocateSource={(locator) =>
+            locateMessage(timelineScope(actorGeneration, imID || ""), locator)
+          }
+        />
+      </div>
+    );
+  }
   return (
     <div data-canonical-message={read.data?.fact.id} className={styles.bubble}>
       {!pointer && <Alert type="warning" message="这条消息暂无法显示" />}

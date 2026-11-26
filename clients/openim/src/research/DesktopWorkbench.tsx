@@ -1,8 +1,8 @@
 import { Alert, Button, Dropdown, Input, Modal, Segmented, Select } from "antd";
-import { DownOutlined } from "@ant-design/icons";
+import { CalendarOutlined, DownOutlined, FileTextOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
-import type { WorkbenchCard } from "@research-agent-platform/contracts";
+import type { PersonalFollowup, WorkbenchCard } from "@research-agent-platform/contracts";
 import { useResearchRead } from "./useResearchRead";
 import { useResearchStore } from "./store";
 import { usePersonalOperation } from "./usePersonalOperation";
@@ -11,7 +11,6 @@ import { useWorkspaceConversation } from "./workspace-api";
 import { workspaceMemberLabel, workspaceStatusLabel } from "./workspace-labels";
 import {
   TaskWorkspace,
-  TaskListRow,
   TaskReadNotice,
   WorkspaceTaskDetail,
 } from "./TaskWorkspace";
@@ -20,6 +19,9 @@ import { collectTaskInbox, workbenchNextAction } from "./task-inbox";
 import { collectTeamWorkspace } from "./team-progress";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import "./workspace.scss";
+import "./blue-task-page.scss";
+import { TaskWeekSchedule, taskDateTime, taskSchedule } from "./TaskWeekSchedule";
+import { PersonalAssistantPanel } from "./PersonalAssistantPanel";
 import { useWorkspaceAvailability } from "./useWorkspaceAvailability";
 import { WorkspaceUnavailable } from "./WorkspaceUnavailable";
 
@@ -127,7 +129,7 @@ export function DesktopWorkbench() {
   const [params, setParams] = useSearchParams();
   const relocated = relocatedWorkspace(params);
   // Saved planning links still open the assistant; history itself is a full page.
-  const { tab, planning, planId, requestId, draft, filter } = workbenchView(params);
+  const { tab, layout, planning, planId, requestId, draft, filter } = workbenchView(params);
   const [planningLaunch, setPlanningLaunch] = useState(0);
   const [taskLaunch, setTaskLaunch] = useState(0);
   const [planningExpanded, setPlanningExpanded] = useState(false);
@@ -138,6 +140,9 @@ export function DesktopWorkbench() {
     valid: requestedValid,
   } = workbenchTaskTarget(params);
   const [taskSearch, setTaskSearch] = useState("");
+  const [taskSort, setTaskSort] = useState<"recent" | "oldest" | "title">("recent");
+  const [reminderId, setReminderId] = useState<string>();
+  const [remindersOpen, setRemindersOpen] = useState(false);
   const generation = useResearchStore((s) => s.generation),
     actor = useResearchStore((s) => s.actor),
     contacts = useResearchStore((s) => s.contacts);
@@ -169,6 +174,38 @@ export function DesktopWorkbench() {
     tab === "tasks" && supported && !!actor,
     { timeoutMs: 10000, keepDataOnError: transientReadFailure },
   );
+  const members = useResearchRead(
+    (signal) => researchApi("members", {
+      params: { id: actor!.member.labId },
+      query: { limit: 100 },
+      signal,
+    }),
+    `inbox-members:${actor?.member.labId}`,
+    tab === "tasks" && supported && actor?.spaceKind === "laboratory",
+    { poll: false },
+  );
+  const reminders = useResearchRead(
+    async (signal) => {
+      const data: PersonalFollowup[] = [];
+      const seen = new Set<string>();
+      let cursor: string | undefined;
+      do {
+        const result = await researchApi("personalFollowups", {
+          query: { status: "all", limit: 100, cursor },
+          signal,
+        });
+        data.push(...result.data);
+        cursor = result.nextCursor || undefined;
+        if (!cursor) return { data, truncated: false };
+        if (seen.has(cursor)) throw new Error("提醒分页重复，请重新读取。");
+        seen.add(cursor);
+      } while (seen.size < 10);
+      return { data, truncated: true };
+    },
+    "inbox-week-reminders",
+    tab === "tasks" && layout === "week" && !!actor && supported,
+    { timeoutMs: 10000, keepDataOnError: transientReadFailure },
+  );
   const [selected, setSelected] = useState<WorkbenchCard>();
   const [creating, setCreating] = useState(false),
     [busy, setBusy] = useState(false),
@@ -188,17 +225,45 @@ export function DesktopWorkbench() {
     setSelected(undefined);
     setCreating(false);
     setTaskSearch("");
+    setTaskSort("recent");
+    setReminderId(undefined);
+    setRemindersOpen(false);
     setFailure("");
     setBusy(false);
     inFlight.current = false;
     setForm({ goal: "", contactIds: [] });
   }, [generation]);
   const query = taskSearch.trim().toLocaleLowerCase();
-  const cards = (read.data?.data || []).filter((card) =>
-    !query || [card.title, card.goal, card.owner.displayName].join(" ").toLocaleLowerCase().includes(query),
-  );
-  const awaiting = cards.filter((card) => card.category === "awaiting_me");
-  const summaryCards = awaiting.length ? awaiting : cards;
+  const cards = (read.data?.data || [])
+    .filter((card) => (filter === "completed" || card.category !== "completed") &&
+      (!query || [card.title, card.goal, card.owner.displayName, ...card.participants.map((person) => person.displayName)]
+        .join(" ").toLocaleLowerCase().includes(query)))
+    .sort((a, b) => taskSort === "title" ? a.title.localeCompare(b.title, "zh-CN") :
+      taskSort === "oldest" ? Date.parse(a.updatedAt) - Date.parse(b.updatedAt) :
+      Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+  const review = (card: WorkbenchCard) =>
+    !card.summaryOnly && card.allowedActions.includes("review") &&
+    !!card.result && !card.result.accepted && !card.result.changesRequested;
+  const groups = [
+    { key: "review", label: "待我验收", items: cards.filter(review) },
+    { key: "follow", label: "跟进中", items: cards.filter((card) =>
+        !review(card) && ["ongoing", "awaiting_me"].includes(card.category)) },
+    { key: "scheduled", label: "定时安排", items: cards.filter((card) => card.category === "scheduled") },
+    { key: "completed", label: "已完成", items: cards.filter((card) => card.category === "completed") },
+  ];
+  const memberNames = new Map(members.data?.data.map((member) => [member.id, member.displayName]));
+  for (const { contact } of contacts) {
+    const identity = contact.identity;
+    if (identity.kind === "human" && !memberNames.has(identity.memberId))
+      memberNames.set(identity.memberId, contact.displayName);
+  }
+  if (actor) memberNames.set(actor.member.id, actor.member.displayName);
+  const researchRow = (card: WorkbenchCard) =>
+    card.source === "research_task" && card.taskId ? read.data?.researchRows.get(card.taskId) : undefined;
+  const selectedReminder = reminders.data?.data.find((item) => item.id === reminderId);
+  const matches = (card: WorkbenchCard) => requestedTask
+    ? card.taskId === requestedTask && (card.source === "research_task" ? "research" : "personal") === requestedKind
+    : selected?.id === card.id && selected.source === card.source;
   const activeCard =
     selected &&
     cards.find(
@@ -214,35 +279,52 @@ export function DesktopWorkbench() {
   const setTab = (value: WorkbenchTab) => {
     setPlanningLaunch(0);
     setSelected(undefined);
-    setParams(
-      new URLSearchParams({
-        view: value,
-        ...(value === "history" ? { returnTo: tab === "team" ? "team" : "tasks" } : {}),
-      }),
-    );
+    setReminderId(undefined);
+    setTaskSearch("");
+    setParams(new URLSearchParams({
+      view: value,
+      ...(layout === "week" ? { layout } : {}),
+      ...(value === "history" ? { returnTo: tab === "team" ? "team" : "tasks" } : {}),
+    }));
+  };
+  const setLayout = (layout: string) => {
+    setTaskSearch("");
+    const next = new URLSearchParams(params);
+    if (layout === "week") next.set("layout", "week");
+    else next.delete("layout");
+    next.delete("detail");
+    setParams(next);
   };
   // A saved plan or planning link is a request to keep working on it, so the
   // assistant opens with that thread instead of a separate page being shown.
   useEffect(() => {
     if (planning) setPlanningLaunch((value) => value + 1);
   }, [planning, planId, requestId]);
-  const select = (card: WorkbenchCard) => {
-    if (card.taskId && card.source !== "followup") {
-      const next = new URLSearchParams(
-        workbenchTaskPath(
-          card.taskId,
-          card.source === "research_task" ? "research" : "personal",
-        ).split("?")[1],
-      );
-      if (filter === "completed") next.set("category", "completed");
-      setParams(next);
-      return;
-    }
-    setSelected(card);
+  const select = (card: WorkbenchCard, replace = false) => {
+    setReminderId(undefined);
     const next = new URLSearchParams(params);
-    next.delete("task");
-    setParams(next, { replace: true });
+    next.delete("plan");
+    next.delete("planning");
+    next.delete("draft");
+    next.delete("delivery");
+    if (card.taskId && card.source !== "followup") {
+      setSelected(undefined);
+      next.set("view", "tasks");
+      next.set("task", card.taskId);
+      next.set("taskKind", card.source === "research_task" ? "research" : "personal");
+    } else {
+      setSelected(card);
+      next.delete("task");
+      next.delete("taskKind");
+    }
+    setParams(next, { replace });
   };
+  const firstReview = groups[0].items[0];
+  useEffect(() => {
+    if (tab === "tasks" && layout === "list" && !requestedTask && !selected && !planning && !planningLaunch && firstReview)
+      select(firstReview, true);
+  }, [tab, layout, requestedTask, selected?.id, planning, planningLaunch, firstReview?.taskId]);
+
   const create = async () => {
     if (!supported || inFlight.current || !form.goal.trim()) return;
     const { isCurrent } = operation.capture();
@@ -265,6 +347,7 @@ export function DesktopWorkbench() {
       const next = new URLSearchParams(
         workbenchTaskPath(created.data.id).split("?")[1],
       );
+      if (layout === "week") next.set("layout", "week");
       setParams(next);
       await read.refresh();
     } catch (e) {
@@ -276,10 +359,7 @@ export function DesktopWorkbench() {
     }
   };
   if (relocated) return <Navigate to={relocated} replace />;
-  // A task detail is read-and-act, not a place to start a new plan: the assistant
-  // bar stays on the list so the detail screen keeps a single next action.
-  const detailOpen = !!requestedTask && requestedValid;
-  const assistantBar = !!actor && !detailOpen && tab !== "history";
+  const assistantBar = !!actor && tab !== "history";
   // The assistant writes the task; the old form survives only where it cannot run.
   const assistantReady =
     Boolean(actor) &&
@@ -290,7 +370,7 @@ export function DesktopWorkbench() {
     if (!assistantReady) return;
     // Drop any plan link so the assistant opens a fresh thread, not the last one.
     if (requestedTask || planId || requestId || params.get("view") === "planning")
-      setParams(new URLSearchParams({ view: tab }));
+      setParams(new URLSearchParams({ view: tab, ...(layout === "week" ? { layout } : {}) }));
     setTaskLaunch((value) => value + 1);
     setPlanningLaunch((value) => value + 1);
   };
@@ -303,26 +383,32 @@ export function DesktopWorkbench() {
   };
   return (
     <div
-      className={`social-workspace workspace-workbench ${
+      className={`social-workspace workspace-workbench blue-task-page ${
         planningExpanded && assistantBar ? "is-planning-expanded" : ""
       }`}
     >
       <header className="workspace-heading">
-        <div>
-          <h1>任务</h1>
-        </div>
+        <h1>任务</h1>
         <div className="workspace-heading-actions">
-          <Segmented
+          {tab === "history" ? <strong>计划记录</strong> : <Segmented
+            className="blue-task-scope-control"
             aria-label="任务视图"
             value={tab}
             onChange={(value) => setTab(value as WorkbenchTab)}
             options={[
               { label: "我的待办", value: "tasks" },
               { label: "团队任务", value: "team" },
-              { label: "计划记录", value: "history" },
             ]}
-          />
+          />}
           {tab !== "history" && (
+            <>
+            <Segmented
+              className="blue-task-layout-control"
+              aria-label="任务布局"
+              value={layout}
+              onChange={(value) => setLayout(String(value))}
+              options={[{ label: "列表", value: "list" }, { label: "周安排", value: "week" }]}
+            />
             <Dropdown
               trigger={["click"]}
               menu={{
@@ -333,12 +419,21 @@ export function DesktopWorkbench() {
                     label: <span title={assistantReady ? undefined : "这台服务器还没有任务助手，暂时只能建个人任务"}>新建课题组任务</span>,
                     disabled: !assistantReady,
                   },
+                  { type: "divider" },
+                  { key: "resume-plan", label: "继续计划讨论", disabled: !assistantReady },
+                  { key: "history", label: "计划记录" },
                 ],
-                onClick: ({ key }) => key === "personal" ? startPersonalTask() : startTask(),
+                onClick: ({ key }) => {
+                  if (key === "history") setTab("history");
+                  else if (key === "resume-plan") setPlanningLaunch((value) => value + 1);
+                  else if (key === "personal") startPersonalTask();
+                  else startTask();
+                },
               }}
             >
-              <Button type="primary" disabled={!supported}>新建任务 <DownOutlined /></Button>
+              <Button type="primary" icon={<PlusOutlined />} disabled={!supported}>新建任务</Button>
             </Dropdown>
+            </>
           )}
         </div>
       </header>
@@ -373,16 +468,24 @@ export function DesktopWorkbench() {
             <ResearchTeamWorkbench
               refresh={workbenchRevision}
               onPlan={startTask}
+              layout={layout}
+              detailOpen={params.get("detail") === "1"}
               selectedTask={
                 requestedKind === "research" && requestedValid
                   ? requestedTask || undefined
                   : undefined
               }
-              onSelectTask={(id) => {
-                const next = new URLSearchParams(
-                  workbenchTaskPath(id, "research").split("?")[1],
-                );
-                next.set("view", "team");
+              onSelectTask={(id, details) => {
+                const next = new URLSearchParams(params);
+                if (id) {
+                  next.set("task", id);
+                  next.set("taskKind", "research");
+                } else {
+                  next.delete("task");
+                  next.delete("taskKind");
+                }
+                if (details) next.set("detail", "1");
+                else next.delete("detail");
                 setParams(next);
               }}
             />
@@ -403,131 +506,138 @@ export function DesktopWorkbench() {
           )
         ) : (
           <TaskWorkspace
-            list={
+            weekly={layout === "week"}
+            list={layout === "week" ? (
+              <TaskWeekSchedule
+                onClearSelection={() => {
+                  const next = new URLSearchParams(params);
+                  next.delete("task");
+                  next.delete("taskKind");
+                  next.delete("delivery");
+                  setSelected(undefined);
+                  setReminderId(undefined);
+                  setParams(next, { replace: true });
+                }}
+                items={[
+                  ...cards.filter((card) => card.source !== "followup" || !reminders.data)
+                    .map((card) => ({
+                      id: card.id,
+                      title: card.title,
+                      note: card.goal,
+                      when: taskSchedule(researchRow(card)?.task.schedule),
+                      selected: matches(card),
+                      onSelect: () => select(card),
+                    })),
+                  ...(reminders.data?.data || [])
+                    .filter((item) => filter === "completed" ? item.status === "completed" :
+                      item.status === "active" || item.status === "paused")
+                    .map((item) => ({
+                      id: `reminder:${item.id}`,
+                      title: item.title,
+                      note: item.body,
+                      when: item.status === "paused" ? undefined : {
+                        kind: "instant" as const,
+                        at: item.status === "active" ? item.nextDeliveryAt : item.lastRun?.scheduledAt || item.dueAt,
+                      },
+                      selected: item.id === reminderId && !requestedTask,
+                      onSelect: () => {
+                        const next = new URLSearchParams(params);
+                        next.delete("task");
+                        next.delete("taskKind");
+                        setParams(next);
+                        setSelected(undefined);
+                        setReminderId(item.id);
+                      },
+                    })),
+                ]}
+                notices={<>
+                  <TaskReadNotice error={read.error} stale={!!read.data} loading={read.loading} onRetry={read.refresh} />
+                  {reminders.error && <Alert type="warning" message="暂时无法读取定时安排" description={reminders.error}
+                    action={<Button size="small" onClick={() => void reminders.refresh()}>重试</Button>} />}
+                  {(read.data?.truncated || reminders.data?.truncated) && <Alert type="warning" message="周安排计数仅包含已读取的事项。" />}
+                </>}
+              />
+            ) : (
               <>
-                <div className="workspace-task-list-tools">
-                  <div>
-                    <strong>
-                      {availability.supports(23) ? "我的待办" : "任务列表"}
-                    </strong>
-                    <Button
-                      size="small"
-                      loading={read.loading}
-                      onClick={() => void read.refresh()}
-                    >
-                      刷新
-                    </Button>
-                  </div>
-                  <Input.Search
+                <div className="blue-task-list-tools">
+                  <Input
                     aria-label="查找我的任务"
                     placeholder="搜索任务"
+                    suffix={<SearchOutlined aria-hidden />}
                     allowClear
                     value={taskSearch}
                     onChange={(e) => setTaskSearch(e.target.value)}
                   />
-                  <p>我发起、参与或需要我处理的事项</p>
-                </div>
-                {read.data?.truncated && (
-                  <Alert
-                    type="warning"
-                    message="任务较多，当前列表仅包含已读取的事项。请从团队任务继续查找。"
-                  />
-                )}
-                <TaskReadNotice
-                  error={read.error}
-                  stale={!!read.data}
-                  loading={read.loading}
-                  onRetry={read.refresh}
-                />
-                {!read.data && !read.error && (
-                  <p role="status" className="p-5">
-                    正在读取任务…
-                  </p>
-                )}
-                {(() => {
-                  const partial = !!read.data?.truncated,
-                    groups = [
-                      { key: "awaiting_me", label: "需要你动手" },
-                      { key: "ongoing", label: "未完成" },
-                      { key: "scheduled", label: "定时安排" },
-                      { key: "completed", label: "已完成" },
-                    ]
-                      .map((group) => ({
-                        ...group,
-                        items: cards.filter((card) => card.category === group.key),
-                      }))
-                      .filter((group) => group.items.length);
-                  return groups.map((group) => (
-                    <section
-                      className="workspace-task-group"
-                      key={group.key}
-                      aria-label={group.label}
-                    >
-                      <h2 className="workspace-task-group-label">
-                        {group.label}
-                        {partial ? "" : ` · ${group.items.length}`}
-                      </h2>
-                      {group.items.map((card) => {
-                        // One status per row: the footer only adds the progress step
-                        // when it says something the badge does not.
-                        const badge =
-                            (card.result?.changesRequested ? "待修改" : workspaceStatusLabel[card.status]) ||
-                            card.progress.label ||
-                            "查看状态",
-                          step = workbenchNextAction(card);
-                        return (
-                          <TaskListRow
-                            key={`${card.source}:${card.id}`}
-                            title={card.title}
-                            status={badge}
-                            meta={card.owner.displayName}
-                            hint={step && step !== badge ? step : undefined}
-                            selected={
-                              requestedTask
-                                ? card.taskId === requestedTask &&
-                                  (card.source === "research_task"
-                                    ? "research"
-                                    : "personal") === requestedKind
-                                : activeCard?.id === card.id
-                            }
-                            onSelect={() => select(card)}
-                          />
-                        );
-                      })}
-                    </section>
-                  ));
-                })()}
-                {read.data && !read.data.data.length && (
-                  <div className="workspace-empty">
-                    <h2>
-                      {filter === "completed"
-                        ? "还没有已完成的任务"
-                        : "暂时没有要推进的任务"}
-                    </h2>
-                  </div>
-                )}
-                {read.data && read.data.data.length > 0 && (
-                  <Button
-                    type="link"
-                    size="small"
-                    onClick={() => {
-                      setParams(
-                        filter === "completed"
-                          ? { view: "tasks" }
-                          : { view: "tasks", category: "completed" },
-                      );
-                      setTaskSearch("");
-                      setSelected(undefined);
+                  <Dropdown
+                    trigger={["click"]}
+                    menu={{
+                      selectedKeys: [taskSort],
+                      items: [
+                        { key: "recent", label: "按更新时间" },
+                        { key: "oldest", label: "最早更新优先" },
+                        { key: "title", label: "按任务名称" },
+                        { type: "divider" },
+                        { key: "refresh", label: "刷新" },
+                      ],
+                      onClick: ({ key }) => {
+                        if (key === "refresh") void read.refresh();
+                        else setTaskSort(key as typeof taskSort);
+                      },
                     }}
                   >
+                    <Button type="text" aria-label="任务排序" loading={read.loading}>
+                      {{ recent: "按更新时间", oldest: "最早更新优先", title: "按任务名称" }[taskSort]} <DownOutlined />
+                    </Button>
+                  </Dropdown>
+                </div>
+                {read.data?.truncated && <Alert type="warning" message="当前仅显示已读取的任务。" />}
+                <TaskReadNotice error={read.error} stale={!!read.data} loading={read.loading} onRetry={read.refresh} />
+                {!read.data && !read.error && <p className="workspace-task-list-note" role="status">正在读取任务…</p>}
+                {groups.filter((group) => group.items.length).map((group) => (
+                  <details key={group.key} className="blue-task-inbox-group" open>
+                    <summary>
+                      {group.label}{!read.data?.truncated && `（${group.items.length}）`}
+                    </summary>
+                    {group.items.map((card) => {
+                      const row = researchRow(card);
+                      const delivery = row?.latestDeliverable;
+                      const name = delivery
+                        ? memberNames.get(delivery.submittedBy) || "提交人姓名待读取"
+                        : memberNames.get(row?.acceptedAssignment?.memberId || "") ||
+                          card.participants.find((person) => person.kind === "human" && person.status === "accepted")?.displayName ||
+                          card.owner.displayName;
+                      const date = card.updatedAt;
+                      return (
+                        <button type="button" key={card.id} className="blue-task-inbox-row" aria-pressed={matches(card)}
+                          title={workbenchNextAction(card)} onClick={() => select(card)}>
+                          {card.source === "followup" ? <CalendarOutlined aria-hidden /> : <FileTextOutlined aria-hidden />}
+                          <span className="blue-task-inbox-copy">
+                            <strong>{card.title}</strong>
+                            <small>{name}{delivery ? ` · 第 ${delivery.revision} 版` : ""}
+                              {(card.status === "changes_requested" || card.result?.changesRequested) &&
+                                <span className="blue-task-needs-revision"> · 待修改</span>}
+                            </small>
+                          </span>
+                          <time dateTime={date}>{taskDateTime(date)}</time>
+                        </button>
+                      );
+                    })}
+                  </details>
+                ))}
+                {read.data && !cards.length && <p className="workspace-task-list-note">
+                  {query ? "没有符合搜索条件的任务。" : filter === "completed" ? "还没有已完成的任务。" : "暂时没有要推进的任务。"}
+                </p>}
+                {read.data && (
+                  <Button type="link" size="small" onClick={() => {
+                    setParams(filter === "completed" ? { view: "tasks" } : { view: "tasks", category: "completed" });
+                    setTaskSearch("");
+                    setSelected(undefined);
+                  }}>
                     {filter === "completed" ? "返回待办" : "查看已完成"}
                   </Button>
                 )}
-                {read.data && query && !cards.length && (
-                    <p className="workspace-task-list-note">没有符合搜索条件的任务。</p>
-                  )}
               </>
-            }
+            )}
           >
             {requestedTask ? (
               requestedValid ? (
@@ -535,7 +645,16 @@ export function DesktopWorkbench() {
                   key={`${generation}:${requestedKind}:${requestedTask}`}
                   taskId={requestedTask}
                   kind={requestedKind === "research" ? "research" : "personal"}
-                  onChanged={read.refresh}
+                  reviewContext={
+                    (requestedKind === "research" && read.data?.planGoals?.get(requestedTask)) ||
+                    "我的待办"
+                  }
+                  memberNames={memberNames}
+                  deliveryOpen={params.get("delivery") === "1"}
+                  onChanged={async () => {
+                    read.invalidate();
+                    await read.refresh();
+                  }}
                 />
               ) : (
                 <Alert type="warning" message="任务链接无效，请从列表重新选择。" />
@@ -545,27 +664,18 @@ export function DesktopWorkbench() {
                 key={`${activeCard.source}:${activeCard.id}`}
                 card={activeCard}
               />
-            ) : summaryCards.length ? (
-              <section className="workspace-task-detail workspace-inbox-summary">
-                <header>
-                  <h2>{awaiting.length ? "需要你动手" : filter === "completed" ? "已完成的任务" : "最近的任务"}</h2>
-                </header>
-                <ul>
-                  {summaryCards.slice(0, 5).map((card) => (
-                    <li key={`${card.source}:${card.id}`}>
-                      <div>
-                        <strong>{card.title}</strong>
-                        {card.goal && card.goal.trim() !== card.title && <p>{card.goal}</p>}
-                      </div>
-                      <Button onClick={() => select(card)}>{workbenchNextAction(card)}</Button>
-                    </li>
-                  ))}
-                </ul>
+            ) : layout === "week" && selectedReminder ? (
+              <section className="workspace-task-detail" aria-label="定时安排详情">
+                <header><h2>{selectedReminder.title}</h2></header>
+                <p className="workspace-muted">{selectedReminder.status === "paused" ? "已暂停" : taskDateTime(
+                  selectedReminder.status === "active" ? selectedReminder.nextDeliveryAt :
+                    selectedReminder.lastRun?.scheduledAt || selectedReminder.dueAt,
+                )}</p>
+                <SafeMessageMarkdown text={selectedReminder.body} />
+                <Button onClick={() => setRemindersOpen(true)}>管理任务与提醒</Button>
               </section>
             ) : read.data ? (
-              <div className="workspace-empty">
-                <h2>{query ? "没有符合搜索条件的任务" : filter === "completed" ? "还没有已完成的任务" : "暂时没有要推进的任务"}</h2>
-              </div>
+              <div className="workspace-empty"><h2>选择一项任务</h2></div>
             ) : null}
           </TaskWorkspace>
         )}
@@ -573,7 +683,7 @@ export function DesktopWorkbench() {
       {!!actor && (
         <PlanningAgent
           view={tab}
-          hidden={detailOpen || tab === "history"}
+          hidden={tab === "history" || (!planning && !planningExpanded && !planningLaunch)}
           available={supported && availability.supports(23)}
           conversationAvailable={availability.supports(32)}
           focus={planningLaunch}
@@ -589,6 +699,7 @@ export function DesktopWorkbench() {
           onTeam={() => setTab("team")}
         />
       )}
+      {remindersOpen && <PersonalAssistantPanel open initialTab="followups" onClose={() => setRemindersOpen(false)} />}
       <Modal
         title="新建个人任务"
         open={creating}

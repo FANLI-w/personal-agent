@@ -68,15 +68,20 @@ test("rules are summarised instead of asking for more input", async () => {
 
 // Execute the actual work page against returned service snapshots. Transport and
 // the React host are controlled; no account data or desktop IPC is touched.
-async function renderWorkPage({ kind = "research", status = "completed", deliveries = [], result, localState, allowedActions = [], bridge } = {}) {
+async function workPageHost({ kind = "research", status = "completed", deliveries = [], result, localState, allowedActions = [], bridge } = {}) {
   const ts = (await import("typescript")).default;
   const vm = await import("node:vm");
   const source = await read("../src/research/TaskWorkPage.tsx");
   const task = { id: "synthetic_task", title: "Synthetic report", goal: "Compare the evidence", acceptanceCriteria: "Show source limitations", version: 3, status, allowedActions, ...(kind === "personal" ? { result } : {}) };
   const jsx = (type, props) => typeof type === "function" ? type(props) : { type, props };
   let hook = 0;
+  const state = [];
   const dependencies = {
-    react: { useState: value => [hook++ === 1 ? localState : value, () => {}], useRef: value => ({ current: value }), useEffect() {} },
+    react: { useState(value) {
+      const index = hook++;
+      if (!(index in state)) state[index] = index === 1 ? localState : value;
+      return [state[index], (next) => { state[index] = next; }];
+    }, useRef: value => ({ current: value }), useEffect() {} },
     "react/jsx-runtime": { jsx, jsxs: jsx, Fragment: "fragment" },
     "react-router-dom": { useNavigate: () => () => {}, Link: "Link" },
     antd: { Alert: "Alert", Button: "Button", Checkbox: "Checkbox", Input: { TextArea: "TextArea" }, Select: "Select" },
@@ -91,7 +96,13 @@ async function renderWorkPage({ kind = "research", status = "completed", deliver
   const module = { exports: {} };
   const context = { module, exports: module.exports, window: { electronAPI: { localDsh: bridge } }, require: name => dependencies[name] || new Proxy({}, { get: (_, key) => String(key) }) };
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText, context);
-  return module.exports.TaskWorkPage({ taskId: task.id, kind, onChanged: async () => {}, children: () => "Arrangement controls" });
+  return () => {
+    hook = 0;
+    return module.exports.TaskWorkPage({ taskId: task.id, kind, onChanged: async () => {}, children: () => "Arrangement controls" });
+  };
+}
+async function renderWorkPage(options) {
+  return (await workPageHost(options))();
 }
 function renderText(node) {
   if (Array.isArray(node)) return node.map(renderText).join(" ");
@@ -120,37 +131,37 @@ test("personal accepted text results stay visible in the single delivery area wi
   assert.doesNotMatch(text, /开始任务后，这里会出现本机工作区/);
 });
 
-test("the current delivery, its download, and its review controls are before the new upload", async () => {
+test("the current delivery opens a focused review and details keep historical files and upload controls", async () => {
   const latest = { ...delivery(2), review: undefined };
-  const tree = await renderWorkPage({
+  const render = await workPageHost({
     status: "in_review",
     deliveries: [delivery(1, "accepted"), latest],
     allowedActions: ["submit", "review"],
     bridge: { taskStageDelivery: async () => [] },
   });
-  const ordered = nodes(tree);
+  const ordered = nodes(render());
   const currentSource = ordered.findIndex(node => node.type === "TaskDeliveryDownload" && node.props.label === "report-v2.pdf");
   const review = ordered.findIndex(node => node.type === "TaskResultReview" && node.props.delivery === latest);
-  const upload = ordered.findIndex(node => node.type === "TaskDeliveryPanel");
-  assert.ok(currentSource >= 0 && currentSource < review && review < upload);
+  assert.ok(currentSource >= 0 && currentSource < review);
+  assert.equal(ordered.some(node => node.type === "TaskDeliveryPanel"), false);
+  ordered.find(node => node.props?.className === "task-review-breadcrumb").props.children[0].props.onClick();
+  const detail = nodes(render());
+  assert.ok(detail.some(node => node.type === "TaskDeliveryDownload" && node.props.label === "report-v1.pdf"));
+  assert.ok(detail.some(node => node.type === "TaskDeliveryPanel"));
+  detail.find(node => node.type === "Button" && node.props.children === "查看成果并验收").props.onClick();
+  assert.ok(nodes(render()).some(node => node.type === "TaskResultReview"));
 });
 
-test("long results link directly to their own version's review while keeping the full text", async () => {
+test("the document can scroll independently while the exact review action remains in its own region", async () => {
   const summary = ("Long result text for manual review and copy.\n").repeat(60).trim();
   const result = { messageId: "personal_current", summary, accepted: false };
   const tree = await renderWorkPage({ kind: "personal", status: "awaiting_review", result, allowedActions: ["review"] });
   const ordered = nodes(tree);
-  const shortcut = ordered.findIndex(node => node.type === "Button" && node.props.children === "去验收");
   const fullText = ordered.findIndex(node => node.props?.text === summary);
   const review = ordered.findIndex(node => node.type === "TaskResultReview" && node.props.messageId === "personal_current" && node.props.taskVersion === 3);
-  assert.ok(shortcut >= 0 && shortcut < fullText && fullText < review);
-  const target = ordered.find(node => node.props?.className === "task-work-review-target");
-  const jumped = [];
-  target.props.ref.current = { scrollIntoView: () => jumped.push("scroll"), focus: () => jumped.push("focus") };
-  ordered[shortcut].props.onClick();
-  assert.deepEqual(jumped, ["scroll", "focus"]);
-  const short = await renderWorkPage({ kind: "personal", status: "awaiting_review", result: { ...result, summary: "Short result" }, allowedActions: ["review"] });
-  assert.equal(nodes(short).some(node => node.type === "Button" && node.props.children === "去验收"), false);
+  assert.ok(fullText >= 0 && fullText < review);
+  assert.equal(tree.props.children[0].props.className, "task-review-document");
+  assert.equal(tree.props.children[1].type, "TaskResultReview");
 });
 
 async function statusHost(readStatus) {
@@ -274,11 +285,13 @@ test("work folder headings keep the verified path available while hiding legacy 
   }
 });
 test("review grants place exactly one control by the latest result for both task types", async () => {
-  const team = await renderWorkPage({ status: "in_review", deliveries: [delivery(1, "changes_requested"), delivery(2, "pending")], allowedActions: ["review"] });
+  const team = await renderWorkPage({ status: "in_review", deliveries: [delivery(1, "changes_requested"), { ...delivery(2), review: null }], allowedActions: ["review"] });
   const reviews = nodes(team).filter(node => node.type === "TaskResultReview");
   assert.equal(reviews.length, 1); assert.equal(reviews[0].props.delivery.id, "delivery_2");
   const personal = await renderWorkPage({ kind: "personal", status: "awaiting_review", result: { messageId: "personal_message", accepted: false, summary: "Result" }, allowedActions: ["review"] });
   assert.equal(nodes(personal).filter(node => node.type === "TaskResultReview").length, 1);
+  const stillRunning = await renderWorkPage({ kind: "personal", status: "running", result: { messageId: "personal_message", accepted: false, summary: "Current result" }, allowedActions: ["review"] });
+  assert.equal(nodes(stillRunning).find(node => node.type === "TaskResultReview")?.props.messageId, "personal_message");
   const observer = await renderWorkPage({ status: "in_review", deliveries: [delivery(1, "pending")] });
   assert.equal(nodes(observer).some(node => node.type === "TaskResultReview"), false);
 });
