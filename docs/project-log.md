@@ -3424,3 +3424,4 @@ Windows x64 正式版于 03:30:47 UTC 设为最新稳定版，标签 `v0.10.120`
 - 客户端 `test:task-views` 97 项、`test:local-dsh` 78 项、`test:desktop-work` 3 项，renderer 与 Electron 类型检查均通过。首轮 DSH 材料测试的夹具漏传科研任务种类，按已有权限校验改为显式种类并补上错种类拒绝断言后通过。Git 外日志位于 `D:/deepseek-agent/.runtime/deepchat-blue-task-views.log`、`D:/deepseek-agent/.runtime/deepchat-blue-task-dsh.log` 和 `D:/deepseek-agent/.runtime/deepchat-blue-task-desktop.log`。本轮为本地源码，尚未发布或部署。
 复核补记（2026-11-26）：两个本地 Electron 账号完成提交、退回、在原生 DSH 取回并改稿、重新提交和验收。第一版与第二版独立留存，课题进度 1/3 → 2/3。737 项桌面回归通过。视觉对照与限制见本仓库 design-qa.md 及桌面《DeepChat 淡蓝任务页实测》。
 2026-11-26 · PR #253 的三个基础检查与 Windows 打包检查通过，合并为 fd97fd4。已公开发布 DeepChat 0.10.121，GitHub Latest 和桌面安装包摘要一致；正式资源包括安装包、blockmap、latest.yml 和 SHA256SUMS.txt。
+2026-11-26 · 聊天修复本地预览 0.10.122-preview.1（716ed26）。Electron 真实聊天时间线通过旧到期提醒、当前交付、相邻问答、SDK 新回复与用户 JSON 原文回放核对。741 项客户端测试通过；根 CI 1134 项通过、1 项可选跳过。Windows 安装包已通过隔离启动、安装载荷和摘要核对，仅交付本机。公开版仍为 0.10.121。
