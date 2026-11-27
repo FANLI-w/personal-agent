@@ -1,5 +1,5 @@
 import { Alert, App, Button, Input, Modal, Select, Segmented } from "antd";
-import { FileTextOutlined, FolderOutlined, UploadOutlined } from "@ant-design/icons";
+import { CommentOutlined, FileTextOutlined, FolderOutlined, UploadOutlined } from "@ant-design/icons";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from 'react-router-dom';
 import type { ResponseFor } from "@research-agent-platform/contracts";
@@ -15,9 +15,9 @@ import "./research-library.scss";
 import { ZoteroImport } from "./ZoteroImport";
 import { FeishuImport } from "./FeishuImport";
 import { ResearchFileImport as FileImport } from "./ResearchFileImport";
-import { LibraryAgent } from "./LibraryAgent";
 import { FeishuLibrarySource } from "./FeishuLibrarySource";
 import { authorizedDeliveryTitles, deliveryTaskId } from "./library-delivery-labels";
+import { useOwnAssistantConversation } from "./useOwnAssistantConversation";
 type ResearchCollection = ResponseFor<"researchCollections">["data"][number];
 type ResearchFile = ResponseFor<"researchFiles">["data"][number];
 
@@ -81,7 +81,7 @@ function CollectionEditor({ collection, onClose, onSaved }: { collection?: Resea
   </Modal>;
 }
 
-function SourceDetail({ id, collection, onVersion, onChanged, onClose }: { id: string; collection: ResearchCollection; onVersion: (source: ResearchFile) => void; onChanged: () => Promise<void>; onClose: () => void }) {
+function SourceDetail({ id, collection, onVersion, onChanged, onClose, onDiscuss }: { id: string; collection: ResearchCollection; onVersion: (source: ResearchFile) => void; onChanged: () => Promise<void>; onClose: () => void; onDiscuss: (name: string, version: number) => void }) {
   const read = useResearchRead((signal) => researchApi("researchFile", { params: { id }, signal }), `library-source:${id}`);
   const [version, setVersion] = useState<number>(), [busy, setBusy] = useState(false), [error, setError] = useState("");
   const operation = usePersonalOperation(true, `source-detail:${id}`);
@@ -106,6 +106,7 @@ function SourceDetail({ id, collection, onVersion, onChanged, onClose }: { id: s
       <Select aria-label="来源版本" value={selectedVersion.version} options={data?.versions.map(v => ({ value: v.version, label: `v${v.version}${v.version === source.version ? " · 当前版本" : ""}` }))} onChange={setVersion} />
       <dl className="research-source-facts"><div><dt>资料范围</dt><dd>{researchScopeLabels[collection.scope]}</dd></div><div><dt>导入时间</dt><dd>{new Date(selectedVersion.createdAt).toLocaleString("zh-CN")}</dd></div><div><dt>原件大小</dt><dd>{(selectedVersion.byteLength / 1024).toFixed(1)} KiB</dd></div><div><dt>SHA256</dt><dd className="research-source-hash">{selectedVersion.sha256}</dd></div></dl>
       <ResearchFileDownload id={id} version={selectedVersion} disabled={busy || source.status !== "available" || collection.status !== "available"} />
+      <Button icon={<CommentOutlined aria-hidden="true" />} disabled={source.status !== "available" || collection.status !== "available"} onClick={() => onDiscuss(selectedVersion.filename, selectedVersion.version)}>和个人助理讨论原件</Button>
       {source.owned && <Button icon={<UploadOutlined />} disabled={busy} onClick={() => onVersion(source)}>导入新版本</Button>}
       <section><h3>基本信息</h3><dl className="research-source-facts"><div><dt>标题</dt><dd>{selectedVersion.metadata.title || "未填写"}</dd></div><div><dt>作者</dt><dd>{selectedVersion.metadata.authors.join("、") || "未填写"}</dd></div><div><dt>年份 / DOI</dt><dd>{[selectedVersion.metadata.year, selectedVersion.metadata.doi].filter(Boolean).join(" / ") || "未填写"}</dd></div><div><dt>标签</dt><dd>{selectedVersion.metadata.tags.join("、") || "未填写"}</dd></div><div><dt>备注</dt><dd>{selectedVersion.metadata.note || "未填写"}</dd></div></dl></section>
       <section><h3>实际读取范围</h3><p>{selectedVersion.extraction === "text_extracted" ? `已提取 ${selectedVersion.pageCount} 页 / ${selectedVersion.characterCount} 字符。检索结果只引用实际提取片段。` : selectedVersion.extraction === "original_only" ? "仅保存原始文件，未提取文字或执行内容。" : "文字提取未完成，原始文件仍可下载。"}</p>{selectedVersion.extractionReason && <p className="research-library-muted">{selectedVersion.extractionReason}</p>}{selectedVersion.version === source.version && data?.preview.map((excerpt, index) => <div key={index}><p className="research-library-muted">第 {excerpt.citation.pageNumber} 页 · 字符 {excerpt.citation.start}–{excerpt.citation.end} · v{excerpt.citation.version}</p><pre className="research-source-preview">{excerpt.text}</pre></div>)}{selectedVersion.version !== source.version && <p className="research-library-muted">历史版本可下载原件；当前预览仅展示最新版本。</p>}</section>
@@ -117,10 +118,8 @@ function SourceDetail({ id, collection, onVersion, onChanged, onClose }: { id: s
 function LibraryBody() {
   const [params] = useSearchParams();
   const linkedCollection = params.get('collection'), linkedFile = params.get('file');
-  const [feishuOpen, setFeishuOpen] = useState(false);
-  const [feishuLibraryRead,setFeishuLibraryRead]=useState(false);
-  const [chatFocus, setChatFocus] = useState(0);
-  const [chatCollectionId,setChatCollectionId]=useState<string>();
+  const [feishuMode, setFeishuMode] = useState<"document" | "library">();
+  const openAssistant = useOwnAssistantConversation();
   const [zoteroId, setZoteroId] = useState<string>();
   const [scope, setScope] = useState<"mine" | "visible" | "lab">("visible"), [collectionSearch, setCollectionSearch] = useState(""), [selectedId, setSelectedId] = useState<string>(), [sourceId, setSourceId] = useState<string>(), [search, setSearch] = useState(""), [query, setQuery] = useState("");
   const [editing, setEditing] = useState<ResearchCollection | "new">(), [importing, setImporting] = useState<{ collection: ResearchCollection; source?: ResearchFile }>();
@@ -196,13 +195,33 @@ function LibraryBody() {
   const operation = usePersonalOperation(true, "library-body"); const { modal } = App.useApp();
   const refresh = async () => { await Promise.all([collections.refresh(), collectionMatches.refresh(), files.refresh(), matches.refresh()]); };
   const refreshAfterImport = async () => { await Promise.all([collections.refreshChecked(), collectionMatches.refreshChecked(), files.refreshChecked(), matches.refreshChecked()]); };
+  const openBoundCollection = async (id: string) => {
+    const { isCurrent } = operation.capture();
+    await collections.refreshChecked();
+    if (!isCurrent()) return;
+    setScope("visible");
+    setSelectedId(id);
+    setSourceId(undefined);
+    setCollectionSearch("");
+    setSearch("");
+    setQuery("");
+    setFeishuMode(undefined);
+  };
   const withdraw = async () => {
     if (!collection) return; const { isCurrent } = operation.capture(); setFailure("");
     try { await researchApi("withdrawResearchCollection", { params: { id: collection.id }, body: { expectedVersion: collection.version } }); if (!isCurrent()) return; setSelectedId(undefined); setSourceId(undefined); await refresh(); }
     catch (error) { if (isCurrent()) { setFailure(failureText(error)); await refresh(); } }
   };
   return <div className="research-library">
-    <header className="research-library-heading"><div><h2>{params.get("panel") === "collections" ? "共享原件" : "资料库"}</h2><p>按集合保存原件与版本，读取范围由集合权限决定。</p></div><div className="research-library-actions"><Button onClick={() => setFeishuOpen(true)}>连接飞书资料</Button>{Boolean(shownCollections?.length) && <Button type="primary" onClick={() => setEditing("new")}>新建集合</Button>}</div></header>
+    <header className="research-library-heading">
+      <div><h2>{params.get("panel") === "collections" ? "共享原件" : "资料库"}</h2><p>按集合保存原件与版本，读取范围由集合权限决定。</p></div>
+      <div className="research-library-actions">
+        <Button onClick={() => setFeishuMode("document")}>连接飞书资料</Button>
+        <Button onClick={() => setFeishuMode("library")}>绑定飞书多维表格</Button>
+        {!collection && <Button icon={<CommentOutlined aria-hidden="true" />} onClick={() => void openAssistant("我想请你帮我查找资料。")}>和个人助理讨论</Button>}
+        {Boolean(shownCollections?.length) && <Button type="primary" onClick={() => setEditing("new")}>新建集合</Button>}
+      </div>
+    </header>
     {failure && <Alert type="warning" message={failure} />}
     <div className={`research-library-body ${sourceId ? "has-source" : ""} ${shownCollections && !shownCollections.length ? "is-empty" : ""}`}>
       <aside className="research-collection-rail" aria-label="资料集合">
@@ -239,9 +258,12 @@ function LibraryBody() {
               <h3>{collectionTitle(collection)}</h3>
               {collectionTaskId && <p>任务授权 · {collection.fileCount} 份来源</p>}
             </div>
-            {collection.owned && <Button onClick={() => setEditing(collection)}>集合设置</Button>}
+            <div className="research-library-actions">
+              {!collection.externalSource && <Button icon={<CommentOutlined aria-hidden="true" />} onClick={() => void openAssistant(`我想和你讨论资料集合「${collectionTitle(collection)}」。`)}>和个人助理讨论</Button>}
+              {collection.owned && <Button onClick={() => setEditing(collection)}>集合设置</Button>}
+            </div>
           </div>
-          {collection.externalSource ? <FeishuLibrarySource id={collection.id} scope={collection.scope} onAsk={()=>{setChatCollectionId(collection.id);setChatFocus(n=>n+1);}}/> : <>
+          {collection.externalSource ? <FeishuLibrarySource key={collection.id} id={collection.id} scope={collection.scope} onDiscuss={(draft) => void openAssistant(draft)} /> : <>
           <div className="research-library-actions">{collection.owned && <Button type="primary" icon={<UploadOutlined />} onClick={() => setImporting({ collection })}>导入文件</Button>}{collection.owned && collection.scope === "owner_private" && <Button onClick={() => setZoteroId(collection.id)}>从 Zotero 选择</Button>}<Input.Search aria-label="检索资料正文" placeholder="检索实际提取文字" value={search} allowClear onChange={e => setSearch(e.target.value)} onSearch={v => setQuery(v.trim())} /></div>
           {(files.error || matches.error) && <Alert type="warning" message={files.error || matches.error} action={<Button onClick={() => { void files.refresh(); void matches.refresh(); }}>重试</Button>} />}
           {query ? <div className="research-search-results">{matches.loading && <p role="status">正在检索…</p>}{matches.data?.data.map((match, i) => <button key={`${match.citation.sourceId}:${match.citation.version}:${match.citation.pageNumber}:${i}`} onClick={() => setSourceId(match.citation.sourceId)}><strong>{match.filename}</strong><small>v{match.citation.version} · 第 {match.citation.pageNumber} 页 · 字符 {match.citation.start}–{match.citation.end}</small><p>{match.text}</p>{match.partial && <small>此处为实际提取页的局部片段</small>}</button>)}{matches.data && !matches.data.data.length && <div className="research-library-empty"><h3>未找到实际文字片段</h3><p>调整关键词；仅保存原件的素材不会产生文字检索结果。</p></div>}<Button onClick={() => { setQuery(""); setSearch(""); }}>返回文件列表</Button></div> : <>
@@ -261,10 +283,9 @@ function LibraryBody() {
           {collection.owned && <div className="research-library-withdraw"><Button type="text" danger onClick={() => modal.confirm({ title: "撤回此资料集合？", content: "后续查询将停止使用此集合，飞书原表保持。", onOk: withdraw })}>撤回集合</Button></div>}
         </> : storedMatches.error ? <div className="research-library-empty"><h3>暂时无法读取集合</h3><p>请重试读取后再选择或新建集合。</p><Button onClick={storedMatches.refresh}>重新读取</Button></div> : !shownCollections ? <p role="status">正在读取集合…</p> : shownCollections.length === 0 ? <div className="research-library-empty"><FolderOutlined /><h3>{collectionSearch ? "没有匹配的资料集合" : scope === "lab" ? "暂无课题组共享集合" : "还没有资料集合"}</h3><p>{collectionSearch ? "换个名称搜索，或新建一个集合。" : scope === "lab" ? "新建集合并选择课题组共享，再导入原件。" : "新建集合，再导入论文、笔记或素材。"}</p><Button type="primary" onClick={() => setEditing("new")}>新建资料集合</Button></div> : <div className="research-library-empty"><h3>选择资料集合</h3><p>查看原件、版本与检索结果。</p></div>}
       </section>
-      {sourceId && collection && <SourceDetail key={sourceId} id={sourceId} collection={collection} onClose={() => setSourceId(undefined)} onChanged={refresh} onVersion={source => setImporting({ collection, source })} />}
+      {sourceId && collection && <SourceDetail key={sourceId} id={sourceId} collection={collection} onClose={() => setSourceId(undefined)} onChanged={refresh} onVersion={source => setImporting({ collection, source })} onDiscuss={(name, version) => void openAssistant(`我想和你讨论资料集合「${collectionTitle(collection)}」中的「${name}」（v${version}）。`)} />}
     </div>
-    <LibraryAgent onConnectFeishu={() => {setFeishuLibraryRead(true);setFeishuOpen(true);}} focusRequest={chatFocus} queryCollectionId={chatCollectionId} visibleCollections={collections.data?.data} onLibraryBound={async id=>{await collections.refreshChecked();setSelectedId(id);setChatCollectionId(id);setSourceId(undefined);setCollectionSearch("");setQuery('');}} />
-    {feishuOpen && <FeishuImport libraryRead={feishuLibraryRead} collectionId={collection?.owned && collection.scope === "owner_private" && !collection.externalSource ? collection.id : undefined} onClose={() => {setFeishuOpen(false);setFeishuLibraryRead(false);}} onSaved={refreshAfterImport} onChat={() => { setFeishuOpen(false); setFeishuLibraryRead(false);setChatFocus(n => n + 1); }} />}
+    {feishuMode && <FeishuImport libraryRead={feishuMode === "library"} onLibraryBound={openBoundCollection} collectionId={collection?.owned && collection.scope === "owner_private" && !collection.externalSource ? collection.id : undefined} onClose={() => setFeishuMode(undefined)} onSaved={refreshAfterImport} />}
     {zoteroId && collection?.id === zoteroId && collection.owned && collection.scope === "owner_private" && <ZoteroImport key={zoteroId} collection={collection} onClose={() => setZoteroId(undefined)} onSaved={refresh} />}
     {editing && <CollectionEditor key={editing === "new" ? "new" : editing.id} collection={editing === "new" ? undefined : editing} onClose={() => setEditing(undefined)} onSaved={refresh} />}
     {importing && <FileImport key={`${importing.collection.id}:${importing.source?.id || "new"}`} {...importing} onClose={() => setImporting(undefined)} onSaved={refreshAfterImport} />}

@@ -26,14 +26,14 @@ import { deliveryDisplaySummary } from "./task-delivery-command";
 type Filter = "all" | "review" | "deadline";
 
 export function ResearchTeamWorkbench({
-  onPlan,
+  onCreate,
   refresh,
   selectedTask,
   onSelectTask,
   layout,
   detailOpen,
 }: {
-  onPlan: () => void;
+  onCreate?: () => void;
   refresh?: number;
   selectedTask?: string;
   onSelectTask: (id?: string, detail?: boolean) => void;
@@ -194,8 +194,8 @@ export function ResearchTeamWorkbench({
   const empty = read.data && !visible.length && (
     <div className="workspace-task-list-note">
       <p>{rows.length ? "没有符合当前筛选的任务。" : scope === "mine" ? "还没有你参与的课题组任务。" : "还没有课题组任务。"}</p>
-      {!rows.length && (
-        <Button onClick={scope === "mine" ? () => setScope("lab") : onPlan}>
+      {!rows.length && (scope === "mine" || onCreate) && (
+        <Button onClick={scope === "mine" ? () => setScope("lab") : onCreate}>
           {scope === "mine" ? "查看课题组可见任务" : "新建课题组任务"}
         </Button>
       )}

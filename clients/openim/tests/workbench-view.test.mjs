@@ -35,7 +35,6 @@ test("the workbench defaults to tasks and supports the full history page", () =>
   // Fields are compared one by one: the module is evaluated in another context,
   // so its objects do not share this realm's prototype.
   assert.equal(initial.tab, "tasks");
-  assert.equal(initial.planning, false);
   assert.equal(initial.planId, undefined);
   assert.equal(initial.requestId, undefined);
   assert.equal(initial.filter, "all");
@@ -44,39 +43,36 @@ test("the workbench defaults to tasks and supports the full history page", () =>
   assert.equal(workbenchView(new URLSearchParams("view=team")).tab, "team");
   const history = workbenchView(new URLSearchParams("view=history&plan=plan_demo"));
   assert.equal(history.tab, "history");
-  assert.equal(history.planning, false);
+  assert.equal(history.planId, "plan_demo");
   assert.equal(
     workbenchView(new URLSearchParams("view=tasks&category=completed")).filter,
     "completed",
   );
 });
 
-test("saved planning links open the assistant instead of a third tab", () => {
-  // The old planning tab and its deep links all land on the task list.
+test("saved planning links resolve to history with the exact linked record", () => {
   const planning = workbenchView(new URLSearchParams("view=planning"));
-  assert.equal(planning.tab, "tasks");
-  assert.equal(planning.planning, true);
+  assert.equal(planning.tab, "history");
 
   const plan = workbenchView(new URLSearchParams("view=tasks&plan=plan_abc123"));
-  assert.equal(plan.planning, true);
+  assert.equal(plan.tab, "history");
   assert.equal(plan.planId, "plan_abc123");
 
   const request = workbenchView(
     new URLSearchParams("view=tasks&planning=request_xyz789"),
   );
-  assert.equal(request.planning, true);
+  assert.equal(request.tab, "history");
   assert.equal(request.requestId, "request_xyz789");
 });
 
-test("a team view never opens the assistant, and junk ids are ignored", () => {
+test("a team view stays selected, and junk ids are ignored", () => {
   const team = workbenchView(new URLSearchParams("view=team&plan=plan_abc123"));
   assert.equal(team.tab, "team");
-  assert.equal(team.planning, false);
   assert.equal(team.planId, "plan_abc123");
 
   const junk = workbenchView(new URLSearchParams("view=tasks&plan=not an id"));
   assert.equal(junk.planId, undefined);
-  assert.equal(junk.planning, false);
+  assert.equal(junk.tab, "tasks");
 });
 
 test("task navigation includes full history and names the two kinds of task", async () => {
@@ -89,15 +85,17 @@ test("task navigation includes full history and names the two kinds of task", as
   assert.match(page, /label: "计划记录"/);
   assert.doesNotMatch(page, /label: "计划"/);
   assert.doesNotMatch(page, /label: "定时"/);
-  // One menu keeps both scopes explicit and preserves their original actions.
+  // The menu offers direct creation in both scopes and read access to history.
   assert.match(page, /新建课题组任务/);
   assert.match(page, /新建个人任务/);
   assert.match(page, /<Dropdown/);
-  // 课题组任务 expands the assistant instead of opening a form.
-  assert.match(page, /setPlanningLaunch\(\(value\) => value \+ 1\)/);
-  assert.match(page, /disabled: !assistantReady/);
-  // Personal tasks ask for one sentence only.
-  assert.match(page, /if \(key === "personal"\) startPersonalTask\(\);\s*else startTask\(\)/);
+  assert.doesNotMatch(page, /PlanningAgent|继续计划讨论/);
+  assert.doesNotMatch(page, /label: "和个人助理讨论"/);
+  assert.match(page, /disabled: !teamCreationAvailable/);
+  assert.match(page, /key === "personal" \|\| key === "research"/);
+  assert.match(page, /researchApi\("createPersonalWorkTask"/);
+  assert.match(page, /researchApi\("createPlan"/);
+  assert.match(page, /researchApi\("confirmPlan"/);
   assert.match(page, /aria-label="任务目标"/);
   assert.doesNotMatch(page, /aria-label="任务名称"/);
 });

@@ -349,35 +349,10 @@
     line-height: 1.7;
   }
 }
-.team-library-agent {
-  position: relative;
-  margin-top: auto;
-  border: 1px solid #dbe8df;
-  border-radius: 10px;
-  padding: 14px 18px;
-  box-shadow: 0 3px 15px #42705405;
-  label {
-    font-weight: 600;
-    margin: 0 0 8px;
-  }
-  small {
-    font-size: 11px;
-    font-weight: 400;
-    color: #89998e;
-    margin-left: 10px;
-  }
-  .ant-input {
-    border: 0;
-    padding: 6px 40px 6px 0;
-    box-shadow: none !important;
-    resize: none;
-    font-size: 12px;
-  }
-  .ant-btn {
-    position: absolute;
-    bottom: 15px;
-    right: 14px;
-  }
+.team-library-discussion {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 .team-library-detail {
   padding: 28px 24px;
@@ -629,31 +604,6 @@
 .team-library .team-library-guidance {
   display: none;
 }
-.team-library .team-library-agent {
-  margin-top: 30px;
-  padding: 8px 14px;
-  min-height: 56px;
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  label {
-    font-size: 14px;
-    margin: 0;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  small {
-    display: none;
-  }
-  .ant-input {
-    font-size: 13px;
-    flex: 1;
-  }
-  .ant-btn {
-    position: static;
-    flex-shrink: 0;
-  }
-}
 .team-library .team-library-detail {
   padding: 24px 26px;
   .team-library-detail-title h2 {
@@ -882,18 +832,6 @@
     &.table-heading { background: var(--library-soft); color: var(--library-muted); }
     &:hover:not(.table-heading) { background: var(--library-soft); }
     &.selected { background: var(--library-selected); }
-  }
-  .team-library-agent {
-    margin-top: 24px;
-    padding: 8px 12px;
-    border-radius: 10px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
-    border-color: var(--library-line);
-    background: white;
-    label { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-    small { display: block; font-size: 12px; color: #697176; margin-top: 3px; }
   }
   .team-library-detail { grid-column: auto; border: 1px solid var(--library-line); border-radius: 14px; padding: 18px; min-width: 0; background: white; }
   .team-library-detail-title { display: flex; gap: 10px; align-items: flex-start; }

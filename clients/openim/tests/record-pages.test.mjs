@@ -69,6 +69,7 @@ async function fixture(file) {
       },
       useEffect() {},
       useLayoutEffect() {},
+      useRef: (value) => ({ current: value }),
     },
     "react/jsx-runtime": { jsx, jsxs: jsx },
     antd: Object.fromEntries(
@@ -88,6 +89,7 @@ async function fixture(file) {
       useNavigate: () => (path) => f.opened.push(path),
     },
     "./RecordWorkspace": { RecordWorkspace: "RecordWorkspace" },
+    "./SafeMessageMarkdown": { default: "SafeMessageMarkdown" },
     "./LocalLibraryPicker": { LocalLibraryPicker: "LocalLibraryPicker" },
     "./WorkspaceUnavailable": { WorkspaceUnavailable: "WorkspaceUnavailable" },
     "./useWorkspaceAvailability": {
@@ -175,7 +177,8 @@ async function fixture(file) {
   imports["./ppt-template"] = await load("ppt-template.ts");
   imports["./workbench-links"] = await load("workbench-links.ts");
   imports["./workbench-view"] = await load("workbench-view.ts");
-  imports["./task-planning"] = { requestStateLabels: {} };
+  imports["./task-planning"] = await load("task-planning.ts");
+  imports["./planner-chat"] = await load("planner-chat.ts");
   const exports = await load(file);
   f.render = (props = {}) => {
     f.cursor = 0;
@@ -289,12 +292,12 @@ test("platform rules remain readonly and separate from local files and methods",
     false,
   );
 });
-test("plan history shows records immediately and resumes the exact selected plan without creating tasks", async () => {
+test("plan history shows records and opens an editable draft for the personal assistant", async () => {
   const f = await fixture("PlanningHistory.tsx");
-  let target;
+  let draft;
   const tree = f.render({
-    onOpen: (value) => {
-      target = value;
+    onDiscuss: (value) => {
+      draft = value;
     },
   });
   assert.equal(
@@ -306,8 +309,8 @@ test("plan history shows records immediately and resumes the exact selected plan
       (n) => n.type === "button" && text(n).includes("Prepare a research report"),
     ),
   );
-  button(tree, "继续规划").props.onClick();
-  assert.equal(target.plan, "plan_demo");
+  button(tree, "和个人助理讨论").props.onClick();
+  assert.match(draft, /Prepare a research report/);
   assert.equal(f.writes.length, 0);
   assert(text(tree).includes("Who is the audience?"));
   assert.equal(button(tree, "创建任务"), undefined);
@@ -319,7 +322,7 @@ test("search clears hidden plan details; confirmed plans cannot manufacture task
     .find((n) => n.props?.["aria-label"] === "搜索本页计划")
     .props.onChange({ target: { value: "not present" } });
   tree = f.render();
-  assert.equal(button(tree, "继续规划"), undefined);
+  assert.equal(button(tree, "和个人助理讨论"), undefined);
   f.states = [];
   f.plan.status = "confirmed";
   tree = f.render();
