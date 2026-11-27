@@ -194,6 +194,37 @@ it('replaces current sections, keeps decisions and ignores punctuation-only rena
   expect(topic.titleStatus).toBe('final')
 })
 
+it('rejects duplicate decision ids and retires only the targeted decision', { timeout: 30000 }, async () => {
+  const s = await fixture(), owner = await s.member('owner')
+  const created = await s.call('createAssistantTopic', owner, {
+    assistantId: owner.agentId, title: '实验讨论', summary: '确定实验条件',
+    body: { decisions: [{ text: '采用方案 A' }, { text: '保留对照组' }] },
+  })
+  expect(created.status, created.text).toBe(201)
+  const topic = created.value.data
+  const decisions = [{ id: 'd1', text: '采用方案 A' }, { id: 'd2', text: '保留对照组' }]
+  expect(topic.body.decisions).toEqual(decisions)
+
+  const duplicate = await s.call('updateAssistantTopic', owner, {
+    expectedVersion: 1,
+    body: { decisions: [decisions[0], { ...decisions[1], id: 'd1' }] },
+  }, { id: topic.id })
+  expect(duplicate.status, duplicate.text).toBe(400)
+  expect(duplicate.value.error.code).toBe('VALIDATION_ERROR')
+
+  const service = new ChatService(serviceFor(s.db, owner.id, s.config).c, s.config)
+  const retired = applyTopicPatch(service, { topicId: topic.id, baseVersion: 1, retire: ['d1'] }, { agent: 'assistant' })
+  expect(retired).toMatchObject({ changed: true, unmatched: [] })
+
+  const history = await s.call('assistantTopicHistory', owner, null, { id: topic.id })
+  expect(history.status, history.text).toBe(200)
+  expect(history.value.data.topic).toMatchObject({ version: 2, body: { decisions: [decisions[1]] } })
+  expect(history.value.data.revisions).toMatchObject([
+    { version: 1, body: { decisions } },
+    { version: 2, body: { decisions: [decisions[1]] } },
+  ])
+})
+
 it('fits the topic index under its own budget and the reply reserve', { timeout: 30000 }, async () => {
   const prompt = JSON.stringify({ currentRequest: { messageIds: ['m1'] } })
   const entries = Array.from({ length: 20 }, (_, index) => ({ id: `topic_${index}`, title: `话题${index}`, summary: '摘'.repeat(40), state: 'active' as const }))

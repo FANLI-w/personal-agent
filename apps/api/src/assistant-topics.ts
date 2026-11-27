@@ -144,12 +144,19 @@ function curatorDecisions(current: AssistantTopicBody['decisions'], incoming: As
 
 /** Owner edits replace the whole decisions list; ids they send back are kept. */
 function ownerDecisions(current: AssistantTopicBody['decisions'], incoming: AssistantTopicBodyInput['decisions'], start: number) {
-  const known = new Map(current.map(entry => [entry.id, entry])), seen = new Set<string>(), decisions: AssistantTopicBody['decisions'] = []
+  const known = new Map(current.map(entry => [entry.id, entry]))
+  const seenIds = new Set<string>()
+  const seenTexts = new Set<string>()
+  const decisions: AssistantTopicBody['decisions'] = []
   let next = start
   for (const entry of incoming) {
+    if (entry.id !== undefined) {
+      if (seenIds.has(entry.id)) fail('VALIDATION_ERROR')
+      seenIds.add(entry.id)
+    }
     const normalized = key(entry.text)
-    if (seen.has(normalized)) continue
-    seen.add(normalized)
+    if (seenTexts.has(normalized)) continue
+    seenTexts.add(normalized)
     const prior = entry.id ? known.get(entry.id) : undefined
     decisions.push({ id: prior ? prior.id : decisionId(next), text: entry.text })
     if (!prior) next += 1
