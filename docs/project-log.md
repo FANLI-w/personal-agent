@@ -3449,3 +3449,9 @@ Windows x64 正式版于 03:30:47 UTC 设为最新稳定版，标签 `v0.10.120`
 renderer 类型检查及 57 项资料定向回归通过。Browser 插件不可用，使用 Edge 和 Playwright 对真实渲染组件运行隔离验收，在 1440×900、1024×726 与 420×780 检查未连接和已连接画面，验证无效地址拦截、发现失败、模拟保存 503、同一幂等键重试、默认目录、文件夹和预览、仓库设置及本机资料入口。首次验收的合成账号字段和对话框选择器已修正，日志与截图保留于 `D:/deepseek-agent/.runtime/library-visual-20261127/`。账号、HTTP 响应和桌面桥使用合成数据，生产私有仓库未参与本轮验收。后台和契约沿用当前版本。
 
 Windows x64 本地预览 0.10.122-preview.4 已交付到桌面，安装包已解包核对并通过隔离启动，客户端回归 742 项通过。交付记录见 D:/deepseek-agent/.runtime/deepchat-library-preview-0.10.122-preview.4/desktop-copy.json。
+
+## DeepChat 0.10.122 Windows 正式发布
+
+2026-11-27 · [v0.10.122](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.122) 对应 PR #255 的主线提交 8c21ec0107b4ec5311a22ee53b29fa52f45fa44d。本次发布聊天、通讯录、个人设置和 GitHub 团队资料页的桌面更新。客户端 742 项测试及两项类型检查通过。完整 CI 通过，1,134 项测试通过，1 项可选真实模型测试跳过。Windows、两组 Linux 及打包共四项托管检查通过。
+
+安装器 DeepChat_0.10.122.exe 为 421,785,521 字节，SHA-256 为 ac1754dc7ca8115bb4ef21d4b8254a9a483fe4d877ca3d7ba7fed4413e1dadde，未签署 Authenticode。解包后 138 个编译文件与构建输出一致，隔离启动通过。GitHub 四个附件大小及 SHA-256 与本机产物一致，已核对 Latest 指向本版。线上 API 和 worker 未切换。发布证据保存在本机 D:/deepseek-agent/.runtime/deepchat-release-0.10.122/。

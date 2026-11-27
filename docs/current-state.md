@@ -1,5 +1,11 @@
 # 新 AI 接手：当前项目状态
 
+## DeepChat 0.10.122 Windows 正式发布
+
+2026-11-27 · [v0.10.122](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.122) 对应 PR #255 的主线提交 8c21ec0107b4ec5311a22ee53b29fa52f45fa44d。本次发布聊天、通讯录、个人设置和 GitHub 团队资料页的桌面更新。客户端 742 项测试及两项类型检查通过。完整 CI 通过，1,134 项测试通过，1 项可选真实模型测试跳过。Windows、两组 Linux 及打包共四项托管检查通过。
+
+安装器 DeepChat_0.10.122.exe 为 421,785,521 字节，SHA-256 为 ac1754dc7ca8115bb4ef21d4b8254a9a483fe4d877ca3d7ba7fed4413e1dadde，未签署 Authenticode。解包后 138 个编译文件与构建输出一致，隔离启动通过。GitHub 四个附件大小及 SHA-256 与本机产物一致，已核对 Latest 指向本版。线上 API 和 worker 未切换。发布证据保存在本机 D:/deepseek-agent/.runtime/deepchat-release-0.10.122/。
+
 ## 资料页浅蓝改版
 
 2026-11-27 · 在本地预览工作树 `467fa91` 更新资料页。已绑定仓库时默认浏览 GitHub 根目录，尚未绑定时课题组管理员可在页内粘贴仓库地址并连接。发现仓库和保存配置沿用原有团队权限及本机 Git 访问。窄窗使用资料栏目选择器。客户端类型检查与 57 项资料回归通过。Edge 使用合成 HTTP 和桌面桥验证连接、失败重试与目录浏览。截图和日志位于 `D:/deepseek-agent/.runtime/library-visual-20261127/`。
