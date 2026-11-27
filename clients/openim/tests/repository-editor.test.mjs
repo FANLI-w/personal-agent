@@ -4,28 +4,30 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import ts from 'typescript';
 import { randomUUID } from 'node:crypto';
+import { TeamRepositoryUrl } from '@research-agent-platform/contracts';
 
 const source = await readFile(new URL('../src/research/RepositoryEditor.tsx', import.meta.url), 'utf8');
 const code = ts.transpileModule(source, { compilerOptions: { module:ts.ModuleKind.CommonJS, target:ts.ScriptTarget.ES2022, jsx:ts.JsxEmit.ReactJSX } }).outputText;
 const nodes = node => !node || typeof node !== 'object' ? [] : Array.isArray(node)
   ? node.flatMap(nodes) : [node, ...nodes(node.props?.children)];
-function fixture(current, readOnly = false) {
+function fixture(current, readOnly = false, inline = false) {
   const state = [], refs = [], calls = [];
   let cursor = 0, refCursor = 0, generation = 1, saved = 0;
   const jsx = (type, props) => ({type, props});
   const f = { discover: async url => ({url:url.trim().replace(/(?:\.git)?$/,'.git'),branch:'published',workspaceId:'from-manifest'}), calls,
     expire: () => generation++, get saved() { return saved; } };
   const imports = {
-    antd: { Alert:'Alert', Input:'Input', Modal:'Modal' },
-    react: { useState(initial) { const i=cursor++; if (!(i in state)) state[i]=initial; return [state[i], v => state[i]=v]; }, useRef(initial) { return refs[refCursor++] ||= {current:initial}; } },
+    antd: { Alert:'Alert', Button:'Button', Input:'Input', Modal:'Modal' },
+    react: { useId: () => 'repo-id', useState(initial) { const i=cursor++; if (!(i in state)) state[i]=initial; return [state[i], v => state[i]=v]; }, useRef(initial) { return refs[refCursor++] ||= {current:initial}; } },
     'react/jsx-runtime': {jsx,jsxs:jsx},
+    '@research-agent-platform/contracts': { TeamRepositoryUrl },
     './api': {researchApi:async (name,request) => { calls.push({name,request}); }},
     './usePersonalOperation': {usePersonalOperation:() => ({capture:() => { const started=generation; return {isCurrent:() => generation===started}; }})},
   };
   const module={exports:{}};
   vm.runInNewContext(code, { module, exports:module.exports, require:name => { assert(Object.hasOwn(imports,name),name); return imports[name]; },
     Error, crypto:{randomUUID}, window:{electronAPI:{teamLibrary:{discover:url => f.discover(url)}}} });
-  f.render = () => {cursor=0;refCursor=0;return module.exports.RepositoryEditor({current,readOnly,onSaved:async()=>saved++,onClose:()=>{}});};
+  f.render = () => {cursor=0;refCursor=0;return module.exports.RepositoryEditor({current,readOnly,inline,onSaved:async()=>saved++,onClose:()=>{}});};
   f.paste = url => nodes(f.render()).find(n=>n.type==='Input').props.onChange({target:{value:url}});
   return f;
 }
@@ -35,6 +37,32 @@ test('connection form has exactly one blank URL field, no internal ID/branch fie
   assert.equal(inputs.length,1);assert.equal(inputs[0].props.value,'');
   assert.equal(tree.props.okText,'连接仓库');assert.equal(tree.props.okButtonProps.disabled,true);
   f.paste('https://github.com/synthetic/files');assert.equal(f.render().props.okButtonProps.disabled,false);
+});
+
+test('inline submission validates the repository URL before discovery and connects a corrected address', async () => {
+  const f = fixture(undefined, false, true);
+  const discover = f.discover;
+  const addresses = [];
+  f.discover = async url => { addresses.push(url); return discover(url); };
+  const submit = () => f.render().props.onSubmit({ preventDefault() {} });
+  assert.equal(f.render().type, 'form');
+  assert.equal(nodes(f.render()).find(node => node.type === 'Button').props.disabled, true);
+  for (const invalid of ['https://gitlab.com/synthetic/files', 'https://github.com/synthetic/files/tree/main', 'https://token@github.com/synthetic/files']) {
+    f.paste(invalid);
+    submit();
+    assert.equal(nodes(f.render()).find(node => node.type === 'Input').props['aria-invalid'], true);
+    assert(nodes(f.render()).some(node => node.type === 'Alert' && /GitHub HTTPS/.test(node.props.message)));
+  }
+  assert.deepEqual(addresses, []);
+  assert.deepEqual(f.calls, []);
+
+  f.paste('  https://github.com/synthetic/files/  ');
+  assert.equal(nodes(f.render()).find(node => node.type === 'Input').props['aria-invalid'], undefined);
+  submit();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(addresses, ['https://github.com/synthetic/files']);
+  assert.equal(f.calls[0].request.body.url, 'https://github.com/synthetic/files.git');
+  assert.equal(f.saved, 1);
 });
 
 test('Enter connects both URL forms through discovery before saving its real metadata, with one stable retry key', async () => {

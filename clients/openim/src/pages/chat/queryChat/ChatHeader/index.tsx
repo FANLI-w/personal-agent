@@ -19,7 +19,7 @@ import { researchMode } from "@/research/api";
 import { useResearchStore } from "@/research/store";
 import { PersonalAssistantPanel } from "@/research/PersonalAssistantPanel";
 import {
-  MoreOutlined,
+  EllipsisOutlined,
   TeamOutlined,
   UserOutlined,
   SearchOutlined,
@@ -195,7 +195,7 @@ const ChatHeader = () => {
           >
             <SearchOutlined />
           </button>
-          {researchMode && isCoordinator && (
+          {researchMode && isCoordinator && !window.electronAPI && (
             <Button type="text" onClick={() => setWorkbenchTasks(true)}>
               工作台任务
             </Button>
@@ -229,7 +229,7 @@ const ChatHeader = () => {
                     aria-label={menu.idx === 2 ? "聊天详情" : menu.title}
                     onClick={() => menuClick(menu.idx)}
                   >
-                    {menu.idx === 2 ? <MoreOutlined /> : <TeamOutlined />}
+                    {menu.idx === 2 ? <EllipsisOutlined /> : <TeamOutlined />}
                   </button>
                 ) : (
                   <img
@@ -270,6 +270,10 @@ const ChatHeader = () => {
               setDetails(false);
               setAboutMe(true);
             }}
+            onWorkbenchTasks={researchMode && isCoordinator ? () => {
+              setDetails(false);
+              setWorkbenchTasks(true);
+            } : undefined}
             onManage={() => {
               setDetails(false);
               groupSettingRef.current?.openOverlay();

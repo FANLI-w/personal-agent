@@ -1,5 +1,5 @@
 import { currentHabit } from './feedback-queue.js'
-import {GroupAssistantOutput} from '@research-agent-platform/contracts'
+import {assistantReplyText,GroupAssistantOutput} from '@research-agent-platform/contracts'
 import {groupAssistantSystem,groupPublicContext} from './group-assistant-context.js'
 import {queueGroupNotice} from './group-notices.js'
 import { skillContext,skillSystem } from './skills.js'
@@ -403,7 +403,7 @@ export class ChatWorker {
             turn.outputMessageId=message.id;turn.failure=null
           }else{
           const groupOutput=group.kind==='group'?GroupAssistantOutput.parse(JSON.parse(result.text)):null
-          const output = groupOutput?{answer:groupOutput.answer,waitingInput:false,group:null,actions:[]}:coordinated?.kind==='reply'?{answer:coordinated.answer,waitingInput:false,group:null,actions:[]}:coordinated?.kind==='collaborate'?{answer:coordinated.answer,waitingInput:false,group:coordinated.group,actions:[]}:job.input.dailyChat?{answer:Text.parse(result.text),waitingInput:false,group:null,actions:[]}:ChatModelOutput.parse(JSON.parse(result.text))
+          const output = groupOutput?{answer:groupOutput.answer,waitingInput:false,group:null,actions:[]}:coordinated?.kind==='reply'?{answer:coordinated.answer,waitingInput:false,group:null,actions:[]}:coordinated?.kind==='collaborate'?{answer:coordinated.answer,waitingInput:false,group:coordinated.group,actions:[]}:job.input.dailyChat?{answer:Text.parse(job.input.assistantProjectEntry?assistantReplyText(result.text):result.text),waitingInput:false,group:null,actions:[]}:ChatModelOutput.parse(JSON.parse(result.text))
           if(job.input.dailyChat&&!output.answer.trim())throw new Error('INVALID_MODEL_OUTPUT')
           if(job.input.libraryRead){
             const allowed=new Set(job.input.libraryRead.sources.map(source=>source.label))

@@ -331,44 +331,6 @@
   min-height: 0;
   overflow: hidden;
 }
-.library-section-nav {
-  width: 176px;
-  flex-shrink: 0;
-  padding: 26px 14px;
-  border-right: 1px solid #eeeef0;
-  background: #fcfcfc;
-  overflow: auto;
-  h1 {
-    font-size: 24px;
-    font-weight: 650;
-    margin: 0 14px 24px;
-  }
-  button {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 11px 14px;
-    margin: 5px 0;
-    border: 0;
-    border-radius: 8px;
-    background: none;
-    color: #58616a;
-    text-align: left;
-    font: inherit;
-    cursor: pointer;
-  }
-  button[aria-current="page"] {
-    color: #1466aa;
-    background: #e8f4ff;
-    font-weight: 600;
-  }
-  .library-nav-secondary {
-    border-top: 1px solid #eeeef0;
-    margin-top: 24px;
-    padding-top: 14px;
-  }
-}
 .library-section-body {
   min-width: 0;
   min-height: 0;
@@ -376,27 +338,9 @@
   overflow: auto;
   display: flex;
   flex-direction: column;
-  > .team-library {
-    padding: 24px 28px;
-    flex: 1;
-    overflow: auto;
-  }
-  > .library-workspace-content {
-    padding: 24px 28px;
-    flex: 1;
-    overflow: auto;
-  }
   > .record-page {
     flex: 1;
   }
-}
-.team-library-page-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 650;
-}
-.workspace-library.library-page-shell {
-  flex-direction: row;
 }
 .personal-agent-desktop .social-workspace .record-page,
 .personal-agent-desktop .social-workspace.library-page-shell {
@@ -506,15 +450,8 @@
   .record-workspace-detail-scroll {
     padding: 22px;
   }
-  .library-section-nav {
-    width: 156px;
-    padding-inline: 8px;
-  }
 }
 @media (max-width: 800px) {
-  .library-section-nav {
-    width: 135px;
-  }
   .record-workspace {
     display: flex;
     flex-direction: column;

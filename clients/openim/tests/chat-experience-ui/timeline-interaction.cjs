@@ -25,6 +25,9 @@ const output =
       .locator(".chat-source-link")
       .filter({ hasText: "请比较两种实验方法" })
       .waitFor();
+    const source = page.locator(".chat-source-link").filter({ hasText: "请比较两种实验方法" });
+    await source.locator(".chat-source-quote-text").waitFor({ state: "hidden" });
+    assert.equal(await source.getByRole("button", { name: "展开引用" }).count(), 0);
     assert.equal(await page.locator("#chat-list table").count(), 1);
     checks.push(
       "canonical source relation and rich answer render in real virtualized timeline",
@@ -52,7 +55,6 @@ const output =
       .locator(".desktop-history-results button")
       .filter({ hasText: "检索锚点" })
       .click();
-    await page.getByRole("button", { name: "定位到聊天", exact: true }).click();
     await page.locator("#chat_native_2.chat-message-highlight").waitFor();
     await shot("timeline-02-search-jump");
     checks.push("search loads older pages and highlights original message");
@@ -123,6 +125,7 @@ const output =
     await page
       .locator(".chat-source-link")
       .filter({ hasText: "请比较两种实验方法" })
+      .locator(".chat-source-location")
       .click();
     await page
       .locator("#chat_canonical_input")

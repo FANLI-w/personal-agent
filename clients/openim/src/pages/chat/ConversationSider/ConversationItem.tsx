@@ -27,6 +27,11 @@ import { feedbackToast } from "@/utils/common";
 import styles from "./conversation-item.module.scss";
 import { useResearchStore } from "@/research/store";
 import { useContactRemoval } from '@/research/useContactRemoval';
+import { canonicalChatText, isCoordinatorChatContact, readableMessage, useCoordinatorSdkSender } from "@/research/chat-reply";
+import { readChatMessage } from "@/research/chat-message-read";
+import { researchPointer } from "@/research/chat-timeline";
+import { useChatRecordChanges } from "@/research/useChatRecordChanges";
+import { useResearchRead } from "@/research/useResearchRead";
 
 interface IConversationProps {
   isActive: boolean;
@@ -57,20 +62,33 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
     navigate(`/chat/${conversation.conversationID}`);
   };
 
-  const latestMessageContent = useMemo(() => {
-    let content = "";
-    if (!conversation.latestMsg) {
-      return "";
-    }
+  const latestMessage = useMemo(() => {
+    if (!conversation.latestMsg) return undefined;
     try {
-      content = getConversationContent(
-        JSON.parse(conversation.latestMsg) as MessageItem,
-      );
-    } catch (error) {
-      content = t("messageDescription.catchMessage");
+      return JSON.parse(conversation.latestMsg) as MessageItem;
+    } catch {
+      return undefined;
     }
-    return content;
   }, [conversation.latestMsg]);
+  const sdkCoordinator = useCoordinatorSdkSender(latestMessage?.sendID);
+  const pointer = isCoordinator && latestMessage ? researchPointer(latestMessage) : undefined;
+  const latest = useResearchRead(
+    (signal) => readChatMessage(pointer!.conversationId, pointer!.messageId, pointer!.sequence, signal),
+    `conversation-preview:${pointer?.conversationId}:${pointer?.messageId}:${pointer?.sequence}`,
+    !!pointer,
+    { poll: false },
+  );
+  useChatRecordChanges(pointer?.conversationId, "message", pointer?.messageId, latest.refresh, latest.invalidate);
+  const canonicalCoordinator = useResearchStore((state) =>
+    isCoordinatorChatContact(latest.data?.fact.senderContactId, state),
+  );
+  const sdkPreview = latestMessage && (
+    (sdkCoordinator && readableMessage(latestMessage, sdkCoordinator)) ||
+    getConversationContent(latestMessage)
+  );
+  const latestMessageContent = latest.data
+    ? canonicalChatText(latest.data.fact, canonicalCoordinator)
+    : sdkPreview || (conversation.latestMsg && !latestMessage ? t("messageDescription.catchMessage") : "");
 
   const latestMessageTime = formatConversionTime(conversation.latestMsgSendTime, Boolean(window.electronAPI));
 
@@ -229,7 +247,7 @@ const ConversationItem = ({ isActive, conversation }: IConversationProps) => {
 
           <div className="flex items-center">
             <div className="flex min-h-[16px] flex-1 items-center overflow-hidden text-xs">
-              <div className="truncate text-[rgba(81,94,112,0.5)]">
+              <div className="truncate text-[var(--sub-text)]">
                 {latestMessageContent}
               </div>
             </div>

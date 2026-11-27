@@ -625,6 +625,7 @@ async function messageComponent(message, { group = false, pointer } = {}) {
     "@ant-design/icons": {},
     "@openim/wasm-client-sdk": { MessageType: types, SessionType: { Single: 1 } },
     "@/research/chat-reply": {
+      useCoordinatorSdkSender: () => false,
       readableMessage: (value) =>
         value.textElem?.content ||
         (value.contentType === 102

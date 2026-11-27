@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import ts from 'typescript';
+import {assistantReplyText} from '@research-agent-platform/contracts';
 
 async function load(file,imports={}){
  const source=await readFile(new URL(file,import.meta.url),'utf8'),module={exports:{}};
@@ -23,7 +24,7 @@ test('only coordinator service replies with a real source quote request project 
  for(const value of [{...fact,origin:'human'},{...fact,origin:'model'},{...fact,turnId:'actual-turn'},{...fact,resources:[{kind:'task'}]},{...fact,senderContactId:null}])assert.equal(isProjectNoticeCandidate(value,reply,true),false);
  assert.equal(isProjectNoticeCandidate(fact,reply,false),false);
  assert.equal(isProjectNoticeCandidate(fact,null,true),false);
- assert.equal(isProjectNoticeCandidate(fact,{...reply,withdrawn:true},true),false);
+ assert.equal(isProjectNoticeCandidate(fact,{...reply,withdrawn:true},true),true);
 });
 
 test('history and workspace rerenders share a single request and cache negative results',async()=>{
@@ -45,46 +46,53 @@ test('a whole page of eligible legacy history performs only one capability404',a
  await read(2,'personal','different-account');assert.equal(count,2);
 });
 
-async function renderMessage(projectNotice){
- const jsx=(type,props)=>({type,props}),queries=[],locations=[];
+async function renderMessage(projectNotice,messageFact=fact,turn,previousMessage){
+ const jsx=(type,props)=>({type,props}),queries=[],locations=[],readable=[];
  const store={generation:1,contacts:[{contact:{id:'coordinator',profile:{role:'coordinator'}}}],mappings:[{imConversationID:'im',kind:'personal'}]};
  const imports={
-  react:{useContext:()=>({messageIds:new Set()}),useEffect(){},useState:()=>[undefined,()=>{}]},
+  react:{useContext:()=>({messageIds:new Set()}),useEffect(effect){effect();},useState:()=>[undefined,()=>{}]},
   'react/jsx-runtime':{jsx,jsxs:jsx,Fragment:'Fragment'},
   antd:{Alert:'Alert',Button:'Button'},
+  clsx:(...classNames)=>classNames.filter(Boolean).join(' '),
   '@research-agent-platform/contracts':{OpenImResearchPointer:{safeParse:()=>({success:true,data:{conversationId:'personal',messageId:'decision',sequence:5}})}},
   './api':{researchApi:async()=>({data:projectNotice}),supportsTranscriptSync:()=>true},
   './ChatSourceQuote':{ChatSourceQuote:'ChatSourceQuote'},
   './useResearchRead':{useResearchRead(_read,identity,enabled,options){
    queries.push({identity,enabled,options});
-   return {data:identity.startsWith('project-message:')?projectNotice:identity==='im:personal:decision:5'?{fact,details:{replyTo:reply}}:undefined,refresh(){},invalidate(){}};
+   return {data:identity.startsWith('project-message:')?projectNotice:identity==='im:personal:decision:5'?{fact:messageFact,details:{replyTo:reply}}:turn&&identity===`im:${turn.id}`?{data:turn}:undefined,refresh(){},invalidate(){}};
   }},
   './store':{useResearchStore:selector=>selector(store)},
   '@/store':{useConversationStore:selector=>selector({currentConversation:{conversationID:'im'}})},
-  './agent-progress':{AgentProgressHistory:'History'},
+  './agent-progress':{AgentProgressHistory:'History',acknowledgeAgentReply(){}},
   './task-notice':{isTaskNotice:()=>false,legacyTaskInvitation:()=>undefined,serviceNoticePreview:text=>text,splitTaskResources:()=>({tasks:[],others:[]})},
   './project-message-notice':{createProjectNoticeReader,isProjectNoticeCandidate},
-  './chat-message-read':{},'./useChatRecordChanges':{useChatRecordChanges(){}},'./chat-transcript-sync':{},
-  './chat-timeline':{timelineScope:(generation,imId)=>`${generation}:${imId}`,locateMessage:(scope,locator)=>locations.push({scope,locator})},
+  './chat-message-read':{},'./useChatRecordChanges':{useChatRecordChanges(){}},'./chat-transcript-sync':{watchTranscriptMessage(){}},
+  './chat-timeline':{researchPointer:message=>message.pointer,timelineScope:(generation,imId)=>`${generation}:${imId}`,locateMessage:(scope,locator)=>locations.push({scope,locator})},
   '@/pages/chat/queryChat/MessageItem/message-item.module.scss':{__esModule:true,default:{bubble:'bubble'}},
   './PersonalReceiptCard':{PersonalReceiptCard:'PersonalReceiptCard',WorkTaskReceipt:'WorkTaskReceipt'},
   './ChatProjectDelivery':{ChatProjectDelivery:'ChatProjectDelivery'},
+  './chat-reply':{
+   isCoordinatorChatContact: id => id==='coordinator',
+   canonicalChatText: (message,coordinator) => message.origin==='model'&&coordinator?assistantReplyText(message.text):message.text,
+   coordinatorChatText: text => text,
+  },
   './SafeMessageMarkdown':{__esModule:true,default:'SafeMessageMarkdown'},
  };
  for(const name of ['./GroupNoticeCard','./ResearchActionCard','./ResearchTaskCard','./ResearchTurnStatus','./CreatedAgentChatButton','./AgentFileReadSummary','./ContinueAgentFileReadingButton','./ResearchReadSummary','./GroupMessageStatuses'])imports[name]={};
  const component=(await load('../src/research/ResearchMessageRender.tsx',imports)).default;
- return {tree:component({message:{clientMsgID:'sdk-decision',customElem:{data:'{}'}}}),queries,locations};
+ return {tree:component({message:{clientMsgID:'sdk-decision',customElem:{data:'{}'}},previousMessage,onReadableText:text=>readable.push(text)}),queries,locations,readable};
 }
 
-test('real message renderer keeps host project questions and updates with the corresponding task link',async()=>{
+test('host project questions and deadline notices render a single card with their original text and task',async()=>{
  for(const kind of ['decision','update']){
   const {tree,queries}=await renderMessage({...notice,kind}),all=nodes(tree);
-  assert.equal(all.some(node=>node.type==='details'&&node.props.className==='chat-system-notice'),false);
-  assert.ok(all.some(node=>node.type==='SafeMessageMarkdown'&&node.props.text===fact.text));
-  assert.equal(all.find(node=>node.type==='WorkTaskReceipt').props.taskId,'work');
-  assert.equal(all.find(node=>node.type==='WorkTaskReceipt').props.poll,false);
-  assert.ok(all.findIndex(node=>node.type==='WorkTaskReceipt') < all.findIndex(node=>node.type==='SafeMessageMarkdown'));
-  assert.equal(all.find(node=>node.type==='ChatSourceQuote').props.text,reply.text);
+  const [card,...otherCards]=all.filter(node=>node.type==='ChatProjectDelivery');
+  assert.equal(otherCards.length,0);
+  assert.equal(card.props.kind,kind);
+  assert.equal(card.props.taskId,'work');
+  assert.equal(card.props.text,fact.text);
+  assert.equal(card.props.source,reply);
+  assert.ok(!all.some(node=>['ChatSourceQuote','SafeMessageMarkdown','WorkTaskReceipt'].includes(node.type)));
   assert.equal(queries.find(query=>query.identity.startsWith('project-message:')).options.poll,false);
  }
 });
@@ -93,6 +101,7 @@ test('the verified project result owns a single card using the exact canonical m
  const {tree,queries,locations}=await renderMessage({...notice,kind:'result'}),all=nodes(tree);
  const card=all.find(node=>node.type==='ChatProjectDelivery');
  assert.equal(card.props.taskId,'work');
+ assert.equal(card.props.kind,'result');
  assert.equal(card.props.messageId,fact.id);
  assert.equal(card.props.text,fact.text);
  assert.equal(card.props.source,reply);
@@ -102,6 +111,41 @@ test('the verified project result owns a single card using the exact canonical m
  assert.ok(!all.some(node=>['ChatSourceQuote','SafeMessageMarkdown','WorkTaskReceipt'].includes(node.type)));
  assert.equal(tree.props['data-canonical-message'],fact.id);
  assert.equal(queries.find(query=>query.identity.startsWith('project-message:')).options.poll,false);
+});
+
+test('ordinary assistant history renders and copies the reply body with one compact source',async()=>{
+ const answer='我是你的个人助理。',text=JSON.stringify({plan:null,reply:answer});
+ const {tree,queries,readable}=await renderMessage(null,{...fact,origin:'model',text});
+ const all=nodes(tree);
+ assert.equal(all.find(node=>node.type==='SafeMessageMarkdown').props.text,answer);
+ assert.equal(all.find(node=>node.type==='ChatSourceQuote').props.text,reply.text);
+ assert.equal(readable.at(-1),answer);
+ assert.match(tree.props.className,/chat-assistant-reply/);
+ assert.equal(queries.find(query=>query.identity.startsWith('project-message:')).enabled,false);
+});
+
+test('only an adjacent automatic assistant reply omits its inline source',async()=>{
+ const previous={pointer:{messageId:reply.messageId,sequence:reply.sequence,conversationId:fact.conversationId}};
+ const adjacent={...fact,origin:'model',sequence:reply.sequence+1};
+ for(const [message,before,hasQuote] of [
+  [adjacent,previous,false],
+  [adjacent,undefined,true],
+  [adjacent,{pointer:{...previous.pointer,conversationId:'other'}},true],
+  [{...adjacent,origin:'human'},previous,true],
+  [fact,previous,true],
+ ]){
+  const {tree}=await renderMessage(null,message,undefined,before);
+  assert.equal(nodes(tree).some(node=>node.type==='ChatSourceQuote'),hasQuote);
+ }
+});
+
+test('a canonical plain work receipt uses the verified task instead of nesting a card in its answer',async()=>{
+ const turn={id:'turn',status:'succeeded',outputMessageId:fact.id,assistantReceipt:{kind:'work_task',taskId:'work'}};
+ const {tree}=await renderMessage(null,{...fact,origin:'model',turnId:turn.id},turn);
+ const all=nodes(tree),card=all.find(node=>node.type==='ChatProjectDelivery');
+ assert.equal(card.props.kind,'receipt');
+ assert.equal(card.props.taskId,'work');
+ assert.ok(!all.some(node=>['ChatSourceQuote','SafeMessageMarkdown','PersonalReceiptCard'].includes(node.type)));
 });
 
 test('an ordinary system notice keeps its existing folded presentation',async()=>{
@@ -138,7 +182,7 @@ test('delivery card uses its historical text and only offers review for the curr
   './chat-project-delivery.scss':{},'./workbench-links':{workbenchTaskPath:id=>'/workbench/personal/'+id},
  };
  const {ChatProjectDelivery}=await load('../src/research/ChatProjectDelivery.tsx',imports);
- const props={taskId:task.id,messageId:'delivery',text:'整理好了，你看一下。\n\n原版交付',source:reply,onLocateSource:location=>located.push(location)};
+ const props={taskId:task.id,messageId:'delivery',kind:'result',text:'整理好了，你看一下。\n\n原版交付',source:reply,onLocateSource:location=>located.push(location)};
  const all=nodes(ChatProjectDelivery(props));
  assert.equal(all.find(node=>node.type==='h3').props.children,task.title);
  assert.equal(all.find(node=>node.type==='SafeMessageMarkdown').props.text,'原版交付');
@@ -151,6 +195,12 @@ test('delivery card uses its historical text and only offers review for the curr
  assert.equal(located[0].messageId,reply.messageId);
  assert.equal(located[0].sequence,reply.sequence);
  assert.equal(all.find(node=>node.type==='NativeWorkbenchTaskButton').props.target.taskId,'work');
+
+ const update=nodes(ChatProjectDelivery({...props,kind:'update',text:'项目已到约定时间。仍有一项待交付。'}));
+ assert.equal(update[0].props['aria-label'],'任务进展');
+ assert.equal(update.find(node=>node.type==='Button').props.children,'查看任务');
+ assert.equal(update.find(node=>node.type==='SafeMessageMarkdown').props.text,'项目已到约定时间。仍有一项待交付。');
+ assert.equal(update.find(node=>node.type==='NativeWorkbenchTaskButton').props.target.taskId,'work');
 
  const historical=nodes(ChatProjectDelivery({...props,messageId:'previous',source:{...reply,withdrawn:true}}));
  assert.equal(historical.find(node=>node.type==='Button').props.children,'查看任务');
@@ -173,4 +223,36 @@ test('delivery card uses its historical text and only offers review for the curr
  const restricted=nodes(ChatProjectDelivery(props));
  assert.equal(restricted.find(node=>node.type==='Button').props.children,'查看任务');
  assert.equal(restricted.some(node=>node.type==='NativeWorkbenchTaskButton'),false);
+});
+
+test('SDK text, mentions, and quotes normalize only the known coordinator sender',async()=>{
+ const state={generation:1,contacts:[],actor:null};
+ const useResearchStore=selector=>selector(state);
+ Object.assign(useResearchStore,{getState:()=>state,subscribe(){}});
+ const MessageType={TextMessage:101,AtTextMessage:106,QuoteMessage:114};
+ const {readableMessage,canonicalChatText,useCoordinatorSdkSender}=await load('../src/research/chat-reply.ts',{
+  zustand:{create(init){return {getState:init,subscribe(){}};}},
+  '@openim/wasm-client-sdk':{MessageType},
+  '@research-agent-platform/contracts':{assistantReplyText},
+  '@/store':{},'./store':{useResearchStore},
+ });
+ const body='这是保留换行的助手回复。\n\n第二段。',envelope=JSON.stringify({plan:null,reply:body});
+ const examples=[
+  {contentType:MessageType.TextMessage,textElem:{content:envelope}},
+  {contentType:MessageType.AtTextMessage,atTextElem:{text:envelope}},
+  {contentType:MessageType.QuoteMessage,quoteElem:{text:envelope}},
+ ];
+ assert.equal(useCoordinatorSdkSender('assistant-sdk'),false);
+ assert.equal(readableMessage({...examples[0],sendID:'assistant-sdk'}),envelope);
+ state.session={coordinator:{peerUserID:'assistant-sdk'}};
+ assert.equal(useCoordinatorSdkSender('assistant-sdk'),true);
+ for(const message of examples){
+  assert.equal(readableMessage({...message,sendID:'assistant-sdk'}),body);
+  assert.equal(readableMessage({...message,sendID:'human-sdk',senderNickname:'助手'}),envelope);
+ }
+ assert.equal(canonicalChatText({text:envelope,origin:'human',senderContactId:'human'}),envelope);
+ for(const text of [
+  '{"plan":{},"reply":"r"}','{"plan":null,"reply":" "}','{"plan":null,"reply":"r","extra":true}',
+  '{"reply":"r"}','{"plan":null,"reply":false}','{"plan":null,"reply":','普通内容',
+ ])assert.equal(assistantReplyText(text),text);
 });

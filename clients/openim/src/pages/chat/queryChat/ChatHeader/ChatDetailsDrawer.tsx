@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Drawer, Spin, Switch } from "antd";
-import { PlusOutlined, RightOutlined, SearchOutlined } from "@ant-design/icons";
+import { CheckSquareOutlined, PlusOutlined, RightOutlined, SearchOutlined } from "@ant-design/icons";
 import {
   GroupMemberFilter,
   MessageReceiveOption,
@@ -28,6 +28,7 @@ type Props = {
   onSearch: () => void;
   onManage: () => void;
   onAboutMe: () => void;
+  onWorkbenchTasks?: () => void;
 };
 export default function ChatDetailsDrawer({
   open,
@@ -35,6 +36,7 @@ export default function ChatDetailsDrawer({
   onSearch,
   onManage,
   onAboutMe,
+  onWorkbenchTasks,
 }: Props) {
   const conversation = useConversationStore((s) => s.currentConversation);
   const roster = useGroupChatRoster();
@@ -317,6 +319,19 @@ export default function ChatDetailsDrawer({
           <span>查找聊天内容</span>
           <RightOutlined />
         </button>
+        {onWorkbenchTasks && (
+          <button
+            type="button"
+            className="desktop-chat-detail-link"
+            onClick={() => {
+              if (isScopeCurrent()) leave(onWorkbenchTasks);
+            }}
+          >
+            <CheckSquareOutlined />
+            <span>工作台任务</span>
+            <RightOutlined />
+          </button>
+        )}
         {contact?.profile.introduction && (
           <p className="desktop-chat-introduction">{contact.profile.introduction}</p>
         )}

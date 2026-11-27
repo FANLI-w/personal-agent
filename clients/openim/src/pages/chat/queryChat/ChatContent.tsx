@@ -525,7 +525,7 @@ const ChatContent = () => {
             data={messages}
             components={components}
             computeItemKey={(_, item) => item.clientMsgID}
-            itemContent={(_, message) => {
+            itemContent={(index, message) => {
               if (SystemMessageTypes.includes(message.contentType)) {
                 return (
                   <NotificationMessage key={message.clientMsgID} message={message} />
@@ -545,6 +545,7 @@ const ChatContent = () => {
                     key={message.clientMsgID}
                     conversationID={conversationID}
                     message={message}
+                    previousMessage={messages[index - loadState.firstItemIndex - 1]}
                     messageUpdateFlag={`${message.senderNickname ?? ""}${
                       message.senderFaceUrl ?? ""
                     }`}

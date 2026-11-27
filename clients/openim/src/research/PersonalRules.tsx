@@ -1,4 +1,9 @@
 import { Alert, Button, Input } from "antd";
+import {
+  LockOutlined,
+  PlusOutlined,
+  SafetyCertificateOutlined,
+} from "@ant-design/icons";
 import { useLayoutEffect, useState } from "react";
 
 import { researchApi } from "./api";
@@ -105,14 +110,18 @@ export function PersonalRules() {
   return (
     <section className="my-rules workspace-standards" aria-label="固定要求">
       <header className="my-section-heading">
-        <h2>固定要求</h2>
-        <details className="personal-rules-scope">
-          <summary>查看使用范围</summary>
-          <p>
-            由你明确设定，和聊天中形成的习惯分别保存。用于本人私聊、个人会话及本机任务工作区。
-            群聊和共享个人任务不加载，不能覆盖平台或团队要求。
-          </p>
-        </details>
+        <div>
+          <h2>固定要求</h2>
+          <p>为个人助理和本机任务设定需要持续遵守的要求。</p>
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined aria-hidden="true" />}
+          disabled={busy || Boolean(editing)}
+          onClick={() => setEditing({ version: 0, title: "", content: "" })}
+        >
+          新增要求
+        </Button>
       </header>
       {read.error && (
         <Alert
@@ -124,101 +133,109 @@ export function PersonalRules() {
       )}
       {notice && <Alert type="success" message={notice} />}
       {failure && <Alert type="error" message={failure} />}
-      <div className="workspace-standards-heading">
-        <div>
-          <h3>已保存的要求</h3>
-          <p>确认后立即生效；撤回后保留历史，不再进入新对话。</p>
-        </div>
-        <Button
-          type="primary"
-          disabled={busy || Boolean(editing)}
-          onClick={() => setEditing({ version: 0, title: "", content: "" })}
-        >
-          新增要求
-        </Button>
-      </div>
-      {editing && (
-        <div className="workspace-standards-editor" aria-label="编辑个人规则">
-          <Input
-            aria-label="规则标题"
-            maxLength={80}
-            placeholder="一句话说明这条规则，例如：回答先给结论"
-            value={editing.title}
-            disabled={busy}
-            onChange={(e) => setEditing((s) => s && { ...s, title: e.target.value })}
-          />
-          <Input.TextArea
-            aria-label="规则正文"
-            rows={3}
-            maxLength={2000}
-            placeholder="写清要求本身，例如：先给结论，再给证据；不确定的地方直接说不确定。"
-            value={editing.content}
-            disabled={busy}
-            onChange={(e) => setEditing((s) => s && { ...s, content: e.target.value })}
-          />
+      <div className="my-rules-panel">
+        <div className="workspace-standards-heading">
           <div>
-            <Button
-              type="primary"
-              loading={busy}
-              disabled={!editing.title.trim() || !editing.content.trim()}
-              onClick={() => void submit("save")}
-            >
-              保存
-            </Button>
-            <Button disabled={busy} onClick={() => setEditing(undefined)}>
-              取消
-            </Button>
+            <h3>已保存的要求</h3>
+            <p>确认后立即生效；撤回后保留历史，不再进入新对话。</p>
           </div>
         </div>
-      )}
-      {!read.data && !read.error && <p>正在读取固定要求…</p>}
-      {read.data && !records.length && !editing && !read.error && (
-        <p className="workspace-muted">
-          还没有固定要求。可以保存一条需要持续遵守的明确要求。
-        </p>
-      )}
-      {records.map((record) => (
-        <article className="workspace-standards-record" key={record.id}>
-          <header>
-            <strong>{record.title}</strong>
-            <span className={statusClasses[record.status]}>
-              {statusLabels[record.status]}
-            </span>
-            <small>
-              v{record.version} · {new Date(record.updatedAt).toLocaleString("zh-CN")}
-            </small>
-          </header>
-          <p>{record.content}</p>
-          <div className="workspace-standards-actions">
-            {record.allowedActions.includes("revise") && (
+        {editing && (
+          <div className="workspace-standards-editor" aria-label="编辑个人规则">
+            <Input
+              aria-label="规则标题"
+              maxLength={80}
+              placeholder="一句话说明这条规则，例如：回答先给结论"
+              value={editing.title}
+              disabled={busy}
+              onChange={(e) => setEditing((s) => s && { ...s, title: e.target.value })}
+            />
+            <Input.TextArea
+              aria-label="规则正文"
+              rows={3}
+              maxLength={2000}
+              placeholder="写清要求本身，例如：先给结论，再给证据；不确定的地方直接说不确定。"
+              value={editing.content}
+              disabled={busy}
+              onChange={(e) =>
+                setEditing((s) => s && { ...s, content: e.target.value })
+              }
+            />
+            <div>
               <Button
-                size="small"
-                disabled={busy}
-                onClick={() =>
-                  setEditing({
-                    id: record.id,
-                    version: record.version,
-                    title: record.title,
-                    content: record.content,
-                  })
-                }
+                type="primary"
+                loading={busy}
+                disabled={!editing.title.trim() || !editing.content.trim()}
+                onClick={() => void submit("save")}
               >
-                修改
+                保存
               </Button>
-            )}
-            {record.allowedActions.includes("revoke") && (
-              <Button
-                size="small"
-                danger
-                disabled={busy}
-                onClick={() => void submit("revoke", record)}
-              >
-                撤回
+              <Button disabled={busy} onClick={() => setEditing(undefined)}>
+                取消
               </Button>
-            )}
+            </div>
           </div>
-        </article>
-      ))}
+        )}
+        {!read.data && !read.error && <p role="status">正在读取固定要求…</p>}
+        {read.data && !records.length && !editing && !read.error && (
+          <div className="my-rules-empty">
+            <SafetyCertificateOutlined aria-hidden="true" />
+            <h3>还没有固定要求</h3>
+            <p>例如：所有交付物都在首页注明版本与日期。</p>
+          </div>
+        )}
+        {records.map((record) => (
+          <article className="workspace-standards-record" key={record.id}>
+            <header>
+              <strong>{record.title}</strong>
+              <span className={statusClasses[record.status]}>
+                {statusLabels[record.status]}
+              </span>
+              <small>
+                v{record.version} · {new Date(record.updatedAt).toLocaleString("zh-CN")}
+              </small>
+            </header>
+            <p>{record.content}</p>
+            <div className="workspace-standards-actions">
+              {record.allowedActions.includes("revise") && (
+                <Button
+                  size="small"
+                  disabled={busy}
+                  onClick={() =>
+                    setEditing({
+                      id: record.id,
+                      version: record.version,
+                      title: record.title,
+                      content: record.content,
+                    })
+                  }
+                >
+                  修改
+                </Button>
+              )}
+              {record.allowedActions.includes("revoke") && (
+                <Button
+                  size="small"
+                  danger
+                  disabled={busy}
+                  onClick={() => void submit("revoke", record)}
+                >
+                  撤回
+                </Button>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+      <details className="personal-rules-scope">
+        <summary>
+          <LockOutlined aria-hidden="true" /> 查看使用范围
+        </summary>
+        <p>
+          由你明确设定，和聊天中形成的习惯分别保存。用于本人私聊、个人会话及本机任务工作区。
+          群聊和共享个人任务不加载，不能覆盖平台或团队要求。
+        </p>
+      </details>
     </section>
   );
 }

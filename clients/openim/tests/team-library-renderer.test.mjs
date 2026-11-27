@@ -183,7 +183,7 @@ function fixture(initial = snapshot()) {
     "./workbench-links": {},
     "./native-workbench-handoff": {},
     "./local-dsh-context": {},
-    "./RepositoryEditor": {},
+    "./RepositoryEditor": { RepositoryEditor: "RepositoryEditor" },
     "./LibraryIndexPage": {},
     "./SafeMessageMarkdown": { default: "Markdown" },
     "./TeamLibraryFileImport": {},
@@ -269,10 +269,12 @@ test("the repository offers one primary recovery for each actionable sync or con
   f.repositoryError = "";
   const binding = f.binding;
   f.binding = null;
-  assert.deepEqual(primary(await f.settle()), ["连接团队仓库"]);
+  assert.deepEqual(primary(await f.settle()), []);
+  assert(nodes(f.tree).some(n => n.type === "RepositoryEditor" && n.props.inline));
   f.canConfigure = false;
   assert.deepEqual(primary(await f.settle()), []);
-  assert(textOf(f.tree).includes("请课题组管理员配置仓库"));
+  assert(!nodes(f.tree).some(n => n.type === "RepositoryEditor"));
+  assert(textOf(f.tree).includes("请课题组管理员连接 GitHub 仓库"));
 
   f.binding = binding;
   f.sync = async () => { throw Error("网络暂不可用"); };

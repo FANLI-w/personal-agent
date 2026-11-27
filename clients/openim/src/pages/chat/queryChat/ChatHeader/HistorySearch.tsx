@@ -12,6 +12,7 @@ import {
 } from "@/research/useAgentChatOperation";
 import { withRequestDeadline } from "@/research/request-deadline";
 import {
+  canonicalChatText,
   readableMessage,
   selectChatReply,
   selectCanonicalChatReply,
@@ -95,7 +96,7 @@ export default function HistorySearch({
   }, [open, conversation?.conversationID, mapping?.researchConversationId, generation]);
   const canonicalResult = (message: ChatMessage): Result => ({
     id: `canonical:${message.id}`,
-    text: message.text || "",
+    text: canonicalChatText(message),
     sender:
       roster.data?.data.find((c) => c.id === message.senderContactId)?.displayName ||
       contacts.find((c) => c.contact.id === message.senderContactId)?.contact
@@ -197,10 +198,10 @@ export default function HistorySearch({
             setScanned((previous) => previous + response.data.length);
             found.push(
               ...response.data
-                .filter((message) =>
-                  message.text?.toLocaleLowerCase().includes(term.toLocaleLowerCase()),
-                )
-                .map(canonicalResult),
+                .map(canonicalResult)
+                .filter((result) =>
+                  result.text.toLocaleLowerCase().includes(term.toLocaleLowerCase()),
+                ),
             );
             next = response.nextCursor;
             cursorRef.current = next;

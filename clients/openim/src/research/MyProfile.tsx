@@ -1,5 +1,7 @@
 import { Alert, Button, Input } from "antd";
+import { DownOutlined, EditOutlined, IdcardOutlined } from "@ant-design/icons";
 import { useState } from "react";
+import OIMAvatar from "@/components/OIMAvatar";
 import { useUserStore } from "@/store";
 import { AcceptCatAccountNumber } from "./AcceptCatAccountNumber";
 import { ContactCardShare } from "./ContactCardShare";
@@ -17,14 +19,15 @@ type ProfileDraft = {
   };
   version: number;
 };
-const fields = [
-  ["displayName", "昵称", 200],
+const profileFields = [
   ["introduction", "个人介绍", 2000],
   ["capabilityDescription", "研究方向与能力", 4000],
   ["personality", "名片上的交流介绍", 2000],
 ] as const;
+const fields = [["displayName", "昵称", 200], ...profileFields] as const;
 
 export function MyProfile() {
+  const avatar = useUserStore((s) => s.selfInfo.faceURL);
   const actorId = useResearchStore((s) => s.actor?.member.id);
   const ownId = useResearchStore(
     (s) =>
@@ -104,6 +107,7 @@ export function MyProfile() {
         </div>
         {contact && !draft && (
           <Button
+            icon={<EditOutlined aria-hidden="true" />}
             onClick={() => {
               setDraft({
                 values: {
@@ -139,74 +143,87 @@ export function MyProfile() {
       {contact && (
         <>
           <div className="my-profile-account">
-            <AcceptCatAccountNumber username={contact.username} isSelf compact />
+            <div className="my-profile-account-summary">
+              <div className="my-profile-identity">
+                <OIMAvatar src={avatar} text={contact.displayName} size={56} />
+                <strong>{contact.displayName}</strong>
+              </div>
+              <AcceptCatAccountNumber username={contact.username} isSelf compact />
+            </div>
             <details className="my-profile-share">
-              <summary>分享我的名片</summary>
+              <summary>
+                <IdcardOutlined aria-hidden="true" />
+                分享我的名片
+                <DownOutlined className="my-profile-share-arrow" aria-hidden="true" />
+              </summary>
               <ContactCardShare contact={contact} active />
             </details>
           </div>
-          {draft ? (
-            <form
-              className="my-profile-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void save();
-              }}
-            >
-              {fields.map(([key, label, maxLength]) => (
-                <label key={key}>
-                  {label}
-                  <Input.TextArea
-                    aria-label={label}
-                    rows={key === "displayName" ? 1 : 3}
-                    maxLength={maxLength}
-                    value={draft.values[key]}
+          <section className="my-profile-details" aria-labelledby="my-profile-fields">
+            <h3 id="my-profile-fields">{draft ? "编辑个人资料" : "名片资料"}</h3>
+            {draft ? (
+              <form
+                className="my-profile-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void save();
+                }}
+              >
+                {fields.map(([key, label, maxLength]) => (
+                  <label key={key}>
+                    {label}
+                    <Input.TextArea
+                      aria-label={label}
+                      rows={key === "displayName" ? 1 : 3}
+                      maxLength={maxLength}
+                      value={draft.values[key]}
+                      disabled={busy}
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          values: { ...draft.values, [key]: event.target.value },
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+                <div className="my-profile-actions">
+                  <Button
+                    onClick={() => {
+                      setDraft(undefined);
+                      setFailure("");
+                    }}
                     disabled={busy}
-                    onChange={(event) =>
-                      setDraft({
-                        ...draft,
-                        values: { ...draft.values, [key]: event.target.value },
-                      })
-                    }
-                  />
-                </label>
-              ))}
-              <div className="my-profile-actions">
-                <Button
-                  onClick={() => {
-                    setDraft(undefined);
-                    setFailure("");
-                  }}
-                  disabled={busy}
-                >
-                  取消编辑
-                </Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={busy}
-                  disabled={!draft.values.displayName.trim()}
-                >
-                  保存资料
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <dl className="my-profile-facts">
-              {fields
-                .filter(([key]) => key === "displayName" || contact.profile[key].trim())
-                .map(([key, label]) => (
+                  >
+                    取消编辑
+                  </Button>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={busy}
+                    disabled={!draft.values.displayName.trim()}
+                  >
+                    保存资料
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <dl className="my-profile-facts">
+                {profileFields.map(([key, label]) => (
                   <div key={key}>
                     <dt>{label}</dt>
                     <dd>
-                      {key === "displayName"
-                        ? contact.displayName
-                        : contact.profile[key]}
+                      {contact.profile[key].trim() ? (
+                        contact.profile[key]
+                      ) : (
+                        <span className="my-profile-blank">未填写</span>
+                      )}
                     </dd>
                   </div>
                 ))}
-            </dl>
-          )}
+              </dl>
+            )}
+          </section>
         </>
       )}
     </section>

@@ -7,7 +7,7 @@ export function isProjectNoticeCandidate(
 ) {
   return !!fact && fact.origin === 'service' && !!fact.senderContactId && coordinator &&
     !fact.turnId && !fact.resources.length && !fact.actionIds.length &&
-    !!reply?.senderContactId && !reply.withdrawn;
+    !!reply?.senderContactId;
 }
 
 /** One non-polling lookup per eligible message/account generation. A legacy

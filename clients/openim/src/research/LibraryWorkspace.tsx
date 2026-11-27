@@ -18,6 +18,15 @@ import { WorkspaceReports } from "./WorkspaceReports";
 import { TeamLibraryWorkspace } from "./TeamLibraryWorkspace";
 import "./record-workspace.scss";
 
+const librarySections = [
+  { key: "team", label: "团队资料", Icon: FolderOutlined },
+  { key: "mine", label: "我的资料", Icon: FolderOutlined },
+  { key: "standards", label: "课题组规范", Icon: SafetyCertificateOutlined },
+  { key: "templates", label: "模板与方法", Icon: ReadOutlined },
+  { key: "reports", label: "本机报告", Icon: FileTextOutlined },
+  { key: "collections", label: "共享原件", Icon: FolderOutlined },
+];
+
 export function LibraryWorkspace() {
   const [params, setParams] = useSearchParams();
   // The standards page needs its own routes, so the tab only appears once the
@@ -56,56 +65,57 @@ export function LibraryWorkspace() {
         </section>
       </main>
     );
-  if (availability.supports(44))
+  if (availability.supports(44)) {
+    const active = reports
+      ? "reports"
+      : standards
+      ? ["templates", "methods"].includes(params.get("section") || "")
+        ? "templates"
+        : "standards"
+      : index
+      ? "mine"
+      : params.get("panel") === "collections"
+      ? "collections"
+      : params.get("scope") === "mine"
+      ? "mine"
+      : "team";
+    const openSection = (key: string) => {
+      const next = new URLSearchParams();
+      if (key === "mine") next.set("scope", "mine");
+      else if (key === "templates") {
+        next.set("panel", "standards");
+        next.set("section", "templates");
+      } else if (key !== "team") next.set("panel", key);
+      setParams(next);
+    };
     return (
       <main className="social-workspace workspace-library library-page-shell">
-        <nav className="library-section-nav" aria-label="资料导航">
+        <aside className="library-section-sidebar">
           <h1>资料</h1>
-          {[
-            { key: "team", label: "团队资料", icon: <FolderOutlined /> },
-            { key: "mine", label: "我的资料", icon: <FolderOutlined /> },
-            {
-              key: "standards",
-              label: "课题组规范",
-              icon: <SafetyCertificateOutlined />,
-            },
-            { key: "templates", label: "模板与方法", icon: <ReadOutlined /> },
-            { key: "reports", label: "本机报告", icon: <FileTextOutlined /> },
-            { key: "collections", label: "共享原件", icon: <FolderOutlined /> },
-          ].map(({ key, label, icon }) => {
-            const active = reports
-              ? "reports"
-              : standards
-              ? ["templates", "methods"].includes(params.get("section") || "")
-                ? "templates"
-                : "standards"
-              : index
-              ? "mine"
-              : params.get("panel") === "collections"
-              ? "collections"
-              : params.get("scope") === "mine"
-              ? "mine"
-              : "team";
-            return (
+          <nav className="library-section-nav" aria-label="资料导航">
+            {librarySections.map(({ key, label, Icon }) => (
               <button
                 key={key}
+                type="button"
                 aria-current={active === key ? "page" : undefined}
-                onClick={() => {
-                  const next = new URLSearchParams();
-                  if (key === "mine") next.set("scope", "mine");
-                  else if (key === "templates") {
-                    next.set("panel", "standards");
-                    next.set("section", "templates");
-                  } else if (key !== "team") next.set("panel", key);
-                  setParams(next);
-                }}
+                onClick={() => openSection(key)}
               >
-                {icon}
+                <Icon />
                 {label}
               </button>
-            );
-          })}
-        </nav>
+            ))}
+          </nav>
+          <select
+            className="library-section-switcher"
+            aria-label="资料栏目"
+            value={active}
+            onChange={(event) => openSection(event.target.value)}
+          >
+            {librarySections.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </aside>
         <div className="library-section-body">
           {reports ? (
             <div className="library-workspace-content">
@@ -127,6 +137,7 @@ export function LibraryWorkspace() {
         </div>
       </main>
     );
+  }
   return (
     <main className="social-workspace workspace-library">
       <header className="workspace-heading">

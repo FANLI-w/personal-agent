@@ -18,6 +18,7 @@ import {
   FilePptOutlined,
   FileTextOutlined,
   FolderOpenOutlined,
+  GithubOutlined,
   MoreOutlined,
   HistoryOutlined,
   PlusOutlined,
@@ -511,6 +512,11 @@ export function TeamLibraryWorkspace({
       </Button>
     </details>
   );
+  const refreshBinding = async () => {
+    setConfigure(false);
+    repository.invalidate();
+    await repository.refresh();
+  };
   return (
     <section className="team-library" aria-label="团队资料工作区">
       <div className="team-library-bar">
@@ -653,18 +659,24 @@ export function TeamLibraryWorkspace({
               <Button type="primary" onClick={repository.refresh}>重试读取配置</Button>
             </div>
           ) : !binding ? (
-            <div className="team-library-empty">
-              <FolderOpenOutlined />
-              <h2>把课题组资料放在一起</h2>
-              <p>连接团队仓库，统一维护项目说明、模板、约定和原件位置。</p>
+            <section className="team-library-connect">
+              <header className="team-library-connect-header">
+                <span className="team-library-connect-icon" aria-hidden="true">
+                  <GithubOutlined />
+                </span>
+                <div>
+                  <h3>{current?.canConfigure ? "连接 GitHub 仓库" : "尚未连接 GitHub 仓库"}</h3>
+                  <p>
+                    {current?.canConfigure
+                      ? "粘贴课题组的 GitHub 仓库地址，连接后可按文件夹浏览团队资料。"
+                      : "请课题组管理员连接 GitHub 仓库。连接后，成员可在这里浏览团队资料。"}
+                  </p>
+                </div>
+              </header>
               {current?.canConfigure ? (
-                <Button type="primary" onClick={() => setConfigure(true)}>
-                  连接团队仓库
-                </Button>
-              ) : (
-                <p>请课题组管理员配置仓库。</p>
-              )}
-            </div>
+                <RepositoryEditor inline current={current} onSaved={refreshBinding} />
+              ) : null}
+            </section>
           ) : !snapshot ? (
             <div className="team-library-empty">
               {busy ? (
@@ -790,6 +802,7 @@ export function TeamLibraryWorkspace({
                   <div className="team-library-repository">
                     <div className="team-library-repository-heading">
                       <nav aria-label="仓库路径" className="team-library-breadcrumb">
+                        <GithubOutlined aria-hidden="true" />
                         <Button
                           type="link"
                           onClick={() =>
@@ -1212,10 +1225,7 @@ export function TeamLibraryWorkspace({
           readOnly={!current?.canConfigure}
           current={current}
           onClose={() => setConfigure(false)}
-          onSaved={async () => {
-            setConfigure(false);
-            await repository.refresh();
-          }}
+          onSaved={refreshBinding}
         />
       )}
       {editing && snapshot && (
