@@ -3474,3 +3474,15 @@ Windows x64 本机预览包 `DeepChat_0.10.123-preview.1.exe` 已生成并完成
 2026-11-27 · [v0.10.123](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.123) 来自 PR #257 主线合并提交 63e304d862a543859fd7c300c397db73a47f77c8。742 项客户端测试和四项托管检查通过。该版包含紧凑聊天任务卡、淡蓝配色和固定位置的导航头像。隔离启动及桌面尺寸、双倍像素密度和窄窗口界面检查通过。
 
 四个公开附件的字节数和 SHA-256 已逐项核对，GitHub Latest 指向本版。Windows x64 安装器为 421,785,808 字节，SHA-256 为 e5ce4732fe496e3d91f8b6044d2821f852bceaff3b6dc70b2ed1ae478980917d，未签署 Authenticode。证据位于 D:/deepseek-agent/.runtime/deepchat-release-0.10.123/。线上 API 与 worker 已在本版发布前部署到 0.10.122 对应提交 8c21ec0，本次仅发布桌面更新。
+
+## 2026-11-27 · 话题正文重定（本地分支，契约 0.53）
+
+`feat/topic-curator-refactor` 基于 main `70b97e5`。契约升到 0.53.0：`body` 由六段改四段，删除 `context`；`decisions` 条目改为 `{id, text}`，id 由服务端分配、输入可省略、响应必填，删除 `status`，上限 8 条、单条 150 字；`constraints`/`next`/`openQuestions` 单条 300 字降为 150 字，整段替换，数组顺序即优先级；`summary` 上限 300 字提到 600 字。输入与存储分成两套 schema：`AssistantTopicBodyInput` 的 `id` 可省，`AssistantTopicBody` 的 `id` 必填。`openapi.json` 与 `examples.json` 重新导出。
+
+服务端写入按 id 退役：`retire` 列出要删的 id，服务端删条目并给新结论分配 `d<n>`，未知 id 记 `result_json.unmatched` 且不写库；没有实质变化的 patch 返回 `no_change`，不升版本、不落 revision。`next_decision_id` 随话题持久化，删除后的 id 不复用。注入改为 `summary` 全文加四段各 3 条，索引剔除当前 `active` 那条并重算 `omitted`。
+
+迁移 042 删除存量 `body.context`、按数组顺序补 `decisions[].id`、给 `assistant_topics` 加 `next_decision_id`、按新上限截断。旧 revision 文档不重写，0.53 之前的历史从新版本开始。
+
+整理器提示词按判定顺序重写：冲突 → 重复 → 过长 → 不动，四段上限集中一段，新增「一条一个断言」「保留失效条件」「读者是下一轮的你」与自检要求，`summary` 明确要求人和模型都能读懂。
+
+本地验证：契约包编译、`export-contracts --check`、`apps/api` 类型检查（含 `tests`）、`check-content` 通过；用临时库跑通 42 条迁移链、`pragma integrity_check`，并用 10 条超长 `decisions` 与空 body 两组数据验证截断、id 分配与计数器。vitest 受沙盒限制未在本地执行（Vite 启动时 `spawn EPERM`），单测由 CI 运行。本批未进 CI 通过记录、未部署，生产仍是契约 0.52 / 迁移 041。
