@@ -1,12 +1,24 @@
-import { CopyOutlined, ExportOutlined } from "@ant-design/icons";
+import { CommentOutlined, CopyOutlined, ExportOutlined } from "@ant-design/icons";
 import { Alert, Button, Input } from "antd";
+import type {
+  FeishuLibrary,
+  FeishuLibraryResult,
+} from "@research-agent-platform/contracts";
 import { useRef, useState } from "react";
 import { useResearchRead } from "./useResearchRead";
-import { researchApi } from "./api";
+import { researchApi, ResearchApiError } from "./api";
 import { openFeishuLibrary } from "./feishu-library-link";
 import { usePersonalOperation } from "./usePersonalOperation";
 
-export function FeishuLibrarySource({ id, scope, onAsk }: { id: string; scope: string; onAsk: () => void }) {
+export function FeishuLibrarySource({
+  id,
+  scope,
+  onDiscuss,
+}: {
+  id: string;
+  scope: string;
+  onDiscuss: (draft: string) => void;
+}) {
   const read = useResearchRead(
     (signal) => researchApi("feishuLibraries", { signal }),
     "external-library:" + id,
@@ -25,22 +37,39 @@ export function FeishuLibrarySource({ id, scope, onAsk }: { id: string; scope: s
     return (
       <Alert
         type="warning"
-        message="这个绑定已不可用，请重新读取集合或在对话中重新发送链接。"
+        message="这个绑定已不可用，请重新读取集合或重新绑定飞书多维表格。"
       />
     );
   return (
     <section className="feishu-library-source" aria-label="飞书资料库">
       <FeishuLibraryActions
-        key={id + library.sourceUrl}
+        key={library.sourceUrl}
         url={library.sourceUrl}
-        onAsk={onAsk}
+        onDiscuss={() =>
+          onDiscuss(
+            `我想和你讨论飞书资料库「${library.name}」中的数据表「${library.tableName}」。`,
+          )
+        }
       />
-      <p>{library.tableName} · 飞书多维表格 · {scope === "lab_shared" ? "课题组共享" : "仅自己可见"}</p>
+      <p>
+        {library.tableName} · 飞书多维表格 ·{" "}
+        {scope === "lab_shared" ? "课题组共享" : "仅自己可见"}
+      </p>
+      <FeishuLibraryQuery
+        key={`${library.collectionId}:${library.version}`}
+        library={library}
+      />
     </section>
   );
 }
 
-function FeishuLibraryActions({ url, onAsk }: { url: string; onAsk: () => void }) {
+function FeishuLibraryActions({
+  url,
+  onDiscuss,
+}: {
+  url: string;
+  onDiscuss: () => void;
+}) {
   const [busy, setBusy] = useState(false),
     [showLink, setShowLink] = useState(false);
   const [feedback, setFeedback] = useState<{ error: boolean; message: string }>();
@@ -110,16 +139,8 @@ function FeishuLibraryActions({ url, onAsk }: { url: string; onAsk: () => void }
         <Button icon={<CopyOutlined />} onClick={() => void copy()}>
           复制链接
         </Button>
-        <Button
-          onClick={() => {
-            onAsk();
-            setFeedback({
-              error: false,
-              message: "请在下方资料 Agent 输入问题并发送；这里不会自动发送查询。",
-            });
-          }}
-        >
-          去下方提问
+        <Button icon={<CommentOutlined aria-hidden="true" />} onClick={onDiscuss}>
+          和个人助理讨论
         </Button>
       </div>
       {feedback && (
@@ -141,5 +162,94 @@ function FeishuLibraryActions({ url, onAsk }: { url: string; onAsk: () => void }
         />
       )}
     </>
+  );
+}
+
+function FeishuLibraryQuery({ library }: { library: FeishuLibrary }) {
+  const operation = usePersonalOperation(
+    true,
+    `feishu-library-query:${library.collectionId}`,
+  );
+  const running = useRef(false);
+  const previousQuestion = useRef<string>();
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState("");
+  const [result, setResult] = useState<FeishuLibraryResult>();
+  async function query(value: string) {
+    const question = value.trim();
+    const { isCurrent } = operation.capture();
+    if (!question || running.current || !isCurrent()) return;
+    running.current = true;
+    setBusy(true);
+    setFailure("");
+    setResult(undefined);
+    try {
+      const response = await researchApi("queryFeishuLibrary", {
+        body: {
+          collectionId: library.collectionId,
+          question,
+          ...(previousQuestion.current
+            ? { previousQuestion: previousQuestion.current }
+            : {}),
+        },
+      });
+      if (!isCurrent()) return;
+      previousQuestion.current = response.data.contextQuestion;
+      setResult(response.data);
+    } catch (error) {
+      if (!isCurrent()) return;
+      setFailure(
+        error instanceof ResearchApiError && error.code === "FEISHU_REAUTHORIZE"
+          ? "飞书需要重新授权。请从“绑定飞书多维表格”重新授权后再查询。"
+          : error instanceof Error
+          ? error.message
+          : "查询失败，请重试。",
+      );
+    } finally {
+      running.current = false;
+      if (isCurrent()) setBusy(false);
+    }
+  }
+  return (
+    <details className="feishu-library-query">
+      <summary>查询飞书表格记录</summary>
+      <Input.Search
+        aria-label="查询飞书表格记录"
+        placeholder="例如：2026 年 CCF A 论文"
+        enterButton="查询"
+        loading={busy}
+        maxLength={8000}
+        onSearch={(value) => void query(value)}
+      />
+      {failure && <Alert type="warning" message={failure} />}
+      {result?.state === "clarification" && (
+        <Alert type="info" message={result.clarification} />
+      )}
+      {result?.state === "results" && (
+        <>
+          <p role="status">
+            已读取 {result.scanned} 条，匹配 {result.matched} 条
+            {result.complete ? "" : "（仅覆盖已读范围）"}。
+          </p>
+          {!!result.conditions.length && <p>{result.conditions.join(" · ")}</p>}
+          <ul>
+            {result.records.map((record) => (
+              <li key={record.id}>
+                <strong>{record.title}</strong>
+                <p>
+                  {[record.authors, record.venue, record.year, record.grade]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+                {record.abstract && <p>{record.abstract}</p>}
+              </li>
+            ))}
+          </ul>
+          {result.limitations.map((limit) => (
+            <p key={limit}>{limit}</p>
+          ))}
+        </>
+      )}
+    </details>
   );
 }

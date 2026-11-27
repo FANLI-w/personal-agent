@@ -5,31 +5,55 @@ import {
   HistoryOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
-import { useLayoutEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLayoutEffect, useRef, useState } from "react";
 import { researchApi } from "./api";
 import { useResearchRead } from "./useResearchRead";
 import { useResearchStore } from "./store";
-import { requestStateLabels } from "./task-planning";
+import { planDate, planProblems, requestStateLabels } from "./task-planning";
 import { RecordWorkspace } from "./RecordWorkspace";
-import { workbenchTaskPath } from "./workbench-links";
 import { personalTaskTitle } from "./workbench-view";
+import SafeMessageMarkdown from "./SafeMessageMarkdown";
+import {
+  createPlannerTasks,
+  isDiscussionPlan,
+  plannerCacheKey,
+  plannerPlanInput,
+  readPlannerHistory,
+  type CreateIntent,
+  type PlannerThread,
+} from "./planner-chat";
+import { usePersonalOperation } from "./usePersonalOperation";
 
 export function PlanningHistory({
-  onOpen,
+  planId,
+  requestId,
+  onOpenTask,
+  onDiscuss,
   onBack,
 }: {
-  onOpen?: (target: { plan?: string; request?: string; task?: string }) => void;
-  onBack?: () => void;
-} = {}) {
-  const [params, setParams] = useSearchParams();
+  planId?: string;
+  requestId?: string;
+  onOpenTask: (id: string) => void;
+  onDiscuss: (draft?: string) => Promise<boolean>;
+  onBack: () => void;
+}) {
   const actor = useResearchStore((s) => s.actor),
     generation = useResearchStore((s) => s.generation);
+  const contacts = useResearchStore((s) => s.contacts);
   const [status, setStatus] = useState<"draft" | "confirmed">("draft");
   const [pages, setPages] = useState<(string | undefined)[]>([undefined]);
   const [search, setSearch] = useState("");
-  const [selection, setSelection] = useState("");
-  const [showRequests, setShowRequests] = useState(false);
+  const [selection, setSelection] = useState(planId || "");
+  const [showRequests, setShowRequests] = useState(!!requestId);
+  const [selectedRequest, setSelectedRequest] = useState(requestId);
+  const [archive, setArchive] = useState<PlannerThread[]>();
+  const [selectedThread, setSelectedThread] = useState("");
+  const archiveOperation = usePersonalOperation(!!actor, "plan-archive");
+  const [confirmation, setConfirmation] = useState<CreateIntent>();
+  const [confirming, setConfirming] = useState(false);
+  const [confirmFailure, setConfirmFailure] = useState("");
+  const activeConfirmation = useRef<symbol>();
+  const confirmOperation = usePersonalOperation(!!confirmation, `plan-confirm:${confirmation?.plan.id}`);
   const read = useResearchRead(
     (signal) =>
       researchApi("plans", {
@@ -43,11 +67,12 @@ export function PlanningHistory({
   const visible = (read.data?.data || []).filter((p) =>
     p.goal.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
   );
-  const selected = visible.find((p) => p.id === selection) || visible[0];
+  const selectedId = (search.trim() ? visible.find((p) => p.id === selection)?.id : selection) ||
+    visible[0]?.id;
   const detail = useResearchRead(
-    (signal) => researchApi("getPlan", { params: { id: selected!.id }, signal }),
-    `history-plan:${selected?.id}`,
-    !!actor && !!selected,
+    (signal) => researchApi("getPlan", { params: { id: selectedId! }, signal }),
+    `history-plan:${selectedId}`,
+    !!actor && !!selectedId,
     { timeoutMs: 10000 },
   );
   const plan = detail.data?.data;
@@ -63,6 +88,21 @@ export function PlanningHistory({
     !!actor,
     { poll: false, timeoutMs: 10000 },
   );
+  const requestDetail = useResearchRead(
+    (signal) => researchApi("getPlanRequest", { params: { id: selectedRequest! }, signal }),
+    `history-request:${selectedRequest}`,
+    showRequests && !!actor && !!selectedRequest,
+    { poll: false, timeoutMs: 10000 },
+  );
+  const request = requestDetail.data?.data;
+  const canConfirm = plan?.status === "draft" && plan.ownerId === actor?.member.id &&
+    !isDiscussionPlan(plan.proposedItems) && !planProblems(plannerPlanInput(plan)).length &&
+    !requests.data?.data.some((item) => item.planId === plan.id &&
+      (item.status === "queued" || item.status === "running"));
+  const people = new Map((contacts || []).flatMap(({ contact }) =>
+    contact.identity.kind === "human" ? [[contact.identity.memberId, contact.displayName] as const] : [],
+  ));
+  if (actor) people.set(actor.member.id, actor.member.displayName);
   const recentByPlan = new Map<string, string>();
   for (const request of requests.data?.data || []) {
     if (!request.planId) continue;
@@ -74,36 +114,83 @@ export function PlanningHistory({
     setStatus("draft");
     setPages([undefined]);
     setSearch("");
-    setSelection("");
+    setSelection(planId || "");
+    setShowRequests(!!requestId);
+    setSelectedRequest(requestId);
+    setArchive(undefined);
+    setSelectedThread("");
+    setConfirmation(undefined);
+    setConfirming(false);
+    setConfirmFailure("");
+    activeConfirmation.current = undefined;
+  }, [generation, planId, requestId]);
+  const confirmPlan = async () => {
+    if (!confirmation || activeConfirmation.current) return;
+    const { isCurrent } = confirmOperation.capture();
+    if (!isCurrent()) return;
+    const ticket = Symbol();
+    activeConfirmation.current = ticket;
+    setConfirming(true);
+    setConfirmFailure("");
+    try {
+      const created = await createPlannerTasks(researchApi, confirmation, isCurrent);
+      if (!isCurrent()) return;
+      setConfirmation(undefined);
+      setStatus("confirmed");
+      setPages([undefined]);
+      setSelection(created.plan.id);
+      await detail.refresh();
+    } catch (error) {
+      if (isCurrent())
+        setConfirmFailure(error instanceof Error ? error.message : "暂时无法确认创建结果，请重试。");
+    } finally {
+      if (activeConfirmation.current === ticket) {
+        activeConfirmation.current = undefined;
+        setConfirming(false);
+      }
+    }
+  };
+  const openArchive = async () => {
+    if (!actor) return;
+    const { isCurrent } = archiveOperation.capture();
+    let address = window.location.origin;
+    try {
+      const service = await window.electronAPI?.getResearchServiceStatus();
+      const url = new URL(service?.address || address);
+      if (url.protocol === "http:" || url.protocol === "https:")
+        address = url.origin + url.pathname.replace(/\/$/, "");
+    } catch {
+      // The original conversation cache used the current origin as a fallback.
+    }
+    if (!isCurrent()) return;
+    try {
+      const key = plannerCacheKey(address, actor.member.id, actor.member.labId);
+      const history = readPlannerHistory(localStorage.getItem(key));
+      setArchive(history?.threads.filter((thread) => thread.messages.length || thread.draft) || []);
+    } catch {
+      setArchive([]);
+    }
+    setSelectedThread("");
+  };
+  const thread = archive?.find((item) => item.id === selectedThread);
+  const closeRequests = () => {
     setShowRequests(false);
-  }, [generation]);
-  const open = (target: { plan?: string; request?: string; task?: string }) => {
-    if (onOpen) onOpen(target);
-    else if (target.task)
-      setParams(
-        new URLSearchParams(workbenchTaskPath(target.task, "research").split("?")[1]),
-      );
-    else
-      setParams({
-        view: "tasks",
-        ...(target.plan ? { plan: target.plan } : {}),
-        ...(target.request ? { planning: target.request } : {}),
-      });
+    setSelectedRequest(undefined);
   };
   return (
     <section className="record-page planning-history-page" aria-label="计划记录">
       <header className="record-page-heading">
         <div>
           <h2 className="sr-only">计划记录</h2>
-          <p>接着之前的讨论完善计划，或查看已建立的任务。</p>
         </div>
         <div className="record-page-actions">
+          <Button onClick={() => void openArchive()}>历史对话</Button>
           <Button icon={<HistoryOutlined />} onClick={() => setShowRequests(true)}>
             生成记录
           </Button>
           <Button
             icon={<ArrowLeftOutlined />}
-            onClick={onBack || (() => setParams({ view: "tasks" }))}
+            onClick={onBack}
           >
             返回任务
           </Button>
@@ -168,7 +255,7 @@ export function PlanningHistory({
                 <button
                   className="record-row"
                   key={p.id}
-                  aria-pressed={selected?.id === p.id}
+                  aria-pressed={selectedId === p.id}
                   onClick={() => setSelection(p.id)}
                 >
                   <div>
@@ -194,7 +281,7 @@ export function PlanningHistory({
                 <p>
                   {search
                     ? "可以更换关键词，或翻页查找。"
-                    : "返回任务，和研究方案助手说说想完成什么。"}
+                    : "已保存的计划会在这里显示。"}
                 </p>
               </div>
             )}
@@ -237,14 +324,14 @@ export function PlanningHistory({
             }
           />
         )}
-        {selected && !plan && !detail.error && (
+        {selectedId && !plan && !detail.error && (
           <p className="record-state" role="status">
             正在读取方案…
           </p>
         )}
-        {!selected && (
+        {!selectedId && (
           <div className="record-empty">
-            <h3>选择一份计划，接着推进</h3>
+            <h3>选择一份计划</h3>
             <p>左侧显示你有权查看的计划。这里会展示目标、方案和待明确的问题。</p>
           </div>
         )}
@@ -265,13 +352,18 @@ export function PlanningHistory({
                   {plan.version}
                 </p>
               </div>
-              <Button
-                type="primary"
-                icon={<CommentOutlined />}
-                onClick={() => open({ plan: plan.id })}
-              >
-                {plan.status === "confirmed" ? "查看方案与对话" : "继续规划"}
-              </Button>
+              <div className="record-page-actions">
+                <Button
+                  icon={<CommentOutlined />}
+                  onClick={() => void onDiscuss(`我想讨论这个计划：\n${plan.goal}`.slice(0, 7800))}
+                >
+                  和个人助理讨论
+                </Button>
+                {canConfirm && <Button type="primary" onClick={() => {
+                  setConfirmFailure("");
+                  setConfirmation({ plan, key: crypto.randomUUID() });
+                }}>按计划创建任务</Button>}
+              </div>
             </header>
             {plan.unresolvedQuestions.length > 0 && (
               <div className="record-questions">
@@ -301,11 +393,19 @@ export function PlanningHistory({
                     <li key={item.id}>
                       <strong>{item.title}</strong>
                       <p>{item.goal}</p>
+                      {item.deliverable && <p>交付物：{item.deliverable}</p>}
+                      {item.acceptanceCriteria && <p>验收标准：{item.acceptanceCriteria}</p>}
+                      {item.allocation && <p>分工：{
+                        item.allocation.kind === "self" ? people.get(plan.ownerId) || "计划发起人" :
+                        item.allocation.kind === "invitation" ? `邀请 ${people.get(item.allocation.memberId) || "已选成员"}` :
+                        item.allocation.kind === "claim" ? "课题组成员认领" : "公共 Agent"
+                      }</p>}
+                      {item.schedule?.hardDeadline && <p>截止日期：{planDate(item.schedule.hardDeadline)}</p>}
                     </li>
                   ))}
                 </ol>
               ) : (
-                <p className="workspace-muted">尚未形成步骤，可以继续讨论。</p>
+                <p className="workspace-muted">尚未形成步骤。</p>
               )}
             </section>
             {plan.status === "confirmed" && (
@@ -324,7 +424,7 @@ export function PlanningHistory({
                 {linked.data?.data.steps.map((step) => (
                   <div key={step.itemId} className="record-page-actions">
                     {step.task && step.taskId ? (
-                      <Button type="link" onClick={() => open({ task: step.taskId! })}>
+                      <Button type="link" onClick={() => onOpenTask(step.taskId!)}>
                         {step.task.title}
                       </Button>
                     ) : (
@@ -337,16 +437,43 @@ export function PlanningHistory({
           </>
         )}
       </RecordWorkspace>
+      <Modal title="按计划创建任务" open={!!confirmation}
+        okText="确认创建" cancelText="取消" confirmLoading={confirming}
+        closable={!confirming} maskClosable={!confirming} cancelButtonProps={{ disabled: confirming }}
+        onCancel={() => { if (!confirming) setConfirmation(undefined); }}
+        onOk={() => void confirmPlan()}
+        styles={{ body: { maxHeight: "60vh", overflow: "auto" } }}>
+        {confirmation && <>
+          <p>将按计划第 {confirmation.plan.version} 版创建 {confirmation.plan.proposedItems.length} 项任务。</p>
+          <ol className="record-steps">
+            {confirmation.plan.proposedItems.map((item) => <li key={item.id}>{item.title}</li>)}
+          </ol>
+        </>}
+        {confirmFailure && <Alert type="error" message={confirmFailure} />}
+      </Modal>
       <Modal
         title="生成记录"
         open={showRequests}
         width={640}
-        footer={<Button onClick={() => setShowRequests(false)}>关闭</Button>}
-        onCancel={() => setShowRequests(false)}
+        footer={<Button onClick={closeRequests}>关闭</Button>}
+        onCancel={closeRequests}
       >
-        <p className="workspace-muted">
-          最近 10 次生成请求；打开后可在原对话中继续处理。
-        </p>
+        {selectedRequest ? <>
+          <Button type="link" onClick={() => setSelectedRequest(undefined)}>返回生成记录</Button>
+          {requestDetail.error && <Alert type="warning" message={requestDetail.error}
+            action={<Button onClick={requestDetail.refresh}>重试</Button>} />}
+          {!request && !requestDetail.error && <p role="status">正在读取生成结果…</p>}
+          {request && <>
+            <p>{requestStateLabels[request.status]} · {new Date(request.updatedAt).toLocaleString("zh-CN")}</p>
+            {request.reply?.message && <SafeMessageMarkdown text={request.reply.message} />}
+            {request.reply?.gaps.map((gap, index) => <p key={index}>{gap}</p>)}
+            {request.planId && <Button onClick={() => {
+              setSearch("");
+              setSelection(request.planId!);
+              closeRequests();
+            }}>查看关联计划</Button>}
+          </>}
+        </> : <>
         {requests.error && (
           <Alert
             type="error"
@@ -359,10 +486,7 @@ export function PlanningHistory({
           <button
             key={r.id}
             className="record-row"
-            onClick={() => {
-              setShowRequests(false);
-              open({ request: r.id });
-            }}
+            onClick={() => setSelectedRequest(r.id)}
           >
             <strong>{requestStateLabels[r.status]}</strong>
             <small>{new Date(r.createdAt).toLocaleString("zh-CN")}</small>
@@ -371,6 +495,36 @@ export function PlanningHistory({
         {requests.data && !requests.data.data.length && (
           <p className="record-empty">还没有生成记录。</p>
         )}
+        </>}
+      </Modal>
+      <Modal
+        title="历史对话"
+        open={!!archive}
+        width={640}
+        footer={<Button onClick={() => setArchive(undefined)}>关闭</Button>}
+        onCancel={() => setArchive(undefined)}
+        styles={{ body: { maxHeight: "65vh", overflow: "auto" } }}
+      >
+        {thread ? <>
+          <Button type="link" onClick={() => setSelectedThread("")}>返回历史对话</Button>
+          <h3>{thread.title}</h3>
+          {thread.messages.map((entry) => (
+            <section className="record-detail-section" key={entry.id}>
+              <strong>{entry.role === "user" ? "我" : entry.role === "assistant" ? "助理" : "系统"}</strong>
+              <SafeMessageMarkdown text={entry.text} />
+            </section>
+          ))}
+          {thread.draft && <section className="record-detail-section">
+            <strong>未发送的草稿</strong>
+            <p className="record-content">{thread.draft}</p>
+          </section>}
+        </> : archive?.length ? archive.map((item) => (
+          <button type="button" className="record-row" key={item.id}
+            onClick={() => setSelectedThread(item.id)}>
+            <strong>{item.title}</strong>
+            <small>{new Date(item.updatedAt).toLocaleString("zh-CN")}</small>
+          </button>
+        )) : <p className="record-empty">这台设备没有历史对话。</p>}
       </Modal>
     </section>
   );

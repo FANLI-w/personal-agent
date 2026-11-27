@@ -24,6 +24,12 @@
   > .research-library-actions { margin: 0 0 12px; }
   p { margin: 8px 0; line-height: 1.7; }
 }
+.feishu-library-query {
+  margin-top: 14px;
+  summary { cursor: pointer; margin-bottom: 8px; }
+  .ant-alert, li { margin-top: 10px; }
+  li + li { padding-top: 10px; border-top: 1px solid #e8edf3; }
+}
 .research-library-muted { font-size: 12px; color: #718097; line-height: 1.75; }
 .research-original-download { margin-bottom: 12px; .research-library-actions { margin-bottom: 8px; } p { margin: 8px 0; overflow-wrap: anywhere; } }
 .research-download-error { font-size: 12px; line-height: 1.75; color: #b42318; }

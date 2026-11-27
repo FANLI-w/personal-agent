@@ -28,9 +28,19 @@ import { WorkspaceUnavailable } from "./WorkspaceUnavailable";
 import { ResearchTeamWorkbench } from "./ResearchTeamWorkbench";
 import { relocatedWorkspace } from "./workspace-navigation";
 import { PlanningHistory } from "./PlanningHistory";
+import { emptySchedule } from "./task-planning";
+import { useOwnAssistantConversation } from "./useOwnAssistantConversation";
 import { workbenchTaskPath, workbenchTaskTarget } from "./workbench-links";
 import { workbenchView, personalTaskTitle, type WorkbenchTab } from "./workbench-view";
-import { PlanningAgent } from "./PlanningAgent";
+
+const emptyTaskForm = {
+  goal: "",
+  contactIds: [] as string[],
+  deliverable: "",
+  acceptanceCriteria: "",
+  memberId: "",
+};
+
 function WorkbenchOverview({ card }: { card: WorkbenchCard }) {
   const operation = usePersonalOperation(true, `workspace-overview:${card.id}`),
     openConversation = useWorkspaceConversation();
@@ -128,11 +138,9 @@ function WorkbenchOverview({ card }: { card: WorkbenchCard }) {
 export function DesktopWorkbench() {
   const [params, setParams] = useSearchParams();
   const relocated = relocatedWorkspace(params);
-  // Saved planning links still open the assistant; history itself is a full page.
-  const { tab, layout, planning, planId, requestId, draft, filter } = workbenchView(params);
-  const [planningLaunch, setPlanningLaunch] = useState(0);
-  const [taskLaunch, setTaskLaunch] = useState(0);
-  const [planningExpanded, setPlanningExpanded] = useState(false);
+  const { tab, layout, planId, requestId, filter } = workbenchView(params);
+  const openPersonalAssistant = useOwnAssistantConversation();
+  const [creating, setCreating] = useState<"personal" | "research">();
   const [workbenchRevision, setWorkbenchRevision] = useState(0);
   const {
     id: requestedTask,
@@ -148,6 +156,8 @@ export function DesktopWorkbench() {
     contacts = useResearchStore((s) => s.contacts);
   const availability = useWorkspaceAvailability(!relocated);
   const supported = availability.supports(21);
+  const teamCreationAvailable = supported && availability.supports(23) &&
+    actor?.spaceKind === "laboratory";
   const read = useResearchRead(
     (signal) =>
       collectTaskInbox(
@@ -181,7 +191,8 @@ export function DesktopWorkbench() {
       signal,
     }),
     `inbox-members:${actor?.member.labId}`,
-    tab === "tasks" && supported && actor?.spaceKind === "laboratory",
+    (tab === "tasks" || creating === "research") &&
+      supported && actor?.spaceKind === "laboratory",
     { poll: false },
   );
   const reminders = useResearchRead(
@@ -207,31 +218,31 @@ export function DesktopWorkbench() {
     { timeoutMs: 10000, keepDataOnError: transientReadFailure },
   );
   const [selected, setSelected] = useState<WorkbenchCard>();
-  const [creating, setCreating] = useState(false),
-    [busy, setBusy] = useState(false),
+  const [busy, setBusy] = useState(false),
     [failure, setFailure] = useState("");
-  // A personal task needs one sentence, not a form: the name comes from it and
-  // an Agent is chosen later in the task itself.
-  const [form, setForm] = useState({ goal: "", contactIds: [] as string[] });
+  const [form, setForm] = useState(emptyTaskForm);
   const operation = usePersonalOperation(
-      !!creating && supported,
-      "create-workspace-task",
-    ),
-    inFlight = useRef(false);
+    !!creating && supported,
+    `create-workspace-task:${creating}`,
+  );
+  const inFlight = useRef<symbol>();
+  const attempt = useRef<{ fingerprint: string; key: string }>();
   useLayoutEffect(() => {
-    if (!supported) setCreating(false);
-  }, [supported]);
+    if (!supported || (creating === "research" && !teamCreationAvailable))
+      setCreating(undefined);
+  }, [supported, creating, teamCreationAvailable]);
   useLayoutEffect(() => {
     setSelected(undefined);
-    setCreating(false);
+    setCreating(undefined);
     setTaskSearch("");
     setTaskSort("recent");
     setReminderId(undefined);
     setRemindersOpen(false);
     setFailure("");
     setBusy(false);
-    inFlight.current = false;
-    setForm({ goal: "", contactIds: [] });
+    inFlight.current = undefined;
+    attempt.current = undefined;
+    setForm(emptyTaskForm);
   }, [generation]);
   const query = taskSearch.trim().toLocaleLowerCase();
   const cards = (read.data?.data || [])
@@ -277,7 +288,6 @@ export function DesktopWorkbench() {
         !(c.identity.kind === "human" && c.identity.memberId === actor?.member.id),
     );
   const setTab = (value: WorkbenchTab) => {
-    setPlanningLaunch(0);
     setSelected(undefined);
     setReminderId(undefined);
     setTaskSearch("");
@@ -295,11 +305,6 @@ export function DesktopWorkbench() {
     next.delete("detail");
     setParams(next);
   };
-  // A saved plan or planning link is a request to keep working on it, so the
-  // assistant opens with that thread instead of a separate page being shown.
-  useEffect(() => {
-    if (planning) setPlanningLaunch((value) => value + 1);
-  }, [planning, planId, requestId]);
   const select = (card: WorkbenchCard, replace = false) => {
     setReminderId(undefined);
     const next = new URLSearchParams(params);
@@ -321,72 +326,102 @@ export function DesktopWorkbench() {
   };
   const firstReview = groups[0].items[0];
   useEffect(() => {
-    if (tab === "tasks" && layout === "list" && !requestedTask && !selected && !planning && !planningLaunch && firstReview)
+    if (tab === "tasks" && layout === "list" && !requestedTask && !selected && !creating && firstReview)
       select(firstReview, true);
-  }, [tab, layout, requestedTask, selected?.id, planning, planningLaunch, firstReview?.taskId]);
+  }, [tab, layout, requestedTask, selected?.id, creating, firstReview?.taskId]);
 
+  const canCreate = !!form.goal.trim() && (creating === "personal" ||
+    (teamCreationAvailable && !!form.deliverable.trim() && !!form.acceptanceCriteria.trim()));
   const create = async () => {
-    if (!supported || inFlight.current || !form.goal.trim()) return;
+    if (!actor || !creating || !supported || inFlight.current || !canCreate) return;
     const { isCurrent } = operation.capture();
-    inFlight.current = true;
+    if (!isCurrent()) return;
+    const ticket = Symbol();
+    inFlight.current = ticket;
     setBusy(true);
     setFailure("");
     try {
       const goal = form.goal.trim();
-      const created = await researchApi("createPersonalWorkTask", {
-        body: {
-          title: personalTaskTitle(goal),
-          goal,
-          contactIds: form.contactIds,
-          agentContactId: null,
-        },
-      });
+      const title = personalTaskTitle(goal);
+      const fingerprint = JSON.stringify([creating, actor.member.id, actor.member.labId, form]);
+      if (attempt.current?.fingerprint !== fingerprint)
+        attempt.current = { fingerprint, key: crypto.randomUUID() };
+      const { key } = attempt.current;
+      let taskId: string;
+      if (creating === "research") {
+        const { data: plan } = await researchApi("createPlan", {
+          body: {
+            labId: actor.member.labId,
+            goal,
+            unresolvedQuestions: [],
+            proposedItems: [{
+              id: key,
+              title,
+              goal,
+              deliverable: form.deliverable.trim(),
+              acceptanceCriteria: form.acceptanceCriteria.trim(),
+              allocation: form.memberId
+                ? { kind: "invitation", memberId: form.memberId }
+                : { kind: "self" },
+              dependencies: [],
+              schedule: emptySchedule(),
+              inputArtifactIds: [],
+              budget: null,
+              ...(availability.supports(35) ? { status: "可执行" as const } : {}),
+            }],
+          },
+          idempotencyKey: key,
+        });
+        if (!isCurrent()) return;
+        const confirmed = await researchApi("confirmPlan", {
+          params: { id: plan.id },
+          body: { expectedVersion: plan.version },
+          idempotencyKey: `${key}_confirm`,
+        });
+        taskId = confirmed.data.taskIds[0];
+        if (!taskId) throw new Error("计划已保存，任务暂不可读取。请在计划记录中查看。");
+      } else {
+        const created = await researchApi("createPersonalWorkTask", {
+          body: { title, goal, contactIds: form.contactIds, agentContactId: null },
+          idempotencyKey: key,
+        });
+        taskId = created.data.id;
+      }
       if (!isCurrent()) return;
-      setCreating(false);
-      setForm({ goal: "", contactIds: [] });
+      setCreating(undefined);
+      setForm(emptyTaskForm);
+      attempt.current = undefined;
       const next = new URLSearchParams(
-        workbenchTaskPath(created.data.id).split("?")[1],
+        workbenchTaskPath(taskId, creating === "research" ? "research" : "personal").split("?")[1],
       );
       if (layout === "week") next.set("layout", "week");
+      if (creating === "research") {
+        next.set("view", "team");
+        if (layout === "list") next.set("detail", "1");
+        setWorkbenchRevision((value) => value + 1);
+      }
+      read.invalidate();
       setParams(next);
-      await read.refresh();
+      if (tab === "tasks") void read.refresh();
     } catch (e) {
       if (isCurrent())
-        setFailure(e instanceof Error ? e.message : "任务草案未保存，填写内容已保留。");
+        setFailure(e instanceof Error ? e.message : "任务创建结果暂未确认，请重试。填写内容已保留。");
     } finally {
-      if (isCurrent()) setBusy(false);
-      inFlight.current = false;
+      if (inFlight.current === ticket) {
+        inFlight.current = undefined;
+        setBusy(false);
+      }
     }
   };
   if (relocated) return <Navigate to={relocated} replace />;
-  const assistantBar = !!actor && tab !== "history";
-  // The assistant writes the task; the old form survives only where it cannot run.
-  const assistantReady =
-    Boolean(actor) &&
-    supported &&
-    availability.supports(23) &&
-    availability.supports(32);
-  const startTask = () => {
-    if (!assistantReady) return;
-    // Drop any plan link so the assistant opens a fresh thread, not the last one.
-    if (requestedTask || planId || requestId || params.get("view") === "planning")
-      setParams(new URLSearchParams({ view: tab, ...(layout === "week" ? { layout } : {}) }));
-    setTaskLaunch((value) => value + 1);
-    setPlanningLaunch((value) => value + 1);
-  };
-  // Personal tasks have no group and no materials: one sentence and, at most,
-  // the people who should see it.
-  const startPersonalTask = () => {
-    setCreating(true);
+  const startTask = (kind: "personal" | "research") => {
+    if (kind === "research" && !teamCreationAvailable) return;
+    setCreating(kind);
     setFailure("");
     setBusy(false);
   };
   return (
-    <div
-      className={`social-workspace workspace-workbench blue-task-page ${
-        planningExpanded && assistantBar ? "is-planning-expanded" : ""
-      }`}
-    >
+    <div className="social-workspace workspace-workbench blue-task-page">
       <header className="workspace-heading">
         <h1>任务</h1>
         <div className="workspace-heading-actions">
@@ -413,21 +448,14 @@ export function DesktopWorkbench() {
               trigger={["click"]}
               menu={{
                 items: [
-                  { key: "personal", label: "新建个人任务", disabled: !supported },
-                  {
-                    key: "research",
-                    label: <span title={assistantReady ? undefined : "这台服务器还没有任务助手，暂时只能建个人任务"}>新建课题组任务</span>,
-                    disabled: !assistantReady,
-                  },
+                  { key: "personal", label: "新建个人任务", disabled: !actor },
+                  { key: "research", label: "新建课题组任务", disabled: !teamCreationAvailable },
                   { type: "divider" },
-                  { key: "resume-plan", label: "继续计划讨论", disabled: !assistantReady },
                   { key: "history", label: "计划记录" },
                 ],
                 onClick: ({ key }) => {
                   if (key === "history") setTab("history");
-                  else if (key === "resume-plan") setPlanningLaunch((value) => value + 1);
-                  else if (key === "personal") startPersonalTask();
-                  else startTask();
+                  else if (key === "personal" || key === "research") startTask(key);
                 },
               }}
             >
@@ -447,27 +475,19 @@ export function DesktopWorkbench() {
           />
         ) : tab === "history" ? (
           <PlanningHistory
+            planId={planId}
+            requestId={requestId}
             onBack={() => setTab(params.get("returnTo") === "team" ? "team" : "tasks")}
-            onOpen={(target) => {
-              if (target.task) {
-                setParams(
-                  new URLSearchParams(
-                    workbenchTaskPath(target.task, "research").split("?")[1],
-                  ),
-                );
-                return;
-              }
-              const next = new URLSearchParams({ view: "tasks" });
-              if (target.plan) next.set("plan", target.plan);
-              if (target.request) next.set("planning", target.request);
-              setParams(next);
+            onOpenTask={(taskId) => {
+              setParams(new URLSearchParams(workbenchTaskPath(taskId, "research").split("?")[1]));
             }}
+            onDiscuss={openPersonalAssistant}
           />
         ) : tab === "team" ? (
           availability.supports(23) ? (
             <ResearchTeamWorkbench
               refresh={workbenchRevision}
-              onPlan={startTask}
+              onCreate={teamCreationAvailable ? () => startTask("research") : undefined}
               layout={layout}
               detailOpen={params.get("detail") === "1"}
               selectedTask={
@@ -680,33 +700,16 @@ export function DesktopWorkbench() {
           </TaskWorkspace>
         )}
       </div>
-      {!!actor && (
-        <PlanningAgent
-          view={tab}
-          hidden={tab === "history" || (!planning && !planningExpanded && !planningLaunch)}
-          available={supported && availability.supports(23)}
-          conversationAvailable={availability.supports(32)}
-          focus={planningLaunch}
-          fresh={taskLaunch}
-          onExpandedChange={setPlanningExpanded}
-          planId={planId}
-          requestId={requestId}
-          draft={draft}
-          onCreated={() => {
-            setWorkbenchRevision((value) => value + 1);
-            void read.refresh();
-          }}
-          onTeam={() => setTab("team")}
-        />
-      )}
       {remindersOpen && <PersonalAssistantPanel open initialTab="followups" onClose={() => setRemindersOpen(false)} />}
       <Modal
-        title="新建个人任务"
-        open={creating}
-        onCancel={() => setCreating(false)}
+        title={creating === "research" ? "新建课题组任务" : "新建个人任务"}
+        open={!!creating}
+        onCancel={() => { if (!busy) setCreating(undefined); }}
+        closable={!busy}
+        maskClosable={!busy}
         footer={null}
         destroyOnClose
-        className="workspace-add-dialog"
+        className="workspace-add-dialog blue-task-create-dialog"
       >
         <div className="workspace-task-form">
           <label>
@@ -721,6 +724,37 @@ export function DesktopWorkbench() {
               onChange={(e) => setForm((s) => ({ ...s, goal: e.target.value }))}
             />
           </label>
+          {creating === "research" ? <>
+            <label>
+              交付物
+              <Input aria-label="交付物" maxLength={8000} placeholder="例如：带原始数据链接的汇总表"
+                value={form.deliverable} disabled={busy}
+                onChange={(e) => setForm((s) => ({ ...s, deliverable: e.target.value }))} />
+            </label>
+            <label>
+              验收标准
+              <Input.TextArea aria-label="验收标准" rows={2} maxLength={8000}
+                value={form.acceptanceCriteria} disabled={busy}
+                onChange={(e) => setForm((s) => ({ ...s, acceptanceCriteria: e.target.value }))} />
+            </label>
+            <label>
+              负责人
+              <Select
+                aria-label="负责人"
+                value={form.memberId}
+                disabled={busy}
+                options={[
+                  { value: "", label: "我自己" },
+                  ...(members.data?.data || []).filter((member) => member.id !== actor?.member.id)
+                    .map((member) => ({ value: member.id, label: member.displayName })),
+                ]}
+                onChange={(memberId) => setForm((s) => ({ ...s, memberId }))}
+              />
+            </label>
+            {members.error && <Alert type="warning" message="暂时无法读取成员"
+              action={<Button size="small" onClick={() => void members.refresh()}>重试</Button>} />}
+            {form.memberId && <p className="workspace-muted">创建后会邀请这位成员接受任务。</p>}
+          </> : <>
           <label>
             一起参与的联系人（可留空）
             <Select
@@ -743,13 +777,14 @@ export function DesktopWorkbench() {
             只给自己或朋友安排：不建课题组群，也不占课题组资料；要请 Agent
             处理时在任务里选。
           </p>
+          </>}
           {failure && <Alert type="error" message={failure} />}
           <div className="workspace-task-form-actions">
-            <Button disabled={busy} onClick={() => setCreating(false)}>取消</Button>
+            <Button disabled={busy} onClick={() => setCreating(undefined)}>取消</Button>
           <Button
             type="primary"
             loading={busy}
-            disabled={!form.goal.trim()}
+            disabled={!canCreate}
             onClick={() => void create()}
           >
             建好任务

@@ -8,6 +8,18 @@
 
 本地通过契约包编译、`export-contracts --check`、`apps/api` 类型检查（含 `tests`）与 `check-content`；另用临时库跑通 42 条迁移链、`pragma integrity_check` 与空 body 迁移。vitest 受沙盒限制未在本地执行，单测由 CI 运行。未部署，生产仍是契约 0.52 / 迁移 041。
 
+## DeepChat 0.10.124 Windows 正式发布
+
+2026-11-27 · [v0.10.124](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.124) 来自 PR #260 的合并提交 30903082f022c93a733b532011c64e5bc3cb13f0。任务页缩小字号，计划与资料讨论统一进入本人的个人助理私聊。743 项客户端测试和四项托管检查通过。
+
+Windows x64 安装包为 421,756,210 字节，SHA-256 为 cf11130b297137807368f5104c6c27f66e5b36f7f7a3b58a51275f13415a94ac，未签署 Authenticode。四项公开附件、稳定版自动更新清单及桌面安装包已核对。发布证据位于 D:/deepseek-agent/.runtime/deepchat-release-0.10.124/。此版仅更新桌面客户端。
+
+## 2026-11-27 · 任务与资料统一到个人助理（Windows 本地预览）
+
+在 0.10.123 主线基础上，任务列表、课题组进度、周安排和验收详情采用紧凑字号。新建菜单保留手动创建和计划记录。已保存的草案可按查看过的版本确认。用户从计划记录或资料发起讨论时，桌面端打开当前账号自己的个人助理私聊，并把所选内容的引用放入可编辑草稿。GitHub 文件引用带仓库、版本和路径，用户明确发送后才进入对话。
+
+743 项客户端测试通过。0.10.124-preview.1 桌面安装包已核对安装器内的 ASAR 和桌面副本的 SHA-256，打包记录在 D:/deepseek-agent/.runtime/deepchat-task-preview-0.10.124-preview.1/。隔离 API 验证了手动创建、确认重试，以及旧草案确认。合成资料和模拟即时通信连接验证了已有草稿保留、资料引用和进入会话时的零消息发送。界面证据在 D:/deepseek-agent/.runtime/task-assistant-qa-20261127/ 和 D:/deepseek-agent/.runtime/deepchat-personal-assistant-library-qa/。线上版本与部署情况见下方正式发布记录。
+
 ## DeepChat 0.10.123 Windows 正式发布
 
 2026-11-27 · [v0.10.123](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.123) 来自 PR #257 主线合并提交 63e304d862a543859fd7c300c397db73a47f77c8。742 项客户端测试和四项托管检查通过。该版包含紧凑聊天任务卡、淡蓝配色和固定位置的导航头像。隔离启动及桌面尺寸、双倍像素密度和窄窗口界面检查通过。

@@ -1,19 +1,11 @@
-/**
- * History has a full list/detail page. Existing saved-plan links still resume
- * their original assistant conversation.
- */
 export type WorkbenchTab = "tasks" | "team" | "history";
 export type WorkbenchFilter = "all" | "completed";
 
 export type WorkbenchView = {
   tab: WorkbenchTab;
   layout: "list" | "week";
-  /** A saved planning link should open the assistant, not a separate page. */
-  planning: boolean;
   planId?: string;
   requestId?: string;
-  /** A template can hand the assistant a prepared message. */
-  draft?: string;
   filter: WorkbenchFilter;
 };
 
@@ -22,21 +14,19 @@ const id = (value: string | null) =>
 
 export function workbenchView(params: URLSearchParams): WorkbenchView {
   const requested = params.get("view");
-  const tab: WorkbenchTab =
-    requested === "team" ? "team" : requested === "history" ? "history" : "tasks";
   const planId = id(params.get("plan")),
-    requestId = id(params.get("planning")),
-    draft = params.get("draft")?.trim();
+    requestId = id(params.get("planning"));
+  // Saved links still resolve to their authorized plan or generation record.
+  const history = requested === "history" || requested === "planning" || (
+    requested !== "team" && (planId || requestId)
+  );
+  const tab: WorkbenchTab =
+    requested === "team" ? "team" : history ? "history" : "tasks";
   return {
     tab,
     layout: params.get("layout") === "week" ? "week" : "list",
-    // Older links pointed at a planning tab; keep them landing on the assistant.
-    planning:
-      tab === "tasks" &&
-      (requested === "planning" || Boolean(planId) || Boolean(requestId)),
     planId,
     requestId,
-    draft: draft ? draft.slice(0, 3000) : undefined,
     filter: params.get("category") === "completed" ? "completed" : "all",
   };
 }

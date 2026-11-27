@@ -1,28 +1,28 @@
 import { Alert, Button, Checkbox, Input, Modal, Select } from "antd";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import type { FeishuPreview, RequestFor } from "@research-agent-platform/contracts";
 import { researchApi, ResearchApiError } from "./api";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchRead } from "./useResearchRead";
-import { useResearchStore } from "./store";
-import { feishuPlanningDraft, stageFeishuPlanning } from "./feishu-planning";
+import { feishuDiscussionDraft } from "./feishu-planning";
+import { findFeishuBaseLink } from "./feishu-library-chat";
+import { useOwnAssistantConversation } from "./useOwnAssistantConversation";
 import { openFeishuAuthorization } from "./feishu-authorization";
 
 export function FeishuImport({
   collectionId,
   onClose,
   onSaved,
-  onChat,
+  onLibraryBound,
   libraryRead = false,
 }: {
   collectionId?: string;
   onClose: () => void;
   onSaved: () => Promise<void>;
-  onChat?: () => void;
+  onLibraryBound: (collectionId: string) => Promise<void>;
   libraryRead?: boolean;
 }) {
-  const navigate = useNavigate();
+  const openPersonalAssistant = useOwnAssistantConversation();
   const operation = usePersonalOperation(true, "feishu-import");
   const initialScope = useRef(operation.scope);
   const status = useResearchRead(
@@ -36,6 +36,7 @@ export function FeishuImport({
         signal,
       }),
     "feishu-private-collections",
+    !libraryRead,
   );
   const [target, setTarget] = useState(collectionId);
   const [url, setUrl] = useState(""),
@@ -52,6 +53,11 @@ export function FeishuImport({
     [error, setError] = useState("");
   const [savedId, setSavedId] = useState(""),
     [excerpt, setExcerpt] = useState("");
+  const [libraryName, setLibraryName] = useState("");
+  const [tableOptions, setTableOptions] = useState<{ id: string; name: string }[]>([]);
+  const [tableId, setTableId] = useState<string>();
+  const [boundId, setBoundId] = useState<string>();
+  const bindingAttempt = useRef<{ fingerprint: string; key: string }>();
   const attempt = useRef<{
     body: RequestFor<"importFeishuSnapshot">["body"];
     key: string;
@@ -59,7 +65,9 @@ export function FeishuImport({
   const locked = useRef(false);
   const [uncertain, setUncertain] = useState(false);
   const privateCollections =
-    collections.data?.data.filter((c) => c.owned && c.scope === "owner_private" && !c.externalSource) || [];
+    collections.data?.data.filter(
+      (c) => c.owned && c.scope === "owner_private" && !c.externalSource,
+    ) || [];
   const currentTarget = privateCollections.find((c) => c.id === target);
   const connection = status.data?.data;
   useEffect(() => {
@@ -100,7 +108,9 @@ export function FeishuImport({
     }
   }
   async function connect(current: () => boolean) {
-    const value = await researchApi("connectFeishu", { body: libraryRead ? {libraryRead:true} : {} });
+    const value = await researchApi("connectFeishu", {
+      body: libraryRead ? { libraryRead: true } : {},
+    });
     if (!current()) return;
     setAuthorizationUrl(value.data.authorizationUrl);
     setAuthorizationExpires(value.data.expiresAt);
@@ -195,24 +205,51 @@ export function FeishuImport({
       throw e;
     }
   }
-  function plan() {
-    const actor = useResearchStore.getState();
-    if (!preview || !savedId || !excerpt.trim() || !actor.actor) return;
-    let text: string;
+  async function discuss() {
+    if (!preview || !excerpt.trim()) return;
+    const text = feishuDiscussionDraft(preview, excerpt, savedId);
+    if (await openPersonalAssistant(text)) onClose();
+  }
+  async function bindLibrary(current: () => boolean) {
+    if (boundId) return onLibraryBound(boundId);
+    const baseUrl = findFeishuBaseLink(url.trim());
+    if (!baseUrl) throw new Error("请粘贴飞书多维表格链接。");
+    const body = {
+      url: baseUrl,
+      instruction: libraryName.trim() ? `命名为${libraryName.trim()}` : "",
+      ...(tableId ? { tableId } : {}),
+    };
+    const fingerprint = JSON.stringify(body);
+    if (bindingAttempt.current?.fingerprint !== fingerprint)
+      bindingAttempt.current = { fingerprint, key: crypto.randomUUID() };
     try {
-      text = feishuPlanningDraft(preview, savedId, excerpt);
-    } catch (e) {
-      setError((e as Error).message);
-      return;
+      const { data } = await researchApi("bindFeishuLibrary", {
+        body,
+        idempotencyKey: bindingAttempt.current.key,
+      });
+      if (!current()) return;
+      if (data.state === "choose_table") {
+        setTableOptions(data.tables);
+        return;
+      }
+      setBoundId(data.library.collectionId);
+      await onLibraryBound(data.library.collectionId);
+    } catch (error) {
+      if (
+        current() &&
+        error instanceof ResearchApiError &&
+        error.code === "FEISHU_REAUTHORIZE"
+      ) {
+        await status.refresh();
+        throw new Error("飞书需要重新授权多维表格只读权限。请授权后重试绑定。");
+      }
+      throw error;
     }
-    const nonce = stageFeishuPlanning(actor.actor.member.id, actor.generation, text);
-    navigate("/workbench?view=planning", { state: { feishuMaterialNonce: nonce } });
-    onClose();
   }
   return (
     <Modal
       open
-      title="连接飞书资料"
+      title={libraryRead ? "绑定飞书多维表格" : "连接飞书资料"}
       width={820}
       centered
       footer={null}
@@ -225,7 +262,9 @@ export function FeishuImport({
     >
       <div className="feishu-import">
         <p className="research-library-muted">
-          授权后可直接和资料 Agent 聊文档；需要归档时，也可保存一份资料集合副本。
+          {libraryRead
+            ? "指定一张多维表格，授权后可在资料页实时查询其中的记录。新绑定仅自己可见。"
+            : "授权后可预览飞书文档、保存资料副本，或选一段原文到个人助理聊天中讨论。"}
         </p>
         {(error || status.error) && (
           <Alert
@@ -239,7 +278,6 @@ export function FeishuImport({
           />
         )}
         {!connection && !status.error && <p role="status">正在检查飞书连接…</p>}
-        {libraryRead && <Alert type="info" message="连接飞书多维表格资料库" description="本次重新授权会增加多维表格只读访问，用于读取你指定的数据表字段和记录；不会修改原表或给其他成员开放你的权限。授权后返回下方资料 Agent，核对原请求即可继续。" />}
         {connection?.state === "unconfigured" && (
           <Alert
             type="info"
@@ -378,47 +416,85 @@ export function FeishuImport({
             </Button>
           )}
         </div>
-        {connection?.state === "connected" && !savedId && (
+        {connection?.state === "connected" && libraryRead && (
           <>
-            <Alert
-              type="success"
-              message="飞书已连接，直接和资料 Agent 说吧"
-              description="在底部聊天框发文档链接和问题，就能阅读、总结并继续追问，无需先导入集合。"
-            />
-            {onChat && (
-              <Button type="primary" disabled={busy || uncertain} onClick={onChat}>
-                去和资料 Agent 聊
-              </Button>
-            )}
-            <details className="feishu-manual-import">
-              <summary>保存为资料集合副本（可选）</summary>
+            <label>
+              飞书多维表格链接
+              <Input
+                value={url}
+                placeholder="https://你的团队.feishu.cn/base/…"
+                maxLength={2048}
+                disabled={busy || !!boundId}
+                onChange={(event) => {
+                  setUrl(event.target.value);
+                  setTableOptions([]);
+                  setTableId(undefined);
+                }}
+              />
+            </label>
+            <label>
+              资料库名称（可选）
+              <Input
+                value={libraryName}
+                maxLength={80}
+                disabled={busy || !!boundId}
+                onChange={(event) => setLibraryName(event.target.value)}
+              />
+            </label>
+            {!!tableOptions.length && (
               <label>
-                飞书文档链接
-                <Input
-                  aria-label="飞书文档链接"
-                  placeholder="https://你的团队.feishu.cn/docx/… 或 /wiki/…"
-                  value={url}
-                  maxLength={2048}
-                  disabled={busy || uncertain}
-                  onChange={(e) => {
-                    setUrl(e.target.value);
-                    setPreview(undefined);
-                    setConfirmed(false);
-                  }}
+                选择数据表
+                <Select
+                  value={tableId}
+                  onChange={setTableId}
+                  disabled={busy || !!boundId}
+                  options={tableOptions.map((table) => ({
+                    value: table.id,
+                    label: table.name,
+                  }))}
                 />
               </label>
-              <p className="research-library-muted">
-                支持新版文档，以及知识库中的新版文档。仅纯文本，暂不读取图片、附件、评论或表格的视觉结构。
-              </p>
+            )}
+            <div className="research-library-actions">
               <Button
                 type="primary"
-                disabled={!url.trim() || uncertain}
                 loading={busy}
-                onClick={() => void run(read)}
+                disabled={!url.trim() || (!!tableOptions.length && !tableId)}
+                onClick={() => void run(bindLibrary)}
               >
-                读取并预览
+                {boundId ? "重新打开已绑定的资料库" : "绑定资料库"}
               </Button>
-            </details>
+            </div>
+          </>
+        )}
+        {connection?.state === "connected" && !libraryRead && !savedId && (
+          <>
+            <label>
+              飞书文档链接
+              <Input
+                aria-label="飞书文档链接"
+                placeholder="https://你的团队.feishu.cn/docx/… 或 /wiki/…"
+                value={url}
+                maxLength={2048}
+                disabled={busy || uncertain}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  setPreview(undefined);
+                  setConfirmed(false);
+                }}
+              />
+            </label>
+            <p className="research-library-muted">
+              支持新版文档，以及知识库中的新版文档。仅纯文本，暂不读取图片、附件、评论或表格的视觉结构。
+            </p>
+            <Button
+              type="primary"
+              disabled={!url.trim() || uncertain}
+              loading={busy}
+              onClick={() => void run(read)}
+            >
+              读取并预览
+            </Button>
           </>
         )}
         {preview && (
@@ -436,7 +512,35 @@ export function FeishuImport({
             <pre className="research-source-preview" aria-label="飞书纯文本预览">
               {preview.content}
             </pre>
-            {!savedId ? (
+            {savedId && <Alert type="success" message="已保存到私人资料集合" />}
+            <label>
+              要讨论的片段
+              <Input.TextArea
+                aria-label="要讨论的飞书片段"
+                value={excerpt}
+                maxLength={2200}
+                showCount
+                autoSize={{ minRows: 2, maxRows: 7 }}
+                placeholder="从上方预览复制需要讨论的内容，最多 2200 字符"
+                disabled={busy || uncertain}
+                onChange={(e) => setExcerpt(e.target.value)}
+              />
+            </label>
+            <div className="research-library-actions">
+              <Button
+                loading={busy}
+                disabled={!excerpt.trim() || uncertain}
+                onClick={() => void run(discuss)}
+              >
+                和个人助理讨论
+              </Button>
+              {savedId && (
+                <Button disabled={busy} onClick={onClose}>
+                  完成
+                </Button>
+              )}
+            </div>
+            {!savedId && (
               <>
                 <label>
                   保存到私人集合
@@ -508,35 +612,6 @@ export function FeishuImport({
                 >
                   {uncertain ? "重试原保存请求" : "确认保存副本"}
                 </Button>
-              </>
-            ) : (
-              <>
-                <Alert
-                  type="success"
-                  message="已保存到私人资料集合"
-                  description="在“通讯录 → 智能体 → 技能与资料”中授权此集合后，Agent 才能检索引用。若要规划任务，可从上方预览复制需要的文字到下面。"
-                />
-                <label>
-                  用于任务规划的片段
-                  <Input.TextArea
-                    aria-label="用于任务规划的飞书片段"
-                    value={excerpt}
-                    maxLength={2200}
-                    showCount
-                    autoSize={{ minRows: 3, maxRows: 7 }}
-                    placeholder="从上方预览复制需要用于任务规划的内容，最多 2200 字符"
-                    onChange={(e) => setExcerpt(e.target.value)}
-                  />
-                </label>
-                <p className="research-library-muted">
-                  带入新的规划对话后，你可以编辑需求；点击发送时才交给当前规划模型处理，并按现有规划对话规则保存记录。正式任务仍需你确认。
-                </p>
-                <div className="research-library-actions">
-                  <Button type="primary" disabled={!excerpt.trim()} onClick={plan}>
-                    带入任务规划
-                  </Button>
-                  <Button onClick={onClose}>完成</Button>
-                </div>
               </>
             )}
           </>
