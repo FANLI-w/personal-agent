@@ -3468,3 +3468,9 @@ Windows x64 本地预览 0.10.122-preview.4 已交付到桌面，安装包已解
 在隔离预览中，定位原消息、键盘打开操作菜单、引用和取消引用、多选、查看原任务、从当前交付进入稿件审阅以及从旧提醒进入对应的 DSH 工作台路由均通过。核对了会话悬停、搜索和编辑器焦点、发送与验收悬停态，renderer 未报告页面错误。DSH 验证覆盖任务路由与交接。实际执行留待原生任务验收。首轮状态采样和菜单选择器问题保留在聊天证据目录的 `*-first-run.log` 中。
 
 Windows x64 本机预览包 `DeepChat_0.10.123-preview.1.exe` 已生成并完成隔离启动、更新元数据和安装载荷核对。桌面副本为 421,781,284 字节，SHA-256 为 `7fd65f20e2b9de4ff987c3cd365c54a9ee43d639dd2f2d17cb19e5c67359b693`。安装器解包后的 ASAR 和渲染走查所用 ASAR 的 SHA-256 均为 `34f4210af13cc12c2a97641b47f1cba51a9eb355d07c532e3d14d7d693223aaf`。138 项编译文件逐字节核对通过。证据位于 `D:/deepseek-agent/.runtime/deepchat-compact-preview-0.10.123-preview.1/`。公开稳定版为 0.10.122。
+
+## DeepChat 0.10.123 Windows 正式发布
+
+2026-11-27 · [v0.10.123](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.123) 来自 PR #257 主线合并提交 63e304d862a543859fd7c300c397db73a47f77c8。742 项客户端测试和四项托管检查通过。该版包含紧凑聊天任务卡、淡蓝配色和固定位置的导航头像。隔离启动及桌面尺寸、双倍像素密度和窄窗口界面检查通过。
+
+四个公开附件的字节数和 SHA-256 已逐项核对，GitHub Latest 指向本版。Windows x64 安装器为 421,785,808 字节，SHA-256 为 e5ce4732fe496e3d91f8b6044d2821f852bceaff3b6dc70b2ed1ae478980917d，未签署 Authenticode。证据位于 D:/deepseek-agent/.runtime/deepchat-release-0.10.123/。线上 API 与 worker 已在本版发布前部署到 0.10.122 对应提交 8c21ec0，本次仅发布桌面更新。
