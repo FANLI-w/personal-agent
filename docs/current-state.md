@@ -1,5 +1,13 @@
 # 新 AI 接手：当前项目状态
 
+## DeepChat 精简聊天与桌面导航本地预览
+
+2026-11-27 · 在主线 `ba1a582` 上修正桌面聊天。旧到期提醒和当前交付卡共用紧凑样式，标题 17 px，正文 14 px，操作按钮高 32 px，桌面卡宽上限 560 px。普通聊天和输入正文统一为 15 px。会话选中、发出的气泡、引用、定位原消息、高亮、发送与焦点状态采用浅蓝色系。
+
+导航栏在聊天和「我的」之间保持头像与六个入口的位置一致。「我的」沿用账号、个人助理、课题组、应用设置四组栏目，个人资料选中项、悬停及键盘焦点统一为浅蓝色。本轮证据位于 `D:/deepseek-agent/.runtime/deepchat-compact-blue-chat-20261127/` 与 `D:/deepseek-agent/.runtime/deepchat-rail-my-20261127/`，记录以本机隔离验证为范围。
+
+Windows x64 本机预览 `0.10.123-preview.1` 完成隔离启动和安装载荷核对。聊天用包内样式通过 1×、2× 及 840、620 px 窄窗，并点击核对定位、引用、查看任务、验收及工作台路由。包校验见 `D:/deepseek-agent/.runtime/deepchat-compact-preview-0.10.123-preview.1/`。公开稳定版为 0.10.122。
+
 ## DeepChat 0.10.122 Windows 正式发布
 
 2026-11-27 · [v0.10.122](https://github.com/luoyan96/personal-agent/releases/tag/v0.10.122) 对应 PR #255 的主线提交 8c21ec0107b4ec5311a22ee53b29fa52f45fa44d。本次发布聊天、通讯录、个人设置和 GitHub 团队资料页的桌面更新。客户端 742 项测试及两项类型检查通过。完整 CI 通过，1,134 项测试通过，1 项可选真实模型测试跳过。Windows、两组 Linux 及打包共四项托管检查通过。

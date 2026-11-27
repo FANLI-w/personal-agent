@@ -109,7 +109,7 @@ export function MyWorkspace() {
         <div className="my-workspace-body">
           <aside className="my-workspace-sidebar">
             <h1>我的</h1>
-            <nav aria-label="我的栏目">
+            <nav className="my-workspace-nav" aria-label="我的栏目">
               {sectionGroups.map(({ label, items }) => (
                 <div
                   key={label}

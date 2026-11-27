@@ -1,6 +1,6 @@
 {
   "name": "research-wechat-openim",
-  "version": "0.10.122",
+  "version": "0.10.123",
   "main": "dist-electron/main/bootstrap.js",
   "description": "DeepChat · 科研个人助理与课题组协作",
   "author": "blooming",

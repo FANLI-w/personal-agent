@@ -217,7 +217,10 @@ i18n.on("languageChanged", () => {
 
 function ResearchLeftNav() {
   const navigate = useNavigate();
-  const selfInfo = useUserStore((s) => s.selfInfo);
+  const avatarUrl = useUserStore((s) => s.selfInfo.faceURL);
+  const nickname = useUserStore((s) => s.selfInfo.nickname);
+  const displayName = useResearchStore((s) => s.actor?.member.displayName);
+  const avatarLabel = displayName || nickname;
   const updates = useDesktopUpdates();
   const hasUpdate =
     !!updates.state?.supported &&
@@ -228,19 +231,27 @@ function ResearchLeftNav() {
       width={window.electronAPI ? 76 : 60}
       theme="light"
     >
-      <div className="desktop-navigation-content mt-6 flex flex-col items-center">
+      <nav
+        className="desktop-navigation-content mt-6 flex flex-col items-center"
+        aria-label="主导航"
+      >
         <button
           type="button"
           aria-label="前往我的"
           className="desktop-profile-shortcut mb-6 rounded-full border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-blue-500"
           onClick={() => navigate("/me")}
         >
-          <OIMAvatar src={selfInfo.faceURL} text={selfInfo.nickname} />
+          <OIMAvatar
+            src={avatarUrl}
+            text={avatarLabel}
+            icon={avatarLabel ? undefined : <UserOutlined />}
+            aria-hidden="true"
+          />
         </button>
         {NavList.map((nav) => (
           <NavItem nav={nav} key={nav.path} dot={nav.path === "/me" && hasUpdate} />
         ))}
-      </div>
+      </nav>
     </Sider>
   );
 }
