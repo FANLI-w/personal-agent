@@ -1,8 +1,10 @@
-import { Alert, App, Button } from "antd";
+import { Alert, App, Button, ConfigProvider } from "antd";
 import {
   ApiOutlined,
   BookOutlined,
   CloudDownloadOutlined,
+  ExperimentOutlined,
+  LogoutOutlined,
   SafetyCertificateOutlined,
   SettingOutlined,
   TeamOutlined,
@@ -11,7 +13,6 @@ import {
 import { useLayoutEffect, useRef, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { APP_NAME } from "@/config/brand";
-import OIMAvatar from "@/components/OIMAvatar";
 import { useUserStore } from "@/store";
 import { AboutContent } from "@/layout/LeftNavBar/About";
 import { PersonalSettingsContent } from "@/layout/LeftNavBar/PersonalSettings";
@@ -28,25 +29,53 @@ import { useResearchStore } from "./store";
 import { usePersonalOperation } from "./usePersonalOperation";
 import "./my-workspace.scss";
 
-const sections = [
-  { value: "profile", label: "个人资料", icon: UserOutlined },
-  { value: "labs", label: "课题组", icon: TeamOutlined },
-  { value: "capabilities", label: "课题组能力", icon: TeamOutlined },
-  { value: "models", label: "模型设置", icon: ApiOutlined },
-  { value: "memory", label: "我的习惯", icon: BookOutlined },
-  { value: "rules", label: "固定要求", icon: SafetyCertificateOutlined },
-  { value: "preferences", label: "通用设置", icon: SettingOutlined },
-  { value: "version", label: "版本与帮助", icon: CloudDownloadOutlined },
+const sectionGroups = [
+  {
+    label: "账号",
+    items: [{ value: "profile", label: "个人资料", icon: UserOutlined }],
+  },
+  {
+    label: "个人助理",
+    items: [
+      { value: "memory", label: "我的习惯", icon: BookOutlined },
+      { value: "rules", label: "固定要求", icon: SafetyCertificateOutlined },
+    ],
+  },
+  {
+    label: "课题组",
+    items: [
+      { value: "labs", label: "课题组", icon: TeamOutlined },
+      { value: "capabilities", label: "课题组能力", icon: ExperimentOutlined },
+    ],
+  },
+  {
+    label: "应用设置",
+    items: [
+      { value: "models", label: "模型设置", icon: ApiOutlined },
+      { value: "preferences", label: "通用设置", icon: SettingOutlined },
+      { value: "version", label: "版本与帮助", icon: CloudDownloadOutlined },
+    ],
+  },
 ];
+const sections = sectionGroups.flatMap(({ items }) => items);
+const myTheme = {
+  token: {
+    colorPrimary: "#0968b4",
+    colorLink: "#0968b4",
+    colorText: "#171d24",
+    colorTextSecondary: "#556474",
+    colorBorder: "#d6e0eb",
+    borderRadius: 9,
+  },
+};
 
 export function MyWorkspace() {
   const [params, setParams] = useSearchParams();
   const requested = params.get("view");
   const relocated = relocatedMyWorkspace(params);
-  const view = sections.some((s) => s.value === requested) ? requested! : "profile";
+  const section = sections.find((item) => item.value === requested) ?? sections[0];
+  const view = section.value;
   const generation = useResearchStore((s) => s.generation);
-  const actor = useResearchStore((s) => s.actor);
-  const self = useUserStore((s) => s.selfInfo);
   const navigate = useNavigate(),
     updates = useDesktopUpdates();
   const { modal } = App.useApp();
@@ -75,101 +104,126 @@ export function MyWorkspace() {
   };
   if (relocated) return <Navigate to={relocated} replace />;
   return (
-    <main className="social-workspace my-workspace">
-      <header className="workspace-heading">
-        <div>
-          <h1>我的</h1>
-          <p>管理个人资料与使用偏好。</p>
-        </div>
-      </header>
-      <div className="my-workspace-body">
-        <aside className="my-workspace-sidebar">
-          <div className="my-workspace-identity">
-            <OIMAvatar
-              src={self.faceURL}
-              text={actor?.member.displayName || self.nickname}
-              size={48}
-            />
-            <strong>{actor?.member.displayName || self.nickname || "我的账号"}</strong>
-          </div>
-          <nav aria-label="我的栏目">
-            {sections.map(({ value, label, icon: Icon }) => (
-              <button
-                type="button"
-                key={value}
-                aria-current={view === value ? "page" : undefined}
-                onClick={() => setParams({ view: value })}
-              >
-                <Icon />
-                <span>{label}</span>
-              </button>
-            ))}
-          </nav>
-          <Button type="text" className="my-workspace-logout" onClick={logout}>
-            退出登录
-          </Button>
-        </aside>
-        <section
-          className={`my-workspace-content my-workspace-${view}`}
-          key={`${generation}:${view}`}
-          aria-label="我的内容"
-        >
-          {failure && <Alert type="warning" message={failure} />}
-          {view === "labs" ? (
-            <LabWorkspace />
-          ) : view === "capabilities" ? (
-            <WorkbenchCapabilities view="lab" />
-          ) : view === "models" ? (
-            <ModelSettings open embedded onClose={() => navigate("/me")} />
-          ) : view === "memory" ? (
-            <PersonalMemoryPanel active />
-          ) : view === "rules" ? (
-            <PersonalRules />
-          ) : view === "preferences" ? (
-            <section className="my-preferences">
-              <header className="my-section-heading">
-                <h2>通用设置</h2>
-                <p>语言与桌面使用习惯。</p>
-              </header>
-              <PersonalSettingsContent embedded />
-            </section>
-          ) : view === "version" ? (
-            <>
-              <DesktopVersionPanel updates={updates} />
-              <section className="my-about">
-                <h3>关于 {APP_NAME}</h3>
-                <p>面向教师、科研工作者与实验室团队的科研协作工具。</p>
-                <a
-                  href="https://github.com/luoyan96/personal-agent/issues"
-                  target="_blank"
-                  rel="noreferrer"
+    <ConfigProvider theme={myTheme}>
+      <main className="social-workspace my-workspace">
+        <div className="my-workspace-body">
+          <aside className="my-workspace-sidebar">
+            <h1>我的</h1>
+            <nav aria-label="我的栏目">
+              {sectionGroups.map(({ label, items }) => (
+                <div
+                  key={label}
+                  className="my-workspace-nav-group"
+                  role="group"
+                  aria-label={label}
                 >
-                  反馈问题与建议
-                </a>
-                <details className="my-about-diagnostics">
-                  <summary>头像素材署名</summary>
-                  <p>
-                    应用图标与私人助理「大肥鱼」头像：
-                    <a
-                      href="https://github.com/YunYueSama/codex-deepseek-pet"
-                      target="_blank"
-                      rel="noreferrer"
+                  <span className="my-workspace-nav-label" aria-hidden="true">
+                    {label}
+                  </span>
+                  {items.map(({ value, label: itemLabel, icon: Icon }) => (
+                    <button
+                      type="button"
+                      key={value}
+                      aria-current={view === value ? "page" : undefined}
+                      onClick={() => setParams({ view: value })}
                     >
-                      YunYueSama / codex-deepseek-pet
-                    </a>
-                  </p>
-                </details>
-                <details className="my-about-diagnostics">
-                  <summary>版本详情与诊断</summary>
-                  <AboutContent embedded />
-                </details>
+                      <Icon aria-hidden="true" />
+                      <span>{itemLabel}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </nav>
+            <select
+              className="my-workspace-switcher"
+              aria-label="我的栏目"
+              value={view}
+              onChange={(event) => setParams({ view: event.target.value })}
+            >
+              {sectionGroups.map(({ label, items }) => (
+                <optgroup key={label} label={label}>
+                  {items.map(({ value, label: itemLabel }) => (
+                    <option key={value} value={value}>
+                      {itemLabel}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <Button
+              type="text"
+              icon={<LogoutOutlined aria-hidden="true" />}
+              className="my-workspace-logout"
+              onClick={logout}
+            >
+              退出登录
+            </Button>
+          </aside>
+          <section
+            className={`my-workspace-content my-workspace-${view}`}
+            key={`${generation}:${view}`}
+            aria-label={section.label}
+          >
+            {failure && <Alert type="warning" message={failure} />}
+            {view === "labs" ? (
+              <LabWorkspace />
+            ) : view === "capabilities" ? (
+              <WorkbenchCapabilities view="lab" />
+            ) : view === "models" ? (
+              <ModelSettings open embedded onClose={() => navigate("/me")} />
+            ) : view === "memory" ? (
+              <PersonalMemoryPanel active inMyWorkspace />
+            ) : view === "rules" ? (
+              <PersonalRules />
+            ) : view === "preferences" ? (
+              <section className="my-preferences">
+                <header className="my-section-heading">
+                  <h2>通用设置</h2>
+                  <p>语言与桌面使用习惯。</p>
+                </header>
+                <PersonalSettingsContent embedded />
               </section>
-            </>
-          ) : (
-            <MyProfile />
-          )}
-        </section>
-      </div>
-    </main>
+            ) : view === "version" ? (
+              <>
+                <header className="my-section-heading">
+                  <h2>版本与帮助</h2>
+                </header>
+                <DesktopVersionPanel updates={updates} />
+                <section className="my-about">
+                  <h3>关于 {APP_NAME}</h3>
+                  <p>面向教师、科研工作者与实验室团队的科研协作工具。</p>
+                  <a
+                    href="https://github.com/luoyan96/personal-agent/issues"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    反馈问题与建议
+                  </a>
+                  <details className="my-about-diagnostics">
+                    <summary>头像素材署名</summary>
+                    <p>
+                      应用图标与私人助理「大肥鱼」头像：
+                      <a
+                        href="https://github.com/YunYueSama/codex-deepseek-pet"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        YunYueSama / codex-deepseek-pet
+                      </a>
+                    </p>
+                  </details>
+                  <details className="my-about-diagnostics">
+                    <summary>版本详情与诊断</summary>
+                    <AboutContent embedded />
+                  </details>
+                </section>
+              </>
+            ) : (
+              <MyProfile />
+            )}
+          </section>
+        </div>
+      </main>
+    </ConfigProvider>
   );
 }

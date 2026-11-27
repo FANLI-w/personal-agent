@@ -1,7 +1,15 @@
-import { UserAddOutlined } from "@ant-design/icons";
-import { Alert, Button, Input, Modal } from "antd";
+import {
+  ArrowLeftOutlined,
+  ContactsOutlined,
+  MailOutlined,
+  RightOutlined,
+  SearchOutlined,
+  TeamOutlined,
+  UserAddOutlined,
+} from "@ant-design/icons";
+import { Alert, Button, Input, Modal, type InputRef } from "antd";
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Id } from "@research-agent-platform/contracts";
 import { researchApi } from "./api";
 import { useResearchStore } from "./store";
@@ -16,12 +24,12 @@ import { useContactStars } from "./useContactStars";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { WorkspaceContactCard } from "./WorkspaceContactCard";
 import "./workspace.scss";
+import "./contact-directory.scss";
 import "./directory-skills.scss";
 
 const DirectorySkillLibrary = lazy(() => import("./DirectorySkillLibrary").then(module => ({ default: module.DirectorySkillLibrary })));
 
 export function ResearchContacts() {
-  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const requestedView = params.get("view");
   const library = params.get("panel") === "skills";
@@ -39,6 +47,8 @@ export function ResearchContacts() {
   const stars = useContactStars();
   const directoryOperation = usePersonalOperation(true, `contact-directory:${library}`);
   const profile = useRef<OverlayVisibleHandle>(null);
+  const searchField = useRef<InputRef>(null);
+  const backButton = useRef<HTMLButtonElement>(null);
   const { data, error, refresh, refreshChecked } = useResearchRead(
     signal => readCombinedDirectoryPage((view, next) => researchApi("chatContacts", {
       query: { view, scope: "local", limit: 50, cursor: next, search: search.trim() }, signal,
@@ -53,6 +63,11 @@ export function ResearchContacts() {
     setSearch("");
     setPageFailure("");
   }, [generation]);
+  useLayoutEffect(() => {
+    if (selectedContact && backButton.current?.getClientRects().length) {
+      backButton.current.focus();
+    }
+  }, [selectedContact]);
   useEffect(() => {
     if (!actorId) return;
     const action = params.get("action"), sharedId = params.get("contact");
@@ -110,30 +125,43 @@ export function ResearchContacts() {
   };
   return (
     <div className={`social-workspace desktop-contacts-content${library ? " is-skill-library" : ""}`}>
-      <div className="workspace-split">
-        {!library && <aside className="workspace-list-pane">
+      <div className={`workspace-split${selectedContact ? " has-selected-contact" : ""}`}>
+        {!library && <aside className="workspace-list-pane" aria-labelledby="directory-title">
           <div className="workspace-heading">
-            <h1>通讯录</h1>
+            <h1 id="directory-title">通讯录</h1>
+            <Button
+              className="directory-add-button"
+              icon={<UserAddOutlined aria-hidden="true" />}
+              onClick={() => setAdding(true)}
+            >
+              添加联系人
+            </Button>
           </div>
           <div className="workspace-toolbar workspace-contact-toolbar">
             <Input
-              className="max-w-[320px]"
+              ref={searchField}
+              allowClear
+              prefix={<SearchOutlined aria-hidden="true" />}
               maxLength={200}
               aria-label="搜索联系人"
               placeholder="搜索姓名或 DeepChat 号"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <Button icon={<UserAddOutlined />} onClick={() => setAdding(true)}>添加联系人</Button>
           </div>
+          <nav className="workspace-contact-shortcuts" aria-label="通讯录入口">
+            <Link to="/contact/newFriends">
+              <UserAddOutlined aria-hidden="true" /><span>好友申请</span><RightOutlined aria-hidden="true" />
+            </Link>
+            <Link to="/contact/groupNotifications">
+              <MailOutlined aria-hidden="true" /><span>群邀请</span><RightOutlined aria-hidden="true" />
+            </Link>
+            <Link to="/contact/myGroups">
+              <TeamOutlined aria-hidden="true" /><span>我的群组</span><RightOutlined aria-hidden="true" />
+            </Link>
+          </nav>
+          <h2 className="directory-list-heading">{search.trim() ? "搜索结果" : "联系人"}</h2>
           <div className="workspace-list-scroll">
-            <div className="workspace-contact-shortcuts">
-              <button onClick={() => navigate("/contact/newFriends")}>好友申请</button>
-              <button onClick={() => navigate("/contact/groupNotifications")}>
-                群邀请
-              </button>
-              <button onClick={() => navigate("/contact/myGroups")}>我的群组</button>
-            </div>
             {pageFailure && (
               <Alert
                 type="warning"
@@ -145,7 +173,7 @@ export function ResearchContacts() {
             {error && <Alert type="error" message={error} />}
             {stars.error && <Alert type="warning" message={stars.error} />}
             {!data && !error && (
-              <p role="status" className="p-4 text-sm text-slate-500">
+              <p role="status" className="directory-list-status">
                 正在读取通讯录…
               </p>
             )}
@@ -154,8 +182,8 @@ export function ResearchContacts() {
               onSelect={() => selectContact(contact)} onDetails={() => { selectContact(contact); manageProfile(contact.id); }}
               onStar={() => stars.toggle(contact.id)} onRemoved={async () => { setSelected(previous => previous === contact.id ? undefined : previous); await refreshChecked(); }} />)}
             {data && !filtered.length && (
-              <p className="py-10 text-center text-sm text-slate-500">
-                {search ? "没有匹配的联系人" : "暂无联系人"}
+              <p role="status" className="directory-list-status">
+                {search.trim() ? "没有匹配的联系人" : "暂无联系人"}
               </p>
             )}
             {(pages.length > 1 || data?.nextCursor) && (
@@ -186,18 +214,34 @@ export function ResearchContacts() {
               <DirectorySkillLibrary onBack={closeSkills} />
             </Suspense>
           ) : selectedContact ? (
-            <WorkspaceContactCard
-              key={selectedContact}
-              contactId={selectedContact}
-              onManage={manageProfile}
-              onOpenContact={setSelected}
-              onChanged={refresh}
-              onOpenSkills={openSkills}
-            />
+            <>
+              <div className="directory-back-bar">
+                <button
+                  type="button"
+                  ref={backButton}
+                  onClick={() => {
+                    setSelected(undefined);
+                    requestAnimationFrame(() => searchField.current?.focus());
+                  }}
+                >
+                  <ArrowLeftOutlined aria-hidden="true" /> 返回通讯录
+                </button>
+              </div>
+              <WorkspaceContactCard
+                key={selectedContact}
+                contactId={selectedContact}
+                onManage={manageProfile}
+                onOpenContact={setSelected}
+                onChanged={refresh}
+                onOpenSkills={openSkills}
+                directory
+              />
+            </>
           ) : (
             <div className="workspace-empty">
+              <span className="directory-empty-icon" aria-hidden="true"><ContactsOutlined /></span>
               <h2>选择一位联系人</h2>
-              <p>从左侧列表选择，查看资料并开始聊天。</p>
+              <p>查看对方资料，或联系本人和个人助理。</p>
             </div>
           )}
         </main>

@@ -5,6 +5,7 @@ import type {
 } from "@research-agent-platform/contracts";
 
 export function PersonalMemoryEditor({
+  rootClassName,
   open,
   editing,
   confirming,
@@ -20,6 +21,7 @@ export function PersonalMemoryEditor({
   onClose,
   onSave,
 }: {
+  rootClassName?: string;
   open: boolean;
   editing: boolean;
   confirming: boolean;
@@ -41,7 +43,7 @@ export function PersonalMemoryEditor({
       open={open}
       centered
       width={500}
-      rootClassName="memory-editor-modal"
+      rootClassName={["memory-editor-modal", rootClassName].filter(Boolean).join(" ")}
       destroyOnClose
       onCancel={onClose}
       maskClosable={!busy}
@@ -122,6 +124,7 @@ export function PersonalMemoryEditor({
 }
 
 export function PersonalMemorySettingsEditor({
+  rootClassName,
   open,
   busy,
   ready,
@@ -132,6 +135,7 @@ export function PersonalMemorySettingsEditor({
   onSave,
   onReload,
 }: {
+  rootClassName?: string;
   open: boolean;
   busy: boolean;
   ready: boolean;
@@ -151,7 +155,7 @@ export function PersonalMemorySettingsEditor({
       open={open}
       centered
       width={520}
-      rootClassName="memory-editor-modal"
+      rootClassName={["memory-editor-modal", rootClassName].filter(Boolean).join(" ")}
       destroyOnClose
       onCancel={onClose}
       maskClosable={!busy}

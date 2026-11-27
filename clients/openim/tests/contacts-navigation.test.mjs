@@ -21,7 +21,7 @@ async function fixture() {
       },
     },
     antd: Object.fromEntries(["Alert", "Button", "Input", "Modal", "Segmented", "Tabs"].map(name => [name, name])),
-    "react-router-dom": { useNavigate: () => () => {}, useSearchParams: () => [params, next => { params = next; }] },
+    "react-router-dom": { Link: "Link", useSearchParams: () => [params, next => { params = next; }] },
     "./store": { useResearchStore: Object.assign(selector => selector(actor), { getState: () => actor }) },
     "./useResearchRead": { useResearchRead: () => ({ data: { data: [], nextCursor: null }, refresh() {}, refreshChecked() {} }) },
     "./useContactStars": { useContactStars: () => ({ ids: [] }) },
@@ -51,8 +51,10 @@ const button = (tree, label) => find(tree, node => ["button", "Button"].includes
 test("directory opens people search without specialist tabs or creation", async () => {
   const f = await fixture();
   const tree = f.render();
-  assert(button(tree, "好友申请"));
-  assert(button(tree, "群邀请"));
+  const link = label => find(tree, node => node.type === "Link" && text(node) === label);
+  assert.equal(link("好友申请").props.to, "/contact/newFriends");
+  assert.equal(link("群邀请").props.to, "/contact/groupNotifications");
+  assert.equal(link("我的群组").props.to, "/contact/myGroups");
   assert.equal(button(tree, "智能体"), undefined);
   assert.equal(button(tree, "添加智能体"), undefined);
   assert.match(text(tree), /选择一位联系人/);

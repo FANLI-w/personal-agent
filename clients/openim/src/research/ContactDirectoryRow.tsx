@@ -1,5 +1,5 @@
 import { Dropdown } from "antd";
-import { StarFilled } from "@ant-design/icons";
+import { RightOutlined, StarFilled } from "@ant-design/icons";
 import { useRef, useState } from "react";
 import type { Contact } from "@research-agent-platform/contracts";
 import OIMAvatar from "./ResearchAvatar";
@@ -97,10 +97,7 @@ export function ContactDirectoryRow({
     <Dropdown
       trigger={["contextMenu"]}
       open={menuOpen}
-      onOpenChange={(open) => {
-        setMenuOpen(open);
-        if (open) onSelect();
-      }}
+      onOpenChange={setMenuOpen}
       menu={{
         items,
         onClick: ({ key }) => {
@@ -119,14 +116,15 @@ export function ContactDirectoryRow({
           if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
             event.preventDefault();
             setMenuOpen(true);
-            onSelect();
           }
         }}
       >
-        <OIMAvatar contact={contact} text={contact.displayName} />
-        <div>
-          <strong>{contact.displayName}</strong>
-          {starred && <StarFilled className="directory-star" aria-label="已星标" />}
+        <OIMAvatar contact={contact} text={contact.displayName} size={40} />
+        <div className="directory-person-copy">
+          <div className="directory-person-name">
+            <strong>{contact.displayName}</strong>
+            {starred && <StarFilled className="directory-star" aria-hidden="true" />}
+          </div>
           {source && <small className="directory-contact-source">{source}</small>}
           <p>
             {contact.profile.introduction ||
@@ -135,6 +133,7 @@ export function ContactDirectoryRow({
                 : contact.profile.capabilityDescription)}
           </p>
         </div>
+        <RightOutlined className="directory-person-chevron" aria-hidden="true" />
       </button>
     </Dropdown>
   );

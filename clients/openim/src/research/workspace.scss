@@ -184,6 +184,12 @@
     margin: 7px 0 0;
   }
 }
+.workspace-namecard-identity {
+  display: flex;
+  align-items: center;
+  gap: inherit;
+  min-width: 0;
+}
 .workspace-namecard-heading + .workspace-card-actions {
   margin-bottom: 12px;
 }
@@ -647,18 +653,5 @@
   }
 }
 .directory-star { margin-left: 9px; color: #bf8d28; font-size: 16px; }
-.desktop-contacts-content .workspace-contact-toolbar {
-  display: flex;
-  gap: 8px;
-  padding-block: 0 8px;
-  .ant-input { min-width: 0; }
-  .ant-btn { flex: none; }
-}
-.desktop-contacts-content .workspace-person-row {
-  strong { font-size: 15px; }
-  p { font-size: 13px; }
-  &:focus-visible { outline: 2px solid #548d70; outline-offset: -2px; }
-}
-
 .directory-contact-source { display: block; color: #526b7b; font-size: 12px; margin-top: 3px; }
 .my-groups-empty { padding: 48px 20px; text-align: center; }

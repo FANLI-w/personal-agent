@@ -1,3 +1,4 @@
+import { MessageOutlined, RobotOutlined, UserAddOutlined } from "@ant-design/icons";
 import { Alert, Button } from "antd";
 import type { Contact } from "@research-agent-platform/contracts";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -32,6 +33,7 @@ export function WorkspaceContactCard({
   onOpenContact,
   onChanged,
   onOpenSkills,
+  directory = false,
   children,
 }: {
   contactId: string;
@@ -39,6 +41,7 @@ export function WorkspaceContactCard({
   onManage?: (id: string) => void;
   onChanged?: () => Promise<void>;
   onOpenSkills?: OpenAgentSkills;
+  directory?: boolean;
   children?: ReactNode;
 }) {
   const read = useResearchRead(
@@ -124,21 +127,12 @@ export function WorkspaceContactCard({
             entry.contact.identity.kind === "human" &&
             entry.contact.identity.memberId === ownerId,
         )?.contact.displayName;
-  return (
-    <section className="workspace-namecard" aria-label="联系人名片">
-      <header className="workspace-namecard-heading">
-        <OIMAvatar contact={c} text={c.displayName} size={64} />
-        <div>
-          <h2>{c.displayName}</h2>
-          <span className={`workspace-kind ${human ? "human" : "agent"}`}>
-            {human ? "个人" : "Agent"}
-          </span>
-        </div>
-      </header>
+  const primaryActions = (
       <div className="workspace-card-actions">
         {c.allowedActions.includes("chat") && (
           <Button
             type="primary"
+            icon={directory ? <MessageOutlined aria-hidden="true" /> : undefined}
             loading={currentAction?.busy}
             onClick={() => void command((isCurrent) => openChat(c.id, isCurrent))}
           >
@@ -147,6 +141,9 @@ export function WorkspaceContactCard({
         )}
         {c.identity.kind === "human" && c.username && onOpenContact && (
           <Button
+            aria-label={`联系 TA 的助理（${c.displayName}的个人助理）`}
+            title={`联系${c.displayName}的个人助理`}
+            icon={directory ? <RobotOutlined aria-hidden="true" /> : undefined}
             loading={currentAction?.busy}
             onClick={() =>
               void command(async (isCurrent) => {
@@ -166,12 +163,13 @@ export function WorkspaceContactCard({
               })
             }
           >
-            联系个人助理
+            联系 TA 的助理
           </Button>
         )}
         {c.allowedActions.includes("request") && (
           <Button
             type="primary"
+            icon={directory ? <UserAddOutlined aria-hidden="true" /> : undefined}
             loading={currentAction?.busy}
             onClick={() =>
               void command(
@@ -202,6 +200,24 @@ export function WorkspaceContactCard({
           </Button>
         )}
       </div>
+  );
+  return (
+    <section className="workspace-namecard" aria-label="联系人名片">
+      <header className="workspace-namecard-heading">
+        <div className="workspace-namecard-identity">
+          <OIMAvatar contact={c} text={c.displayName} size={directory ? 80 : 64} />
+          <div>
+            <h2>{c.displayName}</h2>
+            {(!directory || !human) && (
+              <span className={`workspace-kind ${human ? "human" : "agent"}`}>
+                {human ? "个人" : "Agent"}
+              </span>
+            )}
+          </div>
+        </div>
+        {directory && primaryActions}
+      </header>
+      {!directory && primaryActions}
       {(currentAction?.error || currentAction?.notice) && (
         <Alert
           className="workspace-action-feedback"
@@ -216,10 +232,16 @@ export function WorkspaceContactCard({
           isSelf={c.identity.memberId === actor?.member.id}
         />
       )}
-      {c.profile.introduction.trim() && (
+      {!directory && c.profile.introduction.trim() && (
         <p className="workspace-card-intro">{c.profile.introduction}</p>
       )}
       <dl className="workspace-profile-fields">
+        {directory && c.profile.introduction.trim() && (
+          <div>
+            <dt>简介</dt>
+            <dd>{c.profile.introduction}</dd>
+          </div>
+        )}
         {c.profile.capabilityDescription.trim() && (
           <div>
             <dt>能力</dt>

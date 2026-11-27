@@ -1,0 +1,383 @@
+.social-workspace.desktop-contacts-content:not(.is-skill-library) {
+  --directory-blue: #0968b4;
+  --directory-blue-hover: #075995;
+  --directory-heading: #0a385b;
+  --directory-ink: #171d24;
+  --directory-muted: #556474;
+  --directory-line: #dfe5eb;
+  --directory-surface: #fcfdff;
+  --directory-hover: #eef5fc;
+  --directory-selected: #dfedfc;
+  --directory-detail-gutter: clamp(24px, 3.5cqw, 54px);
+  container: contact-directory / inline-size;
+  background: var(--directory-surface);
+  color: var(--directory-ink);
+
+  .workspace-list-pane {
+    width: clamp(295px, 28cqw, 380px);
+    min-width: 0;
+    border-color: var(--directory-line);
+    background: var(--directory-surface);
+  }
+
+  .workspace-heading {
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 25px 20px 16px;
+    background: transparent;
+    border: 0;
+
+    h1 {
+      color: var(--directory-heading);
+      font-size: clamp(25px, 2.3cqw, 32px);
+      font-weight: 730;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+  }
+
+  .workspace-heading > .directory-add-button {
+    height: 34px;
+    padding-inline: 11px;
+    border-color: #d5e5f4;
+    border-radius: 8px;
+    background: var(--directory-hover);
+    color: var(--directory-blue);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .workspace-contact-toolbar {
+    padding: 0 20px 10px;
+    border: 0;
+    background: transparent;
+
+    .ant-input-affix-wrapper {
+      max-width: none;
+      min-height: 38px;
+      padding-inline: 11px;
+      border-color: var(--directory-line);
+      border-radius: 9px;
+      background: #f4f7fa;
+      color: var(--directory-muted);
+
+      &:focus-within { border-color: var(--directory-blue); }
+    }
+
+    .ant-input-prefix {
+      margin-inline-end: 8px;
+      font-size: 15px;
+    }
+
+    .ant-input {
+      min-width: 0;
+      background: transparent;
+      font-size: 13px;
+      &::placeholder { color: #657385; }
+    }
+  }
+
+  .workspace-contact-shortcuts {
+    display: grid;
+    gap: 0;
+    margin: 0 16px;
+    padding: 0 0 9px;
+    border-color: var(--directory-line);
+
+    a {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 9px;
+      min-height: 34px;
+      border-radius: 7px;
+      padding-inline: 9px;
+      color: var(--directory-ink);
+      font-size: 13px;
+
+      > .anticon:first-child { color: var(--directory-blue); font-size: 16px; }
+      > .anticon:last-child { color: var(--directory-muted); font-size: 10px; }
+      &:hover { background: var(--directory-hover); color: var(--directory-heading); }
+      &:focus-visible { outline: 2px solid var(--directory-blue); outline-offset: -2px; }
+    }
+  }
+
+  .directory-list-heading {
+    margin: 0;
+    padding: 13px 23px 8px;
+    color: var(--directory-muted);
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.4;
+  }
+
+  .workspace-list-scroll {
+    padding: 0 13px 12px;
+    scrollbar-gutter: stable;
+    > .ant-alert { margin-block: 0 8px; }
+  }
+
+  .directory-list-status {
+    margin: 0;
+    padding: 24px 10px;
+    color: var(--directory-muted);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .workspace-person-row {
+    position: relative;
+    min-height: 59px;
+    gap: 11px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: var(--directory-ink);
+
+    + .workspace-person-row { margin-top: 2px; }
+    &:hover { background: var(--directory-hover); }
+    &:focus-visible { outline: 2px solid var(--directory-blue); outline-offset: -2px; }
+
+    &[aria-pressed="true"] {
+      background: var(--directory-selected);
+      color: var(--directory-heading);
+
+      &::before {
+        position: absolute;
+        inset: 9px auto 9px 0;
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: var(--directory-blue);
+        content: "";
+      }
+    }
+
+    .ant-avatar { flex: none; border-radius: 10px !important; }
+
+    .directory-person-name {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    strong {
+      overflow: hidden;
+      font-size: 15px;
+      font-weight: 650;
+      line-height: 1.4;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    p {
+      margin: 2px 0 0;
+      color: var(--directory-muted);
+      font-size: 12px;
+      line-height: 1.5;
+      &:empty { display: none; }
+    }
+
+    .directory-star { flex: none; margin: 0; color: #9a6b18; font-size: 12px; }
+    .directory-person-chevron { flex: none; color: var(--directory-blue); font-size: 11px; opacity: 0; }
+    &:hover .directory-person-chevron,
+    &:focus-visible .directory-person-chevron,
+    &[aria-pressed="true"] .directory-person-chevron { opacity: 1; }
+  }
+
+  .workspace-detail-pane { background: var(--directory-surface); }
+  .directory-back-bar { display: none; }
+
+  .workspace-namecard {
+    max-width: none;
+    padding: 0 0 32px;
+
+    > p[role="status"], > .ant-alert:first-child {
+      margin: 24px var(--directory-detail-gutter);
+    }
+  }
+
+  .workspace-namecard-heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: center;
+    gap: 20px;
+    min-height: 190px;
+    padding: 28px var(--directory-detail-gutter);
+    border-color: var(--directory-line);
+    background: linear-gradient(112deg, #edf5ff, #e3effc);
+
+    .workspace-namecard-identity { flex: 0 1 auto; }
+    .ant-avatar { flex: none; border-radius: 21px !important; }
+
+    h2 {
+      display: block;
+      color: var(--directory-heading);
+      font-size: clamp(25px, 2.6cqw, 36px);
+      font-weight: 730;
+      line-height: 1.25;
+    }
+
+    .workspace-kind {
+      margin: 5px 0 0;
+      background: #d8e8f8;
+      color: var(--directory-heading);
+    }
+
+    > .workspace-card-actions { border: 0; padding: 0; }
+  }
+
+  .workspace-card-actions {
+    gap: 8px;
+    &:empty { display: none; }
+
+    .ant-btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 0;
+      max-width: 100%;
+      height: 38px;
+      padding-inline: 13px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .ant-btn-default:not(.ant-btn-dangerous) {
+      border-color: #bacdde;
+      background: #fff;
+      color: var(--directory-heading);
+      &:hover { border-color: var(--directory-blue); color: var(--directory-blue); }
+    }
+
+    .ant-btn-primary:enabled {
+      background: var(--directory-blue);
+      color: #fff;
+      &:hover { background: var(--directory-blue-hover); color: #fff; }
+    }
+  }
+
+  .workspace-namecard > :where(.acceptcat-account-number, .workspace-profile-fields, .workspace-card-actions, .workspace-action-feedback) {
+    margin-inline: var(--directory-detail-gutter);
+  }
+
+  .acceptcat-account-number.is-compact {
+    column-gap: 16px;
+    max-width: none;
+    margin-top: 10px;
+    padding-block: 13px;
+    border-bottom: 1px solid var(--directory-line);
+    border-radius: 0;
+
+    .acceptcat-account-label {
+      flex: 0 0 92px;
+      color: var(--directory-muted);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .acceptcat-account-value {
+      flex: 0 1 auto;
+
+      .ant-input {
+        width: auto;
+        min-width: 9ch;
+        max-width: min(28ch, 30cqw);
+        height: 29px;
+        padding-inline: 0;
+        border-color: transparent;
+        background: transparent;
+        color: var(--directory-ink);
+        field-sizing: content;
+        &:focus { border-bottom-color: var(--directory-blue); }
+      }
+
+      .ant-btn {
+        height: 29px;
+        padding-inline: 8px;
+        border-color: var(--directory-line);
+        border-radius: 6px;
+        color: var(--directory-blue);
+        font-size: 12px;
+      }
+    }
+
+    :where(.acceptcat-account-feedback, .acceptcat-account-help) { color: var(--directory-muted); }
+  }
+
+  .workspace-profile-fields {
+    > div {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      align-items: baseline;
+      gap: 16px;
+      margin: 0;
+      padding-block: 13px;
+      border-bottom: 1px solid var(--directory-line);
+    }
+
+    dt { color: var(--directory-muted); font-size: 14px; font-weight: 500; }
+    dd { font-size: 15px; overflow-wrap: anywhere; }
+  }
+
+  .workspace-namecard > .workspace-card-actions {
+    border: 0;
+    padding-top: 20px;
+
+    .ant-btn-dangerous {
+      background: transparent;
+      border-color: transparent;
+      color: var(--directory-muted);
+
+      &:hover, &:focus-visible { color: #b52b2b; }
+    }
+  }
+
+  .workspace-empty {
+    gap: 7px;
+    color: var(--directory-muted);
+    h2 { margin: 7px 0 0; color: var(--directory-heading); font-size: 19px; font-weight: 650; }
+    p { margin: 0; }
+  }
+
+  .directory-empty-icon {
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    border: 1px solid #d8e7f7;
+    border-radius: 16px;
+    background: var(--directory-hover);
+    color: var(--directory-blue);
+    font-size: 26px;
+  }
+
+  @container contact-directory (max-width: 640px) {
+    .workspace-list-pane { width: 100%; border-right: 0; }
+    .workspace-detail-pane,
+    .has-selected-contact .workspace-list-pane { display: none; }
+    .has-selected-contact .workspace-detail-pane { display: block; }
+    .workspace-person-row .directory-person-chevron { opacity: 1; }
+
+    .directory-back-bar {
+      display: block;
+      padding: 8px 13px;
+      background: var(--directory-surface);
+
+      button {
+        min-height: 32px;
+        padding-inline: 7px;
+        border-radius: 6px;
+        color: var(--directory-blue);
+        font-size: 13px;
+        font-weight: 600;
+        &:hover { background: var(--directory-hover); }
+      }
+    }
+
+    .workspace-namecard-heading { min-height: 0; padding-block: 20px; }
+    .workspace-namecard-heading .workspace-namecard-identity { gap: 14px; }
+    .workspace-profile-fields > div { gap: 10px; }
+    .acceptcat-account-number.is-compact { column-gap: 10px; }
+  }
+}

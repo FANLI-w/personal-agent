@@ -119,7 +119,13 @@ function MemoryEntry({
   );
 }
 
-export function PersonalMemoryPanel({ active }: { active: boolean }) {
+export function PersonalMemoryPanel({
+  active,
+  inMyWorkspace = false,
+}: {
+  active: boolean;
+  inMyWorkspace?: boolean;
+}) {
   const { modal } = App.useApp();
   const operation = usePersonalOperation(active, "personal-memory");
   const overlays = useRef<{ destroy: () => void }[]>([]);
@@ -324,11 +330,13 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
       }),
     );
 
+  const Heading = inMyWorkspace ? "h2" : "h1";
+  const editorClass = inMyWorkspace ? "my-workspace-memory-dialog" : undefined;
   return (
     <section className="personal-memory" aria-label="我的习惯">
       <header className="memory-heading">
         <div>
-          <h1>我的习惯</h1>
+          <Heading>我的习惯</Heading>
           <p>
             查看聊天中形成和你明确保存的偏好。
             {newest && ` · 最近更新 ${shortDate(newest)}`}
@@ -413,7 +421,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
         {filter === "revoked" && (
           <p className="memory-state-note">这些记忆已停止使用，保留在这里供你查看。</p>
         )}
-        <div role="tabpanel" aria-label={filters[filter]}>
+        <div role="region" aria-label={filters[filter]}>
           {!currentList.data && !currentList.error && (
             <Skeleton active title={false} paragraph={{ rows: 3 }} />
           )}
@@ -483,6 +491,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
         <button onClick={showScope}>了解使用范围</button>
       </footer>
       <PersonalMemoryEditor
+        rootClassName={editorClass}
         open={editorOpen && active}
         editing={!!editing}
         confirming={editing?.status === "candidate"}
@@ -522,6 +531,7 @@ export function PersonalMemoryPanel({ active }: { active: boolean }) {
         }
       />
       <PersonalMemorySettingsEditor
+        rootClassName={editorClass}
         open={settingsOpen && active}
         busy={busy}
         policy={policy}
