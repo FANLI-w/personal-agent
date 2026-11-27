@@ -1,6 +1,7 @@
 import "./library-index.scss";
 
 import type { LibraryIndexEntry } from "@research-agent-platform/contracts";
+import { CommentOutlined } from "@ant-design/icons";
 import { Alert, Button, Checkbox, Input, Select, Tag } from "antd";
 import { useState } from "react";
 
@@ -8,6 +9,7 @@ import { researchApi } from "./api";
 import { LocalLibraryPicker } from "./LocalLibraryPicker";
 import { useResearchStore } from "./store";
 import { useLocalLibrary } from "./useLocalLibrary";
+import { useOwnAssistantConversation } from "./useOwnAssistantConversation";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchRead } from "./useResearchRead";
 import { useWorkspaceAvailability } from "./useWorkspaceAvailability";
@@ -53,6 +55,7 @@ export function LibraryIndexPage() {
     supported && Boolean(actor),
   );
   const local = useLocalLibrary();
+  const openAssistant = useOwnAssistantConversation();
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState<Draft>();
   const [picking, setPicking] = useState(false);
@@ -274,6 +277,15 @@ export function LibraryIndexPage() {
                     {new Date(entry.updatedAt).toLocaleString("zh-CN")}
                   </small>
                   <div className="library-index-actions">
+                    <Button
+                      size="small"
+                      icon={<CommentOutlined aria-hidden="true" />}
+                      onClick={() => void openAssistant(
+                        `我想和你讨论「${entry.project}」项目中的资料「${entry.name}」。`,
+                      )}
+                    >
+                      和个人助理讨论
+                    </Button>
                     {entry.allowedActions.includes("revise") && (
                       <Button
                         size="small"

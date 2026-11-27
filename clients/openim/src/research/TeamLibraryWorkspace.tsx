@@ -11,8 +11,8 @@ import {
   Spin,
 } from "antd";
 import {
-  ArrowUpOutlined,
   CloseOutlined,
+  CommentOutlined,
   FileImageOutlined,
   FilePdfOutlined,
   FilePptOutlined,
@@ -43,16 +43,11 @@ import { useResearchRead } from "./useResearchRead";
 import { usePersonalOperation } from "./usePersonalOperation";
 import { useResearchStore } from "./store";
 import { nativeWorkbenchTaskPath } from "./workbench-links";
-import { readWorkbenchServiceOrigin } from "./native-workbench-handoff";
-import {
-  storeWorkbenchInstruction,
-  workbenchInstructionKey,
-} from "./local-dsh-context";
 import { RepositoryEditor } from "./RepositoryEditor";
 import { LibraryIndexPage } from "./LibraryIndexPage";
 import SafeMessageMarkdown from "./SafeMessageMarkdown";
 import { TeamLibraryFileImport } from "./TeamLibraryFileImport";
-import { findTeamMaterials } from "./team-material-selection";
+import { useOwnAssistantConversation } from "./useOwnAssistantConversation";
 import "./team-library.scss";
 
 const canUseMaterials = (card: WorkbenchCard) =>
@@ -101,6 +96,7 @@ export function TeamLibraryWorkspace({
 }) {
   const navigate = useNavigate(),
     actor = useResearchStore((s) => s.actor);
+  const openAssistant = useOwnAssistantConversation();
   const operation = usePersonalOperation(true, "team-library");
   const bridge = window.electronAPI?.teamLibrary;
   const repository = useResearchRead(
@@ -146,27 +142,8 @@ export function TeamLibraryWorkspace({
   const [importFile, setImportFile] = useState<File>(),
     [importTarget, setImportTarget] = useState(""),
     [taskSearch, setTaskSearch] = useState("");
-  const [candidates, setCandidates] = useState<TeamLibraryEntry[]>(),
-    [chosenIds, setChosenIds] = useState<string[]>([]);
-  const findMaterials = () => {
-    if (!snapshot) return;
-    const found = question.trim()
-      ? findTeamMaterials(snapshot.manifest, question)
-      : entry
-      ? [entry]
-      : [];
-    setCandidates(found);
-    const purposes = new Set<string>();
-    setChosenIds(
-      found
-        .filter((item) => {
-          if (purposes.has(item.purpose)) return false;
-          purposes.add(item.purpose);
-          return true;
-        })
-        .map((item) => item.id),
-    );
-  };
+  const [materialPickerOpen, setMaterialPickerOpen] = useState(false);
+  const [taskEntries, setTaskEntries] = useState<TeamLibraryEntry[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
   const beginImport = (files: FileList | File[], target = "") => {
     if (!files.length) return;
@@ -184,7 +161,6 @@ export function TeamLibraryWorkspace({
   const [tasks, setTasks] = useState<WorkbenchCard[]>(),
     [taskCursor, setTaskCursor] = useState<string | null>(),
     [taskBusy, setTaskBusy] = useState(false),
-    [question, setQuestion] = useState(""),
     [includeRules, setIncludeRules] = useState(true);
   const current = repository.data?.data,
     binding = current?.binding;
@@ -258,6 +234,27 @@ export function TeamLibraryWorkspace({
         )
       : undefined;
   const selectedName = entry?.name || selectedFile?.path.split("/").pop() || "";
+  const discussMaterials = () => {
+    if (!snapshot) return;
+    const repository = snapshot.binding.url
+      .replace(/\/$/, "")
+      .replace(/\.git$/, "")
+      .split("/")
+      .slice(-2)
+      .join("/");
+    const filePath = selectedFile?.path || (entry?.source.kind === "git" ? entry.source.path : "");
+    const projectName = snapshot.manifest.projects.find(
+      (item) => item.id === (entry ? entry.projectId : project),
+    )?.name;
+    return openAssistant(
+      [
+        selectedName ? `我想和你讨论团队资料「${selectedName}」。` : "我想请你帮我查找团队资料。",
+        `GitHub 仓库：${repository}（${snapshot.binding.branch}，${snapshot.revision.slice(0, 8)}）`,
+        projectName && `项目：${projectName}`,
+        filePath ? `文件路径：${filePath}` : nav.mode === "tree" && nav.directory && `目录：${nav.directory}`,
+      ].filter(Boolean).join("\n"),
+    );
+  };
   const previewKey = entry
     ? `entry:${entry.id}`
     : selectedFile
@@ -282,14 +279,13 @@ export function TeamLibraryWorkspace({
     setTasks(undefined);
     setError("");
     setSyncError("");
-    setQuestion("");
     setProject("");
     setPurpose("");
     setQuery("");
     setNewProject(false);
     setImportFile(undefined);
-    setCandidates(undefined);
-    setChosenIds([]);
+    setMaterialPickerOpen(false);
+    setTaskEntries([]);
     setConfigure(false);
     setPanel("");
     setHistory(undefined);
@@ -426,7 +422,7 @@ export function TeamLibraryWorkspace({
       }
     }
   };
-  const chooseTask = async (cursor?: string, selected = chosenIds) => {
+  const chooseTask = async (cursor?: string, selected = taskEntries) => {
     const ticket = operation.capture();
     setTaskBusy(true);
     setError("");
@@ -443,7 +439,7 @@ export function TeamLibraryWorkspace({
           available.length === 1 &&
           selected.length
         ) {
-          await useEntry(available[0], selected);
+          useEntry(available[0], selected);
           return;
         }
         setTasks((old) =>
@@ -457,39 +453,17 @@ export function TeamLibraryWorkspace({
       if (ticket.isCurrent()) setTaskBusy(false);
     }
   };
-  const useEntry = async (card: WorkbenchCard, selected = chosenIds) => {
-    if (!snapshot || !card.taskId || card.summaryOnly || !actor) return;
-    const ticket = operation.capture();
-    const ids = selected.length ? selected : entry ? [entry.id] : [];
-    if (!ids.length) return;
+  const useEntry = (card: WorkbenchCard, selected = taskEntries) => {
+    if (!snapshot || !card.taskId || card.summaryOnly || !actor || !selected.length) return;
     const target = nativeWorkbenchTaskPath(
       card.taskId,
       card.source === "research_task" ? "research" : "personal",
     );
     const params = new URLSearchParams(target.split("?")[1]);
-    for (const id of ids) params.append("teamEntry", id);
+    for (const material of selected) params.append("teamEntry", material.id);
     params.set("teamRevision", snapshot.revision);
     params.set("teamRules", String(includeRules));
-    try {
-      const serviceOrigin = await readWorkbenchServiceOrigin();
-      if (!ticket.isCurrent()) return;
-      const key = workbenchInstructionKey(
-        {
-          memberId: actor.member.id,
-          labId: actor.member.labId,
-          generation: operation.generation,
-          serviceOrigin,
-        },
-        {
-          taskId: card.taskId,
-          kind: card.source === "research_task" ? "research" : "personal",
-        },
-      );
-      storeWorkbenchInstruction(sessionStorage, key, question);
-      navigate("/dsh?" + params.toString());
-    } catch (failure) {
-      if (ticket.isCurrent()) setError(message(failure));
-    }
+    navigate("/dsh?" + params.toString());
   };
   const run = async (action: () => Promise<unknown>) => {
     const ticket = operation.capture();
@@ -750,6 +724,15 @@ export function TeamLibraryWorkspace({
                         onChange={(e) => setQuery(e.target.value)}
                         allowClear
                       />
+                      <Button
+                        disabled={!visible.length}
+                        onClick={() => {
+                          setTaskEntries(entry ? [entry] : []);
+                          setMaterialPickerOpen(true);
+                        }}
+                      >
+                        选择资料用于任务
+                      </Button>
                     </header>
                     <div className="team-library-quick-filters" aria-label="资料用途">
                       {[
@@ -992,31 +975,13 @@ export function TeamLibraryWorkspace({
                     )}
                   </div>
                 )}
-                <div className="team-library-agent">
-                  <label htmlFor="team-library-question">查找资料并带入任务</label>
-                  <Input.TextArea
-                    id="team-library-question"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="描述所需模板、图片或参考资料…"
-                    maxLength={4000}
-                    autoSize={{ minRows: 1, maxRows: 3 }}
-                    onPressEnter={(event) => {
-                      if (!event.shiftKey && !event.nativeEvent.isComposing) {
-                        event.preventDefault();
-                        findMaterials();
-                      }
-                    }}
-                  />
+                <div className="team-library-discussion">
                   <Button
-                    type="primary"
-                    shape="circle"
-                    icon={<ArrowUpOutlined />}
-                    aria-label="查找可用资料"
-                    disabled={!entry && !question.trim()}
-                    loading={taskBusy}
-                    onClick={findMaterials}
-                  />
+                    icon={<CommentOutlined aria-hidden="true" />}
+                    onClick={() => void discussMaterials()}
+                  >
+                    和个人助理讨论
+                  </Button>
                 </div>
               </div>
               {(entry || selectedFile) && (
@@ -1106,8 +1071,8 @@ export function TeamLibraryWorkspace({
                         block
                         loading={taskBusy}
                         onClick={() => {
-                          setChosenIds([entry.id]);
-                          void chooseTask(undefined, [entry.id]);
+                          setTaskEntries([entry]);
+                          void chooseTask(undefined, [entry]);
                         }}
                       >
                         用于任务
@@ -1282,56 +1247,42 @@ export function TeamLibraryWorkspace({
         )}
       </Modal>
       <Modal
-        open={!!candidates}
-        title="选好资料，一起带入任务"
-        onCancel={() => setCandidates(undefined)}
-        okText={
-          chosenIds.length ? `选择任务 · ${chosenIds.length} 份资料` : "请选择资料"
-        }
-        okButtonProps={{ disabled: !chosenIds.length }}
+        open={materialPickerOpen}
+        title="选择要带入任务的资料"
+        onCancel={() => setMaterialPickerOpen(false)}
+        okText="选择任务"
+        okButtonProps={{ disabled: !taskEntries.length }}
         onOk={() => {
-          setCandidates(undefined);
+          setMaterialPickerOpen(false);
           void chooseTask();
         }}
+        styles={{ body: { maxHeight: "min(50vh, 480px)", overflowY: "auto" } }}
       >
-        {candidates?.length === 0 && (
-          <Empty description="没有找到匹配资料，换个名称或用途试试" />
-        )}
-        {candidates?.map((item) => (
-          <Checkbox
-            className="team-library-candidate"
-            key={item.id}
-            checked={chosenIds.includes(item.id)}
-            onChange={(event) =>
-              setChosenIds((old) =>
-                event.target.checked
-                  ? [...old, item.id]
-                  : old.filter((id) => id !== item.id),
-              )
-            }
-          >
-            <FileIcon entry={item} />
-            <span>
-              <strong>{item.name}</strong>
-              <small>
-                {purposes[item.purpose]} ·{" "}
-                {item.source.kind === "shared"
-                  ? `v${item.source.version}`
-                  : item.source.sha256?.slice(0, 8) || "本地资料"}
-              </small>
-            </span>
-          </Checkbox>
-        ))}
+        {materialPickerOpen && visible.map((item) => {
+          const selected = taskEntries.some((material) => material.id === item.id);
+          return (
+            <Checkbox
+              className="team-library-candidate"
+              key={item.id}
+              checked={selected}
+              disabled={!selected && taskEntries.length >= 19}
+              onChange={(event) =>
+                setTaskEntries((old) =>
+                  event.target.checked
+                    ? [...old, item]
+                    : old.filter((material) => material.id !== item.id),
+                )
+              }
+            >
+              <FileIcon entry={item} />
+              <span>{item.name} · {purposes[item.purpose]}</span>
+            </Checkbox>
+          );
+        })}
       </Modal>
       <Modal
         open={!!tasks}
-        title={
-          chosenIds.length > 1
-            ? `将 ${chosenIds.length} 份资料用于任务`
-            : entry
-            ? `将「${entry.name}」用于任务`
-            : "选择任务"
-        }
+        title={taskEntries.length === 1 ? `将「${taskEntries[0].name}」用于任务` : "选择任务"}
         onCancel={() => setTasks(undefined)}
         footer={null}
       >

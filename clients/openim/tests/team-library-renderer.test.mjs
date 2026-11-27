@@ -96,6 +96,9 @@ function fixture(initial = snapshot()) {
     next: initial,
     previews: [],
     paths: [],
+    drafts: [],
+    navigation: [],
+    workbench: [],
     cached: async () => null,
     sync: async () => f.next,
     preview: async (selected) => ({ kind: "text", text: "Registered content" }),
@@ -156,8 +159,8 @@ function fixture(initial = snapshot()) {
       },
     },
     "react/jsx-runtime": { jsx, jsxs: jsx },
-    "react-router-dom": { useNavigate: () => () => {} },
-    "./api": { researchApi: async () => ({ data: [], nextCursor: null }) },
+    "react-router-dom": { useNavigate: () => (path) => f.navigation.push(path) },
+    "./api": { researchApi: async (route) => ({ data: route === "workbench" ? f.workbench : [], nextCursor: null }) },
     "./useResearchRead": {
       useResearchRead: () => ({
         data: f.repositoryError ? undefined : { data: { binding: f.binding, canConfigure: f.canConfigure } },
@@ -180,14 +183,17 @@ function fixture(initial = snapshot()) {
       useResearchStore: (selector) =>
         selector({ actor: { member: { id: f.actorId, labId: "lab" } } }),
     },
-    "./workbench-links": {},
-    "./native-workbench-handoff": {},
-    "./local-dsh-context": {},
+    "./workbench-links": { nativeWorkbenchTaskPath: (id, kind) => `/dsh?task=${id}&taskKind=${kind}` },
     "./RepositoryEditor": { RepositoryEditor: "RepositoryEditor" },
     "./LibraryIndexPage": {},
     "./SafeMessageMarkdown": { default: "Markdown" },
     "./TeamLibraryFileImport": {},
-    "./team-material-selection": {},
+    "./useOwnAssistantConversation": {
+      useOwnAssistantConversation: () => async (draft) => {
+        f.drafts.push(draft);
+        return true;
+      },
+    },
     "./team-library.scss": {},
   };
   const module = { exports: {} };
@@ -245,6 +251,42 @@ function fixture(initial = snapshot()) {
     nodes(f.tree).filter((n) => n.type === "button" && n.props.role === "row");
   return f;
 }
+
+test("repository discussion hands its location to the personal assistant without including preview text", async () => {
+  const f = fixture();
+  await f.settle();
+  assert(!nodes(f.tree).some((node) => node.props?.id === "team-library-question"));
+  await f.click("和个人助理讨论");
+  assert.match(f.drafts[0], /GitHub 仓库：synthetic\/files（main，aaaaaaaa）/);
+  await f.rows().find((row) => textOf(row).includes("docs文件夹")).props.onClick();
+  await f.settle();
+  await f.rows().find((row) => textOf(row).includes("raw.md文件")).props.onClick();
+  await f.settle();
+  await f.click("和个人助理讨论");
+  assert.match(f.drafts[1], /文件路径：docs\/raw\.md/);
+  assert.doesNotMatch(f.drafts[1], /Raw content/);
+});
+
+test("catalog still lets users manually take multiple registered materials to an authorized task", async () => {
+  const f = fixture();
+  f.workbench = [{
+    id: "card", taskId: "task-one", source: "research_task",
+    category: "ongoing", allowedActions: ["run"], summaryOnly: false,
+  }];
+  await f.settle();
+  await f.click("资料目录");
+  await f.click("选择资料用于任务");
+  for (const item of nodes(f.tree).filter((node) => node.props?.className === "team-library-candidate"))
+    item.props.onChange({ target: { checked: true } });
+  await f.settle();
+  const chooser = nodes(f.tree).find((node) => node.props?.okText === "选择任务");
+  await chooser.props.onOk();
+  await f.settle();
+  const params = new URLSearchParams(f.navigation[0].split("?")[1]);
+  assert.deepEqual(params.getAll("teamEntry"), ["registered", "shared"]);
+  assert.equal(params.get("teamRevision"), snapshot().revision);
+  assert.deepEqual(f.drafts, []);
+});
 
 test("root lists every real direct child including dotfiles and manifest with no selected document", async () => {
   const f = fixture();
